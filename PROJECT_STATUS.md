@@ -1,6 +1,12 @@
 # PROJECT_STATUS.md — 新一次データベース構築プロジェクト進捗
 
 作成日: 2026-07-23
+更新日: 2026-08-11（`common/market_data/`を「未着手（投資調査・設計確定済み）」
+から「構築中」に更新。`fetcher.py`・`reader.py`・Daily/Weekly Update
+workflows実装完了、本番消費者8ファイル中3/8〈`beta_fetcher.py`・
+`data_fetcher.py`・`valuation_fetcher.py`〉切替完了を反映。フェーズ1表
+該当行を更新。詳細はBACKLOG.md`[[MARKETDATA-LAYER-CONSTRUCTION-1]]`・
+BACKLOG_DONE.md「2026-08-11（完了）」参照。実装コード変更なし）
 更新日: 2026-08-07（`common/market_data/`の状態表記を「未着手」から
 「未着手（投資調査・設計確定済み）」に更新。`[[MARKETDATA-LAYER-
 CONSTRUCTION-1]]`の3原則照合完了を反映し、フェーズ1表・冒頭サマリー
@@ -318,7 +324,7 @@ market_data/`・`common/macro_data/`新設）への着手を検討する
 単位の個別確認・BBAI/RKLB/SOFI/VRT/ONDSの維持フィールド凍結検討・
 `[[AVGO-CIK-HISTORY-WRONG-LEGACY-CIK-1]]`対応）は優先度中〜低のまま
 BACKLOG.mdに残置 |
-| `common/market_data/` 新設（yfinance統合層、`INPUT-A-019〜023`対応） | 未着手（投資調査・設計確定済み、2026-08-07） | `INPUT_DATA_TOBE.md` 2-B参照。日次/週次属性/イベント履歴の3層分離設計。`[[MARKETDATA-LAYER-CONSTRUCTION-1]]`で12ファイルの使用実態・保存構造・`fetcher.py`/`reader.py`API・株価仕様変更〈取引時間中リアルタイム→前日終値ベース〉・`EXTRACTION_DESIGN_PRINCIPLES.md`3原則照合まで確定済み。未決定事項9件の最終判断後、`fetcher.py`→`reader.py`→本番消費者切替の順で実装着手 |
+| `common/market_data/` 新設（yfinance統合層、`INPUT-A-019〜023`対応） | 構築中（`fetcher.py`・`reader.py`・Daily/Weekly Update workflows完成、本番消費者8ファイル中3/8切替完了、2026-08-11） | `INPUT_DATA_TOBE.md` 2-B参照。日次/週次属性/イベント履歴の3層分離設計。`fetcher.py`（`fetch_daily_prices`/`fetch_weekly_attributes`/`fetch_analyst_events`/`backfill_daily_prices`）・`reader.py`（8種の読み取りAPI）を実装、`Market_Data_Daily_Update.yml`/`Market_Data_Weekly_Update.yml`をworkflow_dispatchで実行確認済み。本番消費者切替は`beta_fetcher.py`・`data_fetcher.py`（TANUKI VALUATION本体、DCF計算直結）・`valuation_fetcher.py`（STONKS SILO）の3件が完了、実データ全数比較で回帰なしを確認。残り`hypecore.py`・`pipeline.py`（`.calendar`のみ）・`collect.py`・`collect_and_send.py`・`breadth_calculator.py`＋診断ツール2ファイルが未着手。詳細は`[[MARKETDATA-LAYER-CONSTRUCTION-1]]`参照 |
 | `common/macro_data/` 新設（FRED統合層、`INPUT-A-024〜047`対応） | 未着手 | `INPUT_DATA_TOBE.md` 2-C参照。系列単位の時系列ストア設計。**着手前に`EXTRACTION_DESIGN_PRINCIPLES.md`（common/sec_data/で発見された5バグの教訓を一般化した抽出設計原則）を確認すること（2026-08-02追記）** |
 | 取得前提条件の一元管理（`INPUT-B-001〜003`） | 未着手 | `INPUT_DATA_TOBE.md`分類B参照。監視銘柄マスタ・CIKマッピングの管理方法は分類Aの取得と一体で設計する |
 | provenanceメタデータ標準化 | 未着手 | `INPUT_DATA_TOBE.md` 2-D参照（`as_of`/`fetched_at`/`source`/`source_detail`/`fallback_used`） |

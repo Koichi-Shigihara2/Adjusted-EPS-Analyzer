@@ -2,6 +2,207 @@
 
 ---
 
+## 2026-08-11（完了）
+
+### ✅ [MARKETDATA-LAYER-CONSTRUCTION-1] 着手順序4-1: beta_fetcher.py切替（本番消費者切替1/8）
+**状態:** 完了
+**優先度:** 高
+**分類:** アーキテクチャ / 新DB構築プロジェクト フェーズ1 / 本番消費者切替
+**登録日:** 2026-08-10（着手時）
+**完了日:** 2026-08-10
+**発見:** `[[MARKETDATA-LAYER-CONSTRUCTION-1]]`着手順序4、本番消費者切替の1件目
+
+#### 内容
+`src/value/tanuki_valuation/beta_fetcher.py`のβ取得元をyfinance直接
+呼び出しから`common.market_data.reader`経由に切替。
+
+- Step0: `common/market_data/fetcher.py::fetch_weekly_attributes()`に
+  `common.yfinance_utils.safe_yf_ticker()`経由のリトライ機構
+  （リトライ2回・待機3秒）を追加した上で切替
+- `fetch_yfinance_beta()` → `fetch_market_data_beta()`に置換し、
+  yfinanceへの直接フォールバックは廃止（market_data専任型、選択肢2採用）
+- `refresh_tickers()`の`overrides[ticker]`書き込みを丸ごと置換から
+  マージ方式に修正し、調査で発見した`sector`等副次キー消去バグも同時に
+  解消
+- `Beta_Config_Update.yml`の依存インストールを`requirements.txt`経由に
+  変更（`common.market_data`連鎖importに追随、旧`pip install yfinance
+  requests`だけでは`pandas_market_calendars`等が不足しImportErrorになる）
+- `tests/test_beta_fetcher.py`新規14件
+
+#### 検証
+`Market_Data_Weekly_Update.yml`をフル母集団（引数なし、570銘柄）で実行し
+`attributes/`をTANUKI対象100銘柄全件生成（欠落0件）した上で、本番
+`beta_config.json`の一時コピーに対し実データで100銘柄全数比較を実施：
+更新0件・スキップ3件（LMT=Damodaran保護、CRWV・TASK=yfinance側5年β
+算出不能によりnull、既存値は無傷で保持）・変化なし97件（切替前後で
+計算結果の実質差分ゼロ）。LMTのDamodaran保護・36銘柄のsectorキー保持
+（副次キー含む）を実データで確認済み。本番`config/beta_config.json`への
+書き込みは実施せず、次回月次cron（`Beta_Config_Update.yml`、月初週の
+日曜）の自動実行に委ねる方針で確定（ユーザー判断、2026-08-10）。
+
+pytest全体572 passed/2 known-failed（`[[TEST-STALE-IV-1]]`、無関係）。
+
+コミット: `d0b9fefdf`（実装）・`a1b349180`（BACKLOG更新）
+
+---
+
+### ✅ [MARKETDATA-LAYER-CONSTRUCTION-1] 着手順序4-2前提条件: attributes/スキーマ拡張・日次価格層バックフィル
+**状態:** 完了
+**優先度:** 高
+**分類:** アーキテクチャ / 新DB構築プロジェクト フェーズ1
+**登録日:** 2026-08-10（着手時）
+**完了日:** 2026-08-11
+**発見:** `data_fetcher.py`切替（着手順序4-2）の事前投資調査で判明した
+2つの前提条件
+
+#### 内容
+**① attributes/スキーマ拡張**（`data_fetcher.py`が必要とする不足
+フィールドの追加）: `common/market_data/fetcher.py::fetch_weekly_
+attributes()`に`implied_shares_outstanding`・`forward_pe`・
+`payout_ratio`・`target_median_price`・`target_low_price`・
+`target_high_price`・`analyst_count`・`analyst_recommendation_key`を
+追加。`dividend_yield`のソースを`dividendYield`（実測で判明した百分率
+表記の罠フィールド、AAPL=0.34≒0.34%）から`trailingAnnualDividendYield`
+（小数表記、AAPL=0.00335≒0.335%）に変更。`previousClose`はdaily/層の
+責務のため追加しない（層またぎ再計算の禁止と整合）。
+
+**② 日次価格層バックフィル**: `daily/`の日次収集は2026-08-10開始のため
+200営業日移動平均（`reader.get_ma_deviation(window=200)`）が自然蓄積で
+計算可能になるまで約10ヶ月かかる問題を、`backfill_daily_prices(symbols,
+period="1y")`（一過性ツール、`backfill_tech_pulse.py`型、定期cronには
+組み込まない、CLIの`--backfill`フラグ経由）の新設により即時解消。
+`period="1y"`で251営業日分取得（window=200に対し51日の余裕）を実測
+確認。全母集団570銘柄で実行し全銘柄成功。既存の日次cron取得分は
+消失せず保持されることを確認済み。
+
+**注記（再実装の経緯）**: 本バックフィル機能は2026-08-10に一度実装・
+検証済みだったが、コミット前に作業ツリーの変更が失われ2026-08-11に
+再実装が必要となった（詳細は`[[MARKETDATA-LAYER-CONSTRUCTION-1]]`
+着手順序4-2前提の節、およびCHAT_RULES.md「実装完了後の即時コミット
+（2026-08-11の教訓）」参照）。今回は検証完了後直ちにコミット・pushを
+実施し再発を防止した。
+
+バックフィル実行中に再現・確認した別課題2件を新規登録:
+`[[MARKETDATA-CWAN-FROZEN-DATA-SUSPECT-1]]`（CWANのyfinanceデータが
+1日分・出来高0のフリーズ状態）・`[[MARKETDATA-SP500-SCRAPE-INVALID-
+TICKERS-1]]`（S&P500構成銘柄Wikipediaスクレイピングに`FDXF`/`HONA`/`Q`
+という不正銘柄が混入）。両件とも未解決のままBACKLOG.mdに残置。
+
+`tests/test_market_data_fetcher.py`新規14件（スキーマ拡張4件・
+`TestMergeDailyRecords`/`TestBackfillDailyPrices`10件）。
+
+コミット: `1b710759c`（スキーマ拡張）・`0d5dbd18c`（バックフィル再実装）
+
+---
+
+### ✅ [MARKETDATA-LAYER-CONSTRUCTION-1] 着手順序4-2: data_fetcher.py切替（本番消費者切替2/8、DCF計算直結の本丸）
+**状態:** 完了
+**優先度:** 高
+**分類:** アーキテクチャ / 新DB構築プロジェクト フェーズ1 / 本番消費者切替
+**登録日:** 2026-08-11（着手時）
+**完了日:** 2026-08-11
+**発見:** `[[MARKETDATA-LAYER-CONSTRUCTION-1]]`着手順序4、本番消費者切替の
+2件目・TANUKI VALUATION本体のDCF計算に直結する最重要消費者
+
+#### 内容
+`src/value/tanuki_valuation/data_fetcher.py::get_financials()`の
+`.info`単発呼び出しブロックを`common.market_data.reader`経由
+（`get_latest_price()`・`get_attributes()`・`get_ma_deviation()`）に
+置換。`HAS_MARKET_DATA`フラグ・二段構えsys.path解決を`HAS_SEC`と同型
+パターンで追加。不要になった`yfinance`直接importを削除。
+
+**フィールド対応**: current_price=`get_latest_price()["close"]`
+（daily/層、前日終値化——取引時間中リアルタイム取得からの仕様変更
+そのもの）。beta/sector/industry/PER〈trailing優先・forwardフォール
+バック〉/PEG/PS/EV_EBITDA/forward_eps/dividend_yield/payout_ratio/
+アナリスト目標株価〈median/mean/low/high/count/recommendation〉/
+株式数〈implied優先・outstanding〉は`get_attributes()`から。
+
+**ma200の扱い**: `get_ma_deviation(window=200)`が返す乖離率(%)を代数的に
+逆算し`ma200`（価格）を復元する方式を採用（`ma200 = current_price /
+(1 + dev/100)`）。pipeline.py側の既存計算式
+`(current_price/ma200-1)*100`をそのまま維持でき、pipeline.py側の変更が
+一切不要（往復の数学的整合性をテストで確認済み）。
+
+**エラー処理**: reader側がNoneを返す場合、既存except節と同じ中立
+デフォルト（current_price=0.0・beta=None→`_determine_beta()`のセクター
+デフォルトへ自動フォールバック・sector="default"等）に倒す（選択肢A）。
+price取得とattributes取得を独立2呼び出しに分離したため、旧コードの
+「tryブロック前半で部分成功した値が保持される」非atomicな挙動より一貫性
+が向上。
+
+#### 検証
+実データ100銘柄全数比較（切替前`.info`直接 vs 切替後`reader`経由）：
+97/100が完全一致。差分3件はいずれも許容範囲内：ADSK/AMD=PERの数分
+オーダーのドリフト（取得時刻差、実害なし）、QBTS=株価24.6%差
+（ボラティリティの高い小型株の取引時間中リアルタイム価格 vs 確定前日
+終値という意図した仕様変更そのもの、他の全フィールドは完全一致）。
+`current_price=0.0`フォールバック発火は100銘柄中0件（全銘柄`daily/`・
+`attributes/`カバー済み）。`ma200_dev=None`は1銘柄のみ（`CWAN`、
+`[[MARKETDATA-CWAN-FROZEN-DATA-SUSPECT-1]]`と一致、既知事象）。
+`pipeline.py AAPL`を実行しDCF計算・WACC・RICE・上昇率(-59.1%)・ma200
+逆算（dev=+10.2%→$279.64）が全て正常動作することを実地確認。
+
+`tests/test_data_fetcher_market_data_switch.py`新規10件。pytest全体
+596 passed/2 known-failed（`[[TEST-STALE-IV-1]]`、無関係）。
+`TANUKI_VALUATION_Update.yml`の依存インストールを`requirements.txt`
+経由に変更。
+
+コミット: `94887bde6`
+
+---
+
+### ✅ [MARKETDATA-LAYER-CONSTRUCTION-1] 着手順序4-3: valuation_fetcher.py切替（本番消費者切替3/8、STONKS SILO）
+**状態:** 完了
+**優先度:** 高
+**分類:** アーキテクチャ / 新DB構築プロジェクト フェーズ1 / 本番消費者切替
+**登録日:** 2026-08-11（着手時）
+**完了日:** 2026-08-11
+**発見:** `[[MARKETDATA-LAYER-CONSTRUCTION-1]]`着手順序4、本番消費者切替の
+3件目
+
+#### 内容
+`discover/stonks-silo/src/valuation_fetcher.py`（STONKS SILO対象25銘柄）
+を切替。事前調査で`enterprise_value`（`enterpriseValue`）が`attributes/`
+に未収録と判明したため、まず`fetch_weekly_attributes()`にフィールド
+追加（既存フィールドからの合成ではなく生値をそのまま保存、Yahoo側の
+実計算式との乖離リスク回避）。その上で`fetch_valuation()`を
+`reader.get_latest_price()["close"]`（current_price、前日終値化）・
+`reader.get_attributes()`（market_cap/enterprise_value/total_debt）
+経由に切替。戻り値のキー名・意味は不変。`HAS_MARKET_DATA`フラグを
+`data_fetcher.py`と同型パターンで追加（本ファイルは`discover/
+stonks-silo/src/`という独立ディレクトリに属するため、`pipeline.py`の
+sys.path設定に依存せず単体importでも動作するよう独自に二段構え解決）。
+`pipeline.py`側の`net_cash`計算・PSR/EV_Sales算出ロジック（130-133
+行目）は無変更——`[[NETCASH-DUAL-CALC-1]]`の既存対応方針
+（`SECReader.get_net_cash()`への統一が本来の解、market_data経由
+totalDebtへの置き換えは新規実装しない）と整合。
+
+#### 検証
+実データ25銘柄全数比較：24/25完全一致（`market_cap`/`enterprise_value`/
+`total_debt`は全25銘柄で完全一致）。唯一の差分は`QBTS`の株価24.6%
+（`data_fetcher.py`切替検証と同じ、意図した仕様変更差分）。`CWAN`は
+旧来の直接`.info`呼び出し側でも同じ陳腐化した価格（$24.56、
+`[[MARKETDATA-CWAN-FROZEN-DATA-SUSPECT-1]]`）を返しており、切替による
+追加劣化ではなくYahoo Finance側の既存データ問題と確認。`pipeline.py`の
+`run()`を直接呼び出しQBTSで実地検証した結果、`net_cash`=$836,373,000・
+`psr`=245.5・`ev_sales`=285.6が正しく算出され、`overall_score`（SEC
+財務データのみに依存、`valuation`フィールドとは無関係と判明）も影響を
+受けないことを確認。
+
+**副次発見（本切替の範囲外・未修正）**：検証中、`pipeline.py`のCLI
+引数指定実行（`python pipeline.py TICKER`）が変数名衝突で必ず失敗する
+既存バグ（2026-07-12から存在、本切替とは無関係）を発見し、
+`[[STONKS-SILO-CLI-TICKERS-SHADOW-1]]`として新規登録・未解決のまま
+BACKLOG.mdに残置。
+
+`tests/test_valuation_fetcher_market_data_switch.py`新規7件。pytest
+全体603 passed/2 known-failed（`[[TEST-STALE-IV-1]]`、無関係）。
+
+コミット: `40b20411c`
+
+---
+
 ## 2026-08-07（完了）
 
 ### ✅ [LAYER3-STONKS-SPAC-EARLY-YEAR-GAP-1] SPAC合併直後銘柄の最古年度で、fetcher.py現状値の出所accnがLayer3年次エントリに一切見当たらないケースが多数

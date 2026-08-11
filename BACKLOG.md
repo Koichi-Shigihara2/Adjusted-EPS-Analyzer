@@ -2215,125 +2215,39 @@ common/market_data/
    VALUATION本体から、フェーズDと同様の優先順位を検討）。**進捗 3/8。**
 
    **優先順位案（2026-08-10時点、着手順序3完了時の提案）**
-   1. **【完了・2026-08-10】** `beta_fetcher.py`（`reader.get_attributes()
-      ["beta"]`経由への切替。影響範囲が最小、`audit.py`のβ乖離監査と
-      役割分担済み確定事項6）。
-      Step0として`common/market_data/fetcher.py::fetch_weekly_attributes()`
-      に`common.yfinance_utils.safe_yf_ticker()`経由のリトライ機構
-      （リトライ2回・待機3秒）を追加した上で切替。`fetch_yfinance_beta()`
-      → `fetch_market_data_beta()`に置換し、yfinanceへの直接フォール
-      バックは廃止（market_data専任型、選択肢2採用）。`refresh_tickers()`
-      の`overrides[ticker]`書き込みを丸ごと置換からマージ方式に修正し、
-      調査で発見した`sector`等副次キー消去バグも同時に解消。
-      `Beta_Config_Update.yml`の依存インストールを`requirements.txt`
-      経由に変更（`common.market_data`連鎖importに追随）。
-      `tests/test_beta_fetcher.py`新規14件。
-      Market_Data_Weekly_Update.ymlをフル母集団（引数なし、570銘柄）で
-      実行し`attributes/`をTANUKI対象100銘柄全件生成（欠落0件）した上で、
-      本番`beta_config.json`の一時コピーに対し実データで100銘柄全数
-      比較を実施：更新0件・スキップ3件（LMT=Damodaran保護、
-      CRWV・TASK=yfinance側5年β算出不能によりnull、既存値は無傷で保持）・
-      変化なし97件（切替前後で計算結果の実質差分ゼロ）。LMTの
-      Damodaran保護・36銘柄のsectorキー保持（副次キー含む）を実データで
-      確認済み。本番`config/beta_config.json`への書き込みは実施せず、
-      次回月次cron（`Beta_Config_Update.yml`、月初週の日曜）の自動実行に
-      委ねる方針で確定（ユーザー判断、2026-08-10）。
+   1. **【完了・2026-08-10】** `beta_fetcher.py`。詳細・検証結果は
+      BACKLOG_DONE.md「2026-08-11（完了）」`[[MARKETDATA-LAYER-
+      CONSTRUCTION-1]]着手順序4-1`参照（コミット`d0b9fefdf`）。
    2. **【完了・2026-08-11】** `data_fetcher.py`（株価取得を前日終値ベースへ
       仕様変更する本丸。TANUKI VALUATION本体のDCF計算に直結する消費者）。
-      `get_financials()`の`.info`単発呼び出しブロックを
-      `common.market_data.reader`経由（`get_latest_price()`・
-      `get_attributes()`・`get_ma_deviation()`）に置換。`HAS_MARKET_DATA`
-      フラグ・二段構えsys.path解決を`HAS_SEC`と同型パターンで追加。
-      不要になった`yfinance`直接importを削除。
-
-      **フィールド対応**: current_price=`get_latest_price()["close"]`
-      （daily/層、前日終値化そのもの）。beta/sector/industry/PER
-      〈trailing優先・forwardフォールバック〉/PEG/PS/EV_EBITDA/
-      forward_eps/dividend_yield/payout_ratio/アナリスト目標株価
-      〈median/mean/low/high/count/recommendation〉/株式数
-      〈implied優先・outstanding〉は`get_attributes()`から。
-
-      **ma200の扱い**: `get_ma_deviation(window=200)`が返す乖離率(%)を
-      代数的に逆算し`ma200`（価格）を復元する方式を採用（
-      `ma200 = current_price / (1 + dev/100)`）。pipeline.py側の既存計算式
-      `(current_price/ma200-1)*100`をそのまま維持でき、pipeline.py側の
-      変更が一切不要になった（往復の数学的整合性をテストで確認済み）。
-
-      **エラー処理**: reader側がNoneを返す場合、選択肢(A)＝既存except節と
-      同じ中立デフォルト（current_price=0.0・beta=None→`_determine_beta()`
-      のセクターデフォルトへ自動フォールバック・sector="default"等）に
-      倒す。price取得とattributes取得を独立した2呼び出しに分離したため、
-      旧コードの「tryブロック前半で部分成功した値が保持される」非atomicな
-      挙動より一貫性が向上。
-
-      **Step2検証（実データ100銘柄全数比較）**: 切替前(`.info`直接)後
-      (`reader`経由)で97/100が完全一致。差分3件はいずれも許容範囲内：
-      ADSK/AMD=PERの数分オーダーのドリフト（取得時刻差、実害なし）、
-      QBTS=株価24.6%差（ボラティリティの高い小型株の取引時間中リアル
-      タイム価格 vs 確定前日終値という**意図した仕様変更そのもの**、
-      他の全フィールドは完全一致）。`current_price=0.0`フォールバック
-      発火は100銘柄中0件（全銘柄`daily/`・`attributes/`カバー済み）。
-      `ma200_dev=None`は1銘柄のみ（`CWAN`、`[[MARKETDATA-CWAN-FROZEN-
-      DATA-SUSPECT-1]]`と一致、既知事象）。`pipeline.py AAPL`を実行し
-      DCF計算・WACC・RICE・上昇率(-59.1%)・ma200逆算（dev=+10.2%→
-      $279.64）が全て正常動作することを実地確認。
-
-      なお比較実施前に`common/market_data/attributes/`が
-      スキーマ拡張前の旧データのまま（`implied_shares_outstanding`等
-      未取得）だったことが判明したため、フル母集団570銘柄で
-      `fetch_weekly_attributes()`を再実行し新スキーマへ更新した上で
-      比較を実施した。
-
-      `tests/test_data_fetcher_market_data_switch.py`新規10件。
-      `TANUKI_VALUATION_Update.yml`の依存インストールを
-      `requirements.txt`経由に変更（`Beta_Config_Update.yml`と同じ対応）。
+      前提条件（`attributes/`スキーマ拡張・日次価格層バックフィル）を
+      含め、詳細・検証結果はBACKLOG_DONE.md「2026-08-11（完了）」
+      `[[MARKETDATA-LAYER-CONSTRUCTION-1]]着手順序4-2前提条件`・
+      `着手順序4-2`参照（コミット`1b710759c`・`0d5dbd18c`・`94887bde6`）。
+      **ma200はget_ma_deviation()の乖離率を代数的に逆算する方式を採用し
+      pipeline.py側は無変更**、実データ100銘柄比較で97/100完全一致。
    3. **【完了・2026-08-11】** `valuation_fetcher.py`（`discover/
-      stonks-silo/src/`、STONKS SILO対象25銘柄）。事前調査で
-      `enterprise_value`（`enterpriseValue`）が`attributes/`に未収録と
-      判明したため、まず`fetch_weekly_attributes()`にフィールド追加
-      （既存フィールドからの合成ではなく生値をそのまま保存、Yahoo側の
-      実計算式との乖離リスク回避）。その上で`fetch_valuation()`を
-      `reader.get_latest_price()["close"]`（current_price、前日終値化）・
-      `reader.get_attributes()`（market_cap/enterprise_value/total_debt）
-      経由に切替。戻り値のキー名・意味は不変。`HAS_MARKET_DATA`フラグを
-      `data_fetcher.py`と同型パターンで追加（本ファイルは
-      `discover/stonks-silo/src/`という独立ディレクトリに属するため、
-      `pipeline.py`のsys.path設定に依存せず単体importでも動作するよう
-      独自に二段構え解決）。`pipeline.py`側の`net_cash`計算・PSR/EV_Sales
-      算出ロジック（130-133行目）は無変更——`[[NETCASH-DUAL-CALC-1]]`の
-      既存対応方針（`SECReader.get_net_cash()`への統一が本来の解、
-      market_data経由totalDebtへの置き換えは新規実装しない）と整合。
-
-      **Step3検証（実データ25銘柄全数比較）**：24/25完全一致
-      （`market_cap`/`enterprise_value`/`total_debt`は全25銘柄で完全
-      一致）。唯一の差分は`QBTS`の株価24.6%（同日`data_fetcher.py`検証
-      でも確認済みの、ボラティリティの高い小型株の意図した仕様変更差分）。
-      `CWAN`は旧来の直接`.info`呼び出し側でも同じ陳腐化した価格
-      （$24.56、`[[MARKETDATA-CWAN-FROZEN-DATA-SUSPECT-1]]`）を返して
-      おり、切替による追加劣化ではなくYahoo Finance側の既存データ問題と
-      確認。`pipeline.py`の`run()`を直接呼び出しQBTSで実地検証した結果、
-      `net_cash`=$836,373,000・`psr`=245.5・`ev_sales`=285.6が正しく
-      算出され、`overall_score`（SEC財務データのみに依存、`valuation`
-      フィールドとは無関係と判明）も影響を受けないことを確認。
-
-      **副次発見（本切替の範囲外・未修正）**：`pipeline.py`の`if
-      __name__ == "__main__": tickers = sys.argv[1:]`が、モジュール
-      レベルでimportした`from common.sec_data import tickers`を
-      グローバルスコープごと上書きしてしまうバグを発見（`python
-      pipeline.py TICKER`のCLI実行が`AttributeError: 'list' object has
-      no attribute 'get_stonks_silo_tickers'`で必ず失敗する。
-      2026-07-12から存在、本切替とは無関係）。`run()`をモジュールとして
-      直接呼び出す（`__main__`ブロックを経由しない）ことで本切替の検証
-      自体は実施できたが、CLI経由の通常運用が現在壊れている状態のため
-      別途修正が必要。
-
-      `tests/test_valuation_fetcher_market_data_switch.py`新規7件。
-   4. `hypecore.py`
-   5〜8. `pipeline.py`・`collect.py`・`collect_and_send.py`・
-      `breadth_calculator.py`（残り4ファイル、優先順位は着手時に再検討）
-
-   診断ツール2ファイル（`score_verifier.py`・`audit.py`）の切替順序は
-   上記8ファイルの進捗を見ながら別途判断する。
+      stonks-silo/src/`、STONKS SILO対象25銘柄）。詳細・検証結果は
+      BACKLOG_DONE.md「2026-08-11（完了）」`[[MARKETDATA-LAYER-
+      CONSTRUCTION-1]]着手順序4-3`参照（コミット`40b20411c`）。
+      実データ25銘柄比較で24/25完全一致、`pipeline.py`側の`net_cash`・
+      PSR/EV_Sales算出ロジックは無変更（`[[NETCASH-DUAL-CALC-1]]`既存
+      方針と整合）。副次発見`[[STONKS-SILO-CLI-TICKERS-SHADOW-1]]`
+      （CLI引数実行の既存バグ）は本切替の範囲外のため未修正のまま
+      新規登録。
+   **次セッションでの着手順序（2026-08-11時点、最終版）**:
+   1. 着手順序4-4: `hypecore.py`切替（3層〈daily/attributes/
+      analyst_history〉すべてが混在する消費者のため最も複雑、優先着手）
+   2. 着手順序4-5〜8: `pipeline.py`（`.calendar`のみ、他フィールドは
+      着手順序4-2のdata_fetcher.py切替で既に対応済み）・`collect.py`・
+      `collect_and_send.py`・`breadth_calculator.py`（優先順位は着手時に
+      再検討）
+   3. 着手順序5: 診断ツール2ファイル（`score_verifier.py`・`audit.py`）の
+      切替。上記8ファイルの進捗を見ながら詳細順序を判断する
+   4. （本線外・本セッションで蓄積した課題群、優先度は各エントリ参照）:
+      `[[MARKETDATA-CWAN-FROZEN-DATA-SUSPECT-1]]`・`[[MARKETDATA-SP500-
+      SCRAPE-INVALID-TICKERS-1]]`・`[[STONKS-SILO-CLI-TICKERS-SHADOW-1]]`・
+      `[[NETCASH-DUAL-CALC-1]]`等
 5. 周辺ツール2ファイルの切替
 
 #### 日次価格層バックフィル（着手順序4-2 data_fetcher.py切替の前提条件、2026-08-11完了）

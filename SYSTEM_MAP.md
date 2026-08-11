@@ -1,5 +1,13 @@
 # SYSTEM MAP — On-a-journey
 
+最終更新: 2026-08-11（新規セクション「common/market_data/（yfinance統合層）」
+を追加。fetcher.py/reader.pyのAPI構成・保存構造・レイヤー横断再計算禁止
+方針を記載し、本番消費者切替の進捗（8ファイル中3/8完了:
+beta_fetcher.py・data_fetcher.py・valuation_fetcher.py）を反映。
+「変更時の影響範囲チェックリスト」にcommon/market_data/fetcher.py・
+reader.pyの2行を追加。詳細はBACKLOG.md`[[MARKETDATA-LAYER-
+CONSTRUCTION-1]]`参照）
+
 最終更新: 2026-08-07（common/sec_data統合フェーズD実質完了に伴う陳腐化
 是正。layer3_builder.py項の「フェーズD Step2-1」追記に続けて、
 ②STONKS SILO・③TANUKI TAIL・④HypeCoreのLayer3切替完了、⑤stock.html
@@ -980,6 +988,46 @@ TANUKI TAIL（docs/portfolio/tail/）← EDGAR RSS / Grok（KPI提案・四半�
 
 ---
 
+## common/market_data/（yfinance統合層、2026-08-11追記）
+`common/sec_data/`と同型のfetcher.py/reader.py分離構成でyfinance依存を
+一元化する新層（`[[MARKETDATA-LAYER-CONSTRUCTION-1]]`）。レイヤー横断の
+再計算は禁止（`reader.get_ma_deviation()`のみ`daily/`層内での計算を許可
+する例外）。
+
+- `common/market_data/fetcher.py`: ネットワーク取得＋検証＋原子的書き込み。
+  `fetch_daily_prices()`（daily/層、`Market_Data_Daily_Update.yml`平日
+  実行）・`fetch_weekly_attributes()`（attributes/層、`Market_Data_Weekly_
+  Update.yml`週次実行）・`fetch_analyst_events()`（analyst_history/層）・
+  `backfill_daily_prices(symbols, period="1y")`（ma200等の移動平均が
+  自然蓄積で使えるようになるまでの立ち上げ用バックフィル、定期cronには
+  組み込まない一過性ツール、CLIの`--backfill`フラグ経由で手動実行）。
+- `common/market_data/reader.py`: 読み取り専用API。
+  `get_latest_price()`・`get_price_series()`・`get_ma_deviation(window)`
+  （移動平均乖離率%を返す、生の移動平均価格そのものは保存しない設計）・
+  `get_attributes()`・`get_calendar()`・`get_analyst_events()`・
+  `get_index_series()`・`get_sp500_constituents_prices()`の8種。
+- 保存構造は3層独立（`daily/{SYMBOL}.json`・`attributes/{SYMBOL}.json`・
+  `analyst_history/{SYMBOL}.json`）＋`{SYMBOL}/market_data_violations_log.json`
+  （fy_collision_log.json型、セクション独立のread-modify-write）。
+- current_priceは常に`daily/`層（前日終値、`get_latest_price()["close"]`）
+  から取得する方針で統一。`attributes/`層は`.info`スナップショット
+  （market_cap/beta/sector/PER/PEG/PS/EV_EBITDA/dividend_yield/
+  アナリスト目標株価等）専任で、`previousClose`等の価格系フィールドは
+  意図的に含めない。
+- 本番消費者切替（8ファイル中3/8完了、2026-08-11時点）:
+  `beta_fetcher.py`（β取得）・`data_fetcher.py`（TANUKI VALUATION本体、
+  DCF計算直結の本丸、current_price/beta/sector/PER/PEG/PS/EV_EBITDA/
+  ma200/アナリスト目標株価等を`reader`経由に切替）・
+  `discover/stonks-silo/src/valuation_fetcher.py`（STONKS SILO、
+  market_cap/current_price/enterprise_value/total_debt）が切替済み。
+  残り`hypecore.py`（3層すべて混在、最複雑）・`pipeline.py`
+  （`.calendar`のみ未対応）・`collect.py`・`collect_and_send.py`・
+  `breadth_calculator.py`＋診断ツール2ファイル（`score_verifier.py`・
+  `audit.py`）は未着手。詳細な優先順位はBACKLOG.md
+  `[[MARKETDATA-LAYER-CONSTRUCTION-1]]`参照。
+
+---
+
 ## 変更時の影響範囲チェックリスト
 
 | 変更ファイル | 必要な追加作業 |
@@ -989,6 +1037,8 @@ TANUKI TAIL（docs/portfolio/tail/）← EDGAR RSS / Grok（KPI提案・四半�
 | tag_definitions.py（TAG_CANDIDATES） | quarterly.py/parser.py双方に波及するため、変更前後で全銘柄のbuild_raw_table/_extract_values出力を比較し影響銘柄を特定（同日生成のcompany_facts.jsonで新旧比較すること。generated_atタイムスタンプ差だけで見かけ上の差分が出るため単純な過去ファイル比較は不可。raw/は2026-08-05にデッドコード除去のため廃止済み、normalized/の`generated_at`フィールドで同様の注意が必要）→ 影響銘柄のみupdate.py → audit.py |
 | contracts.py（FinancialEntry必須キー変更等） | quarterly.py::save_raw_table()・normalizer.py::save_normalized()の検証が全銘柄で走るため、変更後は全105銘柄のupdate.pyを実行しContractViolationが新規発生しないか確認 → report_consistency_check.py |
 | data_fetcher.py（TTMReader・_select_fcf_source） | 全銘柄fcf_list_raw/fcf_5yr_avgに影響するため全銘柄pipeline.py再実行 → report_consistency_check.py |
+| common/market_data/fetcher.py（daily/attributes/analyst_history各層のスキーマ・取得ロジック） | スキーマ変更時は影響銘柄でfetch_daily_prices/fetch_weekly_attributes/fetch_analyst_eventsを再実行しJSON構造を更新 → 全消費者（beta_fetcher.py/data_fetcher.py/valuation_fetcher.py等、切替済み分）のpipeline.py再実行で反映確認 |
+| common/market_data/reader.py（get_latest_price/get_attributes/get_ma_deviation等の読み取りAPI） | 戻り値の意味・キーを変更する場合は全消費者（切替済み3ファイル＋今後切替予定分）へ影響するため、変更前に全消費者のgrep洗い出し必須。get_ma_deviation()のwindow引数の意味変更はma200代数逆算（data_fetcher.py）に直結するため特に注意 |
 | extract_key_facts.py | EPS quarterly.json 再生成 → report_consistency_check.py（CHECK-17/19確認）|
 | core_calculator.py / calculator/dcf.py | 影響銘柄のpipeline.py再実行 |
 | calculator/adjustments.py | 影響銘柄のpipeline.py再実行（FCF外れ値・estimate_fcf等）。`check_software_system_reclassification()`（FCF-CONVRATE-DESIGN-LIMIT-1、2026-07-14追加）はconfig書き換えを行わない純関数で、`determine_fcf_base()`と同じ「pipeline.py実行のたびに実績データから再判定」パターンを踏襲している。今後この種の自己補正ロジックを追加する際も同パターンを踏襲すること |
