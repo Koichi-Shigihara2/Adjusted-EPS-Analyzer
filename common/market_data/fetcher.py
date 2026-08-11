@@ -9,6 +9,11 @@ yfinance統合層のデータ取得モジュール（BACKLOG [[MARKETDATA-LAYER-
     fetch_weekly_attributes(symbols) 週次準静的属性層 → attributes/{SYMBOL}.json
     fetch_analyst_events(symbols)    イベント履歴層  → analyst_history/{SYMBOL}.json
 
+backfill_daily_prices(symbols, period="1y") は一過性ツール（定期cronには
+組み込まない、backfill_tech_pulse.py型）。日次収集開始前の過去分を一括
+取得し、200日移動平均（get_ma_deviation(window=200)）等が即座に計算可能な
+状態までdaily/を埋める。手動実行専用（CLIの--backfillフラグ経由）。
+
 いずれも保存前に恒等式検証（validate_price_record / validate_attributes_record）
 を行うが、検証失敗時も保存は拒否しない（_validation_warningsフィールドに
 記録した上で保存継続。common/sec_data/parser.py の fy_collision_log.json と
@@ -284,14 +289,16 @@ def _write_violations_section(symbol: str, section_key: str, section_value: Dict
 
 # ── 日次価格層 ────────────────────────────────────────────
 
-def _download_daily_bars(symbols: List[str]) -> Dict[str, Dict[str, Any]]:
-    """yf.download()で複数銘柄の直近日足を一括取得し、銘柄ごとの最新1営業日分
-    のOHLCVをdictで返す（取得できなかった銘柄はキーごと欠落する）。
+def _download_historical_bars(symbols: List[str], period: str = "5d") -> Dict[str, List[Dict[str, Any]]]:
+    """yf.download()で複数銘柄のperiod分の日足を一括取得し、銘柄ごとの
+    OHLCVレコードのリスト（日付昇順）を返す（取得できなかった銘柄は
+    キーごと欠落する）。日次バッチ（直近1件のみ使用）とバックフィル
+    （全件使用）の共通実装。
     """
     if not symbols:
         return {}
     try:
-        raw = yf.download(symbols, period="5d", group_by="ticker",
+        raw = yf.download(symbols, period=period, group_by="ticker",
                            auto_adjust=False, progress=False, threads=True)
     except Exception as e:
         print(f"   [WARN] yf.download失敗: {e}")
@@ -299,33 +306,57 @@ def _download_daily_bars(symbols: List[str]) -> Dict[str, Dict[str, Any]]:
     if raw is None or raw.empty:
         return {}
 
-    results: Dict[str, Dict[str, Any]] = {}
+    results: Dict[str, List[Dict[str, Any]]] = {}
     for symbol in symbols:
         try:
             if isinstance(raw.columns, pd.MultiIndex):
                 if symbol not in raw.columns.get_level_values(0):
-                    print(f"   [{symbol}] 日次データが取得結果に含まれない（スキップ）")
+                    print(f"   [{symbol}] データが取得結果に含まれない（スキップ）")
                     continue
                 sub = raw[symbol]
             else:
                 sub = raw
             sub = sub.dropna(how="all")
             if sub.empty:
-                print(f"   [{symbol}] 日次データが空（スキップ）")
+                print(f"   [{symbol}] データが空（スキップ）")
                 continue
-            last_row = sub.iloc[-1]
-            last_date = sub.index[-1]
-            results[symbol] = {
-                "date": last_date.strftime("%Y-%m-%d"),
-                "open": _to_float(last_row.get("Open")),
-                "high": _to_float(last_row.get("High")),
-                "low": _to_float(last_row.get("Low")),
-                "close": _to_float(last_row.get("Close")),
-                "volume": _to_int(last_row.get("Volume")),
-            }
+            bars: List[Dict[str, Any]] = []
+            for idx, row in sub.iterrows():
+                bars.append({
+                    "date": idx.strftime("%Y-%m-%d"),
+                    "open": _to_float(row.get("Open")),
+                    "high": _to_float(row.get("High")),
+                    "low": _to_float(row.get("Low")),
+                    "close": _to_float(row.get("Close")),
+                    "volume": _to_int(row.get("Volume")),
+                })
+            results[symbol] = bars
         except Exception as e:
-            print(f"   [{symbol}] 日次データ解析エラー: {e}")
+            print(f"   [{symbol}] データ解析エラー: {e}")
     return results
+
+
+def _download_daily_bars(symbols: List[str]) -> Dict[str, Dict[str, Any]]:
+    """yf.download()で複数銘柄の直近日足を一括取得し、銘柄ごとの最新1営業日分
+    のOHLCVをdictで返す（_download_historical_bars(period="5d")の末尾1件を
+    取り出すラッパー）。
+    """
+    history = _download_historical_bars(symbols, period="5d")
+    return {symbol: bars[-1] for symbol, bars in history.items() if bars}
+
+
+def _merge_daily_records(existing_records: List[Dict[str, Any]],
+                          new_records: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """日付をキーに新レコードで置き換え（同一日付は新しい方で上書き）、
+    日付昇順でソートして返す。fetch_daily_prices()の_append_daily_record()
+    と同じ「同一date上書き」冪等性設計をリスト全体のマージに一般化した版
+    （バックフィルで既存の単発日次取得分を消さずに過去分を統合するため）。
+    """
+    merged = {r["date"]: r for r in existing_records if r.get("date")}
+    for r in new_records:
+        if r.get("date"):
+            merged[r["date"]] = r
+    return sorted(merged.values(), key=lambda r: r.get("date", ""))
 
 
 def _append_daily_record(symbol: str, record: Dict[str, Any], base_dir: str) -> None:
@@ -377,6 +408,68 @@ def fetch_daily_prices(symbols: List[str], base_dir: Optional[str] = None) -> No
         )
         if record_warnings:
             print(f"   [{symbol}] 保存前検証で{len(record_warnings)}件の警告を検知（保存は継続）")
+
+
+def backfill_daily_prices(symbols: List[str], period: str = "1y",
+                           base_dir: Optional[str] = None) -> None:
+    """日次価格層の過去分を一括バックフィルする（一過性ツール、
+    backfill_tech_pulse.py型。定期cronには組み込まない、手動実行専用）。
+
+    daily/{SYMBOL}.jsonの日次収集は2026-08-10開始のため、200営業日分の
+    移動平均（reader.get_ma_deviation(window=200)）が自然蓄積で計算可能に
+    なるまで約10ヶ月かかる。yf.download(period=period)で過去分を一括取得し
+    即座にこのブートストラップ欠落を解消する。
+
+    fetch_daily_prices()と同じ保存前検証（validate_price_record()）・
+    アトミック書き込みを適用する。同一日付が既存レコードにある場合は
+    新しい取得値で上書きする（fetch_daily_prices()の「同一date上書き」
+    冪等性設計と一貫。日次cronが既に取得済みの日付を再取得しても、
+    同じ取引日の確定値であれば内容は変わらない）。過去分の検証結果は
+    {SYMBOL}/market_data_violations_log.jsonの`backfill_price_validation`
+    セクションに要約を記録する（`daily_price_validation`＝直近の日次チェック
+    セクションとは独立させ、日次バッチの「最新1件」という意味を壊さない）。
+    """
+    base = _resolve_base_dir(base_dir)
+    target_symbols = _dedupe_symbols(symbols)
+    if not target_symbols:
+        return
+
+    history = _download_historical_bars(target_symbols, period=period)
+    for symbol in target_symbols:
+        bars = history.get(symbol)
+        if not bars:
+            print(f"   [{symbol}] バックフィルデータ取得失敗（スキップ）")
+            continue
+
+        new_records: List[Dict[str, Any]] = []
+        dates_with_warnings: List[str] = []
+        for bar in bars:
+            record = dict(bar)
+            record_warnings = validate_price_record(record)
+            record["_validation_warnings"] = record_warnings
+            if record_warnings:
+                dates_with_warnings.append(record["date"])
+            new_records.append(record)
+
+        path = os.path.join(base, "daily", f"{symbol}.json")
+        payload = _load_json(path, default={"symbol": symbol, "records": []})
+        merged = _merge_daily_records(payload.get("records", []), new_records)
+        payload["symbol"] = symbol
+        payload["records"] = merged
+        _atomic_write_json(path, payload)
+
+        _write_violations_section(
+            symbol, "backfill_price_validation",
+            {
+                "checked_at": _now_iso(), "period": period,
+                "dates_fetched": len(new_records),
+                "dates_with_warnings": dates_with_warnings,
+            },
+            base_dir=base,
+        )
+        print(f"   [{symbol}] バックフィル完了: {len(new_records)}日分取得 → "
+              f"累計{len(merged)}日分保存"
+              + (f"（検証警告{len(dates_with_warnings)}日分）" if dates_with_warnings else ""))
 
 
 # ── 週次準静的属性層 ──────────────────────────────────────
@@ -636,14 +729,25 @@ if __name__ == "__main__":
     arg_parser = argparse.ArgumentParser(description="common/market_data 取得CLI")
     arg_parser.add_argument("symbols", nargs="*", help="対象銘柄（省略時はデフォルトユニバース）")
     arg_parser.add_argument("--layer", choices=["daily", "attributes", "analyst", "all"], default="all")
+    arg_parser.add_argument(
+        "--backfill", action="store_true",
+        help="一過性: daily/の過去分を一括取得する（backfill_tech_pulse.py型、定期cronには組み込まない）",
+    )
+    arg_parser.add_argument(
+        "--period", default="1y",
+        help="--backfill時の取得期間（yfinance期間指定形式、デフォルト1y）",
+    )
     args = arg_parser.parse_args()
 
     symbols_arg = _dedupe_symbols(args.symbols) if args.symbols else get_default_symbol_universe()
     print(f"対象銘柄数: {len(symbols_arg)}")
 
-    if args.layer in ("daily", "all"):
-        fetch_daily_prices(symbols_arg)
-    if args.layer in ("attributes", "all"):
-        fetch_weekly_attributes(symbols_arg)
-    if args.layer in ("analyst", "all"):
-        fetch_analyst_events(symbols_arg)
+    if args.backfill:
+        backfill_daily_prices(symbols_arg, period=args.period)
+    else:
+        if args.layer in ("daily", "all"):
+            fetch_daily_prices(symbols_arg)
+        if args.layer in ("attributes", "all"):
+            fetch_weekly_attributes(symbols_arg)
+        if args.layer in ("analyst", "all"):
+            fetch_analyst_events(symbols_arg)

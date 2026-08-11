@@ -298,3 +298,120 @@ class TestFetchWeeklyAttributesSchema:
                     "target_median_price", "target_low_price", "target_high_price",
                     "analyst_count", "analyst_recommendation_key"):
             assert saved[key] is None
+
+
+class TestMergeDailyRecords:
+    def test_disjoint_dates_are_all_kept_sorted(self):
+        existing = [{"date": "2026-08-10", "close": 100.0}]
+        new = [{"date": "2026-08-11", "close": 101.0}, {"date": "2026-08-09", "close": 99.0}]
+        merged = fetcher._merge_daily_records(existing, new)
+        assert [r["date"] for r in merged] == ["2026-08-09", "2026-08-10", "2026-08-11"]
+
+    def test_overlapping_date_is_overwritten_by_new_value(self):
+        existing = [{"date": "2026-08-10", "close": 100.0, "_validation_warnings": ["stale mock"]}]
+        new = [{"date": "2026-08-10", "close": 305.49, "_validation_warnings": []}]
+        merged = fetcher._merge_daily_records(existing, new)
+        assert len(merged) == 1
+        assert merged[0]["close"] == 305.49
+        assert merged[0]["_validation_warnings"] == []
+
+    def test_empty_existing_returns_new_only(self):
+        new = [{"date": "2026-08-10", "close": 100.0}]
+        assert fetcher._merge_daily_records([], new) == new
+
+    def test_empty_new_returns_existing_only(self):
+        existing = [{"date": "2026-08-10", "close": 100.0}]
+        assert fetcher._merge_daily_records(existing, []) == existing
+
+    def test_records_without_date_are_ignored(self):
+        existing = [{"date": "2026-08-10", "close": 100.0}]
+        new = [{"close": 999.0}]  # date欠落レコードはマージ対象外
+        merged = fetcher._merge_daily_records(existing, new)
+        assert len(merged) == 1
+        assert merged[0]["close"] == 100.0
+
+
+class TestBackfillDailyPrices:
+    """backfill_daily_prices()はネットワークアクセス（_download_historical_bars）
+    をmonkeypatchし、マージ・検証・アトミック書き込み・violations_logの
+    ロジックのみを検証する。"""
+
+    def _patch_history(self, monkeypatch, bars_by_symbol):
+        monkeypatch.setattr(fetcher, "_download_historical_bars", lambda symbols, period="1y": bars_by_symbol)
+
+    def _make_bar(self, date, close=100.0, warnings=None):
+        return {
+            "date": date, "open": close - 0.5, "high": close + 1.0, "low": close - 1.0,
+            "close": close, "volume": 1000,
+        }
+
+    def test_merges_with_existing_single_day_record(self, tmp_path, monkeypatch):
+        base = str(tmp_path)
+        # 日次cronが既に取得済みの1日分（モック値）
+        fetcher._append_daily_record(
+            "AAPL", {"date": "2026-08-10", "close": 303.0, "volume": 5000000, "_validation_warnings": []},
+            base_dir=base,
+        )
+        backfill_bars = {"AAPL": [self._make_bar("2026-08-08", 98.0), self._make_bar("2026-08-10", 305.49)]}
+        self._patch_history(monkeypatch, backfill_bars)
+
+        fetcher.backfill_daily_prices(["AAPL"], period="1y", base_dir=base)
+
+        path = os.path.join(base, "daily", "AAPL.json")
+        saved = json.load(open(path, encoding="utf-8"))
+        dates = [r["date"] for r in saved["records"]]
+        assert dates == ["2026-08-08", "2026-08-10"]
+        # 既存の2026-08-10（モック値close=303.0）はバックフィル取得値で上書きされる
+        aug10 = [r for r in saved["records"] if r["date"] == "2026-08-10"][0]
+        assert aug10["close"] == 305.49
+
+    def test_missing_symbol_in_history_is_skipped_gracefully(self, tmp_path, monkeypatch):
+        base = str(tmp_path)
+        self._patch_history(monkeypatch, {})  # AAPLの取得結果が丸ごと欠落
+        fetcher.backfill_daily_prices(["AAPL"], period="1y", base_dir=base)
+        path = os.path.join(base, "daily", "AAPL.json")
+        assert not os.path.exists(path)
+
+    def test_validation_warnings_are_embedded_per_record(self, tmp_path, monkeypatch):
+        base = str(tmp_path)
+        bad_bar = self._make_bar("2026-08-10", close=-1.0)  # close<=0で検証失敗させる
+        self._patch_history(monkeypatch, {"AAPL": [bad_bar]})
+
+        fetcher.backfill_daily_prices(["AAPL"], period="1y", base_dir=base)
+
+        path = os.path.join(base, "daily", "AAPL.json")
+        saved = json.load(open(path, encoding="utf-8"))
+        assert saved["records"][0]["_validation_warnings"] != []
+
+        violations_path = fetcher._violations_log_path("AAPL", base)
+        violations = json.load(open(violations_path, encoding="utf-8"))
+        assert violations["backfill_price_validation"]["dates_with_warnings"] == ["2026-08-10"]
+
+    def test_backfill_section_does_not_clobber_daily_section(self, tmp_path, monkeypatch):
+        """backfillのviolations_log書き込みが、既存のdaily_price_validation
+        セクション（直近の日次チェック）を上書きしないことを確認する"""
+        base = str(tmp_path)
+        fetcher._write_violations_section(
+            "AAPL", "daily_price_validation",
+            {"checked_at": "t1", "date": "2026-08-10", "warnings": []},
+            base_dir=base,
+        )
+        self._patch_history(monkeypatch, {"AAPL": [self._make_bar("2026-08-09")]})
+        fetcher.backfill_daily_prices(["AAPL"], period="1y", base_dir=base)
+
+        violations_path = fetcher._violations_log_path("AAPL", base)
+        violations = json.load(open(violations_path, encoding="utf-8"))
+        assert violations["daily_price_validation"]["date"] == "2026-08-10"
+        assert "backfill_price_validation" in violations
+
+    def test_no_symbols_is_a_noop(self, tmp_path, monkeypatch):
+        base = str(tmp_path)
+        called = {"count": 0}
+
+        def _fail_if_called(symbols, period="1y"):
+            called["count"] += 1
+            return {}
+
+        monkeypatch.setattr(fetcher, "_download_historical_bars", _fail_if_called)
+        fetcher.backfill_daily_prices([], period="1y", base_dir=base)
+        assert called["count"] == 0
