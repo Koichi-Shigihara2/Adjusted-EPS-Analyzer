@@ -1,5 +1,15 @@
 # Claude Code 作業開始テンプレート
 
+最終更新: 2026-08-11（「次セッションの一次データ層プロジェクト着手順序」節の
+`hypecore.py`切替順序を訂正。読み取り専用事前調査（チャット記録、
+2026-08-11）でdaily/バックフィル期間拡張・attributes/未収録7フィールド・
+analyst_history/未収録2系統という前提作業が判明し、BACKLOG.md
+`[[MARKETDATA-LAYER-CONSTRUCTION-1]]`側で着手順序を4-4→4-8〈残り消費者の
+最後〉へ変更済みだったが、本ファイルへの反映が漏れていたため今回訂正。
+次のアクションは着手順序4-4〜4-7〈`pipeline.py`/`collect.py`/
+`collect_and_send.py`/`breadth_calculator.py`の軽量消費者〉に更新。
+実装コード変更なし）
+
 最終更新: 2026-08-11（「次セッションの一次データ層プロジェクト着手順序」節が
 2026-08-07時点の記述のまま陳腐化していたのを是正。PROJECT_STATUS.md・
 SYSTEM_MAP.md・BACKLOG.mdは2026-08-11時点の状態〈`common/market_data/`
@@ -59,11 +69,15 @@ git pull --rebase origin kaihatsu
   Update.yml`、workflow_dispatchで実行確認済み）実装がいずれも完了し、
   本番消費者切替が進行中（8ファイル中3/8完了: `beta_fetcher.py`・
   `data_fetcher.py`・`valuation_fetcher.py`）。次のアクションは着手順序
-  4-4（`hypecore.py`切替、`daily/`/`attributes/`/`analyst_history/`の
-  3層すべてが混在する消費者のため最も複雑）。以降の優先順位は
-  `pipeline.py`（`.calendar`のみ未対応）・`collect.py`・
-  `collect_and_send.py`・`breadth_calculator.py`→診断ツール2ファイル
-  （`score_verifier.py`・`audit.py`）の順。
+  4-4〜4-7（`pipeline.py`〈`.calendar`のみ未対応〉・`collect.py`・
+  `collect_and_send.py`・`breadth_calculator.py`、軽量消費者を先に
+  処理）。`hypecore.py`切替（`daily/`/`attributes/`/`analyst_history/`の
+  3層すべてが混在する消費者のため最も複雑）は着手順序4-8へ変更し
+  最後に回す（2026-08-11の読み取り専用事前調査で、daily/バックフィル
+  期間拡張〈`period="1y"`→`5y`/`max`相当〉・`attributes/`スキーマ
+  未収録7フィールド・`analyst_history/`未収録2系統という前提作業が
+  判明したため）。以降は診断ツール2ファイル
+  （`score_verifier.py`・`audit.py`、着手順序5）の順。
 
   `common/sec_data`統合の詳細はBACKLOG.md`[[SECDATA-STORAGE-
   FRAGMENTATION-1]]`（マスター追跡エントリ、最終状況を記載）・
