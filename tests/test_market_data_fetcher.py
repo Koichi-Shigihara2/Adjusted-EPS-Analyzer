@@ -307,6 +307,86 @@ class TestFetchWeeklyAttributesSchema:
             assert saved[key] is None
 
 
+class TestFetchWeeklyAttributesHypecorePrereqFields:
+    """[[MARKETDATA-LAYER-CONSTRUCTION-1]]着手順序4-8前提作業2
+    （hypecore.py切替の前提、attributes/スキーマ拡張7フィールド）の
+    フィールドマッピング回帰テスト。"""
+
+    _FAKE_INFO = dict(TestFetchWeeklyAttributesSchema._FAKE_INFO)
+    _FAKE_INFO.update({
+        "revenueGrowth": 0.164, "earningsGrowth": 0.287, "grossMargins": 0.48653,
+        "recommendationMean": 2.08696, "shortPercentOfFloat": 0.01, "shortRatio": 2.28,
+        "averageVolume": 56_619_253, "averageVolume10days": 60_000_000,
+        "volume": 40_000_000,  # 現在出来高（attributes/には保存されないことを検証する）
+    })
+
+    def _patch_info(self, monkeypatch, info):
+        schema = TestFetchWeeklyAttributesSchema()
+        schema._patch_info(monkeypatch, info)
+
+    def test_seven_fields_extracted_with_correct_mapping(self, tmp_path, monkeypatch):
+        base = str(tmp_path)
+        self._patch_info(monkeypatch, dict(self._FAKE_INFO))
+        fetcher.fetch_weekly_attributes(["XYZ"], base_dir=base)
+
+        saved = json.load(open(os.path.join(base, "attributes", "XYZ.json"), encoding="utf-8"))
+        assert saved["revenue_growth"] == 0.164
+        assert saved["earnings_growth"] == 0.287
+        assert saved["gross_margins"] == 0.48653
+        assert saved["recommendation_mean"] == 2.08696
+        assert saved["short_pct_float"] == 0.01
+        assert saved["short_ratio"] == 2.28
+        assert saved["average_volume"] == 56_619_253
+
+    def test_recommendation_mean_and_key_are_both_kept_distinct(self, tmp_path, monkeypatch):
+        """recommendation_mean（数値）とanalyst_recommendation_key（文字列）が
+        混同されず両方独立して保存されることを検証する"""
+        base = str(tmp_path)
+        self._patch_info(monkeypatch, dict(self._FAKE_INFO))
+        fetcher.fetch_weekly_attributes(["XYZ"], base_dir=base)
+
+        saved = json.load(open(os.path.join(base, "attributes", "XYZ.json"), encoding="utf-8"))
+        assert saved["recommendation_mean"] == 2.08696
+        assert isinstance(saved["recommendation_mean"], float)
+        assert saved["analyst_recommendation_key"] == "buy"
+        assert isinstance(saved["analyst_recommendation_key"], str)
+
+    def test_average_volume_falls_back_to_10days_when_primary_absent(self, tmp_path, monkeypatch):
+        """averageVolume不在時はaverageVolume10daysへフォールバックする
+        （hypecore.py::fetch_info_snapshot()と同じフォールバック順序）"""
+        base = str(tmp_path)
+        info = dict(self._FAKE_INFO)
+        del info["averageVolume"]
+        self._patch_info(monkeypatch, info)
+        fetcher.fetch_weekly_attributes(["XYZ"], base_dir=base)
+
+        saved = json.load(open(os.path.join(base, "attributes", "XYZ.json"), encoding="utf-8"))
+        assert saved["average_volume"] == 60_000_000
+
+    def test_current_volume_is_not_captured(self, tmp_path, monkeypatch):
+        """現在出来高（info["volume"]）はdaily/層の責務のためattributes/には
+        含めない設計を回帰テストする（previousClose非保存と同じ理由、
+        BACKLOG確定事項4「層またぎ再計算の禁止」）"""
+        base = str(tmp_path)
+        self._patch_info(monkeypatch, dict(self._FAKE_INFO))
+        fetcher.fetch_weekly_attributes(["XYZ"], base_dir=base)
+
+        saved = json.load(open(os.path.join(base, "attributes", "XYZ.json"), encoding="utf-8"))
+        assert "volume" not in saved
+        assert "current_volume" not in saved
+
+    def test_missing_seven_fields_default_to_none_not_error(self, tmp_path, monkeypatch):
+        """7フィールドが.infoに存在しない銘柄（指数等）でも例外にならずNoneになる"""
+        base = str(tmp_path)
+        self._patch_info(monkeypatch, {"currentPrice": 100.0})
+        fetcher.fetch_weekly_attributes(["XYZ"], base_dir=base)
+
+        saved = json.load(open(os.path.join(base, "attributes", "XYZ.json"), encoding="utf-8"))
+        for key in ("revenue_growth", "earnings_growth", "gross_margins", "recommendation_mean",
+                    "short_pct_float", "short_ratio", "average_volume"):
+            assert saved[key] is None
+
+
 class TestFetchWeeklyAttributesCalendar:
     """[[MARKETDATA-LAYER-CONSTRUCTION-1]]着手順序4-4（pipeline.py .calendar
     切替）で追加したcalendarフィールドの回帰テスト。.calendarをmonkeypatchし、

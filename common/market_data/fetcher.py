@@ -557,6 +557,30 @@ def fetch_weekly_attributes(symbols: List[str], base_dir: Optional[str] = None) 
       配列のみのため、Dividend Date等の他フィールドは保存しない
       （実際に使用するフィールドのみを保存する既存方針を踏襲）。
 
+    [[MARKETDATA-LAYER-CONSTRUCTION-1]]着手順序4-8前提作業2（hypecore.py
+    切替の前提、attributes/スキーマ拡張）で2026-08-11に7フィールドを追加:
+    - `revenue_growth`（`revenueGrowth`）・`earnings_growth`
+      （`earningsGrowth`）・`gross_margins`（`grossMargins`）:
+      hypecore.pyの.info参照フィールドをそのまま追加。
+    - `recommendation_mean`（`recommendationMean`）: 数値のアナリスト
+      推奨度（1=Strong Buy〜5=Sell）。既存の`analyst_recommendation_key`
+      （`recommendationKey`由来の文字列、例:"buy"）とは別物のフィールド
+      であり、混同を避けるため両方を保持する（片方をもう片方から導出
+      しない、Yahoo側の生値をそのまま両方保存する既存方針を踏襲）。
+    - `short_pct_float`（`shortPercentOfFloat`）・`short_ratio`
+      （`shortRatio`）: hypecore.pyの.info参照フィールドをそのまま追加。
+    - `average_volume`（`averageVolume`優先・`averageVolume10days`
+      フォールバック）: hypecore.py::fetch_info_snapshot()の
+      `avg_vol = info.get("averageVolume") or info.get("averageVolume10days")
+      or 1`と同じフォールバック順序をそのまま踏襲する（既存の`peg_ratio`
+      フィールドが`trailingPegRatio`優先・`pegRatio`フォールバックという
+      同型のフォールバック設計を採用済み）。「現在の出来高」
+      （hypecore.pyの`cur_vol = info.get("volume") or avg_vol`）は
+      attributes/には保存しない: 出来高はdaily/層のOHLCVレコード
+      （`reader.get_latest_price()["volume"]`）が正であり、attributes/に
+      重複保存すると層またぎ問題を生む（BACKLOG確定事項4、
+      previousClose非保存と同じ理由）。
+
     .info呼び出しはcommon.yfinance_utils.safe_yf_ticker()（リトライ2回・
     待機3秒、beta_fetcher.py::fetch_yfinance_beta()と同型）経由で行う
     （import失敗時は無リトライの直接呼び出しにフォールバック）。全銘柄
@@ -632,7 +656,14 @@ def fetch_weekly_attributes(symbols: List[str], base_dir: Optional[str] = None) 
             "target_high_price": info.get("targetHighPrice"),
             "analyst_count": info.get("numberOfAnalystOpinions"),
             "analyst_recommendation_key": info.get("recommendationKey"),
+            "recommendation_mean": info.get("recommendationMean"),
             "total_debt": info.get("totalDebt"),
+            "revenue_growth": info.get("revenueGrowth"),
+            "earnings_growth": info.get("earningsGrowth"),
+            "gross_margins": info.get("grossMargins"),
+            "short_pct_float": info.get("shortPercentOfFloat"),
+            "short_ratio": info.get("shortRatio"),
+            "average_volume": info.get("averageVolume") or info.get("averageVolume10days"),
             "calendar": calendar_dict,
         }
 
