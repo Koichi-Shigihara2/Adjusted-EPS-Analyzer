@@ -399,13 +399,59 @@ class TestMergeDailyRecords:
         assert merged[0]["close"] == 100.0
 
 
+class TestDownloadHistoricalBarsStartParam:
+    """[[MARKETDATA-LAYER-CONSTRUCTION-1]]着手順序4-8前提作業1
+    （2026-08-11）: _download_historical_bars()のstart引数がyf.download()
+    のstart=/period=の呼び分けに正しく反映されることを検証する。
+    period="5y"は本日基準の相対期間のためhypecore.py切替が要求する
+    固定開始日を満たせない（事前調査で実測）ことがこの機能追加の動機。"""
+
+    def _patch_yf_download(self, monkeypatch, captured_kwargs):
+        def _fake_download(symbols, **kwargs):
+            captured_kwargs.update(kwargs)
+            captured_kwargs["symbols"] = symbols
+            import pandas as pd
+            return pd.DataFrame()  # emptyなので以降の処理はスキップされる
+        monkeypatch.setattr(fetcher.yf, "download", _fake_download)
+
+    def test_start_specified_calls_yf_download_with_start_not_period(self, monkeypatch):
+        captured = {}
+        self._patch_yf_download(monkeypatch, captured)
+        fetcher._download_historical_bars(["AAPL"], period="1y", start="2021-01-01")
+        assert captured.get("start") == "2021-01-01"
+        assert "period" not in captured
+
+    def test_start_omitted_calls_yf_download_with_period(self, monkeypatch):
+        captured = {}
+        self._patch_yf_download(monkeypatch, captured)
+        fetcher._download_historical_bars(["AAPL"], period="1y")
+        assert captured.get("period") == "1y"
+        assert "start" not in captured
+
+    def test_backfill_daily_prices_passes_start_through(self, tmp_path, monkeypatch):
+        base = str(tmp_path)
+        captured = {}
+
+        def _fake_download_bars(symbols, period="1y", start=None):
+            captured["period"] = period
+            captured["start"] = start
+            return {}
+
+        monkeypatch.setattr(fetcher, "_download_historical_bars", _fake_download_bars)
+        fetcher.backfill_daily_prices(["AAPL"], start="2021-01-01", base_dir=base)
+        assert captured["start"] == "2021-01-01"
+
+
 class TestBackfillDailyPrices:
     """backfill_daily_prices()はネットワークアクセス（_download_historical_bars）
     をmonkeypatchし、マージ・検証・アトミック書き込み・violations_logの
     ロジックのみを検証する。"""
 
     def _patch_history(self, monkeypatch, bars_by_symbol):
-        monkeypatch.setattr(fetcher, "_download_historical_bars", lambda symbols, period="1y": bars_by_symbol)
+        monkeypatch.setattr(
+            fetcher, "_download_historical_bars",
+            lambda symbols, period="1y", start=None: bars_by_symbol,
+        )
 
     def _make_bar(self, date, close=100.0, warnings=None):
         return {

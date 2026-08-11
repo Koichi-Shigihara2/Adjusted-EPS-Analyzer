@@ -302,17 +302,30 @@ def _write_violations_section(symbol: str, section_key: str, section_value: Dict
 
 # ── 日次価格層 ────────────────────────────────────────────
 
-def _download_historical_bars(symbols: List[str], period: str = "5d") -> Dict[str, List[Dict[str, Any]]]:
-    """yf.download()で複数銘柄のperiod分の日足を一括取得し、銘柄ごとの
-    OHLCVレコードのリスト（日付昇順）を返す（取得できなかった銘柄は
-    キーごと欠落する）。日次バッチ（直近1件のみ使用）とバックフィル
-    （全件使用）の共通実装。
+def _download_historical_bars(symbols: List[str], period: str = "5d",
+                               start: Optional[str] = None) -> Dict[str, List[Dict[str, Any]]]:
+    """yf.download()で複数銘柄の日足を一括取得し、銘柄ごとのOHLCVレコード
+    のリスト（日付昇順）を返す（取得できなかった銘柄はキーごと欠落する）。
+    日次バッチ（直近1件のみ使用）とバックフィル（全件使用）の共通実装。
+
+    start（'YYYY-MM-DD'形式、省略可）を指定した場合はperiodを無視し
+    yf.download(symbols, start=start, ...)で日付範囲を直接指定する
+    （[[MARKETDATA-LAYER-CONSTRUCTION-1]]着手順序4-8前提作業1、
+    2026-08-11追加）。`period="5y"`は「本日から遡って5年」を意味し
+    時間経過で開始日がスライドするため、hypecore.py切替が要求する固定
+    開始日（2021-01-01）を正確に満たせない（事前調査で実測: period="5y"
+    は2021-08-11開始と約7ヶ月不足、period="max"は1980年からと約8.2倍の
+    過剰取得と判明）。start指定はこの両方の問題を解消する。
     """
     if not symbols:
         return {}
     try:
-        raw = yf.download(symbols, period=period, group_by="ticker",
-                           auto_adjust=False, progress=False, threads=True)
+        if start is not None:
+            raw = yf.download(symbols, start=start, group_by="ticker",
+                               auto_adjust=False, progress=False, threads=True)
+        else:
+            raw = yf.download(symbols, period=period, group_by="ticker",
+                               auto_adjust=False, progress=False, threads=True)
     except Exception as e:
         print(f"   [WARN] yf.download失敗: {e}")
         return {}
@@ -424,6 +437,7 @@ def fetch_daily_prices(symbols: List[str], base_dir: Optional[str] = None) -> No
 
 
 def backfill_daily_prices(symbols: List[str], period: str = "1y",
+                           start: Optional[str] = None,
                            base_dir: Optional[str] = None) -> None:
     """日次価格層の過去分を一括バックフィルする（一過性ツール、
     backfill_tech_pulse.py型。定期cronには組み込まない、手動実行専用）。
@@ -432,6 +446,13 @@ def backfill_daily_prices(symbols: List[str], period: str = "1y",
     移動平均（reader.get_ma_deviation(window=200)）が自然蓄積で計算可能に
     なるまで約10ヶ月かかる。yf.download(period=period)で過去分を一括取得し
     即座にこのブートストラップ欠落を解消する。
+
+    start（'YYYY-MM-DD'形式、省略可）を指定した場合はperiodを無視し、
+    _download_historical_bars()側でyf.download(symbols, start=start, ...)
+    により日付範囲を直接指定する（[[MARKETDATA-LAYER-CONSTRUCTION-1]]
+    着手順序4-8前提作業1、2026-08-11追加。hypecore.py切替が要求する
+    start="2021-01-01"のような固定開始日には`period`文字列では正確に
+    対応できないため）。
 
     fetch_daily_prices()と同じ保存前検証（validate_price_record()）・
     アトミック書き込みを適用する。同一日付が既存レコードにある場合は
@@ -447,7 +468,7 @@ def backfill_daily_prices(symbols: List[str], period: str = "1y",
     if not target_symbols:
         return
 
-    history = _download_historical_bars(target_symbols, period=period)
+    history = _download_historical_bars(target_symbols, period=period, start=start)
     for symbol in target_symbols:
         bars = history.get(symbol)
         if not bars:
@@ -474,7 +495,7 @@ def backfill_daily_prices(symbols: List[str], period: str = "1y",
         _write_violations_section(
             symbol, "backfill_price_validation",
             {
-                "checked_at": _now_iso(), "period": period,
+                "checked_at": _now_iso(), "period": start or period,
                 "dates_fetched": len(new_records),
                 "dates_with_warnings": dates_with_warnings,
             },
@@ -788,7 +809,12 @@ if __name__ == "__main__":
     )
     arg_parser.add_argument(
         "--period", default="1y",
-        help="--backfill時の取得期間（yfinance期間指定形式、デフォルト1y）",
+        help="--backfill時の取得期間（yfinance期間指定形式、デフォルト1y。--start指定時は無視される）",
+    )
+    arg_parser.add_argument(
+        "--start", default=None,
+        help="--backfill時の取得開始日（'YYYY-MM-DD'形式、指定時は--periodより優先される。"
+             "periodは相対期間〈本日から遡ってN年等〉のため固定開始日を厳密に指定できない場合に使う）",
     )
     args = arg_parser.parse_args()
 
@@ -796,7 +822,7 @@ if __name__ == "__main__":
     print(f"対象銘柄数: {len(symbols_arg)}")
 
     if args.backfill:
-        backfill_daily_prices(symbols_arg, period=args.period)
+        backfill_daily_prices(symbols_arg, period=args.period, start=args.start)
     else:
         if args.layer in ("daily", "all"):
             fetch_daily_prices(symbols_arg)
