@@ -1,5 +1,20 @@
 # On-a-journey — 改善バックログ（全システム）
 
+最終更新: 2026-08-12（`[[MARKETDATA-LAYER-CONSTRUCTION-1]]`着手順序6-1:
+`extract_key_facts.py`（株式数フォールバック④）切替が**完了**。
+yfinance直接呼び出し（`.info.get('sharesOutstanding') or
+.get('impliedSharesOutstanding')`）を`reader.get_attributes()`経由
+（`shares_outstanding`優先→`implied_shares_outstanding`フォールバック、
+既存優先順位パターン維持）に置換。V（該当フォールバックの実例銘柄）で
+切替後コードを実際に発動させ、切替前のキャッシュ値と完全一致を確認。
+EPS Analyzer対象101銘柄をキャッシュ済みquarterly.jsonで走査した結果、
+fallback④該当はV 1件のみと判明（他100銘柄は影響なし）。pytest全体は
+721 passed（既知失敗2件はTEST-STALE-IV-1、無関係）。これで着手順序6は
+周辺ツール2ファイル中1ファイル完了（1/2）、残るは`backfill_tech_pulse.py`
+（`reader.py`への新規API追加が前提と判明済み）のみ。詳細・検証結果は
+BACKLOG_DONE.md「2026-08-12（完了）」`[[MARKETDATA-LAYER-CONSTRUCTION-1]]
+着手順序6-1`参照（コミット`212454681`）
+
 最終更新: 2026-08-12（`[[MARKETDATA-LAYER-CONSTRUCTION-1]]`着手順序5-2:
 `score_verifier.py`切替が**完了**。前提作業として`reader.py`へ
 `get_price_on_or_after(symbol, date)`を新規追加（date以降5日ウィンドウで
@@ -2047,20 +2062,21 @@ ARCH-DATA-1のスコープ拡張（2026-07-16、年次データ正規化3段階�
 **登録日:** 2026-08-07（本来は事前調査着手時点で登録すべきだったが
 未登録のまま3回の投資調査を実施していたため、本エントリで遡って
 正式登録する）
-**更新日:** 2026-08-11（着手順序1〜4（本番消費者8/8）に加え、5-1
-`audit.py`（β乖離監査・カナダ企業判定）が**完了**。`attributes/`へ
-`country`フィールドを新規追加した上で両判定ともyfinance直接呼び出しから
-`reader.get_attributes()`経由に切替（設計確定事項6の方針通り）。
-`SEC_Data_Audit.yml`の依存インストールも`pip install -r requirements.txt`
-へ更新（詳細はBACKLOG_DONE.md「2026-08-11（完了）」着手順序5-1参照、
-コミット`be48054cc`）。残る5-2`score_verifier.py`は`reader.py`への
-新規API追加（任意過去日点参照）が前提と判明し次点保留。一連の切替作業中
-に発見した別課題群を`[[MARKETDATA-CWAN-FROZEN-DATA-SUSPECT-1]]`・
-`[[MARKETDATA-SP500-SCRAPE-INVALID-TICKERS-1]]`・`[[MARKETDATA-VIX9D-
-DATA-GAP-1]]`・`[[STONKS-SILO-CLI-TICKERS-SHADOW-1]]`として登録済み。
-誤って「バグ」登録した`[[MARKETDATA-DAILY-UNADJUSTED-PRICE-DIVIDEND-
-DRIFT-1]]`は事実確認調査により前提の誤りが判明し訂正・クローズ済み。
-詳細は下記「着手順序」参照）
+**更新日:** 2026-08-12（着手順序1〜5（本番消費者8/8＋診断ツール2/2）完了に
+続けて、着手順序6-1`extract_key_facts.py`（株式数フォールバック④）も
+**完了**。yfinance直接呼び出しを`reader.get_attributes()`経由（既存優先
+順位パターン維持）に切替。V実例での再現テストで切替前後の値が完全一致、
+EPS Analyzer対象101銘柄中fallback④該当はV 1件のみと判明（他100銘柄は
+影響なし）。詳細・検証結果はBACKLOG_DONE.md「2026-08-12（完了）」着手順序
+6-1参照（コミット`212454681`）。残る6-2`backfill_tech_pulse.py`は
+`reader.py`への新規API追加（任意過去基準日起点のトレイリングウィンドウ
+取得）が前提と判明し未着手。一連の切替作業中に発見した別課題群を
+`[[MARKETDATA-CWAN-FROZEN-DATA-SUSPECT-1]]`・`[[MARKETDATA-SP500-
+SCRAPE-INVALID-TICKERS-1]]`・`[[MARKETDATA-VIX9D-DATA-GAP-1]]`・
+`[[STONKS-SILO-CLI-TICKERS-SHADOW-1]]`として登録済み。誤って「バグ」
+登録した`[[MARKETDATA-DAILY-UNADJUSTED-PRICE-DIVIDEND-DRIFT-1]]`は事実
+確認調査により前提の誤りが判明し訂正・クローズ済み。詳細は下記
+「着手順序」参照）
 **発見:** `common/market_data/`新設事前調査・実装設計投資調査（チャット
 記録、2026-08-07）
 
@@ -2343,12 +2359,23 @@ common/market_data/
       CONSTRUCTION-1]]着手順序5-2`参照（コミット`2668f3aaf`・
       `bc0f6fb24`）。
 6. 周辺ツール2ファイル（`backfill_tech_pulse.py`・`extract_key_facts.py`）
-   の切替。
+   の切替。**進捗1/2。**
+   1. **【完了・2026-08-12】** `extract_key_facts.py`（株式数フォールバック④、
+      V等SEC全期間で希薄化後株式数タグ未申告の銘柄向け最終フォールバック）。
+      yfinance直接呼び出しを`reader.get_attributes()`経由（`shares_outstanding`
+      優先→`implied_shares_outstanding`フォールバック、既存優先順位パターン
+      維持）に切替。V実例での再現テストで切替前後の値が完全一致、EPS Analyzer
+      対象101銘柄中fallback④該当はV 1件のみと判明（他100銘柄は影響なし）。
+      詳細・検証結果はBACKLOG_DONE.md「2026-08-12（完了）」`[[MARKETDATA-
+      LAYER-CONSTRUCTION-1]]着手順序6-1`参照（コミット`212454681`）。
+   2. **未着手** `backfill_tech_pulse.py`。切替には`reader.py`への新規API
+      追加（任意過去基準日起点のトレイリングウィンドウ取得、
+      `get_price_on_or_after()`追加と同様の前提作業）が必要と判明済み。
 
-**次セッションでの着手順序（2026-08-12時点、着手順序5-2〈score_verifier.py〉
+**次セッションでの着手順序（2026-08-12時点、着手順序6-1〈extract_key_facts.py〉
 完了を反映し最終更新）**:
-1. 着手順序6: 周辺ツール2ファイルの切替（`backfill_tech_pulse.py`・
-   `extract_key_facts.py`、該当あれば）
+1. 着手順序6-2: `backfill_tech_pulse.py`の切替（前提作業として`reader.py`
+   への新規API追加が必要）
 2. フェーズ完了後: `normalized/`廃止相当の判断、または新DB構築
    プロジェクトの次フェーズ（`common/macro_data/`）検討
 3. （本線外・本セッションで蓄積した課題群、優先度は各エントリ参照）:

@@ -95,6 +95,53 @@ base_dir=None)`を新規追加:
 全10ファイルが完了。残るは着手順序6（周辺ツール2ファイル:
 `backfill_tech_pulse.py`・`extract_key_facts.py`）のみ。
 
+### ✅ [MARKETDATA-LAYER-CONSTRUCTION-1] 着手順序6-1: extract_key_facts.py切替（周辺ツール1/2）
+**状態:** 完了
+**優先度:** 高
+**分類:** アーキテクチャ / 新DB構築プロジェクト フェーズ1 / 周辺ツール切替
+**登録日:** 2026-08-12（周辺ツール2ファイル切替の事前確認投資調査を実施、
+同日中に実装まで完了）
+**完了日:** 2026-08-12
+**発見:** `[[MARKETDATA-LAYER-CONSTRUCTION-1]]`着手順序6事前調査（周辺ツール
+2ファイル切替の事前確認、チャット記録、2026-08-12）
+
+#### 内容
+`extract_key_facts.py`の株式数フォールバック④（隣接する実四半期も存在
+しない＝全期間でSECに希薄化後株式数タグ未申告の銘柄向け最終フォール
+バック、V〈Visa〉が実例）のyfinance直接呼び出し
+（`.info.get('sharesOutstanding') or .info.get('impliedSharesOutstanding')`）
+を、`common.market_data.reader.get_attributes()`経由
+（`shares_outstanding`優先→`implied_shares_outstanding`フォールバック、
+既存の優先順位パターンをそのまま維持）に置換。import追加は
+`beta_fetcher.py`と同じ簡潔なトップレベルパターン（try/exceptガードなし）。
+
+#### 検証
+- **V（該当フォールバックの実例銘柄、eps=true）で実際にfallback④を発動**
+  させ、切替後コードの結果を確認。全14四半期に一律`diluted_shares=
+  1,704,112,694`が適用され、切替前（2026-08-10、旧yfinance経由）に
+  キャッシュ済みの`quarterly.json`の値と**完全一致**。
+- **EPS Analyzer対象101銘柄**をキャッシュ済み`quarterly.json`で走査
+  （fallback④特有のシグネチャ=全四半期で`diluted_shares`が同一値）した
+  結果、該当は**V 1件のみ**と判明。他100銘柄はフォールバック①〜③
+  （EPS逆算・Basic株数代用・隣接四半期引き継ぎ）で解決済みのため本切替の
+  影響を受けない（fallback④コードパス自体が到達しない）。AAPL・RCAT
+  （非該当銘柄）で切替後コードを実行し例外なく完走・fallback④の誤発動
+  がないことも確認。
+- `tests/test_extract_key_facts_share_fallback.py`の旧yfinance poison
+  注入方式（偽yfinanceモジュールのsys.modules注入）を
+  `ekf._get_market_data_attributes`のmonkeypatchに更新（クラス名・
+  変数名もmarket_data基準に統一）。該当4テストとも成功。
+- **pytest全体**: 721 passed / 2 known-failed
+  （`tests/test_iv_formula.py::test_iv_formula_adds_up[MSFT]`・`[NVDA]`、
+  `[[TEST-STALE-IV-1]]`、本切替と無関係）
+
+コミット: `212454681`
+
+これで着手順序6は2ファイル中1ファイル完了（**1/2**）。残る
+`backfill_tech_pulse.py`は、切替に`reader.py`への新規API追加（任意の
+過去基準日を起点としたトレイリングウィンドウ取得、`score_verifier.py`
+切替時の`get_price_on_or_after()`追加と同様の前提作業）が必要と判明済み。
+
 ---
 
 ## 2026-08-11（完了）
