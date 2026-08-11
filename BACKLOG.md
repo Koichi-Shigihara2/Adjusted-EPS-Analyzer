@@ -2001,12 +2001,13 @@ ARCH-DATA-1のスコープ拡張（2026-07-16、年次データ正規化3段階�
 未登録のまま3回の投資調査を実施していたため、本エントリで遡って
 正式登録する）
 **更新日:** 2026-08-11（着手順序1〜3完了に加え、4. 本番消費者切替が
-2/8に進捗：4-1`beta_fetcher.py`・4-2`data_fetcher.py`（本丸、DCF計算の
-株価取得を前日終値ベース化）とも完了。前提条件（`attributes/`スキーマ
-拡張・日次価格層バックフィル全570銘柄実行）も完了済み。バックフィル
-実行中に発見した別課題2件を`[[MARKETDATA-CWAN-FROZEN-DATA-SUSPECT-1]]`・
-`[[MARKETDATA-SP500-SCRAPE-INVALID-TICKERS-1]]`として登録済み。
-次は3番手`valuation_fetcher.py`。詳細は下記「着手順序」参照）
+3/8に進捗：4-1`beta_fetcher.py`・4-2`data_fetcher.py`（本丸）・
+4-3`valuation_fetcher.py`（STONKS SILO）とも完了。前提条件（`attributes/`
+スキーマ拡張・日次価格層バックフィル全570銘柄実行）も完了済み。
+一連の切替作業中に発見した別課題3件を`[[MARKETDATA-CWAN-FROZEN-DATA-
+SUSPECT-1]]`・`[[MARKETDATA-SP500-SCRAPE-INVALID-TICKERS-1]]`・
+`[[STONKS-SILO-CLI-TICKERS-SHADOW-1]]`として登録済み。次は4番手
+`hypecore.py`。詳細は下記「着手順序」参照）
 **発見:** `common/market_data/`新設事前調査・実装設計投資調査（チャット
 記録、2026-08-07）
 
@@ -2211,7 +2212,7 @@ common/market_data/
    `analyst_history/`・violations log、AAPL/IONQ/^GSPCの3銘柄分）は
    本番バッチ生成分としてそのままリポジトリに残している。
 4. 本番消費者8ファイル＋診断ツール2ファイルの段階的切替（TANUKI
-   VALUATION本体から、フェーズDと同様の優先順位を検討）。**進捗 2/8。**
+   VALUATION本体から、フェーズDと同様の優先順位を検討）。**進捗 3/8。**
 
    **優先順位案（2026-08-10時点、着手順序3完了時の提案）**
    1. **【完了・2026-08-10】** `beta_fetcher.py`（`reader.get_attributes()
@@ -2286,7 +2287,47 @@ common/market_data/
       `tests/test_data_fetcher_market_data_switch.py`新規10件。
       `TANUKI_VALUATION_Update.yml`の依存インストールを
       `requirements.txt`経由に変更（`Beta_Config_Update.yml`と同じ対応）。
-   3. `valuation_fetcher.py`
+   3. **【完了・2026-08-11】** `valuation_fetcher.py`（`discover/
+      stonks-silo/src/`、STONKS SILO対象25銘柄）。事前調査で
+      `enterprise_value`（`enterpriseValue`）が`attributes/`に未収録と
+      判明したため、まず`fetch_weekly_attributes()`にフィールド追加
+      （既存フィールドからの合成ではなく生値をそのまま保存、Yahoo側の
+      実計算式との乖離リスク回避）。その上で`fetch_valuation()`を
+      `reader.get_latest_price()["close"]`（current_price、前日終値化）・
+      `reader.get_attributes()`（market_cap/enterprise_value/total_debt）
+      経由に切替。戻り値のキー名・意味は不変。`HAS_MARKET_DATA`フラグを
+      `data_fetcher.py`と同型パターンで追加（本ファイルは
+      `discover/stonks-silo/src/`という独立ディレクトリに属するため、
+      `pipeline.py`のsys.path設定に依存せず単体importでも動作するよう
+      独自に二段構え解決）。`pipeline.py`側の`net_cash`計算・PSR/EV_Sales
+      算出ロジック（130-133行目）は無変更——`[[NETCASH-DUAL-CALC-1]]`の
+      既存対応方針（`SECReader.get_net_cash()`への統一が本来の解、
+      market_data経由totalDebtへの置き換えは新規実装しない）と整合。
+
+      **Step3検証（実データ25銘柄全数比較）**：24/25完全一致
+      （`market_cap`/`enterprise_value`/`total_debt`は全25銘柄で完全
+      一致）。唯一の差分は`QBTS`の株価24.6%（同日`data_fetcher.py`検証
+      でも確認済みの、ボラティリティの高い小型株の意図した仕様変更差分）。
+      `CWAN`は旧来の直接`.info`呼び出し側でも同じ陳腐化した価格
+      （$24.56、`[[MARKETDATA-CWAN-FROZEN-DATA-SUSPECT-1]]`）を返して
+      おり、切替による追加劣化ではなくYahoo Finance側の既存データ問題と
+      確認。`pipeline.py`の`run()`を直接呼び出しQBTSで実地検証した結果、
+      `net_cash`=$836,373,000・`psr`=245.5・`ev_sales`=285.6が正しく
+      算出され、`overall_score`（SEC財務データのみに依存、`valuation`
+      フィールドとは無関係と判明）も影響を受けないことを確認。
+
+      **副次発見（本切替の範囲外・未修正）**：`pipeline.py`の`if
+      __name__ == "__main__": tickers = sys.argv[1:]`が、モジュール
+      レベルでimportした`from common.sec_data import tickers`を
+      グローバルスコープごと上書きしてしまうバグを発見（`python
+      pipeline.py TICKER`のCLI実行が`AttributeError: 'list' object has
+      no attribute 'get_stonks_silo_tickers'`で必ず失敗する。
+      2026-07-12から存在、本切替とは無関係）。`run()`をモジュールとして
+      直接呼び出す（`__main__`ブロックを経由しない）ことで本切替の検証
+      自体は実施できたが、CLI経由の通常運用が現在壊れている状態のため
+      別途修正が必要。
+
+      `tests/test_valuation_fetcher_market_data_switch.py`新規7件。
    4. `hypecore.py`
    5〜8. `pipeline.py`・`collect.py`・`collect_and_send.py`・
       `breadth_calculator.py`（残り4ファイル、優先順位は着手時に再検討）
@@ -2403,6 +2444,45 @@ period=1y）実行時（チャット記録、2026-08-11。前回2026-08-10の同
 #### 着手条件
 なし。優先度低のため`common/market_data/`本番消費者切替（着手順序4）の
 残作業と並行して余裕があるときに着手する。
+
+---
+
+### [STONKS-SILO-CLI-TICKERS-SHADOW-1] pipeline.pyのCLIティッカー指定実行が変数名衝突で必ず失敗する
+**優先度:** 中（デフォルト全件実行の自動cronは影響を受けないが、個別
+ティッカー指定でのCLI手動実行——新規登録直後の確認等——が現在完全に
+機能しない）
+**分類:** バグ / 変数名衝突 / STONKS SILO
+**登録日:** 2026-08-11
+**発見:** `[[MARKETDATA-LAYER-CONSTRUCTION-1]]`着手順序4-3（`valuation_
+fetcher.py`切替）のStep3検証中（チャット記録、2026-08-11）
+
+#### 内容
+`discover/stonks-silo/src/pipeline.py`の`if __name__ == "__main__":`
+ブロックが`tickers = sys.argv[1:] if len(sys.argv) > 1 else None`という
+モジュールレベル変数代入を行っており、これがファイル冒頭で`from
+common.sec_data import tickers`によりimportされたモジュール参照を
+グローバルスコープごと上書きしてしまう。結果として`python pipeline.py
+TICKER1 TICKER2`のようにティッカーを指定して実行すると、`run()`内部の
+`_filter_stonks_silo_tickers()` → `stonks_tickers()`が
+`tickers.get_stonks_silo_tickers()`を呼ぼうとした時点で`tickers`が
+（モジュールではなく）CLI引数のリストになっており
+`AttributeError: 'list' object has no attribute 'get_stonks_silo_tickers'`
+で必ず失敗する（実機確認済み、2026-07-12の最終更新時点から存在する
+既存バグ、今回の`market_data`切替とは無関係）。
+
+引数なし実行（`python pipeline.py`、`stonks_silo=true`全件処理、
+Stonks_Silo_Update.ymlの自動cronが使う経路）は`run(None)`が呼ばれるため
+`partial=False`分岐となり、こちらも同じグローバル`tickers`上書きの影響を
+受けるはずだが要実機再確認（`stonks_tickers()`が`tickers`モジュールを
+参照する点は同じ）。
+
+#### 対応方針（未定）
+`__main__`ブロックの変数名を`tickers`から別名（例: `cli_tickers`）に
+変更するだけの軽微な修正で解消できる見込み。修正後、CLI引数あり・
+なし両方の実行パスで動作確認すること。
+
+#### 着手条件
+なし
 
 ---
 

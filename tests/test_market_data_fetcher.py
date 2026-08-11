@@ -219,6 +219,7 @@ class TestFetchWeeklyAttributesSchema:
 
     _FAKE_INFO = {
         "currentPrice": 100.0, "marketCap": 1_000_000_000,
+        "enterpriseValue": 1_050_000_000,
         "trailingPE": 20.0, "forwardPE": 18.0,
         "trailingPegRatio": 1.5, "pegRatio": 1.6,
         "priceToSalesTrailing12Months": 5.0, "enterpriseToEbitda": 12.0,
@@ -250,6 +251,7 @@ class TestFetchWeeklyAttributesSchema:
         fetcher.fetch_weekly_attributes(["XYZ"], base_dir=base)
 
         saved = json.load(open(os.path.join(base, "attributes", "XYZ.json"), encoding="utf-8"))
+        assert saved["enterprise_value"] == 1_050_000_000
         assert saved["forward_pe"] == 18.0
         assert saved["payout_ratio"] == 0.12
         assert saved["implied_shares_outstanding"] == 1_010_000_000
@@ -294,7 +296,7 @@ class TestFetchWeeklyAttributesSchema:
         fetcher.fetch_weekly_attributes(["XYZ"], base_dir=base)
 
         saved = json.load(open(os.path.join(base, "attributes", "XYZ.json"), encoding="utf-8"))
-        for key in ("forward_pe", "payout_ratio", "implied_shares_outstanding",
+        for key in ("enterprise_value", "forward_pe", "payout_ratio", "implied_shares_outstanding",
                     "target_median_price", "target_low_price", "target_high_price",
                     "analyst_count", "analyst_recommendation_key"):
             assert saved[key] is None

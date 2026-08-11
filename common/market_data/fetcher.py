@@ -505,6 +505,14 @@ def fetch_weekly_attributes(symbols: List[str], base_dir: Optional[str] = None) 
       フォールバック設計が既にdata_fetcher.py単体（pegRatioのみ参照）より
       堅牢なため、data_fetcher.py側が本フィールドへ合わせる想定。
 
+    [[MARKETDATA-LAYER-CONSTRUCTION-1]]着手順序4-3（valuation_fetcher.py
+    切替）の事前調査で判明した不足フィールドを2026-08-11に追加:
+    - `enterprise_value`（`enterpriseValue`）: STONKS SILOのEV/Sales算出に
+      必須。既存フィールドからの合成（market_cap+total_debt-cash等）は
+      Yahoo側の実際のenterpriseValue計算式（優先株・少数株主持分等を含む
+      可能性）と乖離するリスクがあるため、独自再計算はせず生の値をそのまま
+      保存する。
+
     .info呼び出しはcommon.yfinance_utils.safe_yf_ticker()（リトライ2回・
     待機3秒、beta_fetcher.py::fetch_yfinance_beta()と同型）経由で行う
     （import失敗時は無リトライの直接呼び出しにフォールバック）。全銘柄
@@ -540,6 +548,7 @@ def fetch_weekly_attributes(symbols: List[str], base_dir: Optional[str] = None) 
             "fetched_at": fetched_at,
             "current_price": info.get("currentPrice") or info.get("regularMarketPrice"),
             "market_cap": info.get("marketCap"),
+            "enterprise_value": info.get("enterpriseValue"),
             "trailing_pe": info.get("trailingPE"),
             "forward_pe": info.get("forwardPE"),
             "peg_ratio": info.get("trailingPegRatio") or info.get("pegRatio"),
