@@ -109,6 +109,72 @@ class TestGetPriceSeries:
         assert series[-1]["close"] == 200.0
 
 
+class TestGetPriceOnOrAfter:
+    """[[MARKETDATA-LAYER-CONSTRUCTION-1]]着手順序5-2（score_verifier.py
+    切替の前提作業）で新設したget_price_on_or_after()の回帰テスト。"""
+
+    def test_missing_symbol_returns_none(self, tmp_path):
+        assert reader.get_price_on_or_after("NOPE", "2026-06-03", base_dir=str(tmp_path)) is None
+
+    def test_exact_date_match_returned(self, tmp_path):
+        base = str(tmp_path)
+        fetcher._append_daily_record("AAPL", _make_price_record("2026-06-03", 200.0), base_dir=base)
+        record = reader.get_price_on_or_after("AAPL", "2026-06-03", base_dir=base)
+        assert record["date"] == "2026-06-03"
+        assert record["close"] == 200.0
+        assert record["symbol"] == "AAPL"
+
+    def test_target_date_is_non_trading_day_picks_next_available(self, tmp_path):
+        """targetが休場日（土日等）で当日レコードが無い場合、
+        ウィンドウ内で最も早い次の取引日レコードを返すこと"""
+        base = str(tmp_path)
+        fetcher._append_daily_record("AAPL", _make_price_record("2026-06-06", 210.0), base_dir=base)
+        fetcher._append_daily_record("AAPL", _make_price_record("2026-06-08", 211.0), base_dir=base)
+        # 2026-06-04（木）を起点にした場合、それより後の最初のレコードは06-06
+        record = reader.get_price_on_or_after("AAPL", "2026-06-04", base_dir=base)
+        assert record["date"] == "2026-06-06"
+        assert record["close"] == 210.0
+
+    def test_no_data_within_5day_window_returns_none(self, tmp_path):
+        base = str(tmp_path)
+        fetcher._append_daily_record("AAPL", _make_price_record("2026-06-10", 220.0), base_dir=base)
+        record = reader.get_price_on_or_after("AAPL", "2026-06-03", base_dir=base)
+        assert record is None
+
+    def test_data_exactly_at_window_boundary_returned(self, tmp_path):
+        """date+5日ちょうどのレコードは境界内として採用されること"""
+        base = str(tmp_path)
+        fetcher._append_daily_record("AAPL", _make_price_record("2026-06-08", 230.0), base_dir=base)
+        record = reader.get_price_on_or_after("AAPL", "2026-06-03", base_dir=base)
+        assert record["date"] == "2026-06-08"
+
+    def test_data_one_day_past_window_returns_none(self, tmp_path):
+        base = str(tmp_path)
+        fetcher._append_daily_record("AAPL", _make_price_record("2026-06-09", 230.0), base_dir=base)
+        record = reader.get_price_on_or_after("AAPL", "2026-06-03", base_dir=base)
+        assert record is None
+
+    def test_earliest_candidate_picked_among_multiple(self, tmp_path):
+        base = str(tmp_path)
+        fetcher._append_daily_record("AAPL", _make_price_record("2026-06-05", 205.0), base_dir=base)
+        fetcher._append_daily_record("AAPL", _make_price_record("2026-06-04", 204.0), base_dir=base)
+        record = reader.get_price_on_or_after("AAPL", "2026-06-03", base_dir=base)
+        assert record["date"] == "2026-06-04"
+        assert record["close"] == 204.0
+
+    def test_lowercase_symbol_is_normalized(self, tmp_path):
+        base = str(tmp_path)
+        fetcher._append_daily_record("AAPL", _make_price_record("2026-06-03", 200.0), base_dir=base)
+        assert reader.get_price_on_or_after("aapl", "2026-06-03", base_dir=base) is not None
+
+    def test_date_object_accepted(self, tmp_path):
+        import datetime as _dt
+        base = str(tmp_path)
+        fetcher._append_daily_record("AAPL", _make_price_record("2026-06-03", 200.0), base_dir=base)
+        record = reader.get_price_on_or_after("AAPL", _dt.date(2026, 6, 3), base_dir=base)
+        assert record["date"] == "2026-06-03"
+
+
 class TestGetMaDeviation:
     def test_missing_symbol_returns_none(self, tmp_path):
         assert reader.get_ma_deviation("NOPE", window=50, base_dir=str(tmp_path)) is None
@@ -321,6 +387,7 @@ class TestErrorResilienceForNeverFetchedSymbol:
         base = str(tmp_path)
         assert reader.get_latest_price("GHOST", base_dir=base) is None
         assert reader.get_price_series("GHOST", days=30, base_dir=base) == []
+        assert reader.get_price_on_or_after("GHOST", "2026-06-03", base_dir=base) is None
         assert reader.get_ma_deviation("GHOST", window=50, base_dir=base) is None
         assert reader.get_attributes("GHOST", base_dir=base) is None
         assert reader.get_analyst_events("GHOST", base_dir=base) == []

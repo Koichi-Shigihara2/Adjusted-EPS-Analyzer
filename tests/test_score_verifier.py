@@ -70,3 +70,40 @@ class TestFullScanTickerFiltering:
         tanuki_set = set(sv._tickers_mod.get_tanuki_tickers())
         assert "ZS" not in tanuki_set
         assert "RKLB" not in tanuki_set
+
+
+class TestFetchPriceAfter:
+    """[[MARKETDATA-LAYER-CONSTRUCTION-1]]着手順序5-2: fetch_price_after()の
+    common.market_data.reader.get_price_on_or_after()経由への切替回帰テスト。
+    ネットワークアクセス（yfinance呼び出し）は行わない。"""
+
+    def test_future_target_returns_none_without_calling_reader(self, monkeypatch):
+        called = []
+        monkeypatch.setattr(
+            sv._market_data_reader, "get_price_on_or_after",
+            lambda *a, **k: called.append((a, k)) or {"close": 999.0},
+        )
+        # 十分先の未来日（daysを大きくして target > today にする）
+        result = sv.fetch_price_after("AAPL", "2026-08-01", 3650)
+        assert result is None
+        assert called == []
+
+    def test_elapsed_target_returns_close_from_reader(self, monkeypatch):
+        monkeypatch.setattr(
+            sv._market_data_reader, "get_price_on_or_after",
+            lambda ticker, date: {"date": date, "close": 123.45, "symbol": ticker},
+        )
+        result = sv.fetch_price_after("AAPL", "2026-06-03", 30)
+        assert result == 123.45
+
+    def test_no_record_found_returns_none(self, monkeypatch):
+        monkeypatch.setattr(
+            sv._market_data_reader, "get_price_on_or_after", lambda ticker, date: None,
+        )
+        assert sv.fetch_price_after("AAPL", "2026-06-03", 30) is None
+
+    def test_reader_exception_returns_none_not_raise(self, monkeypatch):
+        def _boom(ticker, date):
+            raise RuntimeError("boom")
+        monkeypatch.setattr(sv._market_data_reader, "get_price_on_or_after", _boom)
+        assert sv.fetch_price_after("AAPL", "2026-06-03", 30) is None

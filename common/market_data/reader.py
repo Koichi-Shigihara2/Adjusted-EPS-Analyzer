@@ -33,6 +33,7 @@ from .fetcher import MARKET_DATA_DIR, get_nyse_calendar, get_sp500_constituents
 __all__ = [
     "get_latest_price",
     "get_price_series",
+    "get_price_on_or_after",
     "get_ma_deviation",
     "get_attributes",
     "get_analyst_events",
@@ -134,6 +135,40 @@ def get_price_series(symbol: str, days: int = 30, base_dir: Optional[str] = None
         else:
             series.append({"date": d, "symbol": symbol, "_gap": True})
     return series
+
+
+def get_price_on_or_after(symbol: str, date: Any, base_dir: Optional[str] = None) -> Optional[Dict[str, Any]]:
+    """指定日付（date、'YYYY-MM-DD'文字列またはdate/datetime）以降で最初に
+    見つかる取引日のレコード（date/open/high/low/close/volume等）を返す。
+
+    daily/{SYMBOL}.jsonの全期間データから、date <= record.date <=
+    date+5日の範囲で最も早い日付のレコードを検索する（
+    score_verifier.py::fetch_price_after()と同じクエリ形状: start=target,
+    end=target+5日ウィンドウで先頭値を採用するロジックをdaily/層のデータに
+    対して再現、BACKLOG [[MARKETDATA-LAYER-CONSTRUCTION-1]]着手順序5-2）。
+    5営業日以内に該当データが見つからない場合、またはシンボル自体の
+    データが存在しない場合はNoneを返す（例外は発生させない）。
+
+    層またぎ再計算禁止（BACKLOG確定事項4）: 本APIはdaily/のみを参照する。
+    """
+    symbol = symbol.upper()
+    base = _resolve_base_dir(base_dir)
+    date_str = date.isoformat()[:10] if hasattr(date, "isoformat") else str(date)[:10]
+    target = datetime.strptime(date_str, "%Y-%m-%d").date()
+    target_str = target.isoformat()
+    window_end_str = (target + timedelta(days=5)).isoformat()
+
+    records = _load_daily_payload(symbol, base).get("records", [])
+    candidates = [
+        r for r in records
+        if r.get("date") and target_str <= r["date"] <= window_end_str
+    ]
+    if not candidates:
+        return None
+
+    chosen = dict(min(candidates, key=lambda r: r["date"]))
+    chosen["symbol"] = symbol
+    return chosen
 
 
 def get_ma_deviation(symbol: str, window: int = 50, base_dir: Optional[str] = None) -> Optional[float]:
