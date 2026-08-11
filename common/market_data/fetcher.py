@@ -693,44 +693,134 @@ def _event_dedup_key(event: Dict[str, Any]):
 def fetch_analyst_events(symbols: List[str], base_dir: Optional[str] = None) -> None:
     """イベント履歴層を取得・保存する。
 
-    銘柄ごとにupgrades_downgradesを取得し、analyst_history/{SYMBOL}.jsonへ
-    追記型で保存する。(date, firm, to_grade, from_grade, action)をキーに
-    重複イベントを排除する（同一イベントの再取得で無限増殖しない）。
+    銘柄ごとにupgrades_downgrades・earnings_history・recommendationsの
+    3系統を取得し、analyst_history/{SYMBOL}.jsonへ追記型で保存する。
+    (date, firm, to_grade, from_grade, action)をキーに重複イベントを
+    排除する（同一イベントの再取得で無限増殖しない）。
+
+    3系統は互いに独立した失敗として扱う（1系統の取得失敗が他系統の
+    保存を妨げない、fetch_weekly_attributes()のcalendar追加と同型の
+    設計。旧実装ではupgrades_downgrades取得失敗時に銘柄全体をスキップ
+    していたが、3系統に拡張したことで挙動を改善した）。
+
+    [[MARKETDATA-LAYER-CONSTRUCTION-1]]着手順序4-8前提作業3
+    （hypecore.py切替の前提、analyst_history/スキーマ拡張）で
+    2026-08-11に2系統を追加:
+    - `earnings_history`: `Ticker.earnings_history`（直近3〜4四半期の
+      ローリングウィンドウ、確定済みの不変の事実）を`quarter`
+      （四半期末日）をキーに追記型で保存する。`surprise_percent`は
+      Yahoo生値（小数）をそのまま保存し%変換はしない（既存の
+      `dividend_yield`等と同じ「生値保存・変換は消費側」方針）。
+      `Ticker.quarterly_earnings`（hypecore.pyのフォールバック①）は
+      事前調査で現行yfinanceにおいて常にNoneを返す（DeprecationWarning:
+      'Ticker.earnings' is deprecated as not available via API）ことを
+      実測確認したため実装対象外とした。フォールバック②
+      （`info['earningsGrowth']`）は着手順序4-8前提作業2で既に
+      `attributes/{SYMBOL}.json`の`earnings_growth`として保存済みの
+      ため重複実装しない（hypecore.py切替の実装時に消費側で参照する）。
+    - `recommendations_history`: `Ticker.recommendations`
+      （strongBuy/buy/hold/sell/strongSellの生カウント、"0m"=現時点の
+      行のみ使用）を取得日（`date`、本関数の実行日。Weekly Updateで
+      週次実行される）をキーに追記型で保存する。事前調査で本データは
+      upgrades_downgrades・earnings_historyと異なり「不変の確定済み
+      イベント」ではなく「取得時点のコンセンサススナップショット」
+      という性質を持つ（同じ"-1m"ラベルでも取得時期により指す暦月・
+      値が変わりうる）と判明したため、hypecore.py本体のコード内コメント
+      （「現時点値を全期間に設定（将来は月次記録で上書き）」）が示す
+      意図に沿い、週次スナップショットを日付キーで蓄積する設計とした
+      （各エントリは「取得した日にはこう見えた」という事実として扱う、
+      遡及改定があっても過去エントリは書き換えない）。
     """
     base = _resolve_base_dir(base_dir)
     target_symbols = _dedupe_symbols(symbols)
+    fetched_date = _now_iso()[:10]
 
     for symbol in target_symbols:
-        try:
-            df = yf.Ticker(symbol).upgrades_downgrades
-        except Exception as e:
-            print(f"   [{symbol}] upgrades_downgrades取得失敗（スキップ）: {e}")
-            continue
+        t = yf.Ticker(symbol)
 
         new_events: List[Dict[str, Any]] = []
-        if df is not None and not df.empty:
-            for grade_date, row in df.iterrows():
-                date_str = grade_date.strftime("%Y-%m-%d") if hasattr(grade_date, "strftime") else str(grade_date)
-                new_events.append({
-                    "date": date_str,
-                    "firm": _to_str_or_none(row.get("Firm")),
-                    "to_grade": _to_str_or_none(row.get("ToGrade")),
-                    "from_grade": _to_str_or_none(row.get("FromGrade")),
-                    "action": _to_str_or_none(row.get("Action")),
-                    "price_target_action": _to_str_or_none(row.get("priceTargetAction")),
-                    "current_price_target": _to_float(row.get("currentPriceTarget")),
-                    "prior_price_target": _to_float(row.get("priorPriceTarget")),
-                })
+        try:
+            df = t.upgrades_downgrades
+            if df is not None and not df.empty:
+                for grade_date, row in df.iterrows():
+                    date_str = grade_date.strftime("%Y-%m-%d") if hasattr(grade_date, "strftime") else str(grade_date)
+                    new_events.append({
+                        "date": date_str,
+                        "firm": _to_str_or_none(row.get("Firm")),
+                        "to_grade": _to_str_or_none(row.get("ToGrade")),
+                        "from_grade": _to_str_or_none(row.get("FromGrade")),
+                        "action": _to_str_or_none(row.get("Action")),
+                        "price_target_action": _to_str_or_none(row.get("priceTargetAction")),
+                        "current_price_target": _to_float(row.get("currentPriceTarget")),
+                        "prior_price_target": _to_float(row.get("priorPriceTarget")),
+                    })
+        except Exception as e:
+            print(f"   [{symbol}] upgrades_downgrades取得失敗（スキップ）: {e}")
+
+        new_earnings: List[Dict[str, Any]] = []
+        try:
+            eh = t.earnings_history
+            if eh is not None and not eh.empty:
+                for quarter_date, row in eh.iterrows():
+                    quarter_str = (
+                        quarter_date.strftime("%Y-%m-%d") if hasattr(quarter_date, "strftime")
+                        else str(quarter_date)
+                    )
+                    new_earnings.append({
+                        "quarter": quarter_str,
+                        "eps_actual": _to_float(row.get("epsActual")),
+                        "eps_estimate": _to_float(row.get("epsEstimate")),
+                        "eps_difference": _to_float(row.get("epsDifference")),
+                        "surprise_percent": _to_float(row.get("surprisePercent")),
+                    })
+        except Exception as e:
+            print(f"   [{symbol}] earnings_history取得失敗（スキップ）: {e}")
+
+        new_recommendation: Optional[Dict[str, Any]] = None
+        try:
+            rec = t.recommendations
+            if rec is not None and not rec.empty:
+                cur_rows = rec[rec["period"] == "0m"]
+                cur = cur_rows.iloc[0] if len(cur_rows) > 0 else rec.iloc[0]
+                strong_buy = _to_int(cur.get("strongBuy")) or 0
+                buy = _to_int(cur.get("buy")) or 0
+                hold = _to_int(cur.get("hold")) or 0
+                sell = _to_int(cur.get("sell")) or 0
+                strong_sell = _to_int(cur.get("strongSell")) or 0
+                total = strong_buy + buy + hold + sell + strong_sell
+                new_recommendation = {
+                    "date": fetched_date,
+                    "strong_buy": strong_buy, "buy": buy, "hold": hold,
+                    "sell": sell, "strong_sell": strong_sell,
+                    "buy_hold_ratio": round((strong_buy + buy) / total, 4) if total > 0 else None,
+                }
+        except Exception as e:
+            print(f"   [{symbol}] recommendations取得失敗（スキップ）: {e}")
 
         path = os.path.join(base, "analyst_history", f"{symbol}.json")
-        payload = _load_json(path, default={"symbol": symbol, "events": []})
-        merged = {_event_dedup_key(e): e for e in payload.get("events", [])}
+        payload = _load_json(path, default={
+            "symbol": symbol, "events": [], "earnings_history": [], "recommendations_history": [],
+        })
+
+        merged_events = {_event_dedup_key(e): e for e in payload.get("events", [])}
         for e in new_events:
-            merged[_event_dedup_key(e)] = e
-        events = sorted(merged.values(), key=lambda e: e.get("date", ""), reverse=True)
+            merged_events[_event_dedup_key(e)] = e
+        events = sorted(merged_events.values(), key=lambda e: e.get("date", ""), reverse=True)
+
+        merged_earnings = {e.get("quarter"): e for e in payload.get("earnings_history", [])}
+        for e in new_earnings:
+            merged_earnings[e.get("quarter")] = e
+        earnings_history = sorted(merged_earnings.values(), key=lambda e: e.get("quarter", ""), reverse=True)
+
+        merged_recs = {r.get("date"): r for r in payload.get("recommendations_history", [])}
+        if new_recommendation is not None:
+            merged_recs[new_recommendation["date"]] = new_recommendation
+        recommendations_history = sorted(merged_recs.values(), key=lambda r: r.get("date", ""), reverse=True)
 
         payload["symbol"] = symbol
         payload["events"] = events
+        payload["earnings_history"] = earnings_history
+        payload["recommendations_history"] = recommendations_history
         _atomic_write_json(path, payload)
 
 

@@ -13,6 +13,8 @@ BACKLOG [[MARKETDATA-LAYER-CONSTRUCTION-1]] common/market_data/fetcher.py の
 import json
 import os
 
+import pandas as pd
+
 from common.market_data import fetcher
 
 
@@ -609,3 +611,197 @@ class TestBackfillDailyPrices:
         monkeypatch.setattr(fetcher, "_download_historical_bars", _fail_if_called)
         fetcher.backfill_daily_prices([], period="1y", base_dir=base)
         assert called["count"] == 0
+
+
+class TestFetchAnalystEventsSchema:
+    """[[MARKETDATA-LAYER-CONSTRUCTION-1]]着手順序4-8前提作業3
+    （analyst_history/スキーマ拡張、earnings_history・
+    recommendations_history追加）の回帰テスト。upgrades_downgrades・
+    earnings_history・recommendationsをmonkeypatchし、ネットワーク
+    アクセスなしで抽出・重複排除ロジックを検証する。"""
+
+    _UPGRADES_DOWNGRADES_DF = pd.DataFrame(
+        {
+            "Firm": ["UBS"], "ToGrade": ["Buy"], "FromGrade": ["Hold"], "Action": ["up"],
+            "priceTargetAction": ["Raises"], "currentPriceTarget": [220.0], "priorPriceTarget": [200.0],
+        },
+        index=pd.to_datetime(["2026-08-01"]),
+    )
+
+    _EARNINGS_HISTORY_DF = pd.DataFrame(
+        {
+            "epsActual": [2.02], "epsEstimate": [1.89243],
+            "epsDifference": [0.13], "surprisePercent": [0.0674],
+        },
+        index=pd.to_datetime(["2026-06-30"]),
+    )
+
+    _RECOMMENDATIONS_DF = pd.DataFrame({
+        "period": ["0m", "-1m", "-2m", "-3m"],
+        "strongBuy": [6, 6, 6, 7],
+        "buy": [21, 22, 22, 23],
+        "hold": [15, 14, 16, 15],
+        "sell": [2, 2, 1, 1],
+        "strongSell": [2, 2, 2, 2],
+    })
+
+    def _patch_ticker(self, monkeypatch, upgrades_downgrades=None, earnings_history=None,
+                       recommendations=None, earnings_history_raises=False):
+        class _FakeTicker:
+            def __init__(self, symbol):
+                pass
+            @property
+            def upgrades_downgrades(self):
+                return upgrades_downgrades
+            @property
+            def earnings_history(self):
+                if earnings_history_raises:
+                    raise RuntimeError("simulated earnings_history failure")
+                return earnings_history
+            @property
+            def recommendations(self):
+                return recommendations
+        monkeypatch.setattr(fetcher.yf, "Ticker", _FakeTicker)
+
+    def test_earnings_history_extracted_with_correct_mapping(self, tmp_path, monkeypatch):
+        base = str(tmp_path)
+        self._patch_ticker(monkeypatch, earnings_history=self._EARNINGS_HISTORY_DF.copy())
+        fetcher.fetch_analyst_events(["XYZ"], base_dir=base)
+
+        saved = json.load(open(os.path.join(base, "analyst_history", "XYZ.json"), encoding="utf-8"))
+        assert len(saved["earnings_history"]) == 1
+        entry = saved["earnings_history"][0]
+        assert entry["quarter"] == "2026-06-30"
+        assert entry["eps_actual"] == 2.02
+        assert entry["eps_estimate"] == 1.89243
+        assert entry["eps_difference"] == 0.13
+        assert entry["surprise_percent"] == 0.0674
+
+    def test_surprise_percent_stored_as_raw_decimal_not_percent_scaled(self, tmp_path, monkeypatch):
+        """surprise_percentはYahoo生値（小数）のまま保存し、hypecore.py側の
+        *100変換のような百分率化は行わない（生値保存・変換は消費側の方針）"""
+        base = str(tmp_path)
+        self._patch_ticker(monkeypatch, earnings_history=self._EARNINGS_HISTORY_DF.copy())
+        fetcher.fetch_analyst_events(["XYZ"], base_dir=base)
+
+        saved = json.load(open(os.path.join(base, "analyst_history", "XYZ.json"), encoding="utf-8"))
+        assert saved["earnings_history"][0]["surprise_percent"] == 0.0674
+        assert saved["earnings_history"][0]["surprise_percent"] != 6.74
+
+    def test_recommendations_history_uses_0m_row_and_computes_buy_hold_ratio(self, tmp_path, monkeypatch):
+        base = str(tmp_path)
+        self._patch_ticker(monkeypatch, recommendations=self._RECOMMENDATIONS_DF.copy())
+        fetcher.fetch_analyst_events(["XYZ"], base_dir=base)
+
+        saved = json.load(open(os.path.join(base, "analyst_history", "XYZ.json"), encoding="utf-8"))
+        assert len(saved["recommendations_history"]) == 1
+        entry = saved["recommendations_history"][0]
+        assert entry["strong_buy"] == 6
+        assert entry["buy"] == 21
+        assert entry["hold"] == 15
+        assert entry["sell"] == 2
+        assert entry["strong_sell"] == 2
+        # buy_hold_ratio = (6+21)/(6+21+15+2+2) = 27/46
+        assert entry["buy_hold_ratio"] == round(27 / 46, 4)
+
+    def test_recommendations_falls_back_to_first_row_when_0m_absent(self, tmp_path, monkeypatch):
+        """"0m"行が存在しない場合（KULR等、履歴の浅い銘柄）は先頭行を使う
+        （hypecore.py::fetch_analyst_history()と同じフォールバック）"""
+        base = str(tmp_path)
+        single_row_df = pd.DataFrame({
+            "period": ["0m"], "strongBuy": [0], "buy": [1], "hold": [0], "sell": [0], "strongSell": [0],
+        })
+        self._patch_ticker(monkeypatch, recommendations=single_row_df)
+        fetcher.fetch_analyst_events(["XYZ"], base_dir=base)
+
+        saved = json.load(open(os.path.join(base, "analyst_history", "XYZ.json"), encoding="utf-8"))
+        entry = saved["recommendations_history"][0]
+        assert entry["buy"] == 1
+        assert entry["buy_hold_ratio"] == 1.0
+
+    def test_quarter_dedup_overwrites_same_quarter_on_refetch(self, tmp_path, monkeypatch):
+        """同一四半期を再取得した場合は上書きされ、重複エントリにならない"""
+        base = str(tmp_path)
+        self._patch_ticker(monkeypatch, earnings_history=self._EARNINGS_HISTORY_DF.copy())
+        fetcher.fetch_analyst_events(["XYZ"], base_dir=base)
+        fetcher.fetch_analyst_events(["XYZ"], base_dir=base)  # 再実行（同一四半期）
+
+        saved = json.load(open(os.path.join(base, "analyst_history", "XYZ.json"), encoding="utf-8"))
+        assert len(saved["earnings_history"]) == 1
+
+    def test_new_quarter_accumulates_alongside_existing(self, tmp_path, monkeypatch):
+        """新しい四半期のデータは既存の四半期データを消さずに蓄積される
+        （upgrades_downgradesと同型のread-modify-writeマージ）"""
+        base = str(tmp_path)
+        path = os.path.join(base, "analyst_history", "XYZ.json")
+        fetcher._atomic_write_json(path, {
+            "symbol": "XYZ", "events": [], "recommendations_history": [],
+            "earnings_history": [
+                {"quarter": "2026-03-31", "eps_actual": 2.01, "eps_estimate": 1.94275,
+                 "eps_difference": 0.07, "surprise_percent": 0.0346},
+            ],
+        })
+        self._patch_ticker(monkeypatch, earnings_history=self._EARNINGS_HISTORY_DF.copy())  # 2026-06-30
+        fetcher.fetch_analyst_events(["XYZ"], base_dir=base)
+
+        saved = json.load(open(path, encoding="utf-8"))
+        quarters = sorted(e["quarter"] for e in saved["earnings_history"])
+        assert quarters == ["2026-03-31", "2026-06-30"]
+
+    def test_recommendations_same_day_dedup_overwrites(self, tmp_path, monkeypatch):
+        """同一日に複数回実行しても重複エントリにならない（手動再実行時の安全策）"""
+        base = str(tmp_path)
+        self._patch_ticker(monkeypatch, recommendations=self._RECOMMENDATIONS_DF.copy())
+        fetcher.fetch_analyst_events(["XYZ"], base_dir=base)
+        fetcher.fetch_analyst_events(["XYZ"], base_dir=base)
+
+        saved = json.load(open(os.path.join(base, "analyst_history", "XYZ.json"), encoding="utf-8"))
+        assert len(saved["recommendations_history"]) == 1
+
+    def test_recommendations_accumulates_across_different_dates(self, tmp_path, monkeypatch):
+        """異なる日付のスナップショットは蓄積される（週次実行を想定した
+        シミュレーション: 過去の週のスナップショットが残ったまま、今週分が
+        新規追加される）"""
+        base = str(tmp_path)
+        path = os.path.join(base, "analyst_history", "XYZ.json")
+        fetcher._atomic_write_json(path, {
+            "symbol": "XYZ", "events": [], "earnings_history": [],
+            "recommendations_history": [
+                {"date": "2026-08-04", "strong_buy": 5, "buy": 20, "hold": 16,
+                 "sell": 2, "strong_sell": 2, "buy_hold_ratio": 0.5556},
+            ],
+        })
+        self._patch_ticker(monkeypatch, recommendations=self._RECOMMENDATIONS_DF.copy())
+        fetcher.fetch_analyst_events(["XYZ"], base_dir=base)
+
+        saved = json.load(open(path, encoding="utf-8"))
+        dates = sorted(r["date"] for r in saved["recommendations_history"])
+        assert len(dates) == 2
+        assert "2026-08-04" in dates
+
+    def test_earnings_history_failure_does_not_block_other_sources(self, tmp_path, monkeypatch):
+        """earnings_history取得が例外を送出しても、events・
+        recommendations_historyの保存は妨げられない（3系統の独立性）"""
+        base = str(tmp_path)
+        self._patch_ticker(
+            monkeypatch,
+            upgrades_downgrades=self._UPGRADES_DOWNGRADES_DF.copy(),
+            recommendations=self._RECOMMENDATIONS_DF.copy(),
+            earnings_history_raises=True,
+        )
+        fetcher.fetch_analyst_events(["XYZ"], base_dir=base)
+
+        saved = json.load(open(os.path.join(base, "analyst_history", "XYZ.json"), encoding="utf-8"))
+        assert len(saved["events"]) == 1
+        assert len(saved["recommendations_history"]) == 1
+        assert saved["earnings_history"] == []
+
+    def test_all_sources_empty_writes_empty_arrays_gracefully(self, tmp_path, monkeypatch):
+        base = str(tmp_path)
+        self._patch_ticker(monkeypatch)
+        fetcher.fetch_analyst_events(["XYZ"], base_dir=base)
+
+        saved = json.load(open(os.path.join(base, "analyst_history", "XYZ.json"), encoding="utf-8"))
+        assert saved["events"] == []
+        assert saved["earnings_history"] == []
+        assert saved["recommendations_history"] == []
