@@ -3,10 +3,15 @@ tests/test_extract_key_facts_share_fallback.py
 
 ASTS-SHARES-OSCILLATION-1: extract_key_facts.py の株式数フォールバック回帰テスト。
 
-株式数フォールバック④（yfinance現在株数の無条件代入）が、Q1〜Q3の一部四半期
+株式数フォールバック④（現在株数の無条件代入）が、Q1〜Q3の一部四半期
 だけXBRLタグが欠落している銘柄（ASTS/AVAV/RCAT）にも適用され、現在時点の
 株数が過去の四半期に逆行伝播していた問題への対応。新設したフォールバック③
-（隣接する実四半期からの引き継ぎ）が、yfinance代入より優先されることを確認する。
+（隣接する実四半期からの引き継ぎ）が、フォールバック④より優先されることを確認する。
+
+MARKETDATA-LAYER-CONSTRUCTION-1着手順序6: フォールバック④のデータソースを
+yfinance直接呼び出しからcommon.market_data.reader.get_attributes()経由に
+切替（2026-08-12）。本ファイルのpoison注入も`ekf._get_market_data_attributes`
+のmonkeypatchに合わせて更新済み。
 
 実行方法:
     python -m pytest tests/test_extract_key_facts_share_fallback.py -v
@@ -19,7 +24,6 @@ _REPO_ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), ".."))
 if _REPO_ROOT not in sys.path:
     sys.path.insert(0, _REPO_ROOT)
 
-import types
 
 import src.value.adjusted_eps_analyzer.extract_key_facts as ekf  # noqa: E402
 
@@ -37,32 +41,26 @@ def _patch_common(monkeypatch, facts):
     monkeypatch.setattr(ekf, "fetch_company_facts", lambda cik: facts)
 
 
-def _patch_yfinance_poison(monkeypatch, poison_shares):
-    """yfinanceが呼ばれた場合に検知できるよう、明確に分かる値（poison値）を返す
-    偽yfinanceモジュールをsys.modulesに注入する（ネットワーク呼び出しを回避）。"""
-    fake_info = {"sharesOutstanding": poison_shares}
-
-    class _FakeTicker:
-        def __init__(self, ticker):
-            self.info = fake_info
-
-    fake_module = types.ModuleType("yfinance")
-    fake_module.Ticker = _FakeTicker
-    monkeypatch.setitem(sys.modules, "yfinance", fake_module)
-    return fake_info
+def _patch_market_data_poison(monkeypatch, poison_shares):
+    """フォールバック④（market_data属性の現在株数代入）が呼ばれた場合に検知できるよう、
+    明確に分かる値（poison値）を返す偽attributesをekf._get_market_data_attributesの
+    差し替えで注入する（ディスクI/O・ネットワーク呼び出しを回避）。"""
+    fake_attrs = {"shares_outstanding": poison_shares}
+    monkeypatch.setattr(ekf, "_get_market_data_attributes", lambda ticker: fake_attrs)
+    return fake_attrs
 
 
-_POISON_SHARES = 999_000_000  # yfinance「現在株数」が誤って過去に伝播した場合に検知しやすい値
+_POISON_SHARES = 999_000_000  # market_data「現在株数」が誤って過去に伝播した場合に検知しやすい値
 
 
-class TestNeighborCarryOverPrefersRealDataOverYfinance:
+class TestNeighborCarryOverPrefersRealDataOverMarketData:
     """Q1〜Q3の一部だけdiluted sharesタグが欠落している場合、
-    yfinance代入(フォールバック④)ではなく隣接する実四半期(フォールバック③)が
+    market_data代入(フォールバック④)ではなく隣接する実四半期(フォールバック③)が
     優先されること"""
 
-    def test_missing_q1_inherits_from_q2_not_yfinance(self, monkeypatch):
+    def test_missing_q1_inherits_from_q2_not_market_data(self, monkeypatch):
         """Q1のdiluted sharesタグが欠落 → 直後のQ2の実株数を引き継ぐ
-        （yfinanceのpoison値は使われない）"""
+        （market_dataのpoison値は使われない）"""
         diluted_items = [
             # Q1 (2023-03-31) は欠落（意図的に含めない）
             _fact("2023-04-01", "2023-06-30", 110_000_000, "2023-07-15"),
@@ -85,12 +83,12 @@ class TestNeighborCarryOverPrefersRealDataOverYfinance:
             }
         }
         _patch_common(monkeypatch, facts)
-        _patch_yfinance_poison(monkeypatch, _POISON_SHARES)
+        _patch_market_data_poison(monkeypatch, _POISON_SHARES)
 
         quarters = ekf.extract_quarterly_facts("TESTCO", years=5)
         q1 = next(q for q in quarters if q["end"] == "2023-03-31")
         assert q1["diluted_shares"]["value"] == 110_000_000, (
-            "Q1はQ2(直後)の実株数を引き継ぐべき（yfinanceのpoison値が使われている）"
+            "Q1はQ2(直後)の実株数を引き継ぐべき（market_dataのpoison値が使われている）"
         )
         assert q1["diluted_shares"]["value"] != _POISON_SHARES
 
@@ -119,18 +117,18 @@ class TestNeighborCarryOverPrefersRealDataOverYfinance:
             }
         }
         _patch_common(monkeypatch, facts)
-        _patch_yfinance_poison(monkeypatch, _POISON_SHARES)
+        _patch_market_data_poison(monkeypatch, _POISON_SHARES)
 
         quarters = ekf.extract_quarterly_facts("TESTCO", years=5)
         q2 = next(q for q in quarters if q["end"] == "2023-06-30")
         assert q2["diluted_shares"]["value"] == 100_000_000, "直前(Q1)の実株数を優先すべき"
 
 
-class TestYfinanceFallbackStillAppliesWhenNoNeighborExists:
+class TestMarketDataFallbackStillAppliesWhenNoNeighborExists:
     """全期間でdiluted sharesタグが欠落している銘柄（Visa等、フォールバック④
-    本来の対象）は、引き続きyfinance代入にフォールバックすること（既存動作を維持）"""
+    本来の対象）は、引き続きmarket_data代入にフォールバックすること（既存動作を維持）"""
 
-    def test_all_quarters_missing_falls_back_to_yfinance(self, monkeypatch):
+    def test_all_quarters_missing_falls_back_to_market_data(self, monkeypatch):
         facts = {
             "facts": {
                 "us-gaap": {
@@ -146,13 +144,13 @@ class TestYfinanceFallbackStillAppliesWhenNoNeighborExists:
             }
         }
         _patch_common(monkeypatch, facts)
-        _patch_yfinance_poison(monkeypatch, _POISON_SHARES)
+        _patch_market_data_poison(monkeypatch, _POISON_SHARES)
 
         quarters = ekf.extract_quarterly_facts("TESTCO", years=5)
         assert quarters, "quartersが空であってはならない"
         for q in quarters:
             assert q["diluted_shares"]["value"] == _POISON_SHARES, (
-                "隣接する実データが皆無の場合はyfinance代入に落ちるべき（既存動作維持）"
+                "隣接する実データが皆無の場合はmarket_data代入に落ちるべき（既存動作維持）"
             )
 
 
@@ -187,7 +185,7 @@ class TestQ4BlockGeneralizedNeighborLookup:
             }
         }
         _patch_common(monkeypatch, facts)
-        _patch_yfinance_poison(monkeypatch, _POISON_SHARES)
+        _patch_market_data_poison(monkeypatch, _POISON_SHARES)
 
         quarters = ekf.extract_quarterly_facts("TESTCO", years=5)
         q4 = next(q for q in quarters if q["quarter"] == 4 and q["fiscal_year"] == 2023)

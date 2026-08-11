@@ -40,6 +40,10 @@ if PROJECT_ROOT not in sys.path:
 from common.sec_data.utils import determine_fiscal_year, detect_fiscal_end_month, detect_fiscal_anchor_date
 from common.sec_data.tag_definitions import TAG_CANDIDATES
 from common.sec_data.fact_selection import select_latest_filed
+# MARKETDATA-LAYER-CONSTRUCTION-1着手順序6: 株式数フォールバック④（旧yfinance直接
+# 呼び出し）をcommon.market_data.reader経由に切替（beta_fetcher.pyと同じ簡潔な
+# トップレベルimportパターン、try/exceptガードなし）
+from common.market_data.reader import get_attributes as _get_market_data_attributes
 CIK_FILE = os.path.join(CONFIG_DIR, "cik_lookup.csv")
 ADJUSTMENT_ITEMS_FILE = os.path.join(CONFIG_DIR, "adjustment_items.json")
 
@@ -990,33 +994,36 @@ def extract_quarterly_facts(ticker: str, years: int = 10) -> List[Dict[str, Any]
                 _data['diluted_shares'] = {'value': _neighbor_val, 'unit': 'shares'}
                 print(f"  [隣接四半期引き継ぎ] {_data['filing_date']}: {_neighbor_val/1e6:.1f}M株")
 
-        # ---------- 株式数フォールバック④ yfinance 現在株式数を代用（V 等 SEC に株数未提供） ----------
+        # ---------- 株式数フォールバック④ market_data属性の現在株式数を代用（V 等 SEC に株数未提供） ----------
         # 隣接する実四半期も存在しない（＝全期間で欠落している）かつ net_income がある
         # 場合のみ発動する（本来の設計意図「全期間欠落銘柄向け」を維持）
+        # MARKETDATA-LAYER-CONSTRUCTION-1着手順序6: yfinance直接呼び出し（.info単発）を
+        # common.market_data.reader.get_attributes()経由に切替。優先順位パターン
+        # （sharesOutstanding優先→impliedSharesOutstandingフォールバック）はそのまま維持。
         _missing_shares_quarters = [
             _d for _d in quarters_map.values()
             if normalize_value(_d.get('diluted_shares', {'value': 0})) == 0
                and normalize_value(_d.get('net_income', {'value': 0})) != 0
         ]
         if _missing_shares_quarters:
-            print(f"\n=== Share count fallback: yfinance ({len(_missing_shares_quarters)} quarters missing shares) ===")
+            print(f"\n=== Share count fallback: market_data attributes ({len(_missing_shares_quarters)} quarters missing shares) ===")
             try:
-                import yfinance as _yf
-                _yt = _yf.Ticker(ticker)
-                _info = _yt.info
-                _yf_shares = (
-                    _info.get('sharesOutstanding')
-                    or _info.get('impliedSharesOutstanding')
-                )
-                if _yf_shares and _yf_shares > 1e5:
-                    print(f"  [yfinance] {ticker}: {_yf_shares/1e6:.1f}M株")
+                _attrs = _get_market_data_attributes(ticker)
+                _shares_val = None
+                if _attrs:
+                    _shares_val = (
+                        _attrs.get('shares_outstanding')
+                        or _attrs.get('implied_shares_outstanding')
+                    )
+                if _shares_val and _shares_val > 1e5:
+                    print(f"  [market_data] {ticker}: {_shares_val/1e6:.1f}M株")
                     for _data in _missing_shares_quarters:
-                        _data['diluted_shares'] = {'value': float(_yf_shares), 'unit': 'shares'}
-                        print(f"    → {_data['filing_date']}: yfinance株数を適用")
+                        _data['diluted_shares'] = {'value': float(_shares_val), 'unit': 'shares'}
+                        print(f"    → {_data['filing_date']}: market_data株数を適用")
                 else:
-                    print(f"  [yfinance] 株数取得失敗: {_yf_shares}")
+                    print(f"  [market_data] 株数取得失敗: {_shares_val}")
             except Exception as _yf_err:
-                print(f"  [yfinance] エラー: {_yf_err}")
+                print(f"  [market_data] エラー: {_yf_err}")
 
         # ---------- 最終的なリストに変換 ----------
         quarterly_list = []
