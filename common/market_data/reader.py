@@ -33,6 +33,7 @@ from .fetcher import MARKET_DATA_DIR, get_nyse_calendar, get_sp500_constituents
 __all__ = [
     "get_latest_price",
     "get_price_series",
+    "get_price_series_as_of",
     "get_price_on_or_after",
     "get_ma_deviation",
     "get_attributes",
@@ -99,8 +100,12 @@ def _expected_trading_days(anchor_date: str, days: int, calendar=None) -> List[s
     return [d.strftime("%Y-%m-%d") for d in tail]
 
 
-def get_price_series(symbol: str, days: int = 30, base_dir: Optional[str] = None) -> List[Dict[str, Any]]:
-    """直近days営業日分の日次レコードを返す。
+def _price_series_ending_at(symbol: str, anchor_date: str, days: int,
+                             base_dir: str) -> List[Dict[str, Any]]:
+    """anchor_date（'YYYY-MM-DD'）を終点として、そこから遡ったdays営業日分の
+    日次レコードを返す共通実装（MARKETDATA-LAYER-CONSTRUCTION-1着手順序6-2）。
+    get_price_series()・get_price_series_as_of()の双方から呼ばれる
+    （終点日のみが異なる）。
 
     NYSE営業日カレンダー（pandas_market_calendars）で「本来存在すべき
     営業日集合」を計算し、実際に保存されているレコード日付集合と突合する
@@ -109,6 +114,28 @@ def get_price_series(symbol: str, days: int = 30, base_dir: Optional[str] = None
     True}`のプレースホルダーとして埋め込まれる。実データがある日は
     `_gap: False`）。データが一切存在しない銘柄・days<=0の場合は空リストを
     返す（例外は発生させない）。
+    """
+    records_list = _load_daily_payload(symbol, base_dir).get("records", [])
+    records = {r["date"]: r for r in records_list if r.get("date")}
+    if not records or days <= 0:
+        return []
+
+    expected_dates = _expected_trading_days(anchor_date, days)
+
+    series: List[Dict[str, Any]] = []
+    for d in expected_dates:
+        if d in records:
+            row = dict(records[d])
+            row["symbol"] = symbol
+            row["_gap"] = False
+            series.append(row)
+        else:
+            series.append({"date": d, "symbol": symbol, "_gap": True})
+    return series
+
+
+def get_price_series(symbol: str, days: int = 30, base_dir: Optional[str] = None) -> List[Dict[str, Any]]:
+    """直近days営業日分の日次レコードを返す（終点＝daily/の最新保存日）。
 
     層またぎ再計算禁止（BACKLOG確定事項4）: 本APIが返すOHLCV系列は
     daily/{SYMBOL}.jsonの生データそのものであり、attributes/{SYMBOL}.jsonの
@@ -123,18 +150,31 @@ def get_price_series(symbol: str, days: int = 30, base_dir: Optional[str] = None
         return []
 
     anchor_date = max(records.keys())
-    expected_dates = _expected_trading_days(anchor_date, days)
+    return _price_series_ending_at(symbol, anchor_date, days, base)
 
-    series: List[Dict[str, Any]] = []
-    for d in expected_dates:
-        if d in records:
-            row = dict(records[d])
-            row["symbol"] = symbol
-            row["_gap"] = False
-            series.append(row)
-        else:
-            series.append({"date": d, "symbol": symbol, "_gap": True})
-    return series
+
+def get_price_series_as_of(symbol: str, as_of_date: Any, days: int = 30,
+                            base_dir: Optional[str] = None) -> List[Dict[str, Any]]:
+    """as_of_date（'YYYY-MM-DD'文字列またはdate/datetime）を終点として、
+    そこから遡ったdays営業日分の日次レコードを返す。get_price_series()の
+    「終点＝現在（daily/の最新保存日）」を任意の過去日に一般化した版
+    （MARKETDATA-LAYER-CONSTRUCTION-1着手順序6-2、backfill_tech_pulse.py型の
+    一過性バックフィルツールが「過去の欠落エントリを埋める際、その基準日
+    時点でのトレイリングウィンドウが必要」というクエリ形状に対応するため
+    新規追加）。
+
+    daily/の最新保存日より未来のas_of_dateを渡した場合、未保存分の営業日は
+    すべて`_gap: True`として返る（例外は発生させない、既存のエラー耐性
+    方針を維持）。データが一切存在しない銘柄・days<=0の場合は空リストを
+    返す。
+
+    層またぎ再計算禁止（BACKLOG確定事項4）: 本APIが返すOHLCV系列は
+    daily/{SYMBOL}.jsonの生データそのものである。
+    """
+    symbol = symbol.upper()
+    base = _resolve_base_dir(base_dir)
+    date_str = as_of_date.isoformat()[:10] if hasattr(as_of_date, "isoformat") else str(as_of_date)[:10]
+    return _price_series_ending_at(symbol, date_str, days, base)
 
 
 def get_price_on_or_after(symbol: str, date: Any, base_dir: Optional[str] = None) -> Optional[Dict[str, Any]]:

@@ -3,10 +3,11 @@ tests/test_market_data_reader.py
 
 BACKLOG [[MARKETDATA-LAYER-CONSTRUCTION-1]] common/market_data/reader.py の
 単体テスト。fetcher.pyが書き込むdaily/・attributes/・analyst_history/を
-読み取るAPI群（get_latest_price・get_price_series・get_ma_deviation・
-get_attributes・get_analyst_events・get_calendar・get_index_series・
-get_sp500_constituents_prices）の正常系・欠損系・エラー耐性を検証する。
-ネットワークアクセス（yfinance呼び出し）は行わない。
+読み取るAPI群（get_latest_price・get_price_series・get_price_series_as_of・
+get_price_on_or_after・get_ma_deviation・get_attributes・get_analyst_events・
+get_calendar・get_index_series・get_sp500_constituents_prices）の正常系・
+欠損系・エラー耐性を検証する。ネットワークアクセス（yfinance呼び出し）は
+行わない。
 
 実行方法:
     python -m pytest tests/test_market_data_reader.py -v
@@ -107,6 +108,82 @@ class TestGetPriceSeries:
         series = reader.get_price_series("AAPL", days=5, base_dir=base)
         assert series[-1]["date"] == _ANCHOR
         assert series[-1]["close"] == 200.0
+
+
+class TestGetPriceSeriesAsOf:
+    """[[MARKETDATA-LAYER-CONSTRUCTION-1]]着手順序6-2（backfill_tech_pulse.py
+    切替の前提作業）で新設したget_price_series_as_of()の回帰テスト。
+    get_price_series()の「終点＝daily/の最新保存日」を任意の過去日
+    （as_of_date）に一般化した版。"""
+
+    _PAST_ANCHOR = "2026-06-03"  # _ANCHOR（2026-08-10）より過去の基準日
+
+    def test_missing_symbol_returns_empty_list(self, tmp_path):
+        assert reader.get_price_series_as_of("NOPE", self._PAST_ANCHOR, days=10, base_dir=str(tmp_path)) == []
+
+    def test_zero_or_negative_days_returns_empty_list(self, tmp_path):
+        base = str(tmp_path)
+        fetcher._append_daily_record("AAPL", _make_price_record(_ANCHOR, 200.0), base_dir=base)
+        assert reader.get_price_series_as_of("AAPL", self._PAST_ANCHOR, days=0, base_dir=base) == []
+        assert reader.get_price_series_as_of("AAPL", self._PAST_ANCHOR, days=-5, base_dir=base) == []
+
+    def test_anchors_at_as_of_date_not_latest_saved_date(self, tmp_path):
+        """daily/に最新保存日（_ANCHOR）より後のレコードがあっても、
+        as_of_dateを終点とする窓で切り出すこと（get_price_series()との
+        違いそのもの）"""
+        base = str(tmp_path)
+        # 過去基準日を末尾とする30営業日分（欠損なし）を用意
+        past_dates = _seed_no_gap_series(base, "AAPL", 30, anchor=self._PAST_ANCHOR)
+        # さらに未来（_ANCHOR）のレコードも書き込む（本来のget_price_series()
+        # ならこちらが終点になってしまうはずの罠データ）
+        fetcher._append_daily_record("AAPL", _make_price_record(_ANCHOR, 999.0), base_dir=base)
+
+        series = reader.get_price_series_as_of("AAPL", self._PAST_ANCHOR, days=30, base_dir=base)
+        assert len(series) == 30
+        assert [r["date"] for r in series] == past_dates
+        assert series[-1]["date"] == self._PAST_ANCHOR
+        assert series[-1]["close"] != 999.0
+        assert all(r["_gap"] is False for r in series)
+
+    def test_missing_trading_day_is_flagged_as_gap(self, tmp_path):
+        base = str(tmp_path)
+        expected_dates = _seed_no_gap_series(base, "AAPL", 30, anchor=self._PAST_ANCHOR)
+        removed_date = expected_dates[15]
+
+        path = os.path.join(base, "daily", "AAPL.json")
+        payload = fetcher._load_json(path, default={"records": []})
+        payload["records"] = [r for r in payload["records"] if r["date"] != removed_date]
+        fetcher._atomic_write_json(path, payload)
+
+        series = reader.get_price_series_as_of("AAPL", self._PAST_ANCHOR, days=30, base_dir=base)
+        assert len(series) == 30
+        gap_dates = [r["date"] for r in series if r["_gap"]]
+        assert gap_dates == [removed_date]
+        gap_row = [r for r in series if r["date"] == removed_date][0]
+        assert gap_row.get("close") is None
+
+    def test_date_object_accepted(self, tmp_path):
+        import datetime as _dt
+        base = str(tmp_path)
+        _seed_no_gap_series(base, "AAPL", 30, anchor=self._PAST_ANCHOR)
+        series = reader.get_price_series_as_of("AAPL", _dt.date(2026, 6, 3), days=30, base_dir=base)
+        assert len(series) == 30
+        assert series[-1]["date"] == self._PAST_ANCHOR
+
+    def test_lowercase_symbol_is_normalized(self, tmp_path):
+        base = str(tmp_path)
+        _seed_no_gap_series(base, "AAPL", 30, anchor=self._PAST_ANCHOR)
+        series = reader.get_price_series_as_of("aapl", self._PAST_ANCHOR, days=30, base_dir=base)
+        assert len(series) == 30
+
+    def test_as_of_date_beyond_latest_saved_data_returns_gaps(self, tmp_path):
+        """daily/の最新保存日より未来のas_of_dateを渡した場合、未保存分は
+        例外を発生させずgapとして返ること（エラー耐性）"""
+        base = str(tmp_path)
+        fetcher._append_daily_record("AAPL", _make_price_record(_ANCHOR, 200.0), base_dir=base)
+        series = reader.get_price_series_as_of("AAPL", "2099-01-10", days=10, base_dir=base)
+        assert len(series) == 10
+        assert all(r["_gap"] for r in series)
 
 
 class TestGetPriceOnOrAfter:

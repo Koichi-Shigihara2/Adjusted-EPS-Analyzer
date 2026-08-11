@@ -4,7 +4,10 @@ backfill_tech_pulse.py
 market_data.json の tech_pulse が欠落しているエントリを補完する。
 
 データソース:
-  - QQQ/SPY: yfinance（過去データ）
+  - QQQ/SPY: common.market_data.reader.get_price_series_as_of()
+             （daily/{SYMBOL}.json、元データはfetcher.pyがyfinance経由で
+             保存。MARKETDATA-LAYER-CONSTRUCTION-1着手順序6-2で
+             yfinance直接呼び出しから切替、2026-08-12）
   - VXN: FRED API VXNCLS（環境変数 FRED_API_KEY が必要）
   - F&G: market_data.json の fear_greed.score を再利用
          （feargreedchart.com は過去データを提供しないため）
@@ -22,9 +25,9 @@ import os
 import sys
 import argparse
 from datetime import datetime, date, timezone, timedelta
+from typing import Any, Dict, List
 
 import pandas as pd
-import yfinance as yf
 
 # collect_and_send から divergence 計算の 3 関数をインポート
 # （モジュールレベルの sys.exit を避けるため env チェックは __main__ に移動済み）
@@ -43,6 +46,40 @@ JSON_PATH = os.path.join(
 )
 
 FRED_API_KEY = os.getenv("FRED_API_KEY")
+
+# QQQ/SPYの全期間データ（daily/には約1,407件保存済み、2026-08時点）を一度に
+# 取得できるよう十分大きい値を指定する（本来必要なのは各エントリのtarget
+# 基準の125営業日分だが、旧実装の「実行時点で1回だけ取得し全エントリで
+# 使い回す」設計思想を踏襲し、get_price_series_as_of()を1回呼ぶだけで
+# 全期間をカバーする）
+_FULL_HISTORY_LOOKBACK_DAYS = 1500
+
+# common/market_data - MARKETDATA-LAYER-CONSTRUCTION-1着手順序6-2:
+# QQQ/SPYのyfinance直接呼び出し（.history(period="1y")）をcommon.market_data.
+# reader経由に切替。collect_and_send.pyと同じHAS_MARKET_DATAガード・
+# 二段構えsys.path解決パターンを踏襲する（本ファイルは`python src/market/
+# market_pulse/backfill_tech_pulse.py`で直接実行されるためリポジトリルートが
+# sys.pathに含まれない。REPO_ROOTは上で既に計算済みのため流用する）。
+HAS_MARKET_DATA = False
+_md_get_price_series_as_of = None
+
+try:
+    if REPO_ROOT not in sys.path:
+        sys.path.insert(0, REPO_ROOT)
+    from common.market_data.reader import get_price_series_as_of as _md_get_price_series_as_of
+    HAS_MARKET_DATA = True
+except Exception:
+    pass
+
+if not HAS_MARKET_DATA:
+    try:
+        _github_workspace = os.environ.get("GITHUB_WORKSPACE", "")
+        if _github_workspace and _github_workspace not in sys.path:
+            sys.path.insert(0, _github_workspace)
+        from common.market_data.reader import get_price_series_as_of as _md_get_price_series_as_of
+        HAS_MARKET_DATA = True
+    except Exception:
+        pass
 
 
 # ── helpers ────────────────────────────────────────────────────────────────
@@ -68,21 +105,27 @@ def _calc_score(qqq_vs_ma125, vxn_vs_ma50, qqq_vs_spy_20d):
     return max(0, min(100, round(score)))
 
 
-def _qqq_components(target: date, qqq_hist: pd.DataFrame, spy_hist: pd.DataFrame):
-    """指定日時点の qqq_vs_ma125 / qqq_vs_spy_20d を返す"""
+def _qqq_components(target: date, qqq_series: List[Dict[str, Any]], spy_series: List[Dict[str, Any]]):
+    """指定日時点の qqq_vs_ma125 / qqq_vs_spy_20d を返す。
+
+    qqq_series/spy_series は common.market_data.reader.get_price_series_as_of()
+    由来の日付昇順レコードリスト（_gap除外済み、main()で1回だけ取得し
+    全エントリで使い回す）。計算式自体は旧pandas実装から変更なし。
+    """
     try:
-        qqq_sub = qqq_hist[qqq_hist.index <= target]
-        spy_sub = spy_hist[spy_hist.index <= target]
+        target_str = target.isoformat()
+        qqq_sub = [r for r in qqq_series if r["date"] <= target_str]
+        spy_sub = [r for r in spy_series if r["date"] <= target_str]
         if len(qqq_sub) < 125:
             return None, None
-        qqq_latest = float(qqq_sub["Close"].iloc[-1])
-        ma125 = float(qqq_sub["Close"].iloc[-125:].mean())
+        qqq_latest = float(qqq_sub[-1]["close"])
+        ma125 = sum(float(r["close"]) for r in qqq_sub[-125:]) / 125
         qqq_vs_ma125 = round((qqq_latest / ma125 - 1) * 100, 2)
 
         qqq_vs_spy_20d = None
         if len(qqq_sub) >= 21 and len(spy_sub) >= 21:
-            qqq_ret = (float(qqq_sub["Close"].iloc[-1]) / float(qqq_sub["Close"].iloc[-21]) - 1) * 100
-            spy_ret = (float(spy_sub["Close"].iloc[-1]) / float(spy_sub["Close"].iloc[-21]) - 1) * 100
+            qqq_ret = (float(qqq_sub[-1]["close"]) / float(qqq_sub[-21]["close"]) - 1) * 100
+            spy_ret = (float(spy_sub[-1]["close"]) / float(spy_sub[-21]["close"]) - 1) * 100
             # 単純差分（%pt）: collect_and_send.py の新式と統一
             qqq_vs_spy_20d = round(qqq_ret - spy_ret, 2)
         return qqq_vs_ma125, qqq_vs_spy_20d
@@ -189,18 +232,29 @@ def main():
 
     print(f"[INFO] tech_pulse 欠落エントリ: {len(missing_idx)} 件 / 全 {len(all_data)} 件")
 
-    # ── yfinance データ取得 ─────────────────────────────────────────
-    print("[INFO] QQQ/SPY 履歴取得中...")
-    qqq_hist = yf.Ticker("QQQ").history(period="1y")
-    spy_hist = yf.Ticker("SPY").history(period="1y")
-
-    if qqq_hist is None or len(qqq_hist) < 5:
-        print("[ERROR] QQQ データ取得失敗")
+    # ── common.market_data.reader からQQQ/SPY全期間データ取得 ──────────
+    # MARKETDATA-LAYER-CONSTRUCTION-1着手順序6-2: yfinance直接呼び出しを
+    # reader.get_price_series_as_of()経由に切替。「実行時点で1回だけ取得し
+    # 全エントリで使い回す」設計思想はそのまま踏襲（daily/は全期間分すでに
+    # 保存済みの静的データのため、1回の取得で全missingエントリのtarget日を
+    # カバーできる）。
+    print("[INFO] QQQ/SPY 履歴取得中（common.market_data.reader経由）...")
+    if not HAS_MARKET_DATA:
+        print("[ERROR] common.market_data.reader の import に失敗しました")
         sys.exit(1)
 
-    # DatetimeIndex → date オブジェクトへ正規化
-    qqq_hist.index = pd.to_datetime(qqq_hist.index).normalize().date
-    spy_hist.index = pd.to_datetime(spy_hist.index).normalize().date
+    qqq_hist = [
+        r for r in _md_get_price_series_as_of("QQQ", date.today(), days=_FULL_HISTORY_LOOKBACK_DAYS)
+        if not r.get("_gap")
+    ]
+    spy_hist = [
+        r for r in _md_get_price_series_as_of("SPY", date.today(), days=_FULL_HISTORY_LOOKBACK_DAYS)
+        if not r.get("_gap")
+    ]
+
+    if not qqq_hist or len(qqq_hist) < 5:
+        print("[ERROR] QQQ データ取得失敗")
+        sys.exit(1)
 
     # ── FRED VXN 取得 ───────────────────────────────────────────────
     vxn_series = None
