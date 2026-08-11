@@ -36,6 +36,8 @@ __all__ = [
     "get_ma_deviation",
     "get_attributes",
     "get_analyst_events",
+    "get_earnings_history",
+    "get_recommendations_history",
     "get_calendar",
     "get_index_series",
     "get_sp500_constituents_prices",
@@ -221,6 +223,52 @@ def get_analyst_events(symbol: str, since: Optional[Any] = None,
         return events
     since_str = since.isoformat()[:10] if hasattr(since, "isoformat") else str(since)[:10]
     return [e for e in events if (e.get("date") or "") >= since_str]
+
+
+def get_earnings_history(symbol: str, base_dir: Optional[str] = None) -> List[Dict[str, Any]]:
+    """analyst_history/{SYMBOL}.jsonのearnings_history一覧（新しい順、
+    四半期末日quarterで降順ソート済み）を返す。データが存在しない場合は
+    空リストを返す。
+
+    [[MARKETDATA-LAYER-CONSTRUCTION-1]]着手順序4-8前提作業3で
+    fetcher.py::fetch_analyst_events()に追加されたearnings_history
+    （直近3〜4四半期の確定済み実績、quarter一意キーで追記型保存）を
+    そのまま返す。surprise_percentはYahoo生値（小数）のままで%変換は
+    行われていない（fetcher.py側の方針、消費側で必要に応じ変換する）。
+    """
+    symbol = symbol.upper()
+    base = _resolve_base_dir(base_dir)
+    path = os.path.join(base, "analyst_history", f"{symbol}.json")
+    return _load_json(path, default={"symbol": symbol, "earnings_history": []}).get("earnings_history", [])
+
+
+def get_recommendations_history(symbol: str, latest_only: bool = True,
+                                 base_dir: Optional[str] = None) -> Any:
+    """analyst_history/{SYMBOL}.jsonのrecommendations_history
+    （週次スナップショットの蓄積、取得日で降順ソート済み）を返す。
+
+    latest_only=True（既定）: 最新1件のスナップショット（dict）を返す。
+    データが存在しない場合は空dict{}を返す。
+    latest_only=False: 全履歴（リスト、新しい順）を返す。データが存在
+    しない場合は空リスト[]を返す。
+
+    [[MARKETDATA-LAYER-CONSTRUCTION-1]]着手順序4-8前提作業3で
+    fetcher.py::fetch_analyst_events()に追加されたrecommendations_
+    history（"0m"時点のstrongBuy/buy/hold/sell/strongSell生カウント・
+    buy_hold_ratio、取得日をキーに週次蓄積）をそのまま返す。
+    upgrades_downgrades等の不変イベントとは異なり「取得時点の
+    コンセンサススナップショット」という性質を持つ点に注意
+    （fetcher.py::fetch_analyst_events()のdocstring参照）。
+    """
+    symbol = symbol.upper()
+    base = _resolve_base_dir(base_dir)
+    path = os.path.join(base, "analyst_history", f"{symbol}.json")
+    history = _load_json(
+        path, default={"symbol": symbol, "recommendations_history": []}
+    ).get("recommendations_history", [])
+    if not latest_only:
+        return history
+    return history[0] if history else {}
 
 
 # ── 指数/ETF/商品（daily/と同一スキーマ） ───────────────────

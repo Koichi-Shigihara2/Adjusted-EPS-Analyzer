@@ -216,6 +216,81 @@ class TestGetAnalystEvents:
         assert len(events) == 1
 
 
+class TestGetEarningsHistory:
+    """[[MARKETDATA-LAYER-CONSTRUCTION-1]]着手順序4-8（hypecore.py本体
+    切替）で新設したget_earnings_history()の回帰テスト。"""
+
+    def test_missing_symbol_returns_empty_list(self, tmp_path):
+        assert reader.get_earnings_history("NOPE", base_dir=str(tmp_path)) == []
+
+    def test_returns_earnings_history_as_stored(self, tmp_path):
+        base = str(tmp_path)
+        path = os.path.join(base, "analyst_history", "AAPL.json")
+        fetcher._atomic_write_json(path, {"events": [], "earnings_history": [
+            {"quarter": "2026-06-30", "eps_actual": 2.02, "eps_estimate": 1.89243,
+             "eps_difference": 0.13, "surprise_percent": 0.0674},
+            {"quarter": "2026-03-31", "eps_actual": 2.01, "eps_estimate": 1.94275,
+             "eps_difference": 0.07, "surprise_percent": 0.0346},
+        ]})
+        result = reader.get_earnings_history("AAPL", base_dir=base)
+        assert len(result) == 2
+        assert result[0]["quarter"] == "2026-06-30"
+        assert result[0]["surprise_percent"] == 0.0674  # 生値のまま（%変換なし）
+
+    def test_attributes_without_earnings_history_key_returns_empty_list(self, tmp_path):
+        """analyst_history/{SYMBOL}.jsonにearnings_historyキー自体が
+        存在しない旧レコード（移行前データ）でも例外にならず空リストを返す"""
+        base = str(tmp_path)
+        path = os.path.join(base, "analyst_history", "AAPL.json")
+        fetcher._atomic_write_json(path, {"events": []})
+        assert reader.get_earnings_history("AAPL", base_dir=base) == []
+
+
+class TestGetRecommendationsHistory:
+    """[[MARKETDATA-LAYER-CONSTRUCTION-1]]着手順序4-8（hypecore.py本体
+    切替）で新設したget_recommendations_history()の回帰テスト。"""
+
+    def test_missing_symbol_latest_only_returns_empty_dict(self, tmp_path):
+        assert reader.get_recommendations_history("NOPE", base_dir=str(tmp_path)) == {}
+
+    def test_missing_symbol_full_history_returns_empty_list(self, tmp_path):
+        assert reader.get_recommendations_history("NOPE", latest_only=False, base_dir=str(tmp_path)) == []
+
+    def test_latest_only_returns_most_recent_snapshot(self, tmp_path):
+        base = str(tmp_path)
+        path = os.path.join(base, "analyst_history", "AAPL.json")
+        fetcher._atomic_write_json(path, {"events": [], "recommendations_history": [
+            {"date": "2026-08-11", "strong_buy": 6, "buy": 21, "hold": 15,
+             "sell": 2, "strong_sell": 2, "buy_hold_ratio": 0.587},
+            {"date": "2026-08-04", "strong_buy": 5, "buy": 20, "hold": 16,
+             "sell": 2, "strong_sell": 2, "buy_hold_ratio": 0.5556},
+        ]})
+        result = reader.get_recommendations_history("AAPL", base_dir=base)
+        assert isinstance(result, dict)
+        assert result["date"] == "2026-08-11"
+        assert result["buy_hold_ratio"] == 0.587
+
+    def test_full_history_returns_all_snapshots(self, tmp_path):
+        base = str(tmp_path)
+        path = os.path.join(base, "analyst_history", "AAPL.json")
+        fetcher._atomic_write_json(path, {"events": [], "recommendations_history": [
+            {"date": "2026-08-11", "buy_hold_ratio": 0.587},
+            {"date": "2026-08-04", "buy_hold_ratio": 0.5556},
+        ]})
+        result = reader.get_recommendations_history("AAPL", latest_only=False, base_dir=base)
+        assert isinstance(result, list)
+        assert len(result) == 2
+
+    def test_attributes_without_recommendations_history_key_returns_neutral_default(self, tmp_path):
+        """analyst_history/{SYMBOL}.jsonにrecommendations_historyキー
+        自体が存在しない旧レコードでも例外にならない"""
+        base = str(tmp_path)
+        path = os.path.join(base, "analyst_history", "AAPL.json")
+        fetcher._atomic_write_json(path, {"events": []})
+        assert reader.get_recommendations_history("AAPL", base_dir=base) == {}
+        assert reader.get_recommendations_history("AAPL", latest_only=False, base_dir=base) == []
+
+
 class TestGetIndexSeries:
     def test_aliases_get_price_series(self, tmp_path):
         base = str(tmp_path)

@@ -10,6 +10,7 @@ HypeCore PoC v2 - src/value/hypecore/poc.py
 """
 
 import json
+import os
 import sys
 import warnings
 from datetime import date, datetime, timedelta, timezone
@@ -17,7 +18,6 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-import yfinance as yf
 
 warnings.filterwarnings("ignore")
 
@@ -36,6 +36,47 @@ if str(_REPO_ROOT) not in sys.path:
 from common.sec_data.layer3_builder import (  # noqa: E402
     build_ticker_store, get_quarterly_series,
 )
+
+# common/market_data - [[MARKETDATA-LAYER-CONSTRUCTION-1]]着手順序4-8:
+# yfinance直接呼び出し（.history()・.info・upgrades_downgrades・
+# earnings_history・recommendations）をcommon.market_data.reader経由に
+# 切替（2026-08-11）。他の切替済みファイルと同じHAS_MARKET_DATAガード・
+# 二段構えsys.path解決パターンを踏襲する（sys.pathは上のREPO_ROOT設定で
+# 既に解決済みのため一段目は不要だが、他ファイルとの一貫性のため
+# 同型のtry/exceptで統一する）。
+HAS_MARKET_DATA = False
+_md_get_price_series = None
+_md_get_latest_price = None
+_md_get_attributes = None
+_md_get_analyst_events = None
+_md_get_earnings_history = None
+_md_get_recommendations_history = None
+
+try:
+    from common.market_data.reader import get_price_series as _md_get_price_series  # noqa: E402
+    from common.market_data.reader import get_latest_price as _md_get_latest_price  # noqa: E402
+    from common.market_data.reader import get_attributes as _md_get_attributes  # noqa: E402
+    from common.market_data.reader import get_analyst_events as _md_get_analyst_events  # noqa: E402
+    from common.market_data.reader import get_earnings_history as _md_get_earnings_history  # noqa: E402
+    from common.market_data.reader import get_recommendations_history as _md_get_recommendations_history  # noqa: E402
+    HAS_MARKET_DATA = True
+except Exception:
+    pass
+
+if not HAS_MARKET_DATA:
+    try:
+        _github_workspace = os.environ.get("GITHUB_WORKSPACE", "")
+        if _github_workspace and _github_workspace not in sys.path:
+            sys.path.insert(0, _github_workspace)
+        from common.market_data.reader import get_price_series as _md_get_price_series
+        from common.market_data.reader import get_latest_price as _md_get_latest_price
+        from common.market_data.reader import get_attributes as _md_get_attributes
+        from common.market_data.reader import get_analyst_events as _md_get_analyst_events
+        from common.market_data.reader import get_earnings_history as _md_get_earnings_history
+        from common.market_data.reader import get_recommendations_history as _md_get_recommendations_history
+        HAS_MARKET_DATA = True
+    except Exception:
+        pass
 
 # PascalCase（本ファイル内の既存呼び出し表記）→ SEC EDGAR Layer3の
 # snake_caseフィールド名の対応表（フェーズD Step2-4対応）。
@@ -80,14 +121,33 @@ def z_score_series(s: pd.Series, window: int = 24) -> pd.Series:
 # ── データ取得 ────────────────────────────────────────────
 
 def fetch_price_data(ticker: str, start: str = "2021-01-01") -> pd.DataFrame:
-    """yfinanceから日次株価・出来高を取得し月次に集約"""
-    t = yf.Ticker(ticker)
-    hist = t.history(start=start, auto_adjust=True)
-    if hist.empty:
+    """market_data daily/層から日次株価・出来高を取得し月次に集約
+
+    [[MARKETDATA-LAYER-CONSTRUCTION-1]]着手順序4-8: yfinance直接呼び出し
+    （.history(start=...)）をcommon.market_data.reader経由に切替
+    （2026-08-11）。reader.get_price_series(ticker, days=1400)相当で
+    daily/層の生系列（前提作業1で2021-01-01以降をカバーするようbackfill
+    済み）を取得し、以降のma50/ma200/rsi/volume_ratio自前rolling計算
+    ロジックはpandas DataFrameへ変換した上でそのまま維持する（daily/層
+    内での自前計算という設計方針、事前調査で確立済み）。startパラメータは
+    シグネチャ互換のため残すが、daily/層のバックフィル済み範囲
+    （2021-01-01〜）を前提とした固定日数指定に置き換わったため実際の
+    絞り込みには使用しない。
+
+    旧来の`hist.empty`時のValueError送出は、reader.get_price_series()が
+    「対象銘柄のデータが完全に存在しない」場合のみ空リストを返す設計を
+    活かし、実データ0件（_gapのみ・全欠損）の場合に限定して判定する
+    よう改善した（単発の営業日欠損では発火しない、事前調査の改善案）。
+    """
+    series = _md_get_price_series(ticker, days=1400) if HAS_MARKET_DATA else []
+    real_records = [r for r in series if not r.get("_gap") and r.get("close") is not None]
+    if not real_records:
         raise ValueError(f"{ticker}: 株価データ取得失敗")
 
-    hist.index = pd.to_datetime(hist.index).tz_localize(None)
-    hist = hist[["Close", "Volume"]].rename(columns={"Close": "price", "Volume": "volume"})
+    hist = pd.DataFrame(real_records)
+    hist["date"] = pd.to_datetime(hist["date"])
+    hist = hist.set_index("date").sort_index()
+    hist = hist[["close", "volume"]].rename(columns={"close": "price"})
 
     monthly = hist.resample("ME").agg({"price": "last", "volume": "mean"})
     monthly.index = monthly.index.to_period("M").to_timestamp()
@@ -120,26 +180,52 @@ def fetch_price_data(ticker: str, start: str = "2021-01-01") -> pd.DataFrame:
 
 
 def fetch_info_snapshot(ticker: str) -> dict:
-    """yfinance .infoから現時点のバリュエーション・アナリスト情報を取得"""
-    info = yf.Ticker(ticker).info
-    avg_vol = info.get("averageVolume") or info.get("averageVolume10days") or 1
-    cur_vol = info.get("volume") or avg_vol
+    """market_data attributes/層から現時点のバリュエーション・アナリスト
+    情報を取得
+
+    [[MARKETDATA-LAYER-CONSTRUCTION-1]]着手順序4-8: yfinance直接呼び出し
+    （.info）をcommon.market_data.reader経由に切替（2026-08-11）。
+    14フィールド中7件は着手順序4-2で追加済みの既存attributes/スキーマ、
+    残り7件は前提作業2（2026-08-11）で追加済み。volume_vs_avgのみ
+    daily/層の最新出来高（reader.get_latest_price()のvolume）と
+    attributes/のaverage_volumeを組み合わせて算出するが、これは
+    reader.py自体が層をまたいで内部計算するわけではなく、消費者側
+    （本関数）が2つの独立したAPI呼び出し結果を単純に除算しているだけ
+    （旧コードのcur_vol/avg_volと同型の計算、いずれも「出来高」という
+    同じ物理量同士の比較のため、BACKLOG確定事項4が禁じる「異なる時点の
+    価格を組み合わせた指標再計算」には該当しない）。
+
+    common.market_data未import環境・データ未取得銘柄では、旧来の
+    `.info`取得失敗時と同じ中立デフォルト（全フィールドNone）に倒す。
+    """
+    if not HAS_MARKET_DATA:
+        return {
+            "forward_pe": None, "trailing_pe": None, "psr": None, "peg_ratio": None,
+            "revenue_growth": None, "earnings_growth": None, "gross_margins": None,
+            "recommendation_mean": None, "num_analysts": None, "short_pct_float": None,
+            "short_ratio": None, "volume_vs_avg": None, "market_cap": None,
+            "shares": None, "ev_ebitda": None,
+        }
+    attrs = _md_get_attributes(ticker) or {}
+    avg_vol = attrs.get("average_volume") or 1
+    latest_price = _md_get_latest_price(ticker)
+    cur_vol = (latest_price.get("volume") if latest_price is not None else None) or avg_vol
     return {
-        "forward_pe":         info.get("forwardPE"),
-        "trailing_pe":        info.get("trailingPE"),
-        "psr":                info.get("priceToSalesTrailing12Months"),
-        "peg_ratio":          info.get("pegRatio"),
-        "revenue_growth":     info.get("revenueGrowth"),        # YoY (小数)
-        "earnings_growth":    info.get("earningsGrowth"),       # YoY (小数)
-        "gross_margins":      info.get("grossMargins"),
-        "recommendation_mean": info.get("recommendationMean"),  # 1=Strong Buy, 5=Sell
-        "num_analysts":       info.get("numberOfAnalystOpinions"),
-        "short_pct_float":    info.get("shortPercentOfFloat"),
-        "short_ratio":        info.get("shortRatio"),
+        "forward_pe":         attrs.get("forward_pe"),
+        "trailing_pe":        attrs.get("trailing_pe"),
+        "psr":                attrs.get("price_to_sales"),
+        "peg_ratio":          attrs.get("peg_ratio"),
+        "revenue_growth":     attrs.get("revenue_growth"),        # YoY (小数)
+        "earnings_growth":    attrs.get("earnings_growth"),       # YoY (小数)
+        "gross_margins":      attrs.get("gross_margins"),
+        "recommendation_mean": attrs.get("recommendation_mean"),  # 1=Strong Buy, 5=Sell
+        "num_analysts":       attrs.get("analyst_count"),
+        "short_pct_float":    attrs.get("short_pct_float"),
+        "short_ratio":        attrs.get("short_ratio"),
         "volume_vs_avg":      cur_vol / avg_vol if avg_vol else None,
-        "market_cap":         info.get("marketCap"),
-        "shares":             info.get("sharesOutstanding"),
-        "ev_ebitda":          info.get("enterpriseToEbitda"),  # 負値も格納（UIで変換）
+        "market_cap":         attrs.get("market_cap"),
+        "shares":             attrs.get("shares_outstanding"),
+        "ev_ebitda":          attrs.get("ev_to_ebitda"),  # 負値も格納（UIで変換）
     }
 
 
@@ -232,7 +318,7 @@ def fetch_tanuki_iv(ticker: str) -> pd.Series:
 
 def fetch_analyst_history(ticker: str) -> pd.DataFrame:
     """
-    yfinanceからアナリスト履歴を月次DataFrameに変換。
+    market_data analyst_history/層からアナリスト履歴を月次DataFrameに変換。
 
     取得データ:
       upgrades_downgrades → 月次アナリスト修正率（上方/下方）
@@ -245,23 +331,39 @@ def fetch_analyst_history(ticker: str) -> pd.DataFrame:
       eps_surprise         : EPSサプライズ率% (四半期→月次前方補完)
       buy_hold_ratio       : (StrongBuy+Buy)/全アナリスト (現時点値のみ)
       sell_on_good_news    : EPSサプライズ>0 かつ 当月株価変化<-3% (bool→float)
+
+    [[MARKETDATA-LAYER-CONSTRUCTION-1]]着手順序4-8: yfinance直接呼び出し
+    （upgrades_downgrades/earnings_history/quarterly_earnings/.info/
+    recommendations）をcommon.market_data.reader経由に切替（2026-08-11）。
+    - upgrades_downgrades: reader.get_analyst_events()（フィールド名は
+      market_data側のsnake_case、date/firm/to_grade/from_grade/action）
+    - eps_surprise: reader.get_earnings_history()から最新四半期を取得。
+      フォールバック①（quarterly_earnings）は前提作業3の事前調査で
+      現行yfinanceにおいて常にNoneを返すと実測確認済みのため実装しない。
+      フォールバック②（info['earningsGrowth']）は前提作業2で既に
+      attributes/{SYMBOL}.jsonのearnings_growthとして保存済みのため
+      reader.get_attributes()["earnings_growth"]を直接参照する（fetcher.py
+      側でのフォールバック合成はしない設計方針、前回投資調査通り）。
+    - buy_hold_ratio: reader.get_recommendations_history(ticker,
+      latest_only=True)から取得（fetcher.py側で既に計算済みの値を
+      そのまま使う、旧コードの現場計算ロジックはfetcher.py側へ移譲）。
     """
-    t = yf.Ticker(ticker)
     result = pd.DataFrame()
 
     # ── 1. upgrades_downgrades → 月次修正率 ──────────────────
     try:
-        ud = t.upgrades_downgrades
-        if ud is not None and not ud.empty:
-            ud = ud.copy()
-            ud.index = pd.to_datetime(ud.index).tz_localize(None)
+        events = _md_get_analyst_events(ticker) if HAS_MARKET_DATA else []
+        if events:
+            ud = pd.DataFrame(events)
+            ud["date"] = pd.to_datetime(ud["date"])
+            ud = ud.set_index("date").sort_index()
 
-            # ToGradeでBuy系/Sell系を分類
+            # to_gradeでBuy系/Sell系を分類
             BUY_GRADES  = {"Buy","Strong Buy","Outperform","Overweight","Market Outperform","Positive"}
             SELL_GRADES = {"Sell","Strong Sell","Underperform","Underweight","Market Underperform","Negative"}
 
-            ud["is_upgrade"]   = ud["ToGrade"].isin(BUY_GRADES).astype(int)
-            ud["is_downgrade"] = ud["ToGrade"].isin(SELL_GRADES).astype(int)
+            ud["is_upgrade"]   = ud["to_grade"].isin(BUY_GRADES).astype(int)
+            ud["is_downgrade"] = ud["to_grade"].isin(SELL_GRADES).astype(int)
 
             monthly_ud = ud.resample("ME").agg(
                 upgrades=("is_upgrade", "sum"),
@@ -280,20 +382,21 @@ def fetch_analyst_history(ticker: str) -> pd.DataFrame:
                 monthly_ud["analyst_upgrade_rate"].rolling(3, min_periods=1).mean()
             )
             result = monthly_ud[["analyst_upgrade_rate", "analyst_downgrade_rate"]]
-            print(f"  アナリスト修正: {len(ud)}件（{ud.index.min().date()}〜）")
+            print(f"  アナリスト修正: {len(events)}件（{ud.index.min().date()}〜）")
     except Exception as e:
         print(f"  警告: upgrades_downgrades取得失敗: {e}")
 
     # ── 2. earnings_history → 四半期EPSサプライズ率 ──────────
     eps_fetched = False
     try:
-        eh = t.earnings_history
-        if eh is not None and not eh.empty:
-            eh = eh.copy()
-            eh.index = pd.to_datetime(eh.index).tz_localize(None)
-            eh_monthly = eh[["surprisePercent"]].copy()
+        earnings_hist = _md_get_earnings_history(ticker) if HAS_MARKET_DATA else []
+        if earnings_hist:
+            eh = pd.DataFrame(earnings_hist)
+            eh["quarter"] = pd.to_datetime(eh["quarter"])
+            eh = eh.set_index("quarter").sort_index()
+            eh_monthly = eh[["surprise_percent"]].copy()
             eh_monthly.columns = ["eps_surprise"]
-            eh_monthly["eps_surprise"] *= 100  # 小数→%
+            eh_monthly["eps_surprise"] *= 100  # 生値（小数）→% 変換は消費側の責務
             if not result.empty:
                 monthly_idx = result.index
             else:
@@ -310,33 +413,20 @@ def fetch_analyst_history(ticker: str) -> pd.DataFrame:
                 result = eps_monthly
             else:
                 result = result.join(eps_monthly, how="outer")
-            print(f"  EPSサプライズ: {len(eh)}件")
+            print(f"  EPSサプライズ: {len(earnings_hist)}件")
             eps_fetched = True
     except Exception as e:
         print(f"  警告: earnings_history取得失敗: {e}")
 
-    # フォールバック①: quarterly_earnings から surprisePercent を取得
-    if not eps_fetched:
-        try:
-            qe = t.quarterly_earnings
-            if qe is not None and not qe.empty and "Surprise(%)" in qe.columns:
-                qe = qe.copy()
-                qe.index = pd.to_datetime(qe.index).tz_localize(None)
-                qe_monthly = qe[["Surprise(%)"]].rename(columns={"Surprise(%)": "eps_surprise"})
-                if not result.empty:
-                    monthly_idx = result.index
-                    eps_monthly = qe_monthly.reindex(monthly_idx, method="ffill")
-                    result = result.join(eps_monthly, how="left")
-                print(f"  EPSサプライズ(fallback1): {len(qe)}件")
-                eps_fetched = True
-        except Exception as e:
-            print(f"  警告: quarterly_earnings取得失敗: {e}")
+    # フォールバック①（quarterly_earnings）は着手順序4-8前提作業3の事前調査で
+    # 現行yfinanceにおいて常にNoneを返す（DeprecationWarning: 'Ticker.earnings'
+    # is deprecated as not available via API）と実測確認済みのため実装しない。
 
-    # フォールバック②: info['earningsGrowth'] を欠損月のみに適用
+    # フォールバック②: attributes/のearnings_growthを欠損月のみに適用
     if not eps_fetched:
         try:
-            info_snap = t.info
-            eg = info_snap.get("earningsGrowth")
+            attrs = _md_get_attributes(ticker) if HAS_MARKET_DATA else None
+            eg = attrs.get("earnings_growth") if attrs else None
             if eg is not None:
                 eg_val = round(float(eg) * 100, 2)
                 if not result.empty:
@@ -344,10 +434,10 @@ def fetch_analyst_history(ticker: str) -> pd.DataFrame:
                         result["eps_surprise"] = eg_val
                     else:
                         result["eps_surprise"] = result["eps_surprise"].fillna(eg_val)
-                print(f"  EPSサプライズ(fallback2/earningsGrowth): {eg:.1%}")
+                print(f"  EPSサプライズ(fallback/earnings_growth): {eg:.1%}")
                 eps_fetched = True
         except Exception as e:
-            print(f"  警告: earningsGrowth取得失敗: {e}")
+            print(f"  警告: earnings_growth取得失敗: {e}")
 
     # 最終補完: eps_surpriseのNullを前方補完（最大3ヶ月）
     if not result.empty and "eps_surprise" in result.columns:
@@ -358,14 +448,11 @@ def fetch_analyst_history(ticker: str) -> pd.DataFrame:
 
     # ── 3. recommendations → Buy/Hold/Sell比率（現時点） ──────
     try:
-        rec = t.recommendations
-        if rec is not None and not rec.empty:
-            # 直近月（0m）のデータ
-            cur = rec[rec["period"] == "0m"].iloc[0] if len(rec[rec["period"] == "0m"]) > 0 else rec.iloc[0]
-            total = (cur.get("strongBuy", 0) + cur.get("buy", 0) +
-                     cur.get("hold", 0) + cur.get("sell", 0) + cur.get("strongSell", 0))
-            buy_ratio = (cur.get("strongBuy", 0) + cur.get("buy", 0)) / (total + 1e-9)
-            # 現時点値を全期間に設定（将来は月次記録で上書き）
+        rec = _md_get_recommendations_history(ticker, latest_only=True) if HAS_MARKET_DATA else {}
+        buy_ratio = rec.get("buy_hold_ratio") if rec else None
+        if buy_ratio is not None:
+            # 現時点値を全期間に設定（将来は月次記録で上書き、週次バッチが
+            # 蓄積するrecommendations_historyが育つにつれ自然に解消される）
             if "buy_hold_ratio" not in result.columns:
                 result["buy_hold_ratio"] = np.nan
             today_ts = pd.Timestamp(date.today()).to_period("M").to_timestamp()
