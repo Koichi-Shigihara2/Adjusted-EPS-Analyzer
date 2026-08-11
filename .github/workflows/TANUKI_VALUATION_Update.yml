@@ -29,8 +29,16 @@ jobs:
           cache: 'pip'
 
       - name: Install dependencies
+        # [[MARKETDATA-LAYER-CONSTRUCTION-1]]着手順序4-2: data_fetcher.pyが
+        # common.market_data.reader経由になったため、common/market_data/
+        # fetcher.py（__init__.py経由で連鎖import）が要求する
+        # pandas_market_calendars・pyyaml等もrequirements.txt経由で導入する
+        # （Beta_Config_Update.ymlと同じ対応。旧: pip install yfinance
+        # numpy requests xlrd だけでは不足しImportErrorになる。xlrdは
+        # requirements.txtに既に含まれているため個別インストール不要）
         run: |
-          pip install yfinance numpy requests xlrd
+          pip install --upgrade pip
+          pip install -r requirements.txt
 
       - name: Run TANUKI VALUATION Pipeline
         working-directory: src/value/tanuki_valuation

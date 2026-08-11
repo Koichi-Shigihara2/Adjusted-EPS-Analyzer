@@ -16,13 +16,6 @@ from datetime import date
 from statistics import mean
 from typing import Dict, Any, Optional, Tuple
 
-# yfinance
-try:
-    import yfinance as yf
-    HAS_YFINANCE = True
-except ImportError:
-    HAS_YFINANCE = False
-
 # SEC EDGAR - common/sec_data/reader.py
 HAS_SEC = False
 SECReader = None
@@ -56,6 +49,43 @@ if not HAS_SEC:
         from common.sec_data.reader import SECReader
         from common.sec_data.contracts import FCFSeries, ContractViolation
         HAS_SEC = True
+    except Exception:
+        pass
+
+# common/market_data - common.market_data.reader（BACKLOG [[MARKETDATA-
+# LAYER-CONSTRUCTION-1]]着手順序4-2: 株価・β・PER等のyfinance直接呼び出し
+# 〈.info単発〉をcommon.market_data.reader経由に切替。HAS_SECと同じ
+# sys.path解決・二段構えtry/exceptパターンを踏襲）
+HAS_MARKET_DATA = False
+_md_get_latest_price = None
+_md_get_attributes = None
+_md_get_ma_deviation = None
+
+try:
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    repo_root = os.path.dirname(os.path.dirname(os.path.dirname(current_dir)))
+
+    if repo_root not in sys.path:
+        sys.path.insert(0, repo_root)
+
+    from common.market_data.reader import get_latest_price as _md_get_latest_price
+    from common.market_data.reader import get_attributes as _md_get_attributes
+    from common.market_data.reader import get_ma_deviation as _md_get_ma_deviation
+    HAS_MARKET_DATA = True
+except Exception:
+    pass
+
+if not HAS_MARKET_DATA:
+    try:
+        github_workspace = os.environ.get("GITHUB_WORKSPACE", "")
+        if github_workspace:
+            repo_root = github_workspace
+        if github_workspace and github_workspace not in sys.path:
+            sys.path.insert(0, github_workspace)
+        from common.market_data.reader import get_latest_price as _md_get_latest_price
+        from common.market_data.reader import get_attributes as _md_get_attributes
+        from common.market_data.reader import get_ma_deviation as _md_get_ma_deviation
+        HAS_MARKET_DATA = True
     except Exception:
         pass
 
@@ -464,8 +494,24 @@ class TanukiDataFetcher:
             rice_data_source = "annual_fallback"
 
         # ========================================
-        # 2. yfinance（株式数、株価、β、セクター）
+        # 2. common/market_data（株式数、株価、β、セクター）
         # ========================================
+        # [[MARKETDATA-LAYER-CONSTRUCTION-1]]着手順序4-2: yfinance直接呼び出し
+        # （.info単発）をcommon.market_data.reader経由に切替。
+        #   - current_price: reader.get_latest_price()["close"]（daily/層。
+        #     旧来のcurrentPrice→regularMarketPrice→previousCloseフォール
+        #     バックチェーンを置き換える——取引時間中リアルタイムから
+        #     前日終値ベースへの仕様変更そのもの。previousCloseはattributes/
+        #     に含まれない設計〈層またぎ再計算の禁止〉のためdaily/層に一本化）
+        #   - beta以下: reader.get_attributes()（attributes/層、週次スナップ
+        #     ショット）
+        # reader側がNoneを返す場合（データ未生成銘柄）は、旧来の
+        # 「yfinance完全失敗」except節と同じ中立デフォルトに倒す
+        # （事前調査の結論・選択肢(A)を踏襲。daily/・attributes/は独立した
+        # 更新頻度のため、価格取得失敗と属性取得失敗はそれぞれ独立に
+        # 中立デフォルトへフォールバックする——旧コードの「tryブロック
+        # 前半で部分成功した値は保持される」非atomicな挙動より一貫性が
+        # 高くなる）。
         yf_implied = 0
         yf_outstanding = 0
         current_price = 0.0
@@ -473,6 +519,7 @@ class TanukiDataFetcher:
         sector = "default"
         industry = ""       # v8.1: 保険判定精度向上のためindustryも取得
         per = None
+        per_is_forward = False
         peg = None
         ps = None
         ev_ebitda = None
@@ -487,46 +534,41 @@ class TanukiDataFetcher:
         dividend_yield = 0.0
         payout_ratio   = 0.0
 
-        if HAS_YFINANCE:
-            try:
-                stock = yf.Ticker(ticker)
-                info = stock.info
-                
-                # 株式数
-                yf_implied = info.get("impliedSharesOutstanding", 0) or 0
-                if yf_implied > 0:
-                    print(f"   [{ticker}] yfinance implied shares: {yf_implied:,.0f}")
-                
-                yf_outstanding = info.get("sharesOutstanding", 0) or 0
-                if yf_outstanding > 0:
-                    print(f"   [{ticker}] yfinance outstanding shares: {yf_outstanding:,.0f}")
-                
-                # 株価
-                current_price = (
-                    info.get("currentPrice") or 
-                    info.get("regularMarketPrice") or 
-                    info.get("previousClose") or 0
-                )
-                if current_price > 0:
-                    print(f"   [{ticker}] yfinance price: ${current_price:.2f}")
-                
-                # β（ベータ）
-                beta = info.get("beta")
-                if beta is not None and beta > 0:
-                    print(f"   [{ticker}] yfinance beta: {beta:.2f}")
-                
-                # セクター・業種（v8.1: industryを追加取得）
-                sector = info.get("sector", "default")
-                if sector and sector != "default":
-                    print(f"   [{ticker}] yfinance sector: {sector}")
-                industry = info.get("industry", "")
-                if industry:
-                    print(f"   [{ticker}] yfinance industry: {industry}")
+        latest_price = _md_get_latest_price(ticker) if HAS_MARKET_DATA else None
+        if latest_price is not None and latest_price.get("close") is not None:
+            current_price = float(latest_price["close"])
+            print(f"   [{ticker}] market_data price (daily/ {latest_price.get('date')}): ${current_price:.2f}")
+        else:
+            print(f"   [{ticker}] market_data daily/未取得（current_price=0.0で継続）")
 
+        attrs = _md_get_attributes(ticker) if HAS_MARKET_DATA else None
+        if attrs is not None:
+            try:
+                # 株式数
+                yf_implied = attrs.get("implied_shares_outstanding") or 0
+                if yf_implied > 0:
+                    print(f"   [{ticker}] market_data implied shares: {yf_implied:,.0f}")
+
+                yf_outstanding = attrs.get("shares_outstanding") or 0
+                if yf_outstanding > 0:
+                    print(f"   [{ticker}] market_data outstanding shares: {yf_outstanding:,.0f}")
+
+                # β（ベータ）
+                beta = attrs.get("beta")
+                if beta is not None and beta > 0:
+                    print(f"   [{ticker}] market_data beta: {beta:.2f}")
+
+                # セクター・業種（v8.1: industryを追加取得）
+                sector = attrs.get("sector") or "default"
+                if sector and sector != "default":
+                    print(f"   [{ticker}] market_data sector: {sector}")
+                industry = attrs.get("industry") or ""
+                if industry:
+                    print(f"   [{ticker}] market_data industry: {industry}")
 
                 # PER（株価収益率）
-                _trailing_pe = info.get("trailingPE")
-                _forward_pe  = info.get("forwardPE")
+                _trailing_pe = attrs.get("trailing_pe")
+                _forward_pe  = attrs.get("forward_pe")
                 per = _trailing_pe or _forward_pe or None
                 per_is_forward = (
                     (_trailing_pe is None or _trailing_pe <= 0)
@@ -534,50 +576,61 @@ class TanukiDataFetcher:
                 )
                 if per is not None and per > 0:
                     _pe_src = "Fwd" if per_is_forward else "Trailing"
-                    print(f"   [{ticker}] yfinance PER({_pe_src}): {per:.1f}")
+                    print(f"   [{ticker}] market_data PER({_pe_src}): {per:.1f}")
 
                 # PEG（成長調整PER）
-                peg_raw = info.get("pegRatio") or None
+                peg_raw = attrs.get("peg_ratio") or None
                 if peg_raw is not None and peg_raw > 0:
                     peg = float(peg_raw)
-                    print(f"   [{ticker}] yfinance PEG: {peg:.2f}")
+                    print(f"   [{ticker}] market_data PEG: {peg:.2f}")
 
                 # PS（株価売上高倍率）
-                ps_raw = info.get("priceToSalesTrailing12Months") or None
+                ps_raw = attrs.get("price_to_sales") or None
                 if ps_raw is not None and ps_raw > 0:
                     ps = float(ps_raw)
-                    print(f"   [{ticker}] yfinance PS: {ps:.2f}")
+                    print(f"   [{ticker}] market_data PS: {ps:.2f}")
 
                 # EV/EBITDA
-                ev_ebitda_raw = info.get("enterpriseToEbitda") or None
+                ev_ebitda_raw = attrs.get("ev_to_ebitda") or None
                 if ev_ebitda_raw is not None and ev_ebitda_raw > 0:
                     ev_ebitda = float(ev_ebitda_raw)
-                    print(f"   [{ticker}] yfinance EV/EBITDA: {ev_ebitda:.2f}")
+                    print(f"   [{ticker}] market_data EV/EBITDA: {ev_ebitda:.2f}")
 
-                # 200日移動平均
-                ma200 = info.get("twoHundredDayAverage") or None
-                if ma200 is not None and ma200 > 0:
-                    print(f"   [{ticker}] yfinance 200MA: ${ma200:.2f}")
+                # 200日移動平均: reader.get_ma_deviation()（daily/由来、単一の
+                # 正）を代数的に逆算してma200（価格）に戻す。get_ma_deviation()
+                # がtwoHundredDayAverageを保存しない設計（BACKLOG確定事項7）
+                # のため生のMA価格自体はどこにも保存されていないが、
+                # pipeline.py側の既存計算式 ma200_dev=(current_price/ma200-1)
+                # *100 をそのまま維持できるよう、同じ関係式を逆算してma200を
+                # 復元する（current_priceはdaily/最新closeと同一日付・同一値
+                # のため数学的に完全往復し、pipeline.py側の変更は不要になる。
+                # ma200自体を独自ロジックで再計算しているわけではなく、
+                # get_ma_deviation()の計算結果を形だけ元に戻しているだけ）。
+                if HAS_MARKET_DATA:
+                    ma200_dev = _md_get_ma_deviation(ticker, window=200)
+                    if ma200_dev is not None and current_price > 0:
+                        ma200 = current_price / (1 + ma200_dev / 100.0)
+                        print(f"   [{ticker}] market_data 200MA(dev={ma200_dev:+.1f}%より逆算): ${ma200:.2f}")
 
                 # Forward EPS（アナリスト予想EPS）
-                forward_eps_raw = info.get("forwardEps")
+                forward_eps_raw = attrs.get("forward_eps")
                 if forward_eps_raw is not None and isinstance(forward_eps_raw, (int, float)):
                     forward_eps = float(forward_eps_raw)
-                    print(f"   [{ticker}] yfinance forwardEps: ${forward_eps:.4f}")
+                    print(f"   [{ticker}] market_data forwardEps: ${forward_eps:.4f}")
 
                 # 配当（ディビデンドトラップ判定用）
-                dividend_yield = info.get("trailingAnnualDividendYield") or 0.0
-                payout_ratio   = info.get("payoutRatio") or 0.0
+                dividend_yield = attrs.get("dividend_yield") or 0.0
+                payout_ratio   = attrs.get("payout_ratio") or 0.0
                 if dividend_yield > 0:
-                    print(f"   [{ticker}] yfinance dividend yield: {dividend_yield:.1%}, payout ratio: {payout_ratio:.1%}")
+                    print(f"   [{ticker}] market_data dividend yield: {dividend_yield:.1%}, payout ratio: {payout_ratio:.1%}")
 
                 # アナリスト目標株価
-                _at_median = info.get("targetMedianPrice")
-                _at_mean   = info.get("targetMeanPrice")
-                _at_low    = info.get("targetLowPrice")
-                _at_high   = info.get("targetHighPrice")
-                _at_count  = info.get("numberOfAnalystOpinions")
-                _at_rec    = info.get("recommendationKey") or ""
+                _at_median = attrs.get("target_median_price")
+                _at_mean   = attrs.get("target_mean_price")
+                _at_low    = attrs.get("target_low_price")
+                _at_high   = attrs.get("target_high_price")
+                _at_count  = attrs.get("analyst_count")
+                _at_rec    = attrs.get("analyst_recommendation_key") or ""
                 if _at_median is not None and isinstance(_at_median, (int, float)) and _at_median > 0:
                     analyst_target_median = float(_at_median)
                     analyst_target_mean   = float(_at_mean)   if isinstance(_at_mean,  (int, float)) and _at_mean  > 0 else None
@@ -588,8 +641,9 @@ class TanukiDataFetcher:
                     print(f"   [{ticker}] analyst target median: ${analyst_target_median:.2f} ({analyst_count} analysts)")
 
             except Exception as e:
-                print(f"   [{ticker}] yfinance取得エラー: {e}")
+                print(f"   [{ticker}] market_data attributes解析エラー: {e}")
                 per = None
+                per_is_forward = False
                 peg = None
                 ps = None
                 ev_ebitda = None
@@ -603,6 +657,8 @@ class TanukiDataFetcher:
                 analyst_rec_key = ""
                 dividend_yield = 0.0
                 payout_ratio   = 0.0
+        else:
+            print(f"   [{ticker}] market_data attributes/未取得（β・PER等は中立デフォルトで継続）")
 
         # ========================================
         # 3. β決定（beta_config.json > yfinance > セクターデフォルト）

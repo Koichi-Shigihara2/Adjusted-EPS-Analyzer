@@ -2000,14 +2000,13 @@ ARCH-DATA-1のスコープ拡張（2026-07-16、年次データ正規化3段階�
 **登録日:** 2026-08-07（本来は事前調査着手時点で登録すべきだったが
 未登録のまま3回の投資調査を実施していたため、本エントリで遡って
 正式登録する）
-**更新日:** 2026-08-11（着手順序1〜3完了・4-1`beta_fetcher.py`切替完了
-（進捗1/8）に加え、data_fetcher.py切替の前提条件2件を完了：
-`attributes/`スキーマ拡張、および日次価格層バックフィル
-（`backfill_daily_prices()`新設・全570銘柄実行・ma200ブートストラップ
-欠落解消）。バックフィル実行中に発見した別課題2件を`[[MARKETDATA-CWAN-
-FROZEN-DATA-SUSPECT-1]]`・`[[MARKETDATA-SP500-SCRAPE-INVALID-
-TICKERS-1]]`として新規登録。次は2番手`data_fetcher.py`本体の切替実装。
-詳細は下記「着手順序」参照）
+**更新日:** 2026-08-11（着手順序1〜3完了に加え、4. 本番消費者切替が
+2/8に進捗：4-1`beta_fetcher.py`・4-2`data_fetcher.py`（本丸、DCF計算の
+株価取得を前日終値ベース化）とも完了。前提条件（`attributes/`スキーマ
+拡張・日次価格層バックフィル全570銘柄実行）も完了済み。バックフィル
+実行中に発見した別課題2件を`[[MARKETDATA-CWAN-FROZEN-DATA-SUSPECT-1]]`・
+`[[MARKETDATA-SP500-SCRAPE-INVALID-TICKERS-1]]`として登録済み。
+次は3番手`valuation_fetcher.py`。詳細は下記「着手順序」参照）
 **発見:** `common/market_data/`新設事前調査・実装設計投資調査（チャット
 記録、2026-08-07）
 
@@ -2212,7 +2211,7 @@ common/market_data/
    `analyst_history/`・violations log、AAPL/IONQ/^GSPCの3銘柄分）は
    本番バッチ生成分としてそのままリポジトリに残している。
 4. 本番消費者8ファイル＋診断ツール2ファイルの段階的切替（TANUKI
-   VALUATION本体から、フェーズDと同様の優先順位を検討）。**進捗 1/8。**
+   VALUATION本体から、フェーズDと同様の優先順位を検討）。**進捗 2/8。**
 
    **優先順位案（2026-08-10時点、着手順序3完了時の提案）**
    1. **【完了・2026-08-10】** `beta_fetcher.py`（`reader.get_attributes()
@@ -2238,19 +2237,55 @@ common/market_data/
       確認済み。本番`config/beta_config.json`への書き込みは実施せず、
       次回月次cron（`Beta_Config_Update.yml`、月初週の日曜）の自動実行に
       委ねる方針で確定（ユーザー判断、2026-08-10）。
-   2. **次のアクション**: `data_fetcher.py`（株価取得を前日終値ベースへ
-      仕様変更する本丸。TANUKI VALUATION本体のDCF計算に直結するため
-      慎重に）。
-      着手前に`beta_fetcher.py`切替と同様の事前調査（現状の使用実態・
-      `reader.get_price_series()`/`get_latest_price()`への置換後の差分・
-      対象銘柄母集団の同期状況）を先に実施することを推奨。特に
-      `beta_fetcher.py`切替時の教訓（①スクリプト直接実行時は相対import
-      不可・sys.path手動追加が必要、②overrides等の既存dictへの書き込みは
-      丸ごと置換でなくマージ方式にする、③yfinance側のデータ欠如
-      〈CRWV/TASK型〉は切替のバグではなく実データの限界として区別する）
-      を踏まえること。株価前日終値化は市場取引時間中のリアルタイム取得
-      からの仕様変更（BACKLOG設計確定事項）のため、影響範囲（DCF計算・
-      スコアリング）の事前確認が特に重要。
+   2. **【完了・2026-08-11】** `data_fetcher.py`（株価取得を前日終値ベースへ
+      仕様変更する本丸。TANUKI VALUATION本体のDCF計算に直結する消費者）。
+      `get_financials()`の`.info`単発呼び出しブロックを
+      `common.market_data.reader`経由（`get_latest_price()`・
+      `get_attributes()`・`get_ma_deviation()`）に置換。`HAS_MARKET_DATA`
+      フラグ・二段構えsys.path解決を`HAS_SEC`と同型パターンで追加。
+      不要になった`yfinance`直接importを削除。
+
+      **フィールド対応**: current_price=`get_latest_price()["close"]`
+      （daily/層、前日終値化そのもの）。beta/sector/industry/PER
+      〈trailing優先・forwardフォールバック〉/PEG/PS/EV_EBITDA/
+      forward_eps/dividend_yield/payout_ratio/アナリスト目標株価
+      〈median/mean/low/high/count/recommendation〉/株式数
+      〈implied優先・outstanding〉は`get_attributes()`から。
+
+      **ma200の扱い**: `get_ma_deviation(window=200)`が返す乖離率(%)を
+      代数的に逆算し`ma200`（価格）を復元する方式を採用（
+      `ma200 = current_price / (1 + dev/100)`）。pipeline.py側の既存計算式
+      `(current_price/ma200-1)*100`をそのまま維持でき、pipeline.py側の
+      変更が一切不要になった（往復の数学的整合性をテストで確認済み）。
+
+      **エラー処理**: reader側がNoneを返す場合、選択肢(A)＝既存except節と
+      同じ中立デフォルト（current_price=0.0・beta=None→`_determine_beta()`
+      のセクターデフォルトへ自動フォールバック・sector="default"等）に
+      倒す。price取得とattributes取得を独立した2呼び出しに分離したため、
+      旧コードの「tryブロック前半で部分成功した値が保持される」非atomicな
+      挙動より一貫性が向上。
+
+      **Step2検証（実データ100銘柄全数比較）**: 切替前(`.info`直接)後
+      (`reader`経由)で97/100が完全一致。差分3件はいずれも許容範囲内：
+      ADSK/AMD=PERの数分オーダーのドリフト（取得時刻差、実害なし）、
+      QBTS=株価24.6%差（ボラティリティの高い小型株の取引時間中リアル
+      タイム価格 vs 確定前日終値という**意図した仕様変更そのもの**、
+      他の全フィールドは完全一致）。`current_price=0.0`フォールバック
+      発火は100銘柄中0件（全銘柄`daily/`・`attributes/`カバー済み）。
+      `ma200_dev=None`は1銘柄のみ（`CWAN`、`[[MARKETDATA-CWAN-FROZEN-
+      DATA-SUSPECT-1]]`と一致、既知事象）。`pipeline.py AAPL`を実行し
+      DCF計算・WACC・RICE・上昇率(-59.1%)・ma200逆算（dev=+10.2%→
+      $279.64）が全て正常動作することを実地確認。
+
+      なお比較実施前に`common/market_data/attributes/`が
+      スキーマ拡張前の旧データのまま（`implied_shares_outstanding`等
+      未取得）だったことが判明したため、フル母集団570銘柄で
+      `fetch_weekly_attributes()`を再実行し新スキーマへ更新した上で
+      比較を実施した。
+
+      `tests/test_data_fetcher_market_data_switch.py`新規10件。
+      `TANUKI_VALUATION_Update.yml`の依存インストールを
+      `requirements.txt`経由に変更（`Beta_Config_Update.yml`と同じ対応）。
    3. `valuation_fetcher.py`
    4. `hypecore.py`
    5〜8. `pipeline.py`・`collect.py`・`collect_and_send.py`・
