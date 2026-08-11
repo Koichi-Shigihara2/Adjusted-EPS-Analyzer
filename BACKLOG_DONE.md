@@ -142,6 +142,69 @@ base_dir=None)`を新規追加:
 過去基準日を起点としたトレイリングウィンドウ取得、`score_verifier.py`
 切替時の`get_price_on_or_after()`追加と同様の前提作業）が必要と判明済み。
 
+### ✅ [MARKETDATA-LAYER-CONSTRUCTION-1] 着手順序6-2: backfill_tech_pulse.py切替（周辺ツール2/2、全数完了）
+**状態:** 完了
+**優先度:** 高
+**分類:** アーキテクチャ / 新DB構築プロジェクト フェーズ1 / 周辺ツール切替
+**登録日:** 2026-08-12（着手順序6-1完了時点で次点として記録）
+**完了日:** 2026-08-12
+**発見:** `[[MARKETDATA-LAYER-CONSTRUCTION-1]]`着手順序6-2事前調査
+（`reader.py`新規API設計投資調査、チャット記録、2026-08-12）
+
+#### 内容
+`backfill_tech_pulse.py`（Tech Pulse履歴バックフィル専用の一過性ツール）
+のQQQ/SPY取得（`yf.Ticker("QQQ"/"SPY").history(period="1y")`）を
+`common.market_data.reader`経由に切替。
+
+**前提作業（`reader.py`新規API）:** `backfill_tech_pulse.py`が必要とする
+「任意の過去基準日（各missingエントリのtarget日）を終点とした125営業日分の
+トレイリングウィンドウ」に対応するAPIが`reader.py`に存在しなかった
+（既存の`get_price_series()`は「daily/の最新保存日を終点とする直近N
+営業日」専用、`get_price_on_or_after()`は「単一日以降1件」専用でどちらも
+形状が合わない）。共通実装`_price_series_ending_at(symbol, anchor_date,
+days, base_dir)`を新規に切り出し、`get_price_series_as_of(symbol,
+as_of_date, days=30, base_dir=None)`を新規追加（`get_price_series()`の
+「終点＝現在」を任意の過去日に一般化した版）。`get_price_series()`自体も
+この共通実装を使うようリファクタ（外部から見た挙動は無変更、既存テスト
+全通過で確認済み）。
+
+**本体切替:** `_qqq_components()`をpandas DataFrameスライスから
+`reader.get_price_series_as_of()`由来のlist[dict]処理に書き換え（計算式
+自体は無変更）。「実行時点で1回だけ取得し全エントリで使い回す」旧設計
+思想は維持（`daily/`は全期間分すでに保存済みの静的データのため、
+`_FULL_HISTORY_LOOKBACK_DAYS=1500`日分を1回取得するだけで全missing
+エントリのtarget日をカバー可能）。`collect_and_send.py`と同じ
+`HAS_MARKET_DATA`ガード・二段構え`sys.path`解決パターンを踏襲。
+`import yfinance`は不要化・削除（VXN取得用の`pandas`は引き続き必要の
+ため残置）。
+
+#### 検証
+- **新規ユニットテスト7件追加**: `tests/test_market_data_reader.py::
+  TestGetPriceSeriesAsOf`（欠損銘柄・days<=0・「最新保存日でなく
+  as_of_date自体を終点にする」get_price_series()との挙動差・欠損営業日の
+  gapフラグ・date型受理・大文字小文字正規化・as_of_dateが最新保存日より
+  未来の場合のgap応答を検証）
+- **51件のmissingエントリ全件で`--dry-run`実行**し例外なく完走
+  （`market_data.json`は書き込まれないことを`git status`で確認）。
+  3サンプル（2026-04-04/05-06/06-07）の実測値は前回投資調査の予測値
+  （daily/のauto_adjust=False由来の0.09〜0.16pt差、`[[MARKETDATA-DAILY-
+  UNADJUSTED-PRICE-DIVIDEND-DRIFT-1]]`と同一原因、対応不要で確定済みの
+  論点）と完全一致
+- **51件全件で旧実装（yfinanceライブ、`period="1y"`）との突合**を実施し
+  `tp_score`/`tp_label`を比較: スコア差は最大±1点（0-100スケール）、
+  `_tp_label()`バケット判定のクロスは**0件**（想定通りバケットを
+  跨がないことを確認）
+- **pytest全体**: 728 passed / 2 known-failed
+  （`tests/test_iv_formula.py::test_iv_formula_adds_up[MSFT]`・`[NVDA]`、
+  `[[TEST-STALE-IV-1]]`、本切替と無関係）
+
+コミット: `4a864bc1c`
+
+これで着手順序6は周辺ツール2ファイルとも完了（**2/2**）。**これにより
+`common/market_data/`への切替対象「本番消費者8＋診断ツール2＋周辺ツール2」
+の全12ファイル（着手順序4〜6）が完了**。`common/market_data/`構築
+プロジェクト自体が完了。
+
 ---
 
 ## 2026-08-11（完了）

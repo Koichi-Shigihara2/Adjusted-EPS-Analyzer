@@ -1,5 +1,20 @@
 # On-a-journey — 改善バックログ（全システム）
 
+最終更新: 2026-08-12（`[[MARKETDATA-LAYER-CONSTRUCTION-1]]`着手順序6-2:
+`backfill_tech_pulse.py`（QQQ/SPY取得）切替が**完了**。前提作業として
+`reader.py`へ`get_price_series_as_of(symbol, as_of_date, days)`を新規
+追加（任意過去基準日起点のトレイリングウィンドウ取得、共通実装
+`_price_series_ending_at()`へ`get_price_series()`ともリファクタ）した
+上で本体切替。「実行時点で1回だけ取得し全エントリで使い回す」旧設計
+思想は維持。51件のmissingエントリ全件で`--dry-run`実行・旧実装との
+`tp_score`/`tp_label`突合を実施し、`_tp_label()`バケット判定のクロス
+0件を確認。pytest全体は728 passed（既知失敗2件はTEST-STALE-IV-1、
+無関係）。**これにより着手順序6は周辺ツール2/2（全数完了）、着手順序
+4〜6（本番消費者8＋診断ツール2＋周辺ツール2の全12ファイル）が完了し、
+`common/market_data/`構築プロジェクト自体が完了**。詳細・検証結果は
+BACKLOG_DONE.md「2026-08-12（完了）」`[[MARKETDATA-LAYER-CONSTRUCTION-1]]
+着手順序6-2`参照（コミット`4a864bc1c`）
+
 最終更新: 2026-08-12（`[[MARKETDATA-LAYER-CONSTRUCTION-1]]`着手順序6-1:
 `extract_key_facts.py`（株式数フォールバック④）切替が**完了**。
 yfinance直接呼び出し（`.info.get('sharesOutstanding') or
@@ -2055,28 +2070,32 @@ ARCH-DATA-1のスコープ拡張（2026-07-16、年次データ正規化3段階�
 
 ## 優先度：高（早急に対応）
 
-### [MARKETDATA-LAYER-CONSTRUCTION-1] common/market_data/新設（yfinance統合層）— 投資調査・設計確定
+### [MARKETDATA-LAYER-CONSTRUCTION-1] common/market_data/新設（yfinance統合層）— 実装完了（切替対象全12ファイル完了）
 **優先度:** 高（新DB構築プロジェクト フェーズ1の本線、`common/sec_data`
 統合が2026-08-07に実質完了したことに伴う次の優先タスク）
+**状態:** **実装完了**（着手順序4〜6: 本番消費者8＋診断ツール2＋周辺ツール2、
+全12ファイルの切替が完了。`common/market_data/`構築プロジェクト自体が完了）
 **分類:** アーキテクチャ / 新DB構築プロジェクト フェーズ1
 **登録日:** 2026-08-07（本来は事前調査着手時点で登録すべきだったが
 未登録のまま3回の投資調査を実施していたため、本エントリで遡って
 正式登録する）
-**更新日:** 2026-08-12（着手順序1〜5（本番消費者8/8＋診断ツール2/2）完了に
-続けて、着手順序6-1`extract_key_facts.py`（株式数フォールバック④）も
-**完了**。yfinance直接呼び出しを`reader.get_attributes()`経由（既存優先
-順位パターン維持）に切替。V実例での再現テストで切替前後の値が完全一致、
-EPS Analyzer対象101銘柄中fallback④該当はV 1件のみと判明（他100銘柄は
-影響なし）。詳細・検証結果はBACKLOG_DONE.md「2026-08-12（完了）」着手順序
-6-1参照（コミット`212454681`）。残る6-2`backfill_tech_pulse.py`は
-`reader.py`への新規API追加（任意過去基準日起点のトレイリングウィンドウ
-取得）が前提と判明し未着手。一連の切替作業中に発見した別課題群を
+**更新日:** 2026-08-12（着手順序6-2`backfill_tech_pulse.py`（QQQ/SPY
+取得）が**完了**。前提作業として`reader.py`へ`get_price_series_as_of()`
+（任意過去基準日起点のトレイリングウィンドウ取得、共通実装
+`_price_series_ending_at()`へ`get_price_series()`ともリファクタ）を
+新規追加した上で本体切替。「実行時点で1回だけ取得し全エントリで使い回す」
+旧設計思想は維持。51件のmissingエントリ全件で`--dry-run`実行・旧実装との
+`tp_score`/`tp_label`突合を実施し、`_tp_label()`バケット判定のクロスは
+0件と確認。詳細・検証結果はBACKLOG_DONE.md「2026-08-12（完了）」着手順序
+6-2参照（コミット`4a864bc1c`）。**これにより着手順序4〜6（本番消費者8＋
+診断ツール2＋周辺ツール2の全12ファイル）が完了し、`common/market_data/`
+構築プロジェクト自体が完了**。一連の切替作業中に発見した別課題群を
 `[[MARKETDATA-CWAN-FROZEN-DATA-SUSPECT-1]]`・`[[MARKETDATA-SP500-
 SCRAPE-INVALID-TICKERS-1]]`・`[[MARKETDATA-VIX9D-DATA-GAP-1]]`・
-`[[STONKS-SILO-CLI-TICKERS-SHADOW-1]]`として登録済み。誤って「バグ」
-登録した`[[MARKETDATA-DAILY-UNADJUSTED-PRICE-DIVIDEND-DRIFT-1]]`は事実
-確認調査により前提の誤りが判明し訂正・クローズ済み。詳細は下記
-「着手順序」参照）
+`[[STONKS-SILO-CLI-TICKERS-SHADOW-1]]`として登録済み（本線外・低優先度、
+未対応）。誤って「バグ」登録した`[[MARKETDATA-DAILY-UNADJUSTED-PRICE-
+DIVIDEND-DRIFT-1]]`は事実確認調査により前提の誤りが判明し訂正・クローズ
+済み。詳細は下記「着手順序」参照）
 **発見:** `common/market_data/`新設事前調査・実装設計投資調査（チャット
 記録、2026-08-07）
 
@@ -2359,7 +2378,7 @@ common/market_data/
       CONSTRUCTION-1]]着手順序5-2`参照（コミット`2668f3aaf`・
       `bc0f6fb24`）。
 6. 周辺ツール2ファイル（`backfill_tech_pulse.py`・`extract_key_facts.py`）
-   の切替。**進捗1/2。**
+   の切替。**【完了・2026-08-12】進捗2/2（全数完了）。**
    1. **【完了・2026-08-12】** `extract_key_facts.py`（株式数フォールバック④、
       V等SEC全期間で希薄化後株式数タグ未申告の銘柄向け最終フォールバック）。
       yfinance直接呼び出しを`reader.get_attributes()`経由（`shares_outstanding`
@@ -2368,17 +2387,29 @@ common/market_data/
       対象101銘柄中fallback④該当はV 1件のみと判明（他100銘柄は影響なし）。
       詳細・検証結果はBACKLOG_DONE.md「2026-08-12（完了）」`[[MARKETDATA-
       LAYER-CONSTRUCTION-1]]着手順序6-1`参照（コミット`212454681`）。
-   2. **未着手** `backfill_tech_pulse.py`。切替には`reader.py`への新規API
-      追加（任意過去基準日起点のトレイリングウィンドウ取得、
-      `get_price_on_or_after()`追加と同様の前提作業）が必要と判明済み。
+   2. **【完了・2026-08-12】** `backfill_tech_pulse.py`（Tech Pulse履歴
+      バックフィル専用の一過性ツール、QQQ/SPY取得）。前提作業として
+      `reader.py`へ`get_price_series_as_of(symbol, as_of_date, days)`を
+      新規追加（任意過去基準日起点のトレイリングウィンドウ取得、共通実装
+      `_price_series_ending_at()`へ`get_price_series()`ともリファクタ）
+      した上で本体切替。「実行時点で1回だけ取得し全エントリで使い回す」
+      旧設計思想は維持。51件のmissingエントリ全件で`--dry-run`実行・
+      旧実装との`tp_score`/`tp_label`突合を実施し、`_tp_label()`バケット
+      判定のクロス0件を確認。詳細・検証結果はBACKLOG_DONE.md
+      「2026-08-12（完了）」`[[MARKETDATA-LAYER-CONSTRUCTION-1]]着手順序
+      6-2`参照（コミット`4a864bc1c`）。
 
-**次セッションでの着手順序（2026-08-12時点、着手順序6-1〈extract_key_facts.py〉
+**これにより着手順序4〜6（本番消費者8＋診断ツール2＋周辺ツール2の
+全12ファイル）が完了し、`common/market_data/`構築プロジェクト自体が
+完了した。**
+
+**次セッションでの着手順序（2026-08-12時点、着手順序6-2
+〈backfill_tech_pulse.py〉完了＝`common/market_data/`構築プロジェクト
 完了を反映し最終更新）**:
-1. 着手順序6-2: `backfill_tech_pulse.py`の切替（前提作業として`reader.py`
-   への新規API追加が必要）
-2. フェーズ完了後: `normalized/`廃止相当の判断、または新DB構築
-   プロジェクトの次フェーズ（`common/macro_data/`）検討
-3. （本線外・本セッションで蓄積した課題群、優先度は各エントリ参照）:
+1. `common/market_data/`構築プロジェクト自体は完了。次は新DB構築
+   プロジェクトの残フェーズ（`common/macro_data/`新設、FRED統合層）を検討
+2. （本線外・本セッション・過去セッションで蓄積した低優先度課題群一式、
+   優先度は各エントリ参照）:
    `[[MARKETDATA-CWAN-FROZEN-DATA-SUSPECT-1]]`・`[[MARKETDATA-SP500-
    SCRAPE-INVALID-TICKERS-1]]`・`[[MARKETDATA-VIX9D-DATA-GAP-1]]`・
    `[[STONKS-SILO-CLI-TICKERS-SHADOW-1]]`・`[[NETCASH-DUAL-CALC-1]]`等
