@@ -9,6 +9,7 @@ Discover - 情報収集レーダー
 import json
 import os
 import re
+import sys
 import requests
 from datetime import date, datetime, timezone, timedelta
 from pathlib import Path
@@ -16,6 +17,35 @@ from pathlib import Path
 XAI_API_KEY = os.getenv("XAI_API_KEY")
 NEWS_API_KEY = os.getenv("NEWS_API_KEY")
 JST = timezone(timedelta(hours=9))
+
+# common/market_data - [[MARKETDATA-LAYER-CONSTRUCTION-1]]着手順序4-5:
+# 参考株価取得（yf.Ticker(ticker).history(period="2d")直接呼び出し）を
+# common.market_data.reader経由に切替。data_fetcher.py/valuation_fetcher.py/
+# pipeline.py切替と同じHAS_MARKET_DATAガード・二段構えsys.path解決パターンを
+# 踏襲する（本ファイルは`python src/discover/collect.py`で直接実行される
+# ためリポジトリルートがsys.pathに含まれない）。
+HAS_MARKET_DATA = False
+_md_get_price_series = None
+
+try:
+    _current_dir = os.path.dirname(os.path.abspath(__file__))
+    _repo_root = os.path.dirname(os.path.dirname(_current_dir))
+    if _repo_root not in sys.path:
+        sys.path.insert(0, _repo_root)
+    from common.market_data.reader import get_price_series as _md_get_price_series
+    HAS_MARKET_DATA = True
+except Exception:
+    pass
+
+if not HAS_MARKET_DATA:
+    try:
+        _github_workspace = os.environ.get("GITHUB_WORKSPACE", "")
+        if _github_workspace and _github_workspace not in sys.path:
+            sys.path.insert(0, _github_workspace)
+        from common.market_data.reader import get_price_series as _md_get_price_series
+        HAS_MARKET_DATA = True
+    except Exception:
+        pass
 
 
 def load_config() -> dict:
@@ -293,13 +323,24 @@ URLが不明な場合はurlをnullにして情報源名のみ記載してくだ�
 
 
 def get_price_change(ticker: str) -> "float | None":
-    """直近2営業日の終値比騰落率（%）を返す"""
+    """直近2営業日の終値比騰落率（%）を返す
+
+    [[MARKETDATA-LAYER-CONSTRUCTION-1]]着手順序4-5: yfinance直接呼び出し
+    （.history(period="2d")）をcommon.market_data.reader経由に切替
+    （2026-08-11）。days=5で取得し、_gapプレースホルダーを除外した実データの
+    末尾2件を比較する（単発の営業日欠損に対する耐性を持たせる、
+    data_fetcher.py切替時と同様の防御的設計）。common.market_data未import
+    環境（HAS_MARKET_DATA=False）・データ不足時は旧コードの
+    「len(hist)<2で何もしない」と同じくNoneを返す（中立デフォルト）。
+    """
+    if not HAS_MARKET_DATA:
+        return None
     try:
-        import yfinance as yf
-        hist = yf.Ticker(ticker).history(period="2d", interval="1d")
-        if len(hist) >= 2:
-            prev = float(hist["Close"].iloc[-2])
-            curr = float(hist["Close"].iloc[-1])
+        series = _md_get_price_series(ticker, days=5)
+        real_closes = [r for r in series if not r.get("_gap") and r.get("close") is not None]
+        if len(real_closes) >= 2:
+            prev = float(real_closes[-2]["close"])
+            curr = float(real_closes[-1]["close"])
             if prev > 0:
                 return round((curr - prev) / prev * 100, 2)
     except Exception as e:
