@@ -158,21 +158,28 @@ class TestGetCalendar:
         assert reader.get_calendar("NOPE", base_dir=str(tmp_path)) == {}
 
     def test_attributes_without_calendar_key_returns_empty_dict(self, tmp_path):
-        """fetcher.pyは現時点でcalendarを取得しないため常に空dict
-        （BACKLOG設計:「fetcher.py側で取得済みの場合、なければ空dict」）"""
+        """[[MARKETDATA-LAYER-CONSTRUCTION-1]]着手順序4-4（2026-08-11）で
+        fetcher.pyがcalendarフィールドを取得するようになったが、常に
+        {"earnings_date": [...]}形式のdict（取得失敗・空の場合は空dict）を
+        書き込む設計のため、calendarキー自体が欠落したレコードは実運用では
+        発生しない。本テストは移行前の旧レコード・想定外の書き込み欠落を
+        想定した後方互換の確認（中立デフォルトへのフォールバック）"""
         base = str(tmp_path)
         path = os.path.join(base, "attributes", "AAPL.json")
         fetcher._atomic_write_json(path, {"fetched_at": "2026-08-10T00:00:00+00:00"})
         assert reader.get_calendar("AAPL", base_dir=base) == {}
 
-    def test_future_calendar_key_is_surfaced_when_present(self, tmp_path):
+    def test_calendar_key_is_surfaced_when_present(self, tmp_path):
+        """fetcher.py::fetch_weekly_attributes()が実際に書き込むスキーマ
+        （{"earnings_date": [ISO8601日付文字列, ...]}）で検証する
+        （[[MARKETDATA-LAYER-CONSTRUCTION-1]]着手順序4-4、2026-08-11）"""
         base = str(tmp_path)
         path = os.path.join(base, "attributes", "AAPL.json")
         fetcher._atomic_write_json(path, {
             "fetched_at": "2026-08-10T00:00:00+00:00",
-            "calendar": {"next_earnings_date": "2026-10-30"},
+            "calendar": {"earnings_date": ["2026-10-30"]},
         })
-        assert reader.get_calendar("AAPL", base_dir=base) == {"next_earnings_date": "2026-10-30"}
+        assert reader.get_calendar("AAPL", base_dir=base) == {"earnings_date": ["2026-10-30"]}
 
 
 class TestGetAnalystEvents:

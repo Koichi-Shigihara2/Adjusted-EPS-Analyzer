@@ -40,6 +40,20 @@ from common.sec_data.layer3_builder import (  # フェーズD Step2-1
     get_long_term_debt_latest,
 )
 
+# common/market_data - [[MARKETDATA-LAYER-CONSTRUCTION-1]]着手順序4-4:
+# 次回決算日取得（yf.Ticker(ticker).calendar直接呼び出し）を
+# common.market_data.reader経由に切替。他フィールドは着手順序4-2
+# （data_fetcher.py切替）で既に対応済みのため、本ファイルではこの
+# .calendar呼び出し1箇所のみが対象。data_fetcher.py/valuation_fetcher.py
+# 切替と同じHAS_MARKET_DATAガードパターンを踏襲（sys.pathは上記
+# _REPO_ROOT_FOR_IMPORTで解決済み）。
+try:
+    from common.market_data.reader import get_calendar as _md_get_calendar
+    HAS_MARKET_DATA = True
+except Exception:
+    _md_get_calendar = None
+    HAS_MARKET_DATA = False
+
 # FCF-CONVRATE②（TRUST-SUMMARY-EPIC-1）: FCF実力推定の業種平均固定転換率
 # （fcf_conversion_config.json の sector_conversion_rates）が、業界サイクルにより
 # 年度ごとのFCFが大きく変動する銘柄を表現できない構造的限界があると原因分析で
@@ -2645,29 +2659,32 @@ class TanukiValuationPipeline:
         except Exception:
             pass
 
-        # --- next_earnings_date from yfinance calendar ---
-        # 過去日の場合はリスト内の次の未来日を採用する（Phase3-1修正）
+        # --- next_earnings_date from common.market_data.reader.get_calendar() ---
+        # [[MARKETDATA-LAYER-CONSTRUCTION-1]]着手順序4-4: yfinance直接呼び出し
+        # （.calendar）をcommon.market_data.reader経由に切替（2026-08-11）。
+        # 過去日の場合はリスト内の次の未来日を採用するロジックは維持
+        # （Phase3-1修正）。reader側がcalendar未取得銘柄に対して返す空dictは
+        # 中立デフォルトとして扱い、next_earnings_dateはresultに追加されない
+        # （旧コードの「cal取得失敗・空」の場合と同じ挙動）。
         try:
-            import yfinance as yf
             from datetime import date as _date_cls
-            cal = yf.Ticker(ticker).calendar
-            if cal and "Earnings Date" in cal:
-                dates = cal["Earnings Date"]
-                if dates:
-                    today = _date_cls.today()
-                    _next = None
-                    for _d in dates:
-                        try:
-                            _d_val = _d.date() if hasattr(_d, "date") else _date_cls.fromisoformat(str(_d)[:10])
-                            if _d_val >= today:
-                                _next = _d_val
-                                break
-                        except Exception:
-                            continue
-                    if _next is not None:
-                        result["next_earnings_date"] = str(_next)
-                    else:
-                        result["next_earnings_date"] = str(dates[0])  # 全て過去なら最後の値
+            cal = _md_get_calendar(ticker) if HAS_MARKET_DATA else {}
+            dates = cal.get("earnings_date") if cal else None
+            if dates:
+                today = _date_cls.today()
+                _next = None
+                for _d in dates:
+                    try:
+                        _d_val = _date_cls.fromisoformat(str(_d)[:10])
+                        if _d_val >= today:
+                            _next = _d_val
+                            break
+                    except Exception:
+                        continue
+                if _next is not None:
+                    result["next_earnings_date"] = str(_next)
+                else:
+                    result["next_earnings_date"] = str(dates[0])  # 全て過去なら最後の値
         except Exception:
             pass
 

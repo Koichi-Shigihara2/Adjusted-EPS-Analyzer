@@ -235,13 +235,18 @@ class TestFetchWeeklyAttributesSchema:
         "totalDebt": 500_000_000,
     }
 
-    def _patch_info(self, monkeypatch, info):
+    def _patch_info(self, monkeypatch, info, calendar=None, calendar_raises=False):
         class _FakeTicker:
             def __init__(self, symbol):
                 pass
             @property
             def info(self):
                 return info
+            @property
+            def calendar(self):
+                if calendar_raises:
+                    raise RuntimeError("simulated calendar failure")
+                return calendar
         monkeypatch.setattr(fetcher, "_USE_SAFE_YF", False)
         monkeypatch.setattr(fetcher.yf, "Ticker", _FakeTicker)
 
@@ -300,6 +305,67 @@ class TestFetchWeeklyAttributesSchema:
                     "target_median_price", "target_low_price", "target_high_price",
                     "analyst_count", "analyst_recommendation_key"):
             assert saved[key] is None
+
+
+class TestFetchWeeklyAttributesCalendar:
+    """[[MARKETDATA-LAYER-CONSTRUCTION-1]]着手順序4-4（pipeline.py .calendar
+    切替）で追加したcalendarフィールドの回帰テスト。.calendarをmonkeypatchし、
+    ネットワークアクセスなしで{"earnings_date": [...]}形式への変換を検証する。"""
+
+    _FAKE_INFO = TestFetchWeeklyAttributesSchema._FAKE_INFO
+
+    def _patch(self, monkeypatch, calendar=None, calendar_raises=False):
+        schema = TestFetchWeeklyAttributesSchema()
+        schema._patch_info(monkeypatch, dict(self._FAKE_INFO), calendar=calendar, calendar_raises=calendar_raises)
+
+    def test_earnings_date_is_converted_to_iso_strings(self, tmp_path, monkeypatch):
+        import datetime as _dt
+        base = str(tmp_path)
+        self._patch(monkeypatch, calendar={
+            "Earnings Date": [_dt.date(2026, 10, 30)],
+            "Dividend Date": _dt.date(2026, 8, 13),  # 使用しないフィールド、保存されないこと
+        })
+        fetcher.fetch_weekly_attributes(["XYZ"], base_dir=base)
+
+        saved = json.load(open(os.path.join(base, "attributes", "XYZ.json"), encoding="utf-8"))
+        assert saved["calendar"] == {"earnings_date": ["2026-10-30"]}
+
+    def test_multiple_earnings_dates_all_preserved_in_order(self, tmp_path, monkeypatch):
+        import datetime as _dt
+        base = str(tmp_path)
+        self._patch(monkeypatch, calendar={"Earnings Date": [_dt.date(2026, 10, 30), _dt.date(2027, 1, 29)]})
+        fetcher.fetch_weekly_attributes(["XYZ"], base_dir=base)
+
+        saved = json.load(open(os.path.join(base, "attributes", "XYZ.json"), encoding="utf-8"))
+        assert saved["calendar"]["earnings_date"] == ["2026-10-30", "2027-01-29"]
+
+    def test_missing_earnings_date_key_yields_empty_calendar(self, tmp_path, monkeypatch):
+        base = str(tmp_path)
+        self._patch(monkeypatch, calendar={"Dividend Date": "2026-08-13"})
+        fetcher.fetch_weekly_attributes(["XYZ"], base_dir=base)
+
+        saved = json.load(open(os.path.join(base, "attributes", "XYZ.json"), encoding="utf-8"))
+        assert saved["calendar"] == {}
+
+    def test_calendar_none_yields_empty_calendar(self, tmp_path, monkeypatch):
+        """指数等、.calendarがNoneを返す銘柄でも例外にならず空dictになる"""
+        base = str(tmp_path)
+        self._patch(monkeypatch, calendar=None)
+        fetcher.fetch_weekly_attributes(["XYZ"], base_dir=base)
+
+        saved = json.load(open(os.path.join(base, "attributes", "XYZ.json"), encoding="utf-8"))
+        assert saved["calendar"] == {}
+
+    def test_calendar_fetch_failure_does_not_block_other_fields(self, tmp_path, monkeypatch):
+        """.calendar呼び出しが例外を送出しても、.info由来の他フィールドの
+        保存は妨げられない（calendar取得失敗の独立性）"""
+        base = str(tmp_path)
+        self._patch(monkeypatch, calendar_raises=True)
+        fetcher.fetch_weekly_attributes(["XYZ"], base_dir=base)
+
+        saved = json.load(open(os.path.join(base, "attributes", "XYZ.json"), encoding="utf-8"))
+        assert saved["calendar"] == {}
+        assert saved["forward_pe"] == 18.0  # .info由来フィールドは正常に保存される
 
 
 class TestMergeDailyRecords:

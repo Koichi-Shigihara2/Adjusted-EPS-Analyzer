@@ -513,6 +513,16 @@ def fetch_weekly_attributes(symbols: List[str], base_dir: Optional[str] = None) 
       可能性）と乖離するリスクがあるため、独自再計算はせず生の値をそのまま
       保存する。
 
+    [[MARKETDATA-LAYER-CONSTRUCTION-1]]着手順序4-4（pipeline.py .calendar
+    切替）で2026-08-11に`calendar`フィールドを追加:
+    - `.info`とは別のyfinance API（`Ticker.calendar`、次回決算日等）を
+      追加で1回呼び出し、`{"earnings_date": [ISO8601日付文字列, ...]}`の
+      形で保存する。`.info`取得成功後の独立した呼び出しとして扱い、
+      calendar取得の失敗は`.info`由来の他フィールドの保存を妨げない
+      （空dictのまま保存継続）。pipeline.py側が使うのは次回決算日の
+      配列のみのため、Dividend Date等の他フィールドは保存しない
+      （実際に使用するフィールドのみを保存する既存方針を踏襲）。
+
     .info呼び出しはcommon.yfinance_utils.safe_yf_ticker()（リトライ2回・
     待機3秒、beta_fetcher.py::fetch_yfinance_beta()と同型）経由で行う
     （import失敗時は無リトライの直接呼び出しにフォールバック）。全銘柄
@@ -533,14 +543,34 @@ def fetch_weekly_attributes(symbols: List[str], base_dir: Optional[str] = None) 
                 print(f"   [{symbol}] .info取得失敗（スキップ）: {e}")
                 continue
         else:
+            t = yf.Ticker(symbol)
             try:
-                info = yf.Ticker(symbol).info
+                info = t.info
             except Exception as e:
                 print(f"   [{symbol}] .info取得失敗（スキップ）: {e}")
                 continue
         if not info:
             print(f"   [{symbol}] .info が空（スキップ）")
             continue
+
+        # [[MARKETDATA-LAYER-CONSTRUCTION-1]]着手順序4-4（pipeline.py
+        # .calendar切替）の実装依頼で追加（2026-08-11）。次回決算日
+        # （Earnings Date）のみを対象とし、.info単発呼び出しの失敗とは
+        # 独立した失敗として扱う（calendar取得失敗が.info取得済みの
+        # 他フィールド保存を妨げない）。calendar_dictの構造は{"earnings_
+        # date": [ISO8601日付文字列, ...]}。取得失敗・空の場合は空dictの
+        # まま保存し、reader.get_calendar()が空dictを返す（中立デフォルト）。
+        calendar_dict: Dict[str, Any] = {}
+        try:
+            cal = t.calendar
+            earnings_dates = cal.get("Earnings Date") if isinstance(cal, dict) else None
+            if earnings_dates:
+                calendar_dict["earnings_date"] = [
+                    (d.isoformat() if hasattr(d, "isoformat") else str(d)[:10])
+                    for d in earnings_dates
+                ]
+        except Exception as e:
+            print(f"   [{symbol}] calendar取得失敗（次回決算日なしで継続）: {e}")
 
         fetched_at = _now_iso()
         record: Dict[str, Any] = {
@@ -569,6 +599,7 @@ def fetch_weekly_attributes(symbols: List[str], base_dir: Optional[str] = None) 
             "analyst_count": info.get("numberOfAnalystOpinions"),
             "analyst_recommendation_key": info.get("recommendationKey"),
             "total_debt": info.get("totalDebt"),
+            "calendar": calendar_dict,
         }
 
         record_warnings = validate_attributes_record(record)

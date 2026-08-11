@@ -2074,6 +2074,68 @@ class TestSegmentConfiguredFalseForUnconfiguredTicker:
             "登録済み銘柄で segment_configured=True がセットされていない"
 
 
+class TestLoadExtraDataNextEarningsDate:
+    """[[MARKETDATA-LAYER-CONSTRUCTION-1]]着手順序4-4: next_earnings_dateの
+    取得元をyfinance直接呼び出し（.calendar）からcommon.market_data.reader
+    経由（_md_get_calendar）に切替えたことの回帰テスト。過去日の場合はリスト
+    内の次の未来日を採用する既存ロジック（Phase3-1修正）は維持している。"""
+
+    def test_future_earnings_date_is_selected(self, tmp_path, monkeypatch):
+        monkeypatch.setattr(pipeline, "HAS_MARKET_DATA", True)
+        monkeypatch.setattr(pipeline, "_md_get_calendar", lambda ticker: {"earnings_date": ["2099-01-01"]})
+        pipe = _make_pipe(tmp_path)
+        pipe._eps_summary_cache = {}
+        valuation = {"components": {"latest_revenue": 1_000_000_000}}
+        result = pipe._load_extra_data("FUTURETICKER", valuation)
+        assert result.get("next_earnings_date") == "2099-01-01"
+
+    def test_earliest_future_date_is_selected_when_multiple_present(self, tmp_path, monkeypatch):
+        monkeypatch.setattr(pipeline, "HAS_MARKET_DATA", True)
+        monkeypatch.setattr(
+            pipeline, "_md_get_calendar",
+            lambda ticker: {"earnings_date": ["2020-01-01", "2099-01-01", "2099-04-01"]},
+        )
+        pipe = _make_pipe(tmp_path)
+        pipe._eps_summary_cache = {}
+        valuation = {"components": {"latest_revenue": 1_000_000_000}}
+        result = pipe._load_extra_data("MULTITICKER", valuation)
+        assert result.get("next_earnings_date") == "2099-01-01"
+
+    def test_all_past_dates_fall_back_to_first_entry(self, tmp_path, monkeypatch):
+        """全ての日付が過去の場合はリストの最初の値を採用する（旧ロジック踏襲）"""
+        monkeypatch.setattr(pipeline, "HAS_MARKET_DATA", True)
+        monkeypatch.setattr(
+            pipeline, "_md_get_calendar",
+            lambda ticker: {"earnings_date": ["2020-01-01", "2020-04-01"]},
+        )
+        pipe = _make_pipe(tmp_path)
+        pipe._eps_summary_cache = {}
+        valuation = {"components": {"latest_revenue": 1_000_000_000}}
+        result = pipe._load_extra_data("PASTTICKER", valuation)
+        assert result.get("next_earnings_date") == "2020-01-01"
+
+    def test_empty_calendar_yields_no_next_earnings_date_key(self, tmp_path, monkeypatch):
+        """reader.get_calendar()の中立デフォルト（空dict）ではキー自体を
+        resultに追加しない（旧コードのcalendar取得失敗・空時と同じ挙動）"""
+        monkeypatch.setattr(pipeline, "HAS_MARKET_DATA", True)
+        monkeypatch.setattr(pipeline, "_md_get_calendar", lambda ticker: {})
+        pipe = _make_pipe(tmp_path)
+        pipe._eps_summary_cache = {}
+        valuation = {"components": {"latest_revenue": 1_000_000_000}}
+        result = pipe._load_extra_data("EMPTYTICKER", valuation)
+        assert "next_earnings_date" not in result
+
+    def test_market_data_unavailable_yields_no_next_earnings_date_key(self, tmp_path, monkeypatch):
+        """HAS_MARKET_DATA=False（common.market_data未import環境）でも例外に
+        ならず中立デフォルトのまま継続する"""
+        monkeypatch.setattr(pipeline, "HAS_MARKET_DATA", False)
+        pipe = _make_pipe(tmp_path)
+        pipe._eps_summary_cache = {}
+        valuation = {"components": {"latest_revenue": 1_000_000_000}}
+        result = pipe._load_extra_data("NOMDTICKER", valuation)
+        assert "next_earnings_date" not in result
+
+
 class TestMatrix2ROEDefinitionDynamicYear:
     """Fix3 回帰防止: Matrix② 定義文の ROE 年数が roe_years_used から動的に生成されること"""
 
