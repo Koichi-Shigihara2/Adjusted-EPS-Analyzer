@@ -2879,21 +2879,35 @@ grep -n "Fred(\|from fredapi\|fred_api_key" src/market/market_pulse/collect_and_
 実装・定期取得ワークフロー・本番消費者2ファイル全数切替が完了し、
 **`common/market_data/`と同じ「完成」状態に到達した**。
 
-#### 次セッションでの着手順序（2026-08-12時点、フェーズ2全4データソース結論確定・実質完了を反映）
-1. `common/macro_data/`構築プロジェクト自体は完成。フェーズ2（過去
-   データ移管）も4データソースすべてに結論が確定し**実質完了**:
-   - `[[PHASE2-MIGRATION-POLICY-DECIDED-1]]`（移行方針確定）
-   - `[[MACRODATA-BAMLH0A0HYM2-HISTORY-EXCEPTION-1]]`（FRED、
-     `BAMLH0A0HYM2`のみ例外的移行を実装・実行完了、他23系列は対象外）
-   - `[[PHASE2-SECDATA-FULL-DEPTH-VERIFICATION-1]]`（SEC EDGAR、全105
-     銘柄精査完了・フェーズ2対象外と確定）
-   - `[[PHASE2-YFINANCE-REFETCH-DESIGN-1]]`（yfinance、投資調査の結果
-     移行作業不要・フェーズ2対象外と確定）
-   - 取得前提条件は当初調査時点で対象外と判定済み
-2. 次の選択肢:
-   - フェーズ3（導出データ層の管理方法検討、`PROJECT_STATUS.md`参照）
-     への着手検討
-   - 本線外課題群（下記3〜5）の対応要否判断
+#### 次セッションでの着手順序（2026-08-12時点、フェーズ3着手・分類C3件のBACKLOG整理完了を反映）
+1. `common/macro_data/`構築プロジェクト自体は完成。フェーズ1（一次
+   データ層の構築）・フェーズ2（過去データ移管）はいずれも完了:
+   - フェーズ1: `common/sec_data/`・`common/market_data/`・
+     `common/macro_data/`の3コンポーネントとも完成（`PROJECT_STATUS.md`
+     フェーズ1表参照）
+   - フェーズ2: `[[PHASE2-MIGRATION-POLICY-DECIDED-1]]`（移行方針確定）・
+     `[[MACRODATA-BAMLH0A0HYM2-HISTORY-EXCEPTION-1]]`（FRED、
+     `BAMLH0A0HYM2`のみ例外的移行を実装・実行完了、他23系列は対象外）・
+     `[[PHASE2-SECDATA-FULL-DEPTH-VERIFICATION-1]]`（SEC EDGAR、全105
+     銘柄精査完了・フェーズ2対象外と確定）・
+     `[[PHASE2-YFINANCE-REFETCH-DESIGN-1]]`（yfinance、投資調査の結果
+     移行作業不要・フェーズ2対象外と確定）・取得前提条件（当初調査
+     時点で対象外と判定済み）の4データソース全てに結論確定済み
+2. **フェーズ3（導出データ層の管理方法検討）着手済み**:
+   - 分類C14件のうち3件（設定ファイル配置・重複問題）をBACKLOG登録済み
+     （実装は未着手）: `[[PORTFOLIO-CONFIG-DUP-1]]`（`INPUT-C-008`、
+     Portfolio二重保持）・`[[TAILKPI-CONFIG-LOCATION-1]]`
+     （`INPUT-C-009`、`tail_kpi_map.json`のconfig外配置）・
+     `[[FCFCONFIG-LOCATION-1]]`（`INPUT-C-010`、
+     `fcf_conversion_config.json`のconfig外配置）
+   - `FIELD_DEFINITIONS.md`499項目の新DB参照への切替は未着手。次の
+     アクションは、まず対象件数（yfinance/FRED由来で`common/
+     market_data/`・`common/macro_data/`への参照に未更新の項目数）を
+     数える調査から（`common/sec_data/`は既に13箇所で参照済みと
+     フェーズ3投資調査で確認済み、`common/market_data/`・
+     `common/macro_data/`は0件）
+   - 分類C残り11件（`INPUT-C-001〜007`・`011〜014`）の管理方法検討は
+     未着手
 3. （本線外）SEC EDGAR全105銘柄精査で新規発見した異常ケース:
    `[[SECDATA-ENB-NORMALIZATION-MISSING-1]]`（ENBの正規化データ
    〈annual_*.json/quarterly_*.json〉が1件も生成されていない、原因調査
@@ -2914,8 +2928,9 @@ grep -n "Fred(\|from fredapi\|fred_api_key" src/market/market_pulse/collect_and_
    CLI-TICKERS-SHADOW-1]]`・`[[NETCASH-DUAL-CALC-1]]`等
 
 #### 着手条件
-なし（`common/macro_data/`本体・フェーズ2（4データソースすべて）は
-いずれも完了。フェーズ3着手検討・ENB異常ケース・本線外課題群のみ残置）。
+なし（`common/macro_data/`本体・フェーズ1・フェーズ2はいずれも完了。
+フェーズ3は分類C3件のBACKLOG登録まで完了、残り11件の検討・
+`FIELD_DEFINITIONS.md`切替調査・ENB異常ケース・本線外課題群のみ残置）。
 
 ---
 
