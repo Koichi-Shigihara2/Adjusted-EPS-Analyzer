@@ -1,6 +1,20 @@
 # PROJECT_STATUS.md — 新一次データベース構築プロジェクト進捗
 
 作成日: 2026-07-23
+更新日: 2026-08-12（`[[MACRODATA-BAMLH0A0HYM2-HISTORY-EXCEPTION-1]]`の
+実装・実行が完了。`common/macro_data/migrate_bamlh0a0hym2_history.py`
+（一度限りの例外的移行専用スクリプト、`common/macro_data/`配下に監査
+証跡として恒久残置）を新規実装し、旧`05_events.csv`のHY Spread行
+（`indicator == "HY Spread"`）から`2023-08-14`より前の6,947件を
+`common/macro_data/series/BAMLH0A0HYM2.json`へ追加投入（移行前785件→
+移行後7,732件）。`2023-08-14`以降の既存レコードはサンプル5件の値
+突合で無変化を確認、`as_of`の重複0件・昇順整列済みを確認、保存前検証
+（`fetcher.py::_validate_incoming_batch`再利用）で警告0件、二重実行
+防止ガードの動作も確認。pytest 793 passed / 2 known-failed
+（`[[TEST-STALE-IV-1]]`）で回帰なし。フェーズ2表FRED行の備考を
+「実施予定」→「実施済み」に更新。`[[MACRODATA-BAMLH0A0HYM2-HISTORY-
+EXCEPTION-1]]`をBACKLOG.mdからBACKLOG_DONE.mdへ移動。詳細は
+BACKLOG_DONE.md「2026-08-12（完了）」参照）
 更新日: 2026-08-12（フェーズ2「過去データ移管」の移行方針を確定・記録。
 原則は再取得・再導出、データ提供元が恒久的にAPI提供範囲を制限しており
 再取得が技術的に不可能な場合に限り旧保存先からの例外的移行を許容する
@@ -432,7 +446,7 @@ BACKLOG.mdに残置 |
 |---|---|---|
 | SEC EDGAR既存データ（`INPUT-A-001〜018`） | 未着手 | `INPUT_DATA_AS_IS.md` 1-A・2-A参照（実測7経路）。**現状評価（2026-08-12投資調査）**: サンプル3銘柄（AAPL/MSFT/XOM）で`company_facts.json`と`annual_*.json`の履歴深度を比較した結果、有意な差は確認できず。`common/sec_data/`のfetcherは初回投入時点で既にSEC EDGAR APIから取得可能な深い履歴（20年分程度）を再取得できている可能性が高い。全105銘柄の精査はしていないため、追加作業の要否は暫定的に「作業不要の可能性が高いが未確定」とする |
 | yfinance既存データ（`INPUT-A-019〜023`） | 未着手 | `INPUT_DATA_AS_IS.md` 1-B・2-B参照（実測12ファイル。`common/sec_data/audit.py`見落としを2026-08-07訂正、`[[MARKETDATA-AS-IS-AUDIT-PY-OMITTED-1]]`参照）。**現状評価（2026-08-12投資調査）**: 旧保存先の一部（hypecore・`market_data.json`・`breadth_data.json`）に、数ヶ月〜32ヶ月分の時系列データが存在することを確認済み。Yahoo Finance API自体は同期間のデータを今も提供しているとみられるため、再取得による対応を検討中（次段階の調査対象） |
-| FRED既存データ（`INPUT-A-024〜047`） | 未着手 | `INPUT_DATA_AS_IS.md` 1-C・2-C参照（実測2サブシステム）。**現状評価（2026-08-12投資調査）**: 全24系列を調査した結果、`BAMLH0A0HYM2`のみが2026年4月からのFRED側新規提供制限（直近3年のみ）に該当し、再取得不可能と確認。下記「移行方針」の「例外」規定を適用し、旧`05_events.csv`（1996-12-31〜2023-08-13分）からの一度限りの移行を実施予定（詳細は`[[MACRODATA-BAMLH0A0HYM2-HISTORY-EXCEPTION-1]]`参照）。他23系列は再取得のみで対応可能と確認済み |
+| FRED既存データ（`INPUT-A-024〜047`） | 未着手 | `INPUT_DATA_AS_IS.md` 1-C・2-C参照（実測2サブシステム）。**現状評価（2026-08-12投資調査、`BAMLH0A0HYM2`分は同日実施済み）**: 全24系列を調査した結果、`BAMLH0A0HYM2`のみが2026年4月からのFRED側新規提供制限（直近3年のみ）に該当し、再取得不可能と確認。下記「移行方針」の「例外」規定を適用し、`common/macro_data/migrate_bamlh0a0hym2_history.py`を実装・実行、旧`05_events.csv`（1996-12-31〜2023-08-11分、6,947件）からの一度限りの移行を**実施済み**（`2023-08-14`以降の既存785件は無変化を確認、移行後合計7,732件。詳細は`[[MACRODATA-BAMLH0A0HYM2-HISTORY-EXCEPTION-1]]`参照）。他23系列は初回投入時点で既にFRED公式の全期間履歴を取得済みのため追加の再取得作業は不要と確認済み |
 | 取得前提条件（`INPUT-B-001〜003`） | 未着手 | `INPUT_DATA_AS_IS.md` 1-D・1-E参照（`monitor_tickers.yaml`・`cik_lookup.csv`／`cik_lookup_result.json`はいずれも現状`config/`配下に存在確認済み）。**現状評価（2026-08-12投資調査）**: 対象外と判断（ファイルサイズが小さく、移管・再取得いずれも不要） |
 
 **移行方針（2026-08-12確定）**:

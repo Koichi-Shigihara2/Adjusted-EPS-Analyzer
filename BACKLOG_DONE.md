@@ -204,6 +204,79 @@ HISTORY-EXCEPTION-1]]`をBACKLOG.mdへ新規登録（未着手、実装は次段
 
 ---
 
+### ✅ [MACRODATA-BAMLH0A0HYM2-HISTORY-EXCEPTION-1] BAMLH0A0HYM2の例外的履歴移行を実装・実行（05_events.csv→common/macro_data/series/）
+**状態:** 完了
+**優先度:** 中
+**分類:** データ移行 / 新DB構築プロジェクト フェーズ2（過去データ移管）
+**登録日:** 2026-08-12
+**完了日:** 2026-08-12
+**発見:** `common/macro_data/`履歴深度の投資調査・原因調査（チャット記録、
+2026-08-12）
+
+#### 内容
+確定済み設計（登録時点の内容は本エントリ末尾の「移行設計」参照）に
+従い、`common/macro_data/migrate_bamlh0a0hym2_history.py`を新規実装した。
+`common/macro_data/`の通常のfetcher/reader運用とは別系統の、一度限りの
+例外的移行専用スクリプトとして`common/macro_data/`配下に恒久的に残置
+（監査証跡、使い捨てではない）。二重実行防止ガード（既存レコードの
+`source_detail`に移行マーカー`migrated_from=05_events.csv`が既に含まれる
+場合は`--force`なしでは中断）・`--dry-run`オプションを実装し、
+`fetcher.py`の`_atomic_write_json`・`_load_json`・
+`_validate_incoming_batch`・`_write_violations_section`・`_now_jst_iso`を
+再利用した。
+
+#### 実行結果
+- **移行前**: `common/macro_data/series/BAMLH0A0HYM2.json` 785件
+  （`2023-08-14`〜`2026-08-10`）
+- **`05_events.csv`のHY Spread行**: 全7,709件中、cutoff日（既存最古
+  `as_of`＝`2023-08-14`）より前が**6,947件**（欠損値・重複`release_date`
+  は0件と確認済み）
+- **移行後**: **7,732件**（785＋6,947）、最古`1996-12-31`〜最新
+  `2026-08-10`
+- **既存レコード（`2023-08-14`以降）の非改変確認**: ランダム抽出5件
+  （`2023-09-18`・`2024-01-19`・`2024-09-06`・`2026-02-11`・
+  `2026-07-06`）で移行前後の値を比較し**全件完全一致**（`value`・
+  `as_of`・`fetched_at`・`source`・`source_detail`いずれも無変化）を確認
+- **境界確認**: `2023-08-11`（移行分、`source_detail`に`migrated_from`
+  含む）→`2023-08-14`（既存ライブ取得分、`source_detail=
+  "series=BAMLH0A0HYM2"`のまま）で正しく切り替わっていることを実測確認
+  （`2023-08-12`・`2023-08-13`は土日のため元データに存在せず、上記2日が
+  実質的な境界）
+- **一意性・整列**: `as_of`の重複0件（7,732件中ユニーク7,732件）、
+  昇順ソート済みを確認
+- **保存前検証**: `_validate_incoming_batch(migrated_batch,
+  prior_last_value=None)`実行、警告0件（`macro_data_violations_log.json`
+  のBAMLH0A0HYM2セクションを移行結果で更新、`checked_at`を記録）
+- **二重実行防止ガードの動作確認**: 実行直後に`--force`なしで再実行した
+  ところ、想定通り`RuntimeError`で中断されレコード数が7,732件のまま
+  変化しないことを確認
+- **pytest**: `tests/test_macro_data_fetcher.py`・
+  `tests/test_macro_data_reader.py`・`tests/test_macro_pulse_logic.py`
+  61 passed。リポジトリ全体793 passed / 2 known-failed
+  （`[[TEST-STALE-IV-1]]`）で回帰なし
+
+#### 移行設計（実装時点で確定していた内容、参考として保持）
+- 移行元: `docs/market-monitor/macro-pulse/data/05_events.csv`の
+  `indicator == "HY Spread"`の行
+- 抽出列: `release_date`列を`as_of`、`actual`列を`value`として抽出
+- 投入範囲: 既存最古`as_of`（`2023-08-14`）より前の日付のみを追加投入
+  （それ以降の既存レコードは一切変更しない）
+- provenance: `source="FRED"`固定、`source_detail="series=BAMLH0A0HYM2;
+  migrated_from=05_events.csv (exception, FRED 3yr limit since
+  2026-04)"`（ライブ取得分の`source_detail="series=BAMLH0A0HYM2"`と
+  区別可能）、`fallback_used=false`
+
+#### ドキュメント更新
+`PROJECT_STATUS.md`フェーズ2表のFRED行を「実施予定」→「実施済み」に
+更新。`SYSTEM_MAP.md`の`common/macro_data/`セクションへ本移行スクリプトの
+存在・役割を追記。
+
+実装コード: `common/macro_data/migrate_bamlh0a0hym2_history.py`（新規）。
+データ変更: `common/macro_data/series/BAMLH0A0HYM2.json`・
+`common/macro_data/macro_data_violations_log.json`。
+
+---
+
 ### ✅ [MARKETDATA-LAYER-CONSTRUCTION-1] 着手順序5-2: score_verifier.py切替（診断ツール2/2、全数完了）
 **状態:** 完了
 **優先度:** 高

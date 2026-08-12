@@ -1,5 +1,12 @@
 # SYSTEM MAP — On-a-journey
 
+最終更新: 2026-08-12（common/macro_data/セクションへ`migrate_
+bamlh0a0hym2_history.py`（BAMLH0A0HYM2の例外的履歴移行スクリプト）を
+追記。FRED側が2026年4月から同系列の提供範囲を直近3年に制限したため、
+`common/macro_data/`の通常のfetcher/reader運用とは別系統の一度限りの
+例外専用スクリプトとして新設、旧`05_events.csv`から`2023-08-14`より前の
+6,947件を移行済み（`[[MACRODATA-BAMLH0A0HYM2-HISTORY-EXCEPTION-1]]`参照）。
+
 最終更新: 2026-08-12（common/macro_data/セクションを本番消費者切替完了
 （**完成**）に更新。`05_main.py`（9関数・約20箇所）・`collect_and_send.py`
 （3関数）の全FRED直接呼び出しを`common.macro_data.reader`経由に切替、
@@ -1105,7 +1112,12 @@ TANUKI TAIL（docs/portfolio/tail/）← EDGAR RSS / Grok（KPI提案・四半�
 `.github/workflows/Macro_Data_Update.yml`（定期取得ワークフロー）・
 本番消費者2ファイル（`05_main.py`・`collect_and_send.py`）の切替が
 全て完了。`series/`へ初回実データ投入済み（25系列中24系列成功）。
-過去データ一括投入（フェーズ2）のみ次段階で扱う。
+過去データ一括投入（フェーズ2）は、24系列中23系列が初回投入時点で
+FRED公式の全期間履歴を既に取得済みと判明し追加作業不要、残る
+`BAMLH0A0HYM2`（FRED側の2026年4月からの提供範囲制限で再取得不可能）
+のみ例外的移行（`migrate_bamlh0a0hym2_history.py`）を実施済み。
+FRED分の過去データ移管は実質完了、SEC EDGAR・yfinance分は次段階で
+扱う（詳細はPROJECT_STATUS.md「フェーズ2」参照）。
 
 - `common/macro_data/fetcher.py`: ネットワーク取得＋検証＋原子的書き込み。
   `fetch_series(series_id, start=None)`（FRED系列取得の唯一の外部
@@ -1169,6 +1181,23 @@ TANUKI TAIL（docs/portfolio/tail/）← EDGAR RSS / Grok（KPI提案・四半�
   （FRED Release Calendar REST APIへの直接`requests.get()`、
   observation値ではなく発表日カレンダーを扱う別API表面）のみ対象外・
   維持。詳細はBACKLOG.md`[[MACRODATA-LAYER-CONSTRUCTION-1]]`参照。
+- `common/macro_data/migrate_bamlh0a0hym2_history.py`（例外的履歴移行、
+  2026-08-12実装・実行）: `fetcher.py`・`reader.py`とは別系統の、一度
+  限りの例外専用スクリプト。FRED側（データ提供元ICE Data Indices）が
+  2026年4月から`BAMLH0A0HYM2`の提供範囲を直近3年に制限したため
+  （`fredapi::get_series_info()`のnotes欄で確認）、通常のfetcher.py
+  再取得では対応不能となった過去分を、削除予定の旧`docs/market-monitor/
+  macro-pulse/data/05_events.csv`（`indicator == "HY Spread"`行）から
+  一度だけ移行する。`fetcher.py`の`_atomic_write_json`・`_load_json`・
+  `_validate_incoming_batch`・`_write_violations_section`を再利用。
+  移行レコードの`source_detail`にはライブ取得分（`"series=
+  BAMLH0A0HYM2"`）と区別可能な`migrated_from=05_events.csv`マーカーを
+  付与。二重実行防止ガード（既存レコードに移行マーカーが検出された
+  場合`--force`なしでは中断）・`--dry-run`オプションを実装。実行結果:
+  `2023-08-14`より前の6,947件を追加投入（785件→7,732件）、既存レコード
+  は無変化。スクリプト自体は監査証跡として恒久残置（使い捨てではない）。
+  詳細はBACKLOG_DONE.md`[[MACRODATA-BAMLH0A0HYM2-HISTORY-EXCEPTION-1]]`
+  参照。
 
 ---
 
