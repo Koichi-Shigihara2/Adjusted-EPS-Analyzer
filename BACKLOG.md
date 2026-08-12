@@ -1,5 +1,18 @@
 # On-a-journey — 改善バックログ（全システム）
 
+最終更新: 2026-08-12（`common/macro_data/`新設事前調査（FRED消費者洗い出し、
+`MIGRATION_CHECKLIST.md`Step1相当）で発見した新規4件を登録（記録のみ、
+実装なし）。優先度：中に`[[MACRODATA-AS-IS-DUPLICATION-UNDERCOUNT-1]]`
+（`INPUT_DATA_TOBE.md`記載の`BAMLH0A0HYM2`重複取得「3箇所」は実際には
+`get_financial_context()`を含む4箇所、`T10Y2Y`・`VIXCLS`にも同型の
+未記載重複あり）・`[[MACRODATA-SCHEDULED-SILENT-GAP-CSCICP-USALOL-1]]`
+（現行`INDICATOR_CONFIG`から削除済みの2系列の残存`scheduled`行が
+サイレントにactual欠落を起こす疑い、実データ確認が着手条件）、
+優先度：低に`[[MACRODATA-FTSD-MISSING-FROM-INVENTORY-1]]`（`FTSD`が
+24系列台帳に未掲載）・`[[MACRODATA-IMPORT-HISTORY-CONFIG-DRIFT-1]]`
+（`05_import_history.py`の独自`FRED_INDICATORS`辞書が現行
+`INDICATOR_CONFIG`と2系列分乖離）を登録。実装コード変更なし）
+
 最終更新: 2026-08-12（`[[MARKETDATA-LAYER-CONSTRUCTION-1]]`着手順序6-2:
 `backfill_tech_pulse.py`（QQQ/SPY取得）切替が**完了**。前提作業として
 `reader.py`へ`get_price_series_as_of(symbol, as_of_date, days)`を新規
@@ -7202,6 +7215,94 @@ ARCH-DATA-1残課題③調査結果を反映）」参照）。本タスクはこ
 
 ---
 
+### [MACRODATA-AS-IS-DUPLICATION-UNDERCOUNT-1] INPUT_DATA_TOBE.mdが指摘するBAMLH0A0HYM2重複取得「3箇所」は実際には4箇所。T10Y2Y・VIXCLSにも同型の未記載重複が存在する
+**優先度:** 中（`common/macro_data/`着手前にドキュメント訂正・母集団の
+正確な把握が必要）
+**分類:** ドキュメント不備 / 調査範囲の見落とし
+**登録日:** 2026-08-12
+**発見:** `common/macro_data/`新設事前調査・FRED消費者洗い出し
+（チャット記録、2026-08-12）
+
+#### 内容
+`INPUT_DATA_TOBE.md`（147行・436-439行）は`BAMLH0A0HYM2`（HYスプレッド）
+の重複取得を「MACRO PULSE内部2箇所＋Market Pulse1箇所＝計3箇所」と
+記載しているが、`05_main.py`の通常実行（`main()`、フラグなし）を実コード
+で追跡した結果、以下の**3箇所**が無条件に実行されることを確認した:
+1. `get_financial_context()`（763-794行、786行で`fred_latest(fred,
+   "BAMLH0A0HYM2", ...)`）— `main()`冒頭（2185行）で必ず実行
+2. `fetch_event_row("HY Spread", ...)`（934行、`INDICATOR_CONFIG`の
+   `daily`3系列ループ内、2217-2223行）— 必ず実行
+3. `update_liquidity_csv()`（1956行）— `main()`末尾（2255行）で必ず実行
+
+これに`collect_and_send.py::fetch_hy_spread_from_fred()`（Market Pulse）
+を加えると**計4箇所**。ドキュメントは①`get_financial_context()`を
+見落としており、MACRO PULSE内部は2箇所ではなく3箇所が正しい。
+
+さらに、同一構造の未記載重複が`T10Y2Y`・`VIXCLS`にも存在する:
+`get_financial_context()`（785行`T10Y2Y`・787行`VIXCLS`）と
+`fetch_event_row("Yield Curve 10Y-2Y"/"VIX", ...)`
+（`INDICATOR_CONFIG`経由の`fred_id`再取得）がそれぞれ独立に同一系列を
+再取得しており、`fin_ctx`にすでに取得済みの値があるにもかかわらず
+`daily`系列自身の行を作る際は再フェッチする設計になっている。
+ドキュメントは`BAMLH0A0HYM2`のみを重複例として挙げているが、
+`T10Y2Y`・`VIXCLS`（いずれもMACRO PULSE内部2箇所）にも同型の重複が
+存在する。
+
+#### 対応方針（未定）
+- `INPUT_DATA_TOBE.md`の該当記載（147行・436-439行）を「MACRO PULSE
+  内部3箇所＋Market Pulse1箇所＝計4箇所」に訂正する
+- `T10Y2Y`・`VIXCLS`の2箇所重複も追記する
+- `common/macro_data/fetcher.py`設計時、`get_financial_context()`が
+  `INDICATOR_CONFIG`の`daily`系列と重複取得しない構造（`fin_ctx`の
+  値をそのまま`daily`系列の`actual`にも流用する等）を検討する
+
+#### 着手条件
+なし。`common/macro_data/`設計時にこれら3系列の重複解消を含めること。
+
+---
+
+### [MACRODATA-SCHEDULED-SILENT-GAP-CSCICP-USALOL-1] CSCICP03USM665S・USALOLITONOSTSAMが現行INDICATOR_CONFIGから削除済みにも関わらず、05_indicator_schedule.csvの既存scheduled行がfred_id空文字列のまま処理され、actualが埋まらない静かなデータ欠落を起こす可能性
+**優先度:** 低〜中（実害の有無・範囲が未確認）
+**分類:** バグ疑い（サイレント欠落）
+**登録日:** 2026-08-12
+**発見:** `common/macro_data/`新設事前調査・FRED消費者洗い出し
+（チャット記録、2026-08-12）
+
+#### 内容
+`CSCICP03USM665S`（CB Consumer Confidence）・`USALOLITONOSTSAM`
+（Conference Board LEI）は`05_import_history.py`固有の旧
+`FRED_INDICATORS`辞書にのみ存在し、現行`05_main.py`の
+`INDICATOR_CONFIG`（12系列）には**含まれていない**（実コード確認済み）。
+にもかかわらず、`docs/market-monitor/macro-pulse/data/
+05_indicator_schedule.csv`には両指標の`scheduled`行が現存する
+（実データ確認済み、例:
+`Conference Board LEI,2026-06-08,USALOLITONOSTSAM,FRED,,,scheduled`）。
+
+`fred_release_dates()`（458-498行）は`INDICATOR_CONFIG.items()`のみを
+走査するため、この2系列の**新規**`scheduled`行が今後生成されることは
+ない。しかし**既存の残存`scheduled`行**は`main()`の`for sched in
+scheduled:`ループ（2196-2216行）で処理対象になり、`fetch_event_row()`
+内で`cfg = INDICATOR_CONFIG.get(indicator, {})`が空dictを返すため
+`fred_id`が空文字列となり、`if fred and fred_id and actual_val is
+None:`（921行）の条件が成立せずFRED取得がスキップされる。**例外は
+発生しないが、`actual`欄が空欄のまま行だけが`05_events.csv`に
+生成される**静かな欠落が起こりうる。
+
+#### 対応方針（未定・実データ確認が必要）
+- `05_events.csv`・`05_indicator_schedule.csv`の実データを確認し、
+  この2指標の`scheduled`行が既に処理済み（過去日、`actual`空欄のまま
+  残存）か、まだ未来日で残存しているかを確認する
+- 既に空欄行が生成されている場合は実害の範囲（何件か）を確認する
+- 対応要否の判断: ①`05_indicator_schedule.csv`から該当2系列の
+  残存`scheduled`行を削除する、②`INDICATOR_CONFIG`に復活させる
+  （意図的に除外されたのか要確認）、のいずれかを実データ確認後に判断
+
+#### 着手条件
+実際に`05_events.csv`等でこの欠落が発生しているか（scheduled行の
+残存有無）を実データで確認してから対応要否を判断する。
+
+---
+
 ## 優先度：低（アイデア段階）
 
 ### [MARKETDATA-AS-IS-AUDIT-PY-OMITTED-1] INPUT_DATA_AS_IS.md 1-B節の「11ファイル」がcommon/sec_data/audit.pyを見落としていた
@@ -8910,6 +9011,66 @@ ROEフォールバック不可を許容する明示的な設計判断が必要�
 
 #### 着手条件
 なし
+
+---
+
+### [MACRODATA-FTSD-MISSING-FROM-INVENTORY-1] FTSD（WTREGENフォールバック先）がINPUT_DATA_TOBE.mdの24系列台帳（INPUT-A-024〜047）に含まれていない
+**優先度:** 低（実装漏れではなくドキュメント台帳の記載漏れ）
+**分類:** ドキュメント不備
+**登録日:** 2026-08-12
+**発見:** `common/macro_data/`新設事前調査・FRED消費者洗い出し
+（チャット記録、2026-08-12）
+
+#### 内容
+`05_main.py::update_liquidity_csv()`の`WTREGEN`（TGA）フォールバック先
+として`FTSD`が実装されている（1959-1960行: `if tga_val is None:
+tga_val, _ = fred_latest(fred, "FTSD", target_date, lookback=21)`）が、
+`INPUT_DATA_TOBE.md`の24系列一覧（`INPUT-A-024`〜`047`）には`FTSD`が
+掲載されていない。実際に現行コードが参照する系列は25系列であり、
+24系列という数字は完全な網羅ではない。
+
+#### 対応方針
+`common/macro_data/`設計時、`INPUT_DATA_TOBE.md`の24系列台帳へ`FTSD`
+（`WTREGEN`のフォールバック専用系列である旨も明記）を追加する。
+
+#### 着手条件
+なし。`common/macro_data/`設計時に台帳へ追加する。
+
+---
+
+### [MACRODATA-IMPORT-HISTORY-CONFIG-DRIFT-1] 05_import_history.pyの独自FRED_INDICATORS辞書がINDICATOR_CONFIGと乖離（2系列多い・2系列少ない）
+**優先度:** 低（一過性ツール、通常運用では実行されない）
+**分類:** 設定の陳腐化
+**登録日:** 2026-08-12
+**発見:** `common/macro_data/`新設事前調査・FRED消費者洗い出し
+（チャット記録、2026-08-12）
+
+#### 内容
+`05_import_history.py`（一過性の一括過去投入ツール、どのワークフロー
+からも参照されない手動実行専用）が独自に保持する`FRED_INDICATORS`辞書
+（131-145行）は、`05_main.py`の現行`INDICATOR_CONFIG`と以下の通り
+乖離している:
+- **多い**（現行`INDICATOR_CONFIG`に存在しない2系列）:
+  `CSCICP03USM665S`（CB Consumer Confidence）・`USALOLITONOSTSAM`
+  （Conference Board LEI）。`[[MACRODATA-SCHEDULED-SILENT-GAP-CSCICP-
+  USALOL-1]]`参照
+- **少ない**（現行`INDICATOR_CONFIG`にあるが`FRED_INDICATORS`に
+  存在しない2系列）: `GACDFSA066MSFRBPHI`（Philadelphia Fed
+  Manufacturing）・`CFNAI`（Chicago Fed National Activity）
+
+このため、現状の`05_import_history.py fred`コマンドを実行しても、
+Philadelphia Fed・Chicago Fedの過去データは投入されず、逆に既に
+追跡対象外の2指標（CB Consumer Confidence・Conference Board LEI）の
+過去データが投入されてしまう。
+
+#### 対応方針（未定）
+- `common/macro_data/`統合時に本ツール自体を作り直すか、`FRED_INDICATORS`
+  を`INDICATOR_CONFIG`から動的生成する形に修正するか判断する
+- 判断までの間、本ツールを実行する場合は`--indicators`引数で対象を
+  明示的に絞り込み、乖離した2系列を誤って投入しないよう注意する
+
+#### 着手条件
+なし。`common/macro_data/`統合時にこのツール自体を見直すか判断する。
 
 ---
 
