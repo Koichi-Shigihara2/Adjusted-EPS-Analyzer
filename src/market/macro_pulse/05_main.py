@@ -52,6 +52,34 @@ FED_CONTEXT_PATH = os.path.join(BASE_DATA_DIR, "05_fed_context.csv")
 WEEKLY_ANALYSIS_PATH = os.path.join(BASE_DATA_DIR, "05_weekly_analysis.csv")
 LIQUIDITY_PATH   = os.path.join(BASE_DATA_DIR, "05_liquidity.csv")
 
+# common/macro_data - MACRODATA-LAYER-CONSTRUCTION-1本番消費者切替
+# （2026-08-12）: FRED系列取得をcommon.macro_data.reader経由に切替。
+# collect_and_send.py等と同じHAS_MACRO_DATAガード・二段構えsys.path
+# 解決パターンを踏襲する（本ファイルは`python src/market/macro_pulse/
+# 05_main.py`で直接実行されるためリポジトリルートがsys.pathに含まれ
+# ない。_REPO_ROOTは上で既に計算済みのため流用する）。
+HAS_MACRO_DATA = False
+_md_reader = None
+
+try:
+    _repo_root_str = str(_REPO_ROOT)
+    if _repo_root_str not in sys.path:
+        sys.path.insert(0, _repo_root_str)
+    from common.macro_data import reader as _md_reader
+    HAS_MACRO_DATA = True
+except Exception:
+    pass
+
+if not HAS_MACRO_DATA:
+    try:
+        _github_workspace = os.environ.get("GITHUB_WORKSPACE", "")
+        if _github_workspace and _github_workspace not in sys.path:
+            sys.path.insert(0, _github_workspace)
+        from common.macro_data import reader as _md_reader
+        HAS_MACRO_DATA = True
+    except Exception:
+        pass
+
 # ─────────────────────────────────────────────────────────────────
 #  カラム定義
 # ─────────────────────────────────────────────────────────────────
@@ -669,72 +697,74 @@ def remind_missing_actuals(target_date: date):
     logger.info(f"Missing actuals alert: {len(missing)} rows")
 
 # ─────────────────────────────────────────────────────────────────
-#  FRED クライアント（変更なし）
+#  FRED アクセス（common.macro_data.reader経由に切替、
+#  MACRODATA-LAYER-CONSTRUCTION-1本番消費者切替、2026-08-12）
 # ─────────────────────────────────────────────────────────────────
-def get_fred():
-    try:
-        from fredapi import Fred
-        key = os.environ.get("FRED_API_KEY", "")
-        if not key:
-            logger.warning("FRED_API_KEY not set.")
-            return None
-        return Fred(api_key=key)
-    except ImportError:
-        logger.warning("fredapi not installed.")
-        return None
+def fred_latest(series_id: str):
+    """common.macro_data.reader.get_latest()経由でFRED系列の最新値を返す。
+    戻り値は旧実装（fredapi直接呼び出し）と同じ(value, date)形状を維持
+    する（呼び出し側の変更を最小化するため）。取得失敗時・データ未取得
+    系列は(None, None)を返す（例外は投げない、旧実装と同じエラー耐性）。
 
-def fred_latest(fred, series_id: str, target_date: date, lookback: int = 60):
-    try:
-        end   = target_date.strftime("%Y-%m-%d")
-        start = (target_date - timedelta(days=lookback)).strftime("%Y-%m-%d")
-        s = fred.get_series(series_id, observation_start=start, observation_end=end)
-        if s is None or s.empty:
-            return None, None
-        s = s.dropna()
-        if s.empty:
-            return None, None
-        return float(s.iloc[-1]), s.index[-1].date()
-    except Exception as e:
-        logger.warning(f"FRED [{series_id}]: {e}")
+    旧実装は`target_date`/`lookback`引数で「target_date以前・lookback
+    日以内の直近値」を都度FREDへ問い合わせていたが、reader.get_latest()
+    は`common/macro_data/series/{series_id}.json`に保存済みの最新値を
+    返す設計のため、これらの引数は廃止した（本番の日次cron実行では
+    target_date=today相当のため実質的な挙動差はない。詳細はBACKLOG
+    [[MACRODATA-LAYER-CONSTRUCTION-1]]着手順序参照）。
+    """
+    if not HAS_MACRO_DATA:
+        logger.warning(f"FRED [{series_id}]: common.macro_data.reader が利用できません")
         return None, None
+    rec = _md_reader.get_latest(series_id)
+    if not rec or rec.get("value") is None:
+        return None, None
+    try:
+        obs_date = date.fromisoformat(rec["as_of"])
+    except (KeyError, ValueError, TypeError):
+        obs_date = None
+    return float(rec["value"]), obs_date
 
-def fred_latest_with_prev(fred, series_id: str, target_date: date, lookback: int = 100):
+def fred_latest_with_prev(series_id: str):
     """
     MACRO-NFP-1: fred_latest()に加え、直前の観測値も取得する。
     PAYEMS（雇用者数の水準）から前月比を算出する用途で使用する。
     戻り値: (最新値, 最新観測日, 直前値, 直前観測日)。
     直前値が取得できない場合は (val, date, None, None)。
-    """
-    try:
-        end   = target_date.strftime("%Y-%m-%d")
-        start = (target_date - timedelta(days=lookback)).strftime("%Y-%m-%d")
-        s = fred.get_series(series_id, observation_start=start, observation_end=end)
-        if s is None or s.empty:
-            return None, None, None, None
-        s = s.dropna()
-        if s.empty:
-            return None, None, None, None
-        val_now, date_now = float(s.iloc[-1]), s.index[-1].date()
-        if len(s) >= 2:
-            val_prev, date_prev = float(s.iloc[-2]), s.index[-2].date()
-        else:
-            val_prev, date_prev = None, None
-        return val_now, date_now, val_prev, date_prev
-    except Exception as e:
-        logger.warning(f"FRED [{series_id}]: {e}")
-        return None, None, None, None
 
-def get_ff_current(fred):
-    if fred is None:
-        return None
-    v_hi, _ = fred_latest(fred, "DFEDTARU", date.today(), lookback=30)
-    v_lo, _ = fred_latest(fred, "DFEDTARL", date.today(), lookback=30)
+    common.macro_data.reader.get_series()で観測日昇順の全期間データを
+    取得し末尾2件を使う（MACRODATA-LAYER-CONSTRUCTION-1本番消費者切替、
+    2026-08-12）。
+    """
+    if not HAS_MACRO_DATA:
+        logger.warning(f"FRED [{series_id}]: common.macro_data.reader が利用できません")
+        return None, None, None, None
+    records = _md_reader.get_series(series_id)
+    if not records:
+        return None, None, None, None
+    try:
+        val_now = float(records[-1]["value"])
+        date_now = date.fromisoformat(records[-1]["as_of"])
+    except (KeyError, ValueError, TypeError, IndexError):
+        return None, None, None, None
+    val_prev, date_prev = None, None
+    if len(records) >= 2:
+        try:
+            val_prev = float(records[-2]["value"])
+            date_prev = date.fromisoformat(records[-2]["as_of"])
+        except (KeyError, ValueError, TypeError):
+            val_prev, date_prev = None, None
+    return val_now, date_now, val_prev, date_prev
+
+def get_ff_current():
+    v_hi, _ = fred_latest("DFEDTARU")
+    v_lo, _ = fred_latest("DFEDTARL")
     if v_hi is not None and v_lo is not None:
         return round((v_hi + v_lo) / 2, 4)
-    v, _ = fred_latest(fred, "FEDFUNDS", date.today(), lookback=45)
+    v, _ = fred_latest("FEDFUNDS")
     return round(v, 4) if v is not None else None
 
-def get_implied_cuts(target_date: date, fred=None):
+def get_implied_cuts(target_date: date = None):
     """
     1Y EXPECTED FF = DGS1（FRED: 1年国債利回り）をそのまま使用。
     term premium 補正や ZQ=F 先物取得は廃止し、シンプルに DGS1 を採用。
@@ -742,11 +772,12 @@ def get_implied_cuts(target_date: date, fred=None):
     IMPLIED CUTS = (ff_current - DGS1) / 0.25
       正値: 市場が利下げを織り込み（DGS1 < ff_current）
       負値: 市場が利上げ/高止まりを織り込み（DGS1 > ff_current）
-    """
-    if fred is None:
-        return None, None, None
 
-    dgs1, _ = fred_latest(fred, "DGS1", target_date, lookback=30)
+    target_dateはfred_latest()がcommon.macro_data.reader経由に切替後
+    使用しなくなったため事実上未使用（呼び出し側との互換のため引数
+    自体は残置、MACRODATA-LAYER-CONSTRUCTION-1本番消費者切替）。
+    """
+    dgs1, _ = fred_latest("DGS1")
     if dgs1 is None:
         return None, None, None
 
@@ -754,13 +785,16 @@ def get_implied_cuts(target_date: date, fred=None):
 
 
 # 後方互換エイリアス
-def get_zq_futures(target_date: date, fred=None):
-    return get_implied_cuts(target_date, fred)
+def get_zq_futures(target_date: date = None):
+    return get_implied_cuts(target_date)
 
 # ─────────────────────────────────────────────────────────────────
-#  金融環境スナップショット（変更なし）
+#  金融環境スナップショット
 # ─────────────────────────────────────────────────────────────────
-def get_financial_context(target_date: date, fred) -> dict:
+def get_financial_context(target_date: date = None) -> dict:
+    """target_dateはfred_latest()がcommon.macro_data.reader経由に
+    切替後使用しなくなったため事実上未使用（呼び出し側との互換のため
+    引数自体は残置、MACRODATA-LAYER-CONSTRUCTION-1本番消費者切替）。"""
     ctx = {
         "regime": "BALANCED",
         "ff_rate": None,
@@ -781,15 +815,14 @@ def get_financial_context(target_date: date, fred) -> dict:
         except Exception as e:
             logger.warning(f"fed_context read: {e}")
 
-    if fred:
-        yc, _ = fred_latest(fred, "T10Y2Y", target_date)
-        hy, _ = fred_latest(fred, "BAMLH0A0HYM2", target_date)
-        vx, _ = fred_latest(fred, "VIXCLS", target_date)
-        if yc is not None: ctx["yc_10y2y"]  = round(yc, 4)
-        if hy is not None: ctx["hy_spread"]  = round(hy, 4)
-        if vx is not None: ctx["vix"]        = round(vx, 2)
-        ff = get_ff_current(fred)
-        if ff is not None: ctx["ff_rate"]    = ff
+    yc, _ = fred_latest("T10Y2Y")
+    hy, _ = fred_latest("BAMLH0A0HYM2")
+    vx, _ = fred_latest("VIXCLS")
+    if yc is not None: ctx["yc_10y2y"]  = round(yc, 4)
+    if hy is not None: ctx["hy_spread"]  = round(hy, 4)
+    if vx is not None: ctx["vix"]        = round(vx, 2)
+    ff = get_ff_current()
+    if ff is not None: ctx["ff_rate"]    = ff
 
     return ctx
 
@@ -822,11 +855,10 @@ def _stooq(symbol: str, target_date: date):
         logger.warning(f"stooq [{symbol}]: {e}")
         return None
 
-def get_sp500(target_date: date, fred=None):
-    if fred:
-        v, _ = fred_latest(fred, "SP500", target_date, lookback=10)
-        if v:
-            return v
+def get_sp500(target_date: date):
+    v, _ = fred_latest("SP500")
+    if v:
+        return v
     return _stooq("%5Espx", target_date)
 
 # ─────────────────────────────────────────────────────────────────
@@ -893,7 +925,7 @@ def resolve_forecast(indicator: str, release_date_str: str, actual_val,
 # ─────────────────────────────────────────────────────────────────
 #  指標フェッチ → event row 生成（変更なし）
 # ─────────────────────────────────────────────────────────────────
-def fetch_event_row(indicator: str, target_date: date, fred,
+def fetch_event_row(indicator: str, target_date: date,
                     fin_ctx: dict, schedule: pd.DataFrame,
                     events: pd.DataFrame,
                     override_actual=None) -> dict:
@@ -918,29 +950,28 @@ def fetch_event_row(indicator: str, target_date: date, fred,
 
     actual_val = override_actual
 
-    if fred and fred_id and actual_val is None:
-        for attempt in range(3):
-            try:
-                if indicator == "NFP":
-                    # MACRO-NFP-1: PAYEMSは雇用者数の「水準」のため、
-                    # 前月からの増減（人）に変換してから格納する
-                    level_now, d, level_prev, _ = fred_latest_with_prev(fred, fred_id, target_date)
-                    if level_now is not None and level_prev is not None:
-                        actual_val = round((level_now - level_prev) * 1000)
-                        if d:
-                            row["release_date"] = d.strftime("%Y-%m-%d")
-                            row["event_id"]     = make_event_id(indicator, d)
-                else:
-                    a, d = fred_latest(fred, fred_id, target_date)
-                    if a is not None:
-                        actual_val = a
-                        if d:
-                            row["release_date"] = d.strftime("%Y-%m-%d")
-                            row["event_id"]     = make_event_id(indicator, d)
-                break
-            except Exception as e:
-                logger.warning(f"[{indicator}] FRED attempt {attempt+1}: {e}")
-                time.sleep(2 ** attempt)
+    # MACRODATA-LAYER-CONSTRUCTION-1本番消費者切替（2026-08-12）:
+    # common.macro_data.reader経由（ローカルファイル読み取りのみ）に
+    # 切替たため、ネットワークI/Oを前提としたリトライ・指数バックオフ
+    # （旧: for attempt in range(3): ... time.sleep(2**attempt)）は不要
+    # になり削除した。
+    if fred_id and actual_val is None:
+        if indicator == "NFP":
+            # MACRO-NFP-1: PAYEMSは雇用者数の「水準」のため、
+            # 前月からの増減（人）に変換してから格納する
+            level_now, d, level_prev, _ = fred_latest_with_prev(fred_id)
+            if level_now is not None and level_prev is not None:
+                actual_val = round((level_now - level_prev) * 1000)
+                if d:
+                    row["release_date"] = d.strftime("%Y-%m-%d")
+                    row["event_id"]     = make_event_id(indicator, d)
+        else:
+            a, d = fred_latest(fred_id)
+            if a is not None:
+                actual_val = a
+                if d:
+                    row["release_date"] = d.strftime("%Y-%m-%d")
+                    row["event_id"]     = make_event_id(indicator, d)
 
     row["actual"] = _fmt(actual_val)
 
@@ -969,17 +1000,22 @@ def _fmt(v) -> str:
 # ─────────────────────────────────────────────────────────────────
 #  S&P500 変化率の後補完 (--fill-returns) パス修正のみ
 # ─────────────────────────────────────────────────────────────────
-def _load_sp500_cache(fred, from_date: str, to_date: str) -> pd.Series:
+def _load_sp500_cache(from_date: str, to_date: str) -> pd.Series:
+    """MACRODATA-LAYER-CONSTRUCTION-1本番消費者切替（2026-08-12）:
+    fred.get_series()直接呼び出しをcommon.macro_data.reader.get_series()
+    経由に切替（fill_returns()が複数日分の履歴を必要とするため、単一値
+    のfred_latest()ではなくget_series()を使う）。"""
     logger.info(f"S&P500 一括取得中 ({from_date} 〜 {to_date})...")
-    if fred:
+    if HAS_MACRO_DATA:
         try:
-            s = fred.get_series("SP500", observation_start=from_date, observation_end=to_date)
-            if s is not None and not s.empty:
-                s = s.dropna()
-                if hasattr(s.index, 'tz') and s.index.tz is not None:
-                    s.index = s.index.tz_localize(None)
-                logger.info(f"S&P500 (FRED): {len(s)} obs")
-                return s
+            records = _md_reader.get_series("SP500", start=from_date, end=to_date)
+            if records:
+                s = pd.Series(
+                    {pd.Timestamp(r["as_of"]): float(r["value"]) for r in records}
+                ).sort_index()
+                if not s.empty:
+                    logger.info(f"S&P500 (FRED): {len(s)} obs")
+                    return s
         except Exception as e:
             logger.warning(f"S&P500 FRED: {e} → stooq fallback")
 
@@ -1012,7 +1048,7 @@ def _lookup_sp500(cache: pd.Series, target_date: date):
         return None
     return round(float(s.iloc[-1]), 2)
 
-def fill_returns(fred=None):
+def fill_returns():
     events = load_events()
     if events.empty:
         logger.info("No events to fill.")
@@ -1041,7 +1077,7 @@ def fill_returns(fred=None):
     max_date = min(today, max_rd + timedelta(days=45)).strftime("%Y-%m-%d")
     logger.info(f"fill-returns: {len(need)} rows need update ({need['release_date'].min()} 〜 {need['release_date'].max()})")
 
-    sp_cache = _load_sp500_cache(fred, min_date, max_date)
+    sp_cache = _load_sp500_cache(min_date, max_date)
     if sp_cache.empty:
         logger.error("S&P500 cache empty. Cannot fill returns.")
         return
@@ -1270,7 +1306,7 @@ Respond ONLY in this exact JSON format (no markdown, no extra text):
     logger.warning(f"No JSON found in Grok response (FOMC). Full response: {raw[:500]}")
     return _fallback_regime(ff_current, zq_rate, cuts_implied)
 
-def update_fed_context(target_date: date, fred):
+def update_fed_context(target_date: date):
     logger.info("=== Updating Fed Context ===")
     if os.path.exists(FED_CONTEXT_PATH):
         ctx_df = pd.read_csv(FED_CONTEXT_PATH, dtype=str).fillna("")
@@ -1287,8 +1323,8 @@ def update_fed_context(target_date: date, fred):
     else:
         ctx_df = pd.DataFrame(columns=FED_CONTEXT_COLUMNS)
 
-    zq_ticker, zq_price, zq_rate = get_zq_futures(target_date, fred)
-    ff_current = get_ff_current(fred)
+    zq_ticker, zq_price, zq_rate = get_zq_futures(target_date)
+    ff_current = get_ff_current()
     if ff_current is None:
         ff_current = 3.625  # 現行誘導目標 3.50-3.75% の中心値（FRED取得失敗時の fallback）
 
@@ -1780,7 +1816,7 @@ _MONTHLY_REFRESH_SET = {
     "Michigan Consumer Sentiment",
 }
 
-def refresh_monthly_indicators(target_date: date, fred, fin_ctx: dict,
+def refresh_monthly_indicators(target_date: date, fin_ctx: dict,
                                 schedule: pd.DataFrame, events: pd.DataFrame,
                                 sp500_t0) -> list:
     """
@@ -1789,9 +1825,6 @@ def refresh_monthly_indicators(target_date: date, fred, fin_ctx: dict,
     - スケジュールに依存しないため Philly Fed / CFNAI / Sahm Rule も自動取得できる
     - FREDのobs_dateが月初1日等になる場合、scheduleの実発表日で上書きする
     """
-    if fred is None:
-        return []
-
     new_rows = []
     for ind_name in _MONTHLY_REFRESH_SET:
         cfg = INDICATOR_CONFIG.get(ind_name, {})
@@ -1799,7 +1832,7 @@ def refresh_monthly_indicators(target_date: date, fred, fin_ctx: dict,
         if not fred_id:
             continue
 
-        val, obs_date = fred_latest(fred, fred_id, target_date)
+        val, obs_date = fred_latest(fred_id)
         if val is None or obs_date is None:
             continue
 
@@ -1848,7 +1881,7 @@ def refresh_monthly_indicators(target_date: date, fred, fin_ctx: dict,
                     continue  # 既に正常データあり → スキップ
 
         try:
-            row = fetch_event_row(ind_name, target_date, fred, fin_ctx, schedule, events)
+            row = fetch_event_row(ind_name, target_date, fin_ctx, schedule, events)
             row["release_date"] = release_date.strftime("%Y-%m-%d")
             row["event_id"]     = make_event_id(ind_name, release_date)
             row["sp500_t0"] = str(sp500_t0) if sp500_t0 else ""
@@ -1940,30 +1973,29 @@ LIQUIDITY_COLUMNS = [
     "stealth_alert",          # 警戒アラート（|区切り）
 ]
 
-def update_liquidity_csv(target_date: date, fred) -> None:
+def update_liquidity_csv(target_date: date) -> None:
     """流動性指標を FRED から取得して 05_liquidity.csv に追記・更新する。
     RRP / reserve_balance は Billions → Millions に変換して保存する。
     """
-    if fred is None:
-        logger.warning("[Liquidity] FRED not available. Skipping.")
-        return
-
-    # M2マネーサプライ: 月次, Billions USD (lookback 90日で直近値を確実に捕捉)
-    m2_val,  _ = fred_latest(fred, "M2SL",         target_date, lookback=90)
+    # M2マネーサプライ: 月次, Billions USD
+    m2_val,  _ = fred_latest("M2SL")
     # FRBバランスシート (WALCL): 週次, Millions USD
-    fed_val, _ = fred_latest(fred, "WALCL",         target_date, lookback=21)
+    fed_val, _ = fred_latest("WALCL")
     # HYスプレッド (BAMLH0A0HYM2): 日次, %
-    hy_val,  _ = fred_latest(fred, "BAMLH0A0HYM2", target_date, lookback=7)
+    hy_val,  _ = fred_latest("BAMLH0A0HYM2")
     # TGA (WTREGEN): 週次, Millions USD — 代替: FTSD
-    tga_val, _ = fred_latest(fred, "WTREGEN",       target_date, lookback=21)
+    # （FTSDはFRED上に系列が実在しないため常に取得失敗する既知の問題、
+    # [[MACRODATA-FTSD-SERIES-ID-INVALID-1]]参照。旧実装でも同様に
+    # 機能していなかったフォールバックのため、今回の切替による回帰では
+    # ない。フォールバック構造自体は変更せず維持する）
+    tga_val, _ = fred_latest("WTREGEN")
     if tga_val is None:
-        tga_val, _ = fred_latest(fred, "FTSD",      target_date, lookback=21)
+        tga_val, _ = fred_latest("FTSD")
     # RRP (RRPONTSYD): 日次, Billions USD → × 1000 で Millions に統一
-    rrp_b,   _ = fred_latest(fred, "RRPONTSYD",     target_date, lookback=14)
+    rrp_b,   _ = fred_latest("RRPONTSYD")
     rrp_val    = round(rrp_b * 1000, 4) if rrp_b is not None else None   # Millions USD
     # 準備預金残高 (WRBWFRBL): 週次, Millions USD（FREDはMillions USD単位で返す）
-    # WRBWFRBL は H.4.1 リリース（木曜公表・1週間ラグ）のため lookback=21 日
-    rsv_m,   _ = fred_latest(fred, "WRBWFRBL",      target_date, lookback=21)
+    rsv_m,   _ = fred_latest("WRBWFRBL")
     rsv_val    = round(rsv_m, 4) if rsv_m is not None else None   # Millions USD（×1000 不要）
 
     if all(v is None for v in (m2_val, hy_val, fed_val)):
@@ -2147,7 +2179,6 @@ def run(target_date: date, test_mode: bool = False, do_recalc: bool = False,
                 f"fill_returns={do_fill_returns} | weekly_analysis={do_weekly_analysis} ===")
 
     ensure_schedule_csv()
-    fred     = get_fred()
     schedule = load_schedule()
     events   = load_events()
 
@@ -2166,7 +2197,7 @@ def run(target_date: date, test_mode: bool = False, do_recalc: bool = False,
             logger.error("FRED_API_KEY not set.")
             sys.exit(1)
         update_schedule(fred_api_key)
-        update_fed_context(target_date, fred)
+        update_fed_context(target_date)
         remind_missing_actuals(target_date)
         logger.info("=== Schedule + Fed Context update complete ===")
         return
@@ -2179,11 +2210,11 @@ def run(target_date: date, test_mode: bool = False, do_recalc: bool = False,
 
     if do_fill_returns:
         logger.info("=== FILL RETURNS MODE ===")
-        fill_returns(fred)
+        fill_returns()
         return
 
-    fin_ctx  = get_financial_context(target_date, fred)
-    sp500_t0 = get_sp500(target_date, fred)
+    fin_ctx  = get_financial_context(target_date)
+    sp500_t0 = get_sp500(target_date)
     logger.info(f"Financial context: {fin_ctx}")
     logger.info(f"S&P500 t0: {sp500_t0}")
 
@@ -2207,7 +2238,7 @@ def run(target_date: date, test_mode: bool = False, do_recalc: bool = False,
                 pass
 
         try:
-            row = fetch_event_row(ind, target_date, fred, fin_ctx, schedule, events, override)
+            row = fetch_event_row(ind, target_date, fin_ctx, schedule, events, override)
             row["sp500_t0"] = str(sp500_t0) if sp500_t0 else ""
             new_rows.append(row)
             time.sleep(0.5)
@@ -2216,7 +2247,7 @@ def run(target_date: date, test_mode: bool = False, do_recalc: bool = False,
 
     for ind_name in ["Yield Curve 10Y-2Y", "HY Spread", "VIX"]:
         try:
-            row = fetch_event_row(ind_name, target_date, fred, fin_ctx, schedule, events)
+            row = fetch_event_row(ind_name, target_date, fin_ctx, schedule, events)
             row["sp500_t0"] = str(sp500_t0) if sp500_t0 else ""
             new_rows.append(row)
         except Exception as e:
@@ -2231,7 +2262,7 @@ def run(target_date: date, test_mode: bool = False, do_recalc: bool = False,
         if new_rows else events
     )
     new_rows.extend(
-        refresh_monthly_indicators(target_date, fred, fin_ctx, schedule, events_snapshot, sp500_t0)
+        refresh_monthly_indicators(target_date, fin_ctx, schedule, events_snapshot, sp500_t0)
     )
 
     if not new_rows:
@@ -2252,7 +2283,7 @@ def run(target_date: date, test_mode: bool = False, do_recalc: bool = False,
     save_events(combined)
 
     # 流動性モニター更新（スコア計算には影響しない参考情報）
-    update_liquidity_csv(target_date, fred)
+    update_liquidity_csv(target_date)
 
     logger.info("=== Run complete ===")
 

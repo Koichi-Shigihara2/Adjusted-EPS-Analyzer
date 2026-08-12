@@ -35,44 +35,42 @@ audit05 = _load_module("audit05_test", "05_audit.py")
 
 
 # ─────────────────────────────────────────────────────────────────
-#  ① fred_latest_with_prev
+#  ① fred_latest_with_prev / fred_latest
+#  MACRODATA-LAYER-CONSTRUCTION-1本番消費者切替（2026-08-12）:
+#  common.macro_data.reader経由に切替たため、fredapiの偽クライアントでは
+#  なくmain05._md_reader.get_series()/get_latest()をmonkeypatchする。
 # ─────────────────────────────────────────────────────────────────
-class _FakeFred:
-    """fred.get_series(series_id, observation_start, observation_end) をエミュレートする。"""
-
-    def __init__(self, series: pd.Series):
-        self._series = series
-
-    def get_series(self, series_id, observation_start=None, observation_end=None):
-        return self._series
-
-
-def _series(pairs):
-    idx = pd.to_datetime([p[0] for p in pairs])
-    return pd.Series([p[1] for p in pairs], index=idx)
+def _records(pairs):
+    """[(date_str, value), ...] からcommon.macro_data.reader.get_series()
+    が返すレコード形式（観測日昇順のdictリスト）を作る。"""
+    return [
+        {"value": v, "as_of": d, "fetched_at": "2026-01-01T00:00:00+09:00",
+         "source": "FRED", "source_detail": "series=TEST"}
+        for d, v in pairs
+    ]
 
 
 class TestFredLatestWithPrev:
-    def test_returns_latest_and_prev(self):
-        s = _series([("2026-04-01", 158736.0), ("2026-05-01", 159001.0)])
-        fred = _FakeFred(s)
-        val_now, d_now, val_prev, d_prev = main05.fred_latest_with_prev(fred, "PAYEMS", date(2026, 5, 20))
+    def test_returns_latest_and_prev(self, monkeypatch):
+        records = _records([("2026-04-01", 158736.0), ("2026-05-01", 159001.0)])
+        monkeypatch.setattr(main05._md_reader, "get_series", lambda series_id, **kw: records)
+        val_now, d_now, val_prev, d_prev = main05.fred_latest_with_prev("PAYEMS")
         assert val_now == 159001.0
         assert val_prev == 158736.0
         assert d_now == date(2026, 5, 1)
         assert d_prev == date(2026, 4, 1)
 
-    def test_single_observation_returns_none_prev(self):
-        s = _series([("2026-05-01", 159001.0)])
-        fred = _FakeFred(s)
-        val_now, d_now, val_prev, d_prev = main05.fred_latest_with_prev(fred, "PAYEMS", date(2026, 5, 20))
+    def test_single_observation_returns_none_prev(self, monkeypatch):
+        records = _records([("2026-05-01", 159001.0)])
+        monkeypatch.setattr(main05._md_reader, "get_series", lambda series_id, **kw: records)
+        val_now, d_now, val_prev, d_prev = main05.fred_latest_with_prev("PAYEMS")
         assert val_now == 159001.0
         assert val_prev is None
         assert d_prev is None
 
-    def test_empty_series_returns_all_none(self):
-        fred = _FakeFred(pd.Series(dtype=float))
-        result = main05.fred_latest_with_prev(fred, "PAYEMS", date(2026, 5, 20))
+    def test_empty_series_returns_all_none(self, monkeypatch):
+        monkeypatch.setattr(main05._md_reader, "get_series", lambda series_id, **kw: [])
+        result = main05.fred_latest_with_prev("PAYEMS")
         assert result == (None, None, None, None)
 
 
@@ -80,11 +78,11 @@ class TestFredLatestWithPrev:
 #  ① fetch_event_row: NFPは前月比(人)に変換して格納する
 # ─────────────────────────────────────────────────────────────────
 class TestFetchEventRowNFPDiff:
-    def test_nfp_actual_is_diff_times_1000(self):
-        s = _series([("2026-04-01", 158736.0), ("2026-05-01", 159001.0)])
-        fred = _FakeFred(s)
+    def test_nfp_actual_is_diff_times_1000(self, monkeypatch):
+        records = _records([("2026-04-01", 158736.0), ("2026-05-01", 159001.0)])
+        monkeypatch.setattr(main05._md_reader, "get_series", lambda series_id, **kw: records)
         row = main05.fetch_event_row(
-            "NFP", date(2026, 5, 20), fred,
+            "NFP", date(2026, 5, 20),
             fin_ctx={}, schedule=pd.DataFrame(columns=main05.SCHEDULE_COLUMNS),
             events=pd.DataFrame(columns=main05.EVENTS_COLUMNS),
         )
@@ -92,31 +90,34 @@ class TestFetchEventRowNFPDiff:
         assert row["actual"] == "265000"
         assert row["release_date"] == "2026-05-01"
 
-    def test_nfp_actual_can_be_negative(self):
-        s = _series([("2026-04-01", 159001.0), ("2026-05-01", 158984.0)])
-        fred = _FakeFred(s)
+    def test_nfp_actual_can_be_negative(self, monkeypatch):
+        records = _records([("2026-04-01", 159001.0), ("2026-05-01", 158984.0)])
+        monkeypatch.setattr(main05._md_reader, "get_series", lambda series_id, **kw: records)
         row = main05.fetch_event_row(
-            "NFP", date(2026, 5, 20), fred,
+            "NFP", date(2026, 5, 20),
             fin_ctx={}, schedule=pd.DataFrame(columns=main05.SCHEDULE_COLUMNS),
             events=pd.DataFrame(columns=main05.EVENTS_COLUMNS),
         )
         assert row["actual"] == "-17000"
 
-    def test_nfp_no_prev_leaves_actual_empty(self):
-        s = _series([("2026-05-01", 159001.0)])
-        fred = _FakeFred(s)
+    def test_nfp_no_prev_leaves_actual_empty(self, monkeypatch):
+        records = _records([("2026-05-01", 159001.0)])
+        monkeypatch.setattr(main05._md_reader, "get_series", lambda series_id, **kw: records)
         row = main05.fetch_event_row(
-            "NFP", date(2026, 5, 20), fred,
+            "NFP", date(2026, 5, 20),
             fin_ctx={}, schedule=pd.DataFrame(columns=main05.SCHEDULE_COLUMNS),
             events=pd.DataFrame(columns=main05.EVENTS_COLUMNS),
         )
         assert row["actual"] == ""
 
-    def test_non_nfp_indicator_still_uses_raw_level(self):
-        s = _series([("2026-04-01", 1400.0), ("2026-05-01", 1420.0)])
-        fred = _FakeFred(s)
+    def test_non_nfp_indicator_still_uses_raw_level(self, monkeypatch):
+        # 非NFPはfred_latest()＝reader.get_latest()経由（末尾の1件のみ使用）
+        monkeypatch.setattr(
+            main05._md_reader, "get_latest",
+            lambda series_id, **kw: {"value": 1420.0, "as_of": "2026-05-01"},
+        )
         row = main05.fetch_event_row(
-            "Building Permits", date(2026, 5, 20), fred,
+            "Building Permits", date(2026, 5, 20),
             fin_ctx={}, schedule=pd.DataFrame(columns=main05.SCHEDULE_COLUMNS),
             events=pd.DataFrame(columns=main05.EVENTS_COLUMNS),
         )

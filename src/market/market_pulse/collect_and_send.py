@@ -59,6 +59,33 @@ if not HAS_MARKET_DATA:
     except Exception:
         pass
 
+# common/macro_data - [[MACRODATA-LAYER-CONSTRUCTION-1]]本番消費者切替
+# （2026-08-12）: VXNCLS/BAMLH0A0HYM2/DGS3MOのfredapi直接呼び出し
+# （fetch_vxn_from_fred/fetch_hy_spread_from_fred/fetch_fred_short_bond
+# それぞれが個別にFred()を生成していた）をcommon.macro_data.reader経由に
+# 切替。同じHAS_MACRO_DATAガード・二段構えsys.path解決パターンを踏襲
+# （REPO_ROOTは上のmarket_dataブロックで既に計算済みのため流用）。
+HAS_MACRO_DATA = False
+_mdata_get_series = None
+
+try:
+    if REPO_ROOT not in sys.path:
+        sys.path.insert(0, REPO_ROOT)
+    from common.macro_data.reader import get_series as _mdata_get_series
+    HAS_MACRO_DATA = True
+except Exception:
+    pass
+
+if not HAS_MACRO_DATA:
+    try:
+        _github_workspace = os.environ.get("GITHUB_WORKSPACE", "")
+        if _github_workspace and _github_workspace not in sys.path:
+            sys.path.insert(0, _github_workspace)
+        from common.macro_data.reader import get_series as _mdata_get_series
+        HAS_MACRO_DATA = True
+    except Exception:
+        pass
+
 # CSVのカラム定義（必要に応じて拡張）
 CSV_COLUMNS = [
     "date", "judgment",
@@ -440,21 +467,22 @@ def fetch_qqq_tech_data():
 
 
 def fetch_vxn_from_fred():
-    """FREDからVXNCLS（ナスダック恐怖指数）を取得しMA50乖離率（%）を返す"""
-    fred_api_key = os.getenv("FRED_API_KEY")
-    if not fred_api_key:
-        print("[WARN] FRED_API_KEY未設定。VXN取得スキップ。")
+    """common.macro_data.reader経由でVXNCLS（ナスダック恐怖指数）を
+    取得しMA50乖離率（%）を返す（MACRODATA-LAYER-CONSTRUCTION-1本番
+    消費者切替、2026-08-12。旧実装はfredapi直接呼び出し・都度Fred()
+    生成だった）。"""
+    if not HAS_MACRO_DATA:
+        print("[WARN] common.macro_data.reader が利用できません。VXN取得スキップ。")
         return None, None
     try:
-        from fredapi import Fred
-        fred = Fred(api_key=fred_api_key)
         start = (datetime.now() - timedelta(days=120)).strftime('%Y-%m-%d')
-        vxn = fred.get_series("VXNCLS", observation_start=start).dropna()
-        if len(vxn) < 50:
+        records = _mdata_get_series("VXNCLS", start=start)
+        vxn_values = [float(r["value"]) for r in records if r.get("value") is not None]
+        if len(vxn_values) < 50:
             print("[WARN] VXNデータが不足しています。")
             return None, None
-        vxn_latest = float(vxn.iloc[-1])
-        ma50 = float(vxn.iloc[-50:].mean())
+        vxn_latest = vxn_values[-1]
+        ma50 = sum(vxn_values[-50:]) / 50
         vxn_vs_ma50 = round((vxn_latest / ma50 - 1) * 100, 2)
         print(f"[INFO] VXN: {vxn_latest:.2f}, MA50={ma50:.2f}, vs_MA50={vxn_vs_ma50:+.2f}%")
         return round(vxn_latest, 2), vxn_vs_ma50
@@ -464,25 +492,26 @@ def fetch_vxn_from_fred():
 
 
 def fetch_hy_spread_from_fred():
-    """FREDからHYスプレッド（BAMLH0A0HYM2: ICE BofA US High Yield Index OAS）を取得する
+    """common.macro_data.reader経由でHYスプレッド（BAMLH0A0HYM2: ICE
+    BofA US High Yield Index OAS）を取得する（MACRODATA-LAYER-
+    CONSTRUCTION-1本番消費者切替、2026-08-12。旧実装はfredapi直接
+    呼び出し・都度Fred()生成だった）。
     Returns: {"current", "min_90d", "max_90d", "is_expanding", "is_contracting"} or None
     """
-    fred_api_key = os.getenv("FRED_API_KEY")
-    if not fred_api_key:
-        print("[WARN] FRED_API_KEY未設定。HYスプレッド取得スキップ。")
+    if not HAS_MACRO_DATA:
+        print("[WARN] common.macro_data.reader が利用できません。HYスプレッド取得スキップ。")
         return None
     try:
-        from fredapi import Fred
-        fred = Fred(api_key=fred_api_key)
         start = (datetime.now() - timedelta(days=120)).strftime('%Y-%m-%d')
-        hy = fred.get_series("BAMLH0A0HYM2", observation_start=start).dropna()
-        if len(hy) < 10:
+        records = _mdata_get_series("BAMLH0A0HYM2", start=start)
+        hy_values = [float(r["value"]) for r in records if r.get("value") is not None]
+        if len(hy_values) < 10:
             print("[WARN] HYスプレッドデータが不足しています。")
             return None
-        window = hy.iloc[-90:] if len(hy) >= 90 else hy
-        current = float(hy.iloc[-1])
-        min_90d = float(window.min())
-        max_90d = float(window.max())
+        window = hy_values[-90:] if len(hy_values) >= 90 else hy_values
+        current = hy_values[-1]
+        min_90d = min(window)
+        max_90d = max(window)
         is_expanding = bool(current > min_90d + 0.30)    # 90日最小値から30bps以上拡大
         is_contracting = bool(current < max_90d - 0.30)  # 90日最大値から30bps以上縮小
         print(f"[INFO] HYスプレッド: {current:.2f}%, min_90d={min_90d:.2f}%, max_90d={max_90d:.2f}%, expanding={is_expanding}, contracting={is_contracting}")
@@ -1179,7 +1208,10 @@ def extract_judgment(report_text):
 
 def fetch_fred_short_bond(asset_def):
     """
-    短期国債（3ヶ月T-Bill）データをFRED API（DGS3MO系列）から取得する。
+    common.macro_data.reader経由で短期国債（3ヶ月T-Bill）データ
+    （DGS3MO系列）を取得する（MACRODATA-LAYER-CONSTRUCTION-1本番消費者
+    切替、2026-08-12。旧実装はfredapi直接呼び出し・都度Fred()生成
+    だった）。
     ^IRX（yfinance）はGitHub Actions環境からの取得が直近4日連続で失敗しており
     （Yahoo Finance公式サイトでは同期間のデータ存在を確認済み＝取得経路側の
     問題と判断）、short_bondのみFRED APIに切替（MP-IRX-FRED-1）。
@@ -1188,22 +1220,20 @@ def fetch_fred_short_bond(asset_def):
     FREDのDGS3MOは更新に1営業日程度のラグがあるため、dateフィールドは
     FRED側の実際の最終データ日付をそのまま使う（当日分とは限らない）。
     """
-    fred_api_key = os.getenv("FRED_API_KEY")
-    if not fred_api_key:
-        print("[WARN] asset_flow 短期国債(DGS3MO): FRED_API_KEY未設定。スキップ。")
+    if not HAS_MACRO_DATA:
+        print("[WARN] asset_flow 短期国債(DGS3MO): common.macro_data.reader が利用できません。スキップ。")
         return None
     try:
-        from fredapi import Fred
-        fred = Fred(api_key=fred_api_key)
         start = (datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d')
-        series = fred.get_series("DGS3MO", observation_start=start).dropna()
-        if len(series) < 2:
-            print(f"[WARN] asset_flow 短期国債(DGS3MO): データ不足（{len(series)}件）。")
+        records = _mdata_get_series("DGS3MO", start=start)
+        records = [r for r in records if r.get("value") is not None]
+        if len(records) < 2:
+            print(f"[WARN] asset_flow 短期国債(DGS3MO): データ不足（{len(records)}件）。")
             return None
-        latest = float(series.iloc[-1])
-        prev = float(series.iloc[-2])
+        latest = float(records[-1]["value"])
+        prev = float(records[-2]["value"])
         chg_pct = (latest - prev) / prev * 100 if prev > 0 else 0
-        date_str = series.index[-1].strftime("%Y-%m-%d")
+        date_str = records[-1]["as_of"]
         print(f"[INFO] asset_flow {asset_def['label']}(DGS3MO): {chg_pct:+.2f}% (latest={latest}, date={date_str})")
         return {
             "label":    asset_def["label"],

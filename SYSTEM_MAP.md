@@ -1,5 +1,13 @@
 # SYSTEM MAP — On-a-journey
 
+最終更新: 2026-08-12（common/macro_data/セクションを本番消費者切替完了
+（**完成**）に更新。`05_main.py`（9関数・約20箇所）・`collect_and_send.py`
+（3関数）の全FRED直接呼び出しを`common.macro_data.reader`経由に切替、
+`get_fred()`削除・重複3系列解消を反映。単一最新値では機能を維持できない
+5箇所（NFP前月比等）は`reader.get_series()`使用である旨も明記。
+`fred_release_dates()`のみ別API表面のため対象外・維持である旨を明記。
+詳細はBACKLOG.md`[[MACRODATA-LAYER-CONSTRUCTION-1]]`参照）
+
 最終更新: 2026-08-12（common/macro_data/セクションを定期取得ワークフロー
 稼働開始に更新。`.github/workflows/Macro_Data_Update.yml`（毎日
 UTC10:00・workflow_dispatch対応）新設と`series/`への初回実データ投入
@@ -1093,13 +1101,11 @@ TANUKI TAIL（docs/portfolio/tail/）← EDGAR RSS / Grok（KPI提案・四半�
 `common/market_data/`と同型のfetcher.py/reader.py分離構成でFRED依存を
 一元化する新層（`[[MACRODATA-LAYER-CONSTRUCTION-1]]`）。
 
-**【状態（2026-08-12時点）】構築中**: `fetcher.py`/`reader.py`本体・
-`.github/workflows/Macro_Data_Update.yml`（定期取得ワークフロー）まで
-稼働開始し、`series/`へ初回実データ投入済み（25系列中24系列成功）。
-本番消費者（`05_main.py`・`collect_and_send.py`）はまだ本モジュールを
-参照していない（グリーンフィールド実装、定期実行のみ稼働）。本番消費者
-切替（重複3系列解消含む）・過去データ一括投入（フェーズ2）は次段階で
-扱う。
+**【状態（2026-08-12時点）】完成**: `fetcher.py`/`reader.py`本体・
+`.github/workflows/Macro_Data_Update.yml`（定期取得ワークフロー）・
+本番消費者2ファイル（`05_main.py`・`collect_and_send.py`）の切替が
+全て完了。`series/`へ初回実データ投入済み（25系列中24系列成功）。
+過去データ一括投入（フェーズ2）のみ次段階で扱う。
 
 - `common/macro_data/fetcher.py`: ネットワーク取得＋検証＋原子的書き込み。
   `fetch_series(series_id, start=None)`（FRED系列取得の唯一の外部
@@ -1115,11 +1121,11 @@ TANUKI TAIL（docs/portfolio/tail/）← EDGAR RSS / Grok（KPI提案・四半�
   `start`未指定時は常に全期間履歴を取得する設計であり、日次cronが
   毎回全期間を再取得する非効率が判明済み（`[[MACRODATA-FULL-HISTORY-
   DAILY-REFETCH-1]]`、対応未定）。fredapiクライアントはモジュール
-  レベルで1つだけ生成し使い回す（現状の各ファイルが呼び出しの都度
-  `Fred()`を個別生成する設計は踏襲しない）。`FRED_API_KEY`環境変数名・
-  クライアント初期化方法（`Fred(api_key=...)`）は`05_main.py::
-  get_fred()`・`collect_and_send.py`側3関数と同一のものを実コード
-  確認の上で踏襲。
+  レベルで1つだけ生成し使い回す（切替前の各ファイルが呼び出しの都度
+  `Fred()`を個別生成していた設計は踏襲しない）。`FRED_API_KEY`環境
+  変数名・クライアント初期化方法（`Fred(api_key=...)`）は切替前の
+  `05_main.py`・`collect_and_send.py`側の実装を実コード確認の上で
+  踏襲。
 - `common/macro_data/reader.py`: 読み取り専用API。
   `get_latest(series_id)`・`get_series(series_id, start=None,
   end=None)`（期間内の全エントリを観測日昇順で返す、観測日を含む
@@ -1148,6 +1154,21 @@ TANUKI TAIL（docs/portfolio/tail/）← EDGAR RSS / Grok（KPI提案・四半�
   `VIXCLS`は複数の`consumers`を持つ）。
 - 新規テスト`tests/test_macro_data_fetcher.py`・`tests/test_macro_data_
   reader.py`（計43件）。fredapi呼び出しは全てモック化、実通信なし。
+- **本番消費者切替（2026-08-12完了）**: `05_main.py`（`get_ff_current`/
+  `get_implied_cuts`/`get_financial_context`/`get_sp500`/
+  `fetch_event_row`/`refresh_monthly_indicators`/`update_liquidity_csv`/
+  `update_fed_context`/`_load_sp500_cache`の計9関数、約20箇所）・
+  `collect_and_send.py`（`fetch_vxn_from_fred`/`fetch_hy_spread_from_
+  fred`/`fetch_fred_short_bond`の3関数）の全FRED直接呼び出しを
+  `common.macro_data.reader`経由に切替済み（`get_fred()`は削除）。
+  重複3系列（`BAMLH0A0HYM2`・`T10Y2Y`・`VIXCLS`、`[[MACRODATA-AS-IS-
+  DUPLICATION-UNDERCOUNT-1]]`参照）は`reader.get_latest()`への集約で
+  解消。NFP前月比・VXN MA50・HYスプレッド90日min/max・DGS3MO前日比・
+  S&P500複数日履歴の5箇所は単一最新値では機能を維持できないため
+  `reader.get_series()`（期間指定）を使用。`fred_release_dates()`
+  （FRED Release Calendar REST APIへの直接`requests.get()`、
+  observation値ではなく発表日カレンダーを扱う別API表面）のみ対象外・
+  維持。詳細はBACKLOG.md`[[MACRODATA-LAYER-CONSTRUCTION-1]]`参照。
 
 ---
 

@@ -1,5 +1,24 @@
 # On-a-journey — 改善バックログ（全システム）
 
+最終更新: 2026-08-12（`[[MACRODATA-LAYER-CONSTRUCTION-1]]`: 本番消費者
+2ファイル（`05_main.py`・`collect_and_send.py`）を`common.macro_data.
+reader`経由へ全面切替し**完成**。MIGRATION_CHECKLIST.md Step1〜3に
+従い実施。Step1（洗い出し）で想定リストになかった2箇所
+（`refresh_monthly_indicators()`・`update_fed_context()`）と、grepパターン
+（`Fred(`/`fred_latest(`）では検出できなかった`_load_sp500_cache()`の
+`fred.get_series()`直接呼び出しを追加発見。重複3系列
+（`BAMLH0A0HYM2`・`T10Y2Y`・`VIXCLS`）は`reader.get_latest()`への集約で
+解消。単一最新値だけでは機能を維持できない5箇所（NFP前月比・VXN
+MA50・HYスプレッド90日min/max・DGS3MO前日比・S&P500複数日履歴）は
+`reader.get_series()`（期間指定）を使用（依頼の`get_latest()`一本化
+方針から実装上必要な範囲でのみ逸脱、詳細を明記）。Step2（値突合）で
+18項目全て完全一致（差分0件）を実測確認。Step3（grep最終確認）で
+`Fred(`・`fred_latest(`等の直接呼び出しが両ファイルとも0件であることを
+確認。リトライ・指数バックオフロジックも削除（`fred_release_dates()`
+は別API表面のため対象外・維持）。`tests/test_macro_pulse_logic.py`の
+関連7件をmonkeypatch方式に更新。pytest全体771 passed / 2 known-failed。
+PROJECT_STATUS.md・SYSTEM_MAP.mdも同時更新）
+
 最終更新: 2026-08-12（`[[MACRODATA-LAYER-CONSTRUCTION-1]]`:
 `.github/workflows/Macro_Data_Update.yml`（毎日UTC10:00・
 workflow_dispatch対応）を新設し定期取得ワークフローが稼働開始。
@@ -2511,7 +2530,7 @@ TICKERS-1]]`（S&P500構成銘柄Wikipediaスクレイピングに`FDXF`/`HONA`/
 
 ---
 
-### [MACRODATA-LAYER-CONSTRUCTION-1] common/macro_data/新設（FRED統合層）— 構築中（定期取得ワークフロー稼働開始）
+### [MACRODATA-LAYER-CONSTRUCTION-1] common/macro_data/新設（FRED統合層）— 完成（本番消費者切替完了）
 **優先度:** 高（新DB構築プロジェクト フェーズ1の次コンポーネント、
 `common/market_data/`が2026-08-12に全12ファイル切替完了したことに伴う
 次の優先タスク）
@@ -2519,26 +2538,14 @@ TICKERS-1]]`（S&P500構成銘柄Wikipediaスクレイピングに`FDXF`/`HONA`/
 **登録日:** 2026-08-12（本来は事前調査着手時点で登録すべきだったが、
 `common/market_data/`と同様の経緯で未登録のまま投資調査を実施していた
 ため、本エントリで遡って正式登録する）
-**更新日:** 2026-08-12（`.github/workflows/Macro_Data_Update.yml`
-（毎日UTC10:00・workflow_dispatch対応）を新設し、`fetcher.py`末尾の
-`__main__`ブロックから`fetch_all_series()`を呼ぶ構成にした。GitHub
-Actions側のworkflow_dispatchを直接トリガーする手段（`gh` CLI・
-GitHubトークン）がこのセッション環境になかったため、ワークフローが
-呼び出すのと同一のエントリポイントをローカル環境で実FRED_API_KEY
-（同環境に設定済み）を用いて実行し代替検証。25系列中**24系列が成功**、
-`FTSD`のみFRED API側で`Bad Request. The series does not exist.`と
-判明（`[[MACRODATA-FTSD-SERIES-ID-INVALID-1]]`として新規登録）。
-`macro_data_violations_log.json`の警告255件は全件order-of-magnitude
-jump検知で、サンプル確認の結果、近ゼロ横断する拡散指数・2008年金融
-危機/2020年COVID等の実在する急変動によるものと判明（データ品質問題
-なし）。副次発見として、日次cronが毎回全系列の全期間履歴を再取得する
-非効率な設計（`market_data`のfetch_daily_prices〈直近のみ〉/
-backfill_daily_prices〈全期間、一過性〉の分離を踏襲していない）も
-判明（`[[MACRODATA-FULL-HISTORY-DAILY-REFETCH-1]]`として新規登録）。
-今回のスコープは引き続きワークフロー新設・動作確認までで、`05_main.py`・
-`collect_and_send.py`側の本番消費者切替（重複3系列解消含む）・過去
-データ一括投入（フェーズ2）はいずれも変更していない。詳細は下記
-「定期取得ワークフロー稼働開始」参照）
+**更新日:** 2026-08-12（本番消費者2ファイル（`05_main.py`・
+`collect_and_send.py`）を`common.macro_data.reader`経由へ全面切替し
+**完成**。重複3系列（`BAMLH0A0HYM2`・`T10Y2Y`・`VIXCLS`）は
+`get_financial_context()`・`daily`系列ループ・`update_liquidity_csv()`の
+いずれも同一の`reader.get_latest()`呼び出しへ集約し重複取得を解消。
+両ファイルから`Fred(`・`fred_latest(`等の外部API直接呼び出しを完全に
+排除（grep最終確認で残存0件）。切替前後で18項目の値突合を実施し
+**全項目完全一致**（差分0件）。詳細は下記「本番消費者切替完了」参照）
 **発見:** `common/macro_data/`新設事前調査・FRED消費者洗い出し
 （`MIGRATION_CHECKLIST.md`Step1相当、チャット記録、2026-08-12）
 
@@ -2762,9 +2769,126 @@ order-of-magnitude jump検知、duplicate as_of検知は0件）。内訳を
 `[[MACRODATA-FULL-HISTORY-DAILY-REFETCH-1]]`として新規登録した
 （`--start`引数追加等の対応要否は次回判断）。
 
-#### 次セッションでの着手順序（2026-08-12時点、定期取得ワークフロー稼働開始を反映）
-1. 本番消費者切替（`05_main.py`・`collect_and_send.py`の重複3系列
-   〈`BAMLH0A0HYM2`・`T10Y2Y`・`VIXCLS`〉解消を含む）
+#### 本番消費者切替完了（2026-08-12、MIGRATION_CHECKLIST.md Step1〜3）
+
+**Step1: 全消費者の洗い出し（実コードgrep結果）**
+
+`05_main.py`（`Fred(`・`fred_latest(`・`fred_latest_with_prev(`・
+`fred.get_series`を横断grep、想定箇所に加え2箇所を追加発見）:
+- `get_fred()`（674行）→ 削除（`Fred()`インスタンス生成そのもの）
+- `fred_latest()`（686行）→ `reader.get_latest()`ベースに全面書き換え
+- `fred_latest_with_prev()`（701行）→ `reader.get_series()`ベースに
+  全面書き換え（末尾2件を使用）
+- `get_ff_current()`: `DFEDTARU`・`DFEDTARL`・`FEDFUNDS`（フォールバック）
+- `get_implied_cuts()`: `DGS1`
+- `get_financial_context()`: `T10Y2Y`・`BAMLH0A0HYM2`・`VIXCLS`
+- `get_sp500()`: `SP500`（stooqフォールバックは維持）
+- `fetch_event_row()`: `INDICATOR_CONFIG`の`fred_id`（NFP=`PAYEMS`は
+  `fred_latest_with_prev`、他は`fred_latest`）＋3回リトライ＋指数
+  バックオフ削除
+- `refresh_monthly_indicators()`: `_MONTHLY_REFRESH_SET`7指標の
+  `fred_id`（想定リストになかった追加発見。`fetch_event_row()`と同一
+  指標を二重取得しうる構造だったが、切替後はローカルファイル読み取り
+  のため実害なし）
+- `update_liquidity_csv()`: `M2SL`・`WALCL`・`BAMLH0A0HYM2`・
+  `WTREGEN`（→`FTSD`フォールバック）・`RRPONTSYD`・`WRBWFRBL`
+- `update_fed_context()`: `get_zq_futures()`/`get_ff_current()`経由
+  （想定リストになかった追加発見）
+- `_load_sp500_cache()`（**追加発見**、`fred.get_series()`を`Fred\(`・
+  `fred_latest\(`のgrepパターンでは検出できず気づかなかった箇所）:
+  `fill_returns()`が複数日分のS&P500履歴を必要とするため、
+  `reader.get_series(start=, end=)`（日付範囲指定）ベースに書き換え
+- `fred_release_dates()`（458行）: **対象外**（`https://
+  api.stlouisfed.org/fred/release/dates`への直接`requests.get()`で
+  あり、fredapiクライアントの`Fred(`/`fred_latest(`とは別のAPI表面
+  〈将来の発表日カレンダー、observation値ではない〉。
+  `common/macro_data/`はカレンダー情報を持たないため切替対象外、
+  リトライロジックも維持）
+
+`collect_and_send.py`（3関数、想定通り）:
+- `fetch_vxn_from_fred()`: `VXNCLS`（直近120日→MA50計算のため
+  `reader.get_series(start=)`ベースに書き換え）
+- `fetch_hy_spread_from_fred()`: `BAMLH0A0HYM2`（直近120日→90日
+  min/max計算のため同上）
+- `fetch_fred_short_bond()`: `DGS3MO`（直近30日→末尾2件の変化率計算の
+  ため同上）
+
+**切替方針の実装上の判断**: 依頼文は「`reader.get_latest(series_id)`
+経由への統一」を主方針としていたが、実コード確認の結果、
+`fred_latest_with_prev()`（NFP前月比計算に前月値が必要）・
+`fetch_vxn_from_fred()`（MA50に50日分必要）・
+`fetch_hy_spread_from_fred()`（90日min/maxに90日分必要）・
+`fetch_fred_short_bond()`（前日比に前日値が必要）・
+`_load_sp500_cache()`（複数日の履歴が必要）の5箇所は単一最新値だけでは
+機能を維持できないと判明したため、これらのみ`reader.get_series()`
+（期間指定）を使用し、それ以外（単一最新値で足りる約15箇所）は
+`reader.get_latest()`を使用した。Step2の値突合で全項目一致を確認して
+おり、この判断による機能面の後退はない。
+
+**Step2: 切替前後の値突合（実施結果、2026-08-12実施）**
+
+切替前（live FRED直接呼び出し）と切替後（`reader`経由）を同一セッション
+内で実測比較した結果、**18項目全て完全一致（差分0件）**:
+
+| 系列/関数 | 旧実装（live FRED） | 新実装（reader経由） |
+|---|---|---|
+| T10Y2Y | 0.48 @ 2026-08-11 | 0.48 @ 2026-08-11 |
+| BAMLH0A0HYM2 | 2.7 @ 2026-08-10 | 2.7 @ 2026-08-10 |
+| VIXCLS | 15.46 @ 2026-08-10 | 15.46 @ 2026-08-10 |
+| DGS1 | 4.04 @ 2026-08-10 | 4.04 @ 2026-08-10 |
+| DFEDTARU/DFEDTARL | 3.75/3.5 | 3.75/3.5 |
+| FEDFUNDS | 3.63 @ 2026-07-01 | (フォールバック未使用、DFEDTARU/L成立のため) |
+| SP500 | 7728.2 @ 2026-08-11 | 7728.2 |
+| M2SL | 23155.2 @ 2026-06-01 | 23155.2 @ 2026-06-01 |
+| WALCL | 6748567.0 @ 2026-08-05 | 6748567.0 @ 2026-08-05 |
+| WTREGEN | 907324.0 @ 2026-08-05 | 907324.0 @ 2026-08-05 |
+| RRPONTSYD | 1.25 @ 2026-08-11 | 1.25 @ 2026-08-11 |
+| WRBWFRBL | 3002731.0 @ 2026-08-05 | 3002731.0 @ 2026-08-05 |
+| PAYEMS（now/prev） | 158858.0@07-01 / 158881.0@06-01 | 同一 |
+| get_ff_current() | 3.625 | 3.625 |
+| get_financial_context() | yc=0.48/hy=2.7/vix=15.46/ff=3.625 | 同一 |
+| get_sp500() | 7728.2 | 7728.2 |
+| VXN（latest/vs_ma50） | 23.04 / -15.29% | 23.04 / -15.29% |
+| HYスプレッド（current/min90/max90/expanding/contracting） | 2.7/2.63/2.87/False/False | 同一 |
+| DGS3MO（latest/change_pct） | 3.89 / +0.517% | 3.89 / +0.517% |
+
+差分0件だった理由: `common/macro_data/series/`のローカルストアが
+同日（2026-08-12、`Macro_Data_Update.yml`のworkflow_dispatch実行）に
+最新化されており、FRED日次系列は日中に再公表されないため、
+live直接呼び出しと数時間前に取得済みのローカルストアの値が完全一致した。
+
+`FTSD`（`WTREGEN`フォールバック先）は`reader.get_latest("FTSD")`が
+`None`を返すことを確認したが、これは`[[MACRODATA-FTSD-SERIES-ID-
+INVALID-1]]`で判明済みの通り旧実装でも`FTSD`自体がFRED上に存在せず
+同じく取得失敗していたため、**今回の切替による回帰ではない**
+（フォールバック構造自体は変更せず維持）。
+
+**Step3: 旧参照の最終確認（grep結果）**
+
+```
+grep -n "Fred(\|from fredapi\|fred\.get_series" src/market/macro_pulse/05_main.py
+→ 1件（`_load_sp500_cache()`のdocstring内、コメントで旧実装を説明する文言のみ）
+grep -n "Fred(\|from fredapi\|fred_api_key" src/market/market_pulse/collect_and_send.py
+→ 4件（いずれも切替を説明するdocstring/コメント内のみ）
+```
+実コード上の直接呼び出しは**0件**。両ファイルとも`fred`パラメータ・
+リトライ/指数バックオフロジック（`fetch_event_row()`の3回リトライ）も
+削除済み（`fred_release_dates()`は対象外のため維持）。
+
+**テスト**: `tests/test_macro_pulse_logic.py`の`TestFredLatestWithPrev`・
+`TestFetchEventRowNFPDiff`（計7件）が旧`_FakeFred`パターンで失敗した
+ため、`main05._md_reader.get_series`/`get_latest`をmonkeypatchする方式
+に更新（`[[MACRODATA-FTSD-MISSING-FROM-INVENTORY-1]]`等での
+`_get_market_data_attributes`monkeypatchパターンを踏襲）。pytest全体
+771 passed / 2 known-failed（`[[TEST-STALE-IV-1]]`）。
+
+これにより`common/macro_data/`（FRED統合層）は`fetcher.py`/`reader.py`
+実装・定期取得ワークフロー・本番消費者2ファイル全数切替が完了し、
+**`common/market_data/`と同じ「完成」状態に到達した**。
+
+#### 次セッションでの着手順序（2026-08-12時点、本番消費者切替完了を反映）
+1. `common/macro_data/`構築プロジェクト自体は完成。次は新DB構築
+   プロジェクトの残フェーズ検討、または以下の本線外課題群
 2. （本線外）今回発見した2件の対応要否判断:
    `[[MACRODATA-FTSD-SERIES-ID-INVALID-1]]`（`FTSD`系列がFRED上に
    存在しない、`05_main.py`側の対応要否）・`[[MACRODATA-FULL-HISTORY-
@@ -2781,8 +2905,7 @@ order-of-magnitude jump検知、duplicate as_of検知は0件）。内訳を
    CLI-TICKERS-SHADOW-1]]`・`[[NETCASH-DUAL-CALC-1]]`等
 
 #### 着手条件
-なし（fetcher.py/reader.py実装済み・定期取得ワークフロー稼働開始済み、
-本番消費者切替は着手可能）。
+なし（`common/macro_data/`は完成。本線外課題群のみ残置）。
 
 ---
 
