@@ -1,6 +1,18 @@
 # PROJECT_STATUS.md — 新一次データベース構築プロジェクト進捗
 
 作成日: 2026-07-23
+更新日: 2026-08-12（ブラッシュアップで発見したフェーズ3セクションと
+BACKLOG.mdとの矛盾を訂正。フェーズ3表の2行が「未着手（フェーズ1・2
+完了後に着手）」のまま残っており、BACKLOG.md側の「フェーズ3着手済み
+（分類C3件登録完了）」という記載と食い違っていた。`FIELD_DEFINITIONS.md`
+499項目の新DB参照への切替方針の行へフェーズ3投資調査の結果
+（`common/sec_data/`13箇所参照済み・`common/market_data/`/`common/
+macro_data/`は0件、次のアクションは対象件数を数える調査から）を反映。
+分類C14件の管理方法検討の行を「着手済み」に更新し、登録済み3件
+（`[[PORTFOLIO-CONFIG-DUP-1]]`・`[[TAILKPI-CONFIG-LOCATION-1]]`・
+`[[FCFCONFIG-LOCATION-1]]`）・残り11件の内訳を明記。見出しにも
+「2026-08-12着手」を追加（フェーズ1・2見出しと同形式）。実装コード
+変更・BACKLOG.md側の変更なし）
 更新日: 2026-08-12（`[[PHASE2-YFINANCE-REFETCH-DESIGN-1]]`（yfinance
 過去データ移管の投資調査）が完了。旧保存先（hypecore・
 `market_data.json`・`breadth_data.json`）の派生指標の元となる価格・
@@ -518,12 +530,12 @@ HISTORY-EXCEPTION-1]]`参照）。SEC EDGAR・yfinance分の結論確定は
 `config/`外配置（`INPUT-C-009`/`010`）等の是正要否は、フェーズ3
 （導出データ層の管理方法検討）で扱う。
 
-## フェーズ3: 導出データ層の管理方法検討（分類C14件を含む）
+## フェーズ3: 導出データ層の管理方法検討（分類C14件を含む、**2026-08-12着手**）
 
 | 項目 | 状態 |
 |---|---|
-| `FIELD_DEFINITIONS.md` 499項目の新DB参照への切替方針 | 未着手（フェーズ1・2完了後に着手） |
-| 分類C14件（`INPUT-C-001〜014`）の管理方法検討（`config/`外配置2件の是正、Portfolio二重保持の是正等） | 未着手（フェーズ1・2完了後に着手） |
+| `FIELD_DEFINITIONS.md` 499項目の新DB参照への切替方針 | 未着手。`common/sec_data/`は既に13箇所で参照済みと確認済み（フェーズ3投資調査）、`common/market_data/`・`common/macro_data/`は0件。次のアクションは対象件数（yfinance/FRED由来で未更新の項目数）を数える調査から |
+| 分類C14件（`INPUT-C-001〜014`）の管理方法検討（`config/`外配置2件の是正、Portfolio二重保持の是正等） | 着手済み。分類C14件のうち3件をBACKLOG登録済み（実装は未着手）: `[[PORTFOLIO-CONFIG-DUP-1]]`（`INPUT-C-008`、Portfolio二重保持）・`[[TAILKPI-CONFIG-LOCATION-1]]`（`INPUT-C-009`、config外配置）・`[[FCFCONFIG-LOCATION-1]]`（`INPUT-C-010`、config外配置）。残り11件（`INPUT-C-001〜007`・`011〜014`）は未着手 |
 
 ---
 
