@@ -1,6 +1,15 @@
 # PROJECT_STATUS.md — 新一次データベース構築プロジェクト進捗
 
 作成日: 2026-07-23
+更新日: 2026-08-12（セッション終了時ブラッシュアップで発見した本ファイル
+内部の矛盾を訂正。フェーズ2表FRED行（449行目付近）が「実施済み」と
+記載する一方、直後の説明文が方針決定コミット時点の「実装は次段階に
+分離」のまま`BAMLH0A0HYM2`実装完了後も更新されていなかった。実装完了
+の事実を反映し、SEC EDGAR・yfinance分の残タスクを新規登録した
+BACKLOG.md`[[PHASE2-SECDATA-FULL-DEPTH-VERIFICATION-1]]`・
+`[[PHASE2-YFINANCE-REFETCH-DESIGN-1]]`への参照も追加。詳細は
+BACKLOG_DONE.md`[[BACKLOG-STALE-NEXTSTEPS-BLOCK-MACRODATA-2]]`参照。
+実装コード変更なし）
 更新日: 2026-08-12（`[[MACRODATA-BAMLH0A0HYM2-HISTORY-EXCEPTION-1]]`の
 実装・実行が完了。`common/macro_data/migrate_bamlh0a0hym2_history.py`
 （一度限りの例外的移行専用スクリプト、`common/macro_data/`配下に監査
@@ -464,8 +473,11 @@ BACKLOG.mdに残置 |
 
 詳細な調査経緯（文書ベース調査での仮説提示、実データ検証による反証、
 FRED全25系列の`observation_start`横断調査等）はBACKLOG_DONE.md
-`[[PHASE2-MIGRATION-POLICY-DECIDED-1]]`参照。実装（`BAMLH0A0HYM2`の
-例外的移行含む）は次段階に分離、本更新は方針決定・記録のみ。
+`[[PHASE2-MIGRATION-POLICY-DECIDED-1]]`参照。`BAMLH0A0HYM2`の例外的
+移行は実装・実行済み（詳細はBACKLOG_DONE.md`[[MACRODATA-BAMLH0A0HYM2-
+HISTORY-EXCEPTION-1]]`参照）。SEC EDGAR・yfinance分の残タスクは
+BACKLOG.md`[[PHASE2-SECDATA-FULL-DEPTH-VERIFICATION-1]]`・
+`[[PHASE2-YFINANCE-REFETCH-DESIGN-1]]`参照。
 
 **分類Cはフェーズ1・2の対象外**: `config/segment_config.json`等14件
 （`INPUT-C-001〜014`）は一次データそのものではなく`FIELD_DEFINITIONS.md`
