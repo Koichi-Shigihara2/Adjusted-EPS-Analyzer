@@ -2475,19 +2475,12 @@ common/market_data/
 完了した。**
 
 **次セッションでの着手順序（2026-08-12時点、`[[MACRODATA-LAYER-
-CONSTRUCTION-1]]`投資調査完了を反映し最終更新）**:
-1. `common/market_data/`構築プロジェクト自体は完了。次は
-   `[[MACRODATA-LAYER-CONSTRUCTION-1]]`（`common/macro_data/`新設、
-   FRED統合層）の実装設計（重複解消3系列＋`fetcher.py`/`reader.py`設計）
-2. （本線外）新規発見4件のうち優先度中の2件の対応要否判断:
-   `[[MACRODATA-AS-IS-DUPLICATION-UNDERCOUNT-1]]`・
-   `[[MACRODATA-SCHEDULED-SILENT-GAP-CSCICP-USALOL-1]]`
-3. （本線外・過去セッションで蓄積した低優先度課題群一式、優先度は
-   各エントリ参照）: `[[MACRODATA-FTSD-MISSING-FROM-INVENTORY-1]]`・
-   `[[MACRODATA-IMPORT-HISTORY-CONFIG-DRIFT-1]]`・`[[MARKETDATA-CWAN-
-   FROZEN-DATA-SUSPECT-1]]`・`[[MARKETDATA-SP500-SCRAPE-INVALID-
-   TICKERS-1]]`・`[[MARKETDATA-VIX9D-DATA-GAP-1]]`・`[[STONKS-SILO-
-   CLI-TICKERS-SHADOW-1]]`・`[[NETCASH-DUAL-CALC-1]]`等
+CONSTRUCTION-1]]`完成を反映し訂正。旧内容は`common/macro_data/`実装設計
+着手を指示していたが同日中にプロジェクト自体が完成したため陳腐化、
+ブラッシュアップで発見し削除。詳細はBACKLOG_DONE.md
+`[[BACKLOG-STALE-NEXTSTEPS-BLOCK-MACRODATA-1]]`参照）**:
+最新の「次セッションでの着手順序」は`[[MACRODATA-LAYER-CONSTRUCTION-1]]`
+エントリ側（本ファイル内）を参照。
 
 #### hypecore.py切替の前提作業・本体切替（着手順序4-8、2026-08-11完了）
 事前調査で判明した3件の前提作業（daily/バックフィル期間拡張・

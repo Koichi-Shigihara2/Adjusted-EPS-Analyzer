@@ -71,6 +71,65 @@ OVERLOOKED-1]]`関連作業）に、`INPUT_DATA_TOBE.md`側のみ更新され
 
 ---
 
+### ✅ [BACKLOG-STALE-NEXTSTEPS-BLOCK-MACRODATA-1] BACKLOG.md内の「次セッションでの着手順序」ブロックが`[[MARKETDATA-LAYER-CONSTRUCTION-1]]`エントリ側に陳腐化したまま残置
+**状態:** 完了
+**優先度:** 低（ドキュメント記載の陳腐化、実データ・実装への実害なし。
+ただし次回セッションが誤参照するリスクあり）
+**分類:** ドキュメント不備
+**登録日:** 2026-08-12
+**完了日:** 2026-08-12
+**発見:** `[[MACRODATA-LAYER-CONSTRUCTION-1]]`完成後のセッション終了時
+ブラッシュアップ調査（チャット記録、2026-08-12）
+
+#### 内容
+BACKLOG.md内に「次セッションでの着手順序」という見出しのブロックが
+`[[MARKETDATA-LAYER-CONSTRUCTION-1]]`エントリ内と
+`[[MACRODATA-LAYER-CONSTRUCTION-1]]`エントリ内の2箇所に存在していた。
+前者（`[[MACRODATA-LAYER-CONSTRUCTION-1]]`投資調査完了時点、
+`common/macro_data/`着手前の内容）が、後者（`common/macro_data/`完成後の
+最新内容）へ更新されないまま残置されており、「次は`common/macro_data/`
+実装設計」という既に完了済みの指示を含んでいた。あわせて、同ブロック内で
+「未完了」として列挙されていた`[[MACRODATA-FTSD-MISSING-FROM-INVENTORY-1]]`
+は既にBACKLOG_DONE.mdへ移動済み（本ファイル本セクション先頭のエントリ）
+だったことも確認した。同ブロック内の他の列挙ID
+（`[[MACRODATA-AS-IS-DUPLICATION-UNDERCOUNT-1]]`・
+`[[MACRODATA-SCHEDULED-SILENT-GAP-CSCICP-USALOL-1]]`・
+`[[MACRODATA-IMPORT-HISTORY-CONFIG-DRIFT-1]]`・`[[MARKETDATA-CWAN-
+FROZEN-DATA-SUSPECT-1]]`・`[[MARKETDATA-SP500-SCRAPE-INVALID-TICKERS-1]]`・
+`[[MARKETDATA-VIX9D-DATA-GAP-1]]`・`[[STONKS-SILO-CLI-TICKERS-SHADOW-1]]`・
+`[[NETCASH-DUAL-CALC-1]]`）はBACKLOG_DONE.mdと照合した結果、いずれも
+BACKLOG.md側に開いたエントリ（`### ✅`ではない`### [`見出し）として残存
+しており未完了と確認、除去対象ではなかった。
+
+#### 対応内容
+`[[MARKETDATA-LAYER-CONSTRUCTION-1]]`エントリ内の陳腐化した
+「次セッションでの着手順序」ブロック（旧19行）を、最新版が
+`[[MACRODATA-LAYER-CONSTRUCTION-1]]`エントリ側にある旨を示す短い訂正
+ポインタ（新6行）に置き換え。列挙されていたID群は全て本ブロック内から
+削除したが、いずれも別途固有のエントリとしてBACKLOG.md側に残存して
+いるため、ID自体の登録抹消には該当しない。
+
+修正前後で以下を確認:
+- `grep -n "次セッションでの着手順序" BACKLOG.md`のヒット数・行番号:
+  修正対象2箇所（旧2477行目・旧2889行目）以外はすべて不変
+- `grep -c "^" BACKLOG.md`（総行数）: 12,182行→12,175行（-7行、置換ブロック
+  の行数減少分と一致）
+- `git diff`: 意図した1箇所（旧2477〜2490行目）以外への変更なしを目視確認
+- `grep -oE '\[\[[A-Z0-9-]+\]\]' BACKLOG.md | sort -u | wc -l`（一意ID数）:
+  195件→196件（+1、本エントリ自身への新規参照`[[BACKLOG-STALE-
+  NEXTSTEPS-BLOCK-MACRODATA-1]]`の追加によるもの。既存IDの喪失なし）
+
+#### 教訓
+プロジェクト完成時に更新すべき「次セッションでの着手順序」ブロックが
+複数エントリに跨って存在する場合、片方の更新のみでは陳腐化が残る。
+`grep -n "次セッションでの着手順序"`で全ヒットを洗い出し、更新対象の
+プロジェクトエントリだけでなく、直前に完了した関連プロジェクトの
+エントリ側にも同種のブロックが残っていないか都度確認することが有効。
+
+実装コード変更・データ再生成なし（ドキュメント記録のみ）。
+
+---
+
 ### ✅ [MARKETDATA-LAYER-CONSTRUCTION-1] 着手順序5-2: score_verifier.py切替（診断ツール2/2、全数完了）
 **状態:** 完了
 **優先度:** 高
