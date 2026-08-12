@@ -2879,15 +2879,16 @@ grep -n "Fred(\|from fredapi\|fred_api_key" src/market/market_pulse/collect_and_
 実装・定期取得ワークフロー・本番消費者2ファイル全数切替が完了し、
 **`common/market_data/`と同じ「完成」状態に到達した**。
 
-#### 次セッションでの着手順序（2026-08-12時点、フェーズ2方針確定・BAMLH0A0HYM2例外的移行完了を反映）
+#### 次セッションでの着手順序（2026-08-12時点、SEC EDGAR全105銘柄精査完了・フェーズ2対象外確定を反映）
 1. `common/macro_data/`構築プロジェクト自体は完成。フェーズ2（過去
    データ移管）の移行方針も確定済み（`[[PHASE2-MIGRATION-POLICY-
    DECIDED-1]]`）。`BAMLH0A0HYM2`の例外的移行（FRED側2026年4月からの
    新規提供制限に伴う旧`05_events.csv`からの一度限りの移行）も実装・
-   実行完了済み（`[[MACRODATA-BAMLH0A0HYM2-HISTORY-EXCEPTION-1]]`）
-2. フェーズ2の残タスク:
-   `[[PHASE2-SECDATA-FULL-DEPTH-VERIFICATION-1]]`（SEC EDGAR全105銘柄の
-   履歴深度精査、`company_facts.json`とannual_*.jsonの深度差要否判断）・
+   実行完了済み（`[[MACRODATA-BAMLH0A0HYM2-HISTORY-EXCEPTION-1]]`）。
+   SEC EDGAR過去データ移管もフェーズ2対象外と確定しクローズ済み
+   （全105銘柄精査完了、詳細は`[[PHASE2-SECDATA-FULL-DEPTH-
+   VERIFICATION-1]]`）
+2. フェーズ2の残タスク（1件のみ）:
    `[[PHASE2-YFINANCE-REFETCH-DESIGN-1]]`（yfinance旧保存先の時系列
    データ再取得設計、hypecore・market_data.json・breadth_data.json対象）
 3. （本線外）今回発見した2件の対応要否判断:
@@ -2899,7 +2900,11 @@ grep -n "Fred(\|from fredapi\|fred_api_key" src/market/market_pulse/collect_and_
    `[[MACRODATA-AS-IS-DUPLICATION-UNDERCOUNT-1]]`（ドキュメント訂正）・
    `[[MACRODATA-SCHEDULED-SILENT-GAP-CSCICP-USALOL-1]]`（実データ確認が
    着手条件）
-5. （本線外）過去セッションで蓄積した低優先度課題群一式:
+5. （本線外）SEC EDGAR全105銘柄精査で新規発見した異常ケース:
+   `[[SECDATA-ENB-NORMALIZATION-MISSING-1]]`（ENBの正規化データ
+   〈annual_*.json/quarterly_*.json〉が1件も生成されていない、原因調査
+   未着手）
+6. （本線外）過去セッションで蓄積した低優先度課題群一式:
    `[[MACRODATA-IMPORT-HISTORY-CONFIG-DRIFT-1]]`・`[[MARKETDATA-CWAN-
    FROZEN-DATA-SUSPECT-1]]`・`[[MARKETDATA-SP500-SCRAPE-INVALID-
    TICKERS-1]]`・`[[MARKETDATA-VIX9D-DATA-GAP-1]]`・`[[STONKS-SILO-
@@ -2907,33 +2912,31 @@ grep -n "Fred(\|from fredapi\|fred_api_key" src/market/market_pulse/collect_and_
 
 #### 着手条件
 なし（`common/macro_data/`本体・フェーズ2方針決定・`BAMLH0A0HYM2`例外的
-移行はいずれも完了。フェーズ2残タスク2件・本線外課題群のみ残置）。
+移行・SEC EDGAR全105銘柄精査はいずれも完了。フェーズ2残タスク1件・
+ENB異常ケース・本線外課題群のみ残置）。
 
 ---
 
-### [PHASE2-SECDATA-FULL-DEPTH-VERIFICATION-1] SEC EDGAR過去データ移管の要否判断に必要な全105銘柄の履歴深度精査が未実施
+### [SECDATA-ENB-NORMALIZATION-MISSING-1] ENB（Enbridge）の正規化データ（annual_*.json/quarterly_*.json）が1件も生成されていない
 **状態:** 未着手
-**優先度:** 低〜中
-**分類:** データ移行 / 新DB構築プロジェクト フェーズ2（過去データ移管）
+**優先度:** 中（監視対象銘柄でありながら本番データが欠落しているため）
+**分類:** データ品質 / `common/sec_data/`正規化パイプライン
 **登録日:** 2026-08-12
-**発見:** フェーズ2投資調査（`company_facts.json`とannual_*.jsonの
-履歴深度比較、チャット記録、2026-08-12）
+**発見:** フェーズ2 SEC EDGAR全105銘柄精査（`[[PHASE2-SECDATA-FULL-
+DEPTH-VERIFICATION-1]]`、チャット記録、2026-08-12）
 
 #### 内容
-`common/sec_data/data/{TICKER}/company_facts.json`（SEC EDGAR生
-レスポンス全量）と`annual_*.json`（正規化済み通期データ）の履歴深度差を、
-サンプル3銘柄（AAPL/MSFT/XOM）で比較した結果、有意な差は確認できな
-かった。`common/sec_data/`のfetcherは初回投入時点で既にSEC EDGAR APIから
-取得可能な深い履歴（20年分程度）を再取得できている可能性が高いと
-推測されるが、**全105銘柄の精査は未実施**であり、フェーズ2「過去データ
-移管」の対象からSEC EDGARを除外してよいかの確定判断には追加確認が
-必要である。
+`config/monitor_tickers.yaml`（85行目）で監視対象として登録されている
+ENB（Enbridge Inc.）について、`common/sec_data/data/ENB/`配下に
+`company_facts.json`（SEC EDGAR生アーカイブ、599概念）・
+`submissions.json`は存在するが、正規化済みデータ（`annual_*.json`・
+`quarterly_*.json`）が**1件も生成されていない**ことが、フェーズ2
+投資調査（SEC EDGAR全105銘柄の履歴深度精査）の過程で発見された。
 
 #### 対応方針（未定）
-全105銘柄について`company_facts.json`と`annual_*.json`の最古データを
-機械的に突合し、3銘柄サンプルと同様に有意な深度差がないことを確認する。
-差が見つかった銘柄があれば`[[PHASE2-MIGRATION-POLICY-DECIDED-1]]`の
-「例外」規定の適用要否を個別に判断する。
+なぜENBだけ正規化パイプラインが機能していないのか（銘柄固有のXBRL
+データ構造の問題か、処理時のエラーが握りつぶされているか等）の原因
+調査が必要。原因調査は次回以降に別途着手する。
 
 #### 着手条件
 なし。

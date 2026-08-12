@@ -344,6 +344,65 @@ MACRODATA-1]]`（`[[MARKETDATA-LAYER-CONSTRUCTION-1]]`エントリ側の陳腐�
 
 ---
 
+### ✅ [PHASE2-SECDATA-FULL-DEPTH-VERIFICATION-1] SEC EDGAR全105銘柄の履歴深度精査完了、フェーズ2「過去データ移管」の対象外と確定
+**状態:** 完了
+**優先度:** 低〜中
+**分類:** データ移行 / 新DB構築プロジェクト フェーズ2（過去データ移管）
+**登録日:** 2026-08-12
+**完了日:** 2026-08-12
+**発見:** フェーズ2投資調査（`company_facts.json`とannual_*.jsonの
+履歴深度比較、チャット記録、2026-08-12）
+
+#### 内容
+サンプル3銘柄（AAPL/MSFT/XOM）による先行調査で有意な深度差が
+確認できなかったことを受け、`common/sec_data/data/`配下の全105銘柄
+（`_cik_cache.json`を除く）について、`company_facts.json`（SEC EDGAR
+生アーカイブ）の主要損益系概念の最古日付と、`annual_*.json`のファイル
+名から判別できる最古年度を機械的に突合する一時スクリプトを実行した。
+
+#### 調査過程で発見した機械的突合方式の欠陥（修正込み）
+第1回実行（`NetIncomeLoss`→`SalesRevenueNet`→`Revenues`の優先順位方式、
+最初に見つかった概念で探索を打ち切る方式）では、CAKE（diff=-11yr）・
+ABBV（diff=-4yr）・AMD/CWAN/FCX/JNJ（diff=-2yr）の計6銘柄が異常な
+乖離として検出された。個別確認の結果、いずれも該当銘柄が初期年度の
+純利益を`NetIncomeLoss`とは別のXBRLタグ（`ProfitLoss`）で報告して
+おり、優先順位方式では新しい`NetIncomeLoss`が先に見つかった時点で
+より古い`ProfitLoss`データを見落としていたことが原因の**偽陽性**と
+判明（例: CAKEは`NetIncomeLoss`が2018年からのみだが`ProfitLoss`は
+2008年から存在、annual_min_yearは2007年で通常のノイズ帯に収まる）。
+`ProfitLoss`を含む4概念（`NetIncomeLoss`/`SalesRevenueNet`/
+`Revenues`/`ProfitLoss`）のうち存在するものすべての最小値を採用する
+方式に修正し、再実行した。
+
+#### 最終結果
+- 処理対象104銘柄（1銘柄ENBは`annual_*.json`が1件も存在せず処理対象外、
+  下記「異常ケース」参照）
+- `diff_years`（`annual_min_year − company_facts最古年`）の分布:
+  `-1yr: 56銘柄`・`0yr: 43銘柄`・`+1yr: 5銘柄`。**全104銘柄が-1〜+1年の
+  範囲に収まり、深度差あり（2年以上の乖離）に該当する銘柄は0件**
+- 異常ケース: **ENB（Enbridge Inc.）**は`annual_*.json`・
+  `quarterly_*.json`が1件も存在しないことが判明。これは「深度差」とは
+  別種の問題（正規化パイプライン未実行）のため、`[[SECDATA-ENB-
+  NORMALIZATION-MISSING-1]]`として別途新規登録した
+
+#### 結論
+**SEC EDGARはフェーズ2「過去データ移管」の対象から除外する**。
+`common/sec_data/`のfetcherは初回投入時点で既にSEC EDGAR APIから取得
+可能な範囲の履歴を再取得できており、追加の移行作業は不要と判断した。
+
+#### 対応内容
+`PROJECT_STATUS.md`フェーズ2表のSEC EDGAR行を「作業不要の可能性が
+高いが未確定」から「フェーズ2対象外と確定」に更新。BACKLOG.mdの
+「次セッションでの着手順序」ブロックからSEC EDGAR関連の残タスクを
+削除し、フェーズ2残タスクを`[[PHASE2-YFINANCE-REFETCH-DESIGN-1]]`
+1件のみに整理。`[[SECDATA-ENB-NORMALIZATION-MISSING-1]]`を本線外課題
+として追記。
+
+実装コード変更・データ変更なし（調査・ドキュメント記録のみ。一時
+スクリプトは実行後削除、コミット対象外）。
+
+---
+
 ### ✅ [MARKETDATA-LAYER-CONSTRUCTION-1] 着手順序5-2: score_verifier.py切替（診断ツール2/2、全数完了）
 **状態:** 完了
 **優先度:** 高

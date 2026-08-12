@@ -1,6 +1,16 @@
 # PROJECT_STATUS.md — 新一次データベース構築プロジェクト進捗
 
 作成日: 2026-07-23
+更新日: 2026-08-12（`[[PHASE2-SECDATA-FULL-DEPTH-VERIFICATION-1]]`
+（SEC EDGAR全105銘柄の履歴深度精査）が完了。`company_facts.json`と
+`annual_*.json`の最古日付を機械的に突合した結果、104銘柄で有意な
+深度差なし（-1〜+1年のノイズ帯）を確認し、**SEC EDGARはフェーズ2
+「過去データ移管」の対象外と確定**。異常ケースとしてENB（Enbridge）の
+`annual_*.json`/`quarterly_*.json`が1件も生成されていないことを発見し
+`[[SECDATA-ENB-NORMALIZATION-MISSING-1]]`として新規登録（原因調査は
+次回以降）。フェーズ2表SEC EDGAR行を更新、フェーズ2の残タスクは
+`[[PHASE2-YFINANCE-REFETCH-DESIGN-1]]`1件のみに整理。実装コード変更・
+データ変更なし）
 更新日: 2026-08-12（セッション終了時ブラッシュアップで発見した本ファイル
 内部の矛盾を訂正。フェーズ2表FRED行（449行目付近）が「実施済み」と
 記載する一方、直後の説明文が方針決定コミット時点の「実装は次段階に
@@ -453,7 +463,7 @@ BACKLOG.mdに残置 |
 
 | データソース | 状態 | 対象範囲 |
 |---|---|---|
-| SEC EDGAR既存データ（`INPUT-A-001〜018`） | 未着手 | `INPUT_DATA_AS_IS.md` 1-A・2-A参照（実測7経路）。**現状評価（2026-08-12投資調査）**: サンプル3銘柄（AAPL/MSFT/XOM）で`company_facts.json`と`annual_*.json`の履歴深度を比較した結果、有意な差は確認できず。`common/sec_data/`のfetcherは初回投入時点で既にSEC EDGAR APIから取得可能な深い履歴（20年分程度）を再取得できている可能性が高い。全105銘柄の精査はしていないため、追加作業の要否は暫定的に「作業不要の可能性が高いが未確定」とする |
+| SEC EDGAR既存データ（`INPUT-A-001〜018`） | 未着手 | `INPUT_DATA_AS_IS.md` 1-A・2-A参照（実測7経路）。**現状評価（2026-08-12投資調査、全105銘柄精査完了）**: **フェーズ2対象外と確定**（全105銘柄精査完了、詳細は`[[PHASE2-SECDATA-FULL-DEPTH-VERIFICATION-1]]`参照）。`company_facts.json`と`annual_*.json`の履歴深度を全105銘柄で機械的に突合した結果、104銘柄で有意な差は確認できず（-1〜+1年のノイズ帯に収束）、`common/sec_data/`のfetcherは既にSEC EDGAR APIから取得可能な範囲の履歴を再取得できていると判断。ただしENBの正規化データ欠落を別問題として発見、`[[SECDATA-ENB-NORMALIZATION-MISSING-1]]`参照 |
 | yfinance既存データ（`INPUT-A-019〜023`） | 未着手 | `INPUT_DATA_AS_IS.md` 1-B・2-B参照（実測12ファイル。`common/sec_data/audit.py`見落としを2026-08-07訂正、`[[MARKETDATA-AS-IS-AUDIT-PY-OMITTED-1]]`参照）。**現状評価（2026-08-12投資調査）**: 旧保存先の一部（hypecore・`market_data.json`・`breadth_data.json`）に、数ヶ月〜32ヶ月分の時系列データが存在することを確認済み。Yahoo Finance API自体は同期間のデータを今も提供しているとみられるため、再取得による対応を検討中（次段階の調査対象） |
 | FRED既存データ（`INPUT-A-024〜047`） | 未着手 | `INPUT_DATA_AS_IS.md` 1-C・2-C参照（実測2サブシステム）。**現状評価（2026-08-12投資調査、`BAMLH0A0HYM2`分は同日実施済み）**: 全24系列を調査した結果、`BAMLH0A0HYM2`のみが2026年4月からのFRED側新規提供制限（直近3年のみ）に該当し、再取得不可能と確認。下記「移行方針」の「例外」規定を適用し、`common/macro_data/migrate_bamlh0a0hym2_history.py`を実装・実行、旧`05_events.csv`（1996-12-31〜2023-08-11分、6,947件）からの一度限りの移行を**実施済み**（`2023-08-14`以降の既存785件は無変化を確認、移行後合計7,732件。詳細は`[[MACRODATA-BAMLH0A0HYM2-HISTORY-EXCEPTION-1]]`参照）。他23系列は初回投入時点で既にFRED公式の全期間履歴を取得済みのため追加の再取得作業は不要と確認済み |
 | 取得前提条件（`INPUT-B-001〜003`） | 未着手 | `INPUT_DATA_AS_IS.md` 1-D・1-E参照（`monitor_tickers.yaml`・`cik_lookup.csv`／`cik_lookup_result.json`はいずれも現状`config/`配下に存在確認済み）。**現状評価（2026-08-12投資調査）**: 対象外と判断（ファイルサイズが小さく、移管・再取得いずれも不要） |
