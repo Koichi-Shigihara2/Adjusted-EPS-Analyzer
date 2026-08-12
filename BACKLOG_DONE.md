@@ -38,6 +38,39 @@ CONSTRUCTION-1]]`）の一環として対応:
 
 ---
 
+### ✅ [MACRODATA-FTSD-VERIFICATION-A048-GAP-1] INPUT_DATA_AS_IS.mdのINPUT-A-048（税務・一過性項目タグ群52種）反映漏れ
+**状態:** 完了
+**優先度:** 低（ドキュメント間の記載漏れ、実データ・実装への実害なし）
+**分類:** ドキュメント不備
+**登録日:** 2026-08-12
+**完了日:** 2026-08-12
+**発見:** `[[MACRODATA-FTSD-MISSING-FROM-INVENTORY-1]]`対応（`FTSD`追加）
+の機械的網羅性証明再実行中（チャット記録、2026-08-12）
+
+#### 内容
+`[[MACRODATA-FTSD-MISSING-FROM-INVENTORY-1]]`対応（`FTSD`追加）の機械的
+網羅性証明再実行中に、`INPUT_DATA_TOBE.md`側にのみ存在し
+`INPUT_DATA_AS_IS.md`側に存在しないID（`INPUT-A-048`）を発見した。
+2026-07-24の`INPUT-A-048`新規追加時（`[[SECDATA-COMPANYFACTS-
+OVERLOOKED-1]]`関連作業）に、`INPUT_DATA_TOBE.md`側のみ更新され
+`INPUT_DATA_AS_IS.md`側への反映が漏れていたことに起因する、約3週間
+潜在していた既存の乖離だった（今回の`FTSD`追加とは無関係）。
+
+#### 対応内容
+`INPUT_DATA_AS_IS.md`1-E節へ対応行を追加し解消。差分0件を再確認済み
+（詳細は`[[MACRODATA-FTSD-MISSING-FROM-INVENTORY-1]]`参照）。
+
+#### 教訓
+分類A/B/C追加時の「両ファイル同時更新」ルール（`CHAT_RULES.md`
+「一次データ層（`INPUT_DATA_TOBE.md`）の件数管理」）が徹底されていても、
+機械的な突合を実際に実行するまで漏れが発覚しないことがある。IDを
+追加・削除する依頼では、依頼文に機械的網羅性証明の再実行を明記する
+ことが有効な検知手段となることを再確認した。
+
+実装コード変更・データ再生成なし（ドキュメント記録のみ）。
+
+---
+
 ### ✅ [MARKETDATA-LAYER-CONSTRUCTION-1] 着手順序5-2: score_verifier.py切替（診断ツール2/2、全数完了）
 **状態:** 完了
 **優先度:** 高
