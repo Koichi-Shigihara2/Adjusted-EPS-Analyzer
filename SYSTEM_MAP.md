@@ -1,5 +1,14 @@
 # SYSTEM MAP — On-a-journey
 
+最終更新: 2026-08-12（common/macro_data/セクションを定期取得ワークフロー
+稼働開始に更新。`.github/workflows/Macro_Data_Update.yml`（毎日
+UTC10:00・workflow_dispatch対応）新設と`series/`への初回実データ投入
+（25系列中24系列成功）を反映。`fetcher.py`の`if __name__ ==
+"__main__":`ブロック（CLIエントリポイント）についても追記。日次cronが
+毎回全期間履歴を再取得する設計上の課題（`[[MACRODATA-FULL-HISTORY-
+DAILY-REFETCH-1]]`）も明記。詳細はBACKLOG.md`[[MACRODATA-LAYER-
+CONSTRUCTION-1]]`参照）
+
 最終更新: 2026-08-12（新規セクション「common/macro_data/（FRED統合層）」
 を追加。`fetcher.py`（`fetch_series`/`update_series`/`fetch_all_series`、
 fredapiクライアントのモジュールレベル一元化・リトライ3回＋指数
@@ -1084,12 +1093,13 @@ TANUKI TAIL（docs/portfolio/tail/）← EDGAR RSS / Grok（KPI提案・四半�
 `common/market_data/`と同型のfetcher.py/reader.py分離構成でFRED依存を
 一元化する新層（`[[MACRODATA-LAYER-CONSTRUCTION-1]]`）。
 
-**【状態（2026-08-12時点）】構築中**: 本節が記載する`fetcher.py`/
-`reader.py`本体は実装済みだが、本番消費者（`05_main.py`・
-`collect_and_send.py`）はまだ本モジュールを参照していない
-（グリーンフィールド実装）。本番消費者切替（重複3系列解消含む）・
-GitHub Actionsワークフロー新設・過去データ一括投入（フェーズ2）は
-いずれも次段階で扱う。
+**【状態（2026-08-12時点）】構築中**: `fetcher.py`/`reader.py`本体・
+`.github/workflows/Macro_Data_Update.yml`（定期取得ワークフロー）まで
+稼働開始し、`series/`へ初回実データ投入済み（25系列中24系列成功）。
+本番消費者（`05_main.py`・`collect_and_send.py`）はまだ本モジュールを
+参照していない（グリーンフィールド実装、定期実行のみ稼働）。本番消費者
+切替（重複3系列解消含む）・過去データ一括投入（フェーズ2）は次段階で
+扱う。
 
 - `common/macro_data/fetcher.py`: ネットワーク取得＋検証＋原子的書き込み。
   `fetch_series(series_id, start=None)`（FRED系列取得の唯一の外部
@@ -1098,13 +1108,18 @@ GitHub Actionsワークフロー新設・過去データ一括投入（フェー
   `update_series(series_id, start=None)`（`fetch_series()`結果を
   既存ストアへ日付単位でupsert、保存前検証を実行）・
   `fetch_all_series(series_ids=None)`（`series_meta.json`の全系列
-  または指定系列へ`update_series()`を順次実行するバッチ関数、将来の
-  cron呼び出し用。今回はcron配線自体は行わずこの関数のみ実装）。
-  fredapiクライアントはモジュールレベルで1つだけ生成し使い回す
-  （現状の各ファイルが呼び出しの都度`Fred()`を個別生成する設計は
-  踏襲しない）。`FRED_API_KEY`環境変数名・クライアント初期化方法
-  （`Fred(api_key=...)`）は`05_main.py::get_fred()`・
-  `collect_and_send.py`側3関数と同一のものを実コード確認の上で踏襲。
+  または指定系列へ`update_series()`を順次実行するバッチ関数）。
+  `if __name__ == "__main__":`ブロック（`python common/macro_data/
+  fetcher.py [series_ids]`、`common/market_data/fetcher.py`と同じ
+  CLIパターン）から`.github/workflows/Macro_Data_Update.yml`が呼び出す。
+  `start`未指定時は常に全期間履歴を取得する設計であり、日次cronが
+  毎回全期間を再取得する非効率が判明済み（`[[MACRODATA-FULL-HISTORY-
+  DAILY-REFETCH-1]]`、対応未定）。fredapiクライアントはモジュール
+  レベルで1つだけ生成し使い回す（現状の各ファイルが呼び出しの都度
+  `Fred()`を個別生成する設計は踏襲しない）。`FRED_API_KEY`環境変数名・
+  クライアント初期化方法（`Fred(api_key=...)`）は`05_main.py::
+  get_fred()`・`collect_and_send.py`側3関数と同一のものを実コード
+  確認の上で踏襲。
 - `common/macro_data/reader.py`: 読み取り専用API。
   `get_latest(series_id)`・`get_series(series_id, start=None,
   end=None)`（期間内の全エントリを観測日昇順で返す、観測日を含む

@@ -1,6 +1,21 @@
 # On-a-journey — 改善バックログ（全システム）
 
 最終更新: 2026-08-12（`[[MACRODATA-LAYER-CONSTRUCTION-1]]`:
+`.github/workflows/Macro_Data_Update.yml`（毎日UTC10:00・
+workflow_dispatch対応）を新設し定期取得ワークフローが稼働開始。
+GitHub Actions側のworkflow_dispatchを直接トリガーする手段がセッション
+環境になかったため、同一エントリポイントをローカルで実FRED_API_KEY
+実行し代替検証。25系列中24系列成功（更新レコード合計94,909件）、
+`FTSD`のみFRED API上に系列が実在せず失敗（`[[MACRODATA-FTSD-SERIES-
+ID-INVALID-1]]`新規登録）。`macro_data_violations_log.json`の警告
+255件は全て実在する経済事象・近ゼロ交差によるorder-of-magnitude
+jump検知でありデータ品質問題なしと判断。副次発見として日次cronが
+毎回全期間履歴を再取得する非効率な設計も判明
+（`[[MACRODATA-FULL-HISTORY-DAILY-REFETCH-1]]`新規登録）。05_main.py・
+collect_and_send.pyは今回も変更していない。PROJECT_STATUS.md・
+SYSTEM_MAP.mdも同時更新）
+
+最終更新: 2026-08-12（`[[MACRODATA-LAYER-CONSTRUCTION-1]]`:
 `common/macro_data/fetcher.py`/`reader.py`本体を実装（**構築中**）。
 `fetch_series`/`update_series`/`fetch_all_series`（fredapiクライアント
 のモジュールレベル一元化・リトライ3回＋指数バックオフ・保存前検証2項目
@@ -2496,7 +2511,7 @@ TICKERS-1]]`（S&P500構成銘柄Wikipediaスクレイピングに`FDXF`/`HONA`/
 
 ---
 
-### [MACRODATA-LAYER-CONSTRUCTION-1] common/macro_data/新設（FRED統合層）— 構築中（fetcher.py/reader.py実装完了）
+### [MACRODATA-LAYER-CONSTRUCTION-1] common/macro_data/新設（FRED統合層）— 構築中（定期取得ワークフロー稼働開始）
 **優先度:** 高（新DB構築プロジェクト フェーズ1の次コンポーネント、
 `common/market_data/`が2026-08-12に全12ファイル切替完了したことに伴う
 次の優先タスク）
@@ -2504,18 +2519,26 @@ TICKERS-1]]`（S&P500構成銘柄Wikipediaスクレイピングに`FDXF`/`HONA`/
 **登録日:** 2026-08-12（本来は事前調査着手時点で登録すべきだったが、
 `common/market_data/`と同様の経緯で未登録のまま投資調査を実施していた
 ため、本エントリで遡って正式登録する）
-**更新日:** 2026-08-12（新規モジュール`common/macro_data/fetcher.py`/
-`reader.py`本体を実装（**構築中**）。`fetch_series`/`update_series`/
-`fetch_all_series`（fredapiクライアントのモジュールレベル一元化・
-リトライ3回＋指数バックオフ・保存前検証2項目＋
-`macro_data_violations_log.json`）・`get_latest`/`get_series`/
-`get_value_as_of`・25系列分の`series_meta.json`を実装。新規テスト
-`tests/test_macro_data_fetcher.py`・`tests/test_macro_data_reader.py`
-（計43件）を追加、pytest全体で回帰なしを確認。今回のスコープは新規
-モジュール構築のみで、`05_main.py`・`collect_and_send.py`側の本番
-消費者切替（重複3系列解消含む）・GitHub Actionsワークフロー新設・
-過去データ一括投入（フェーズ2）はいずれも今回変更していない（次段階）。
-詳細は下記「実装完了事項（fetcher.py/reader.py）」参照）
+**更新日:** 2026-08-12（`.github/workflows/Macro_Data_Update.yml`
+（毎日UTC10:00・workflow_dispatch対応）を新設し、`fetcher.py`末尾の
+`__main__`ブロックから`fetch_all_series()`を呼ぶ構成にした。GitHub
+Actions側のworkflow_dispatchを直接トリガーする手段（`gh` CLI・
+GitHubトークン）がこのセッション環境になかったため、ワークフローが
+呼び出すのと同一のエントリポイントをローカル環境で実FRED_API_KEY
+（同環境に設定済み）を用いて実行し代替検証。25系列中**24系列が成功**、
+`FTSD`のみFRED API側で`Bad Request. The series does not exist.`と
+判明（`[[MACRODATA-FTSD-SERIES-ID-INVALID-1]]`として新規登録）。
+`macro_data_violations_log.json`の警告255件は全件order-of-magnitude
+jump検知で、サンプル確認の結果、近ゼロ横断する拡散指数・2008年金融
+危機/2020年COVID等の実在する急変動によるものと判明（データ品質問題
+なし）。副次発見として、日次cronが毎回全系列の全期間履歴を再取得する
+非効率な設計（`market_data`のfetch_daily_prices〈直近のみ〉/
+backfill_daily_prices〈全期間、一過性〉の分離を踏襲していない）も
+判明（`[[MACRODATA-FULL-HISTORY-DAILY-REFETCH-1]]`として新規登録）。
+今回のスコープは引き続きワークフロー新設・動作確認までで、`05_main.py`・
+`collect_and_send.py`側の本番消費者切替（重複3系列解消含む）・過去
+データ一括投入（フェーズ2）はいずれも変更していない。詳細は下記
+「定期取得ワークフロー稼働開始」参照）
 **発見:** `common/macro_data/`新設事前調査・FRED消費者洗い出し
 （`MIGRATION_CHECKLIST.md`Step1相当、チャット記録、2026-08-12）
 
@@ -2674,21 +2697,179 @@ get_value_as_ofのルックバック境界含む）を新規追加、計43件。
 upsert・重複検知・桁違い変化検知・ルックバック境界の動作を個別確認
 済み。pytest全体は既知失敗2件〈`[[TEST-STALE-IV-1]]`〉以外の回帰なし。
 
-#### 次セッションでの着手順序（2026-08-12時点、fetcher.py/reader.py実装完了を反映）
+#### 定期取得ワークフロー稼働開始（2026-08-12）
+
+**事前確認**: `common/market_data/`の`Market_Data_Daily_Update.yml`/
+`Market_Data_Weekly_Update.yml`を実コード確認し、エントリポイントが
+`fetcher.py`自身の`if __name__ == "__main__":`ブロック（argparse、
+`python common/market_data/fetcher.py [symbols] --layer daily`形式）
+であり、別ファイルの起動スクリプトは存在しないことを確認。同じ
+パターンを`common/macro_data/fetcher.py`にも踏襲し、`python
+common/macro_data/fetcher.py [series_ids]`で`fetch_all_series()`を
+呼ぶCLIを追加した。
+
+`.github/workflows/MACRO_PULSE_Update.yml`（`15 22 * * *`・
+`3 13 * * *`・`7 22 * * 6`・`11 22 * * 6`の4種）・
+`Market_Pulse_Update.yml`（`35 21 * * 1-5`）の実際のcronを再確認した
+結果、最速は`3 13 * * *`（UTC 13:03、毎日）。新設した
+`Macro_Data_Update.yml`は`0 10 * * *`（UTC 10:00、毎日）とし、最速の
+既存cronより3時間3分早く、他4件（21:35/22:07/22:11/22:15 UTC）より
+11時間以上早く設定した。
+
+**実装**: `.github/workflows/Macro_Data_Update.yml`新設（`workflow_
+dispatch`の`series_ids`入力対応、`market_data`の2ワークフローと同じ
+checkout/setup-python/pip install/commit・push/Summary構成）。
+`.gitattributes`へ`common/macro_data/series/*.json`・
+`macro_data_violations_log.json`のmerge=ours設定も追加。
+
+**動作確認（代替検証の経緯）**: GitHub Actions側でworkflow_dispatchを
+直接トリガーする手段（`gh` CLI・GitHubトークン）がこのセッション環境
+になかった（`gh: command not found`、`GITHUB_TOKEN`等の環境変数も
+未設定）。そのため、ワークフローが呼び出すのと**同一のエントリ
+ポイント**（`python common/macro_data/fetcher.py`）を、この環境に
+設定済みの実`FRED_API_KEY`を用いてローカルで直接実行し代替検証した
+（GitHub Actions環境そのものでの実行確認は別途ユーザー側で
+workflow_dispatchを手動トリガーする必要がある）。
+
+結果: 25系列中**24系列が成功**（更新レコード合計94,909件）、`FTSD`の
+みFRED API側で`Bad Request. The series does not exist.`（curlで
+`https://api.stlouisfed.org/fred/series?series_id=FTSD`を直接叩いても
+同一エラーを確認済み、fredapiライブラリ側の問題ではない）。`FTSD`は
+`05_main.py::update_liquidity_csv()`の`WTREGEN`フォールバック先として
+実装されているが、このフォールバックが発動する状況では実際には
+機能しない可能性が高いと判明したため`[[MACRODATA-FTSD-SERIES-ID-
+INVALID-1]]`として新規登録（05_main.py自体は今回変更しない）。
+
+`macro_data_violations_log.json`は255件の警告を記録（全件
+order-of-magnitude jump検知、duplicate as_of検知は0件）。内訳を
+サンプル確認した結果、近ゼロ値を横断する拡散指数（`GACDFSA066MSFRBPHI`
+36件・`CFNAI`70件・`SAHMCURRENT`3件）、2008年金融危機
+（`WRBWFRBL`・`DGS3MO`各1件）・2020年COVID急変（`FEDFUNDS`1件）・
+1980年代金利変動期（`T10Y2Y`7件）・2009-2011年のRRP制度低使用期
+（`RRPONTSYD`136件）等、いずれも実在する経済事象・近ゼロ交差による
+妥当な検知と判断した（データ品質問題ではない）。今回が全期間初回投入
+（`start`指定なし＝FRED提供する最古データから全件取得）だったため
+検知件数が多いが、これは想定内である。
+
+**副次発見（設計上の考慮事項）**: `fetch_series()`/`fetch_all_series()`
+は`start`未指定時に常に全期間履歴を再取得する設計であり、
+`common/market_data/fetcher.py`の`fetch_daily_prices()`（日次は直近
+のみ）と`backfill_daily_prices()`（全期間取得は一過性の別関数）という
+分離を踏襲していない。このため`Macro_Data_Update.yml`の日次cronが
+毎回全系列・全期間（合計約9.5万レコード・18MB）を再取得する非効率な
+状態のまま稼働開始する。実害は限定的（FRED APIへの負荷・実行時間の
+増加のみ、正確性への影響はupsertのため無し）だが、
+`[[MACRODATA-FULL-HISTORY-DAILY-REFETCH-1]]`として新規登録した
+（`--start`引数追加等の対応要否は次回判断）。
+
+#### 次セッションでの着手順序（2026-08-12時点、定期取得ワークフロー稼働開始を反映）
 1. 本番消費者切替（`05_main.py`・`collect_and_send.py`の重複3系列
    〈`BAMLH0A0HYM2`・`T10Y2Y`・`VIXCLS`〉解消を含む）
-2. （本線外）新規発見のうち残る優先度中の2件の対応要否判断:
+2. （本線外）今回発見した2件の対応要否判断:
+   `[[MACRODATA-FTSD-SERIES-ID-INVALID-1]]`（`FTSD`系列がFRED上に
+   存在しない、`05_main.py`側の対応要否）・`[[MACRODATA-FULL-HISTORY-
+   DAILY-REFETCH-1]]`（日次cronの全期間再取得の非効率、`--start`
+   引数追加等の対応要否）
+3. （本線外）新規発見のうち残る優先度中の2件の対応要否判断:
    `[[MACRODATA-AS-IS-DUPLICATION-UNDERCOUNT-1]]`（ドキュメント訂正）・
    `[[MACRODATA-SCHEDULED-SILENT-GAP-CSCICP-USALOL-1]]`（実データ確認が
    着手条件）
-3. （本線外）過去セッションで蓄積した低優先度課題群一式:
+4. （本線外）過去セッションで蓄積した低優先度課題群一式:
    `[[MACRODATA-IMPORT-HISTORY-CONFIG-DRIFT-1]]`・`[[MARKETDATA-CWAN-
    FROZEN-DATA-SUSPECT-1]]`・`[[MARKETDATA-SP500-SCRAPE-INVALID-
    TICKERS-1]]`・`[[MARKETDATA-VIX9D-DATA-GAP-1]]`・`[[STONKS-SILO-
    CLI-TICKERS-SHADOW-1]]`・`[[NETCASH-DUAL-CALC-1]]`等
 
 #### 着手条件
-なし（fetcher.py/reader.py実装済み、本番消費者切替は着手可能）。
+なし（fetcher.py/reader.py実装済み・定期取得ワークフロー稼働開始済み、
+本番消費者切替は着手可能）。
+
+---
+
+### [MACRODATA-FTSD-SERIES-ID-INVALID-1] FRED系列コード「FTSD」がFRED API上に実在しない（05_main.pyのWTREGENフォールバックが機能しない可能性）
+**優先度:** 中（本番`05_main.py::update_liquidity_csv()`の既存フォール
+バック経路が実質的に機能していない疑い、ただし`WTREGEN`自体は通常
+正常取得できておりフォールバックが発動する頻度は低いと推定される）
+**分類:** バグ疑い / データソース側の系列コード誤り
+**登録日:** 2026-08-12
+**発見:** `common/macro_data/`定期取得ワークフロー新設・動作確認
+（`fetch_all_series()`の実FRED_API_KEYによるローカル実行、チャット
+記録、2026-08-12）
+
+#### 内容
+`common/macro_data/fetcher.py::fetch_series("FTSD")`を実行したところ、
+fredapi経由・`curl`による直接FRED REST API呼び出し
+（`https://api.stlouisfed.org/fred/series?series_id=FTSD&api_key=...`）
+の両方で`{"error_code":400,"error_message":"Bad Request.  The series
+does not exist."}`が返り、**`FTSD`はFRED上に実在しない系列コードで
+あることを確認した**（ネットワーク一時障害やfredapiライブラリ側の
+問題ではなく、系列コード自体が無効）。
+
+`05_main.py::update_liquidity_csv()`は`WTREGEN`（TGA残高）取得失敗時に
+`FTSD`へフォールバックする実装になっている（1959-1960行:
+`if tga_val is None: tga_val, _ = fred_latest(fred, "FTSD",
+target_date, lookback=21)`）が、このフォールバックが実際に発動しても
+`FTSD`自体が無効な系列コードのため取得は失敗し、TGA値は結局取得
+できないままになると推定される。`FTSD`は
+`[[MACRODATA-FTSD-MISSING-FROM-INVENTORY-1]]`（`INPUT_DATA_TOBE.md`の
+24系列台帳への追加漏れ、`INPUT-A-049`として2026-08-12に対応済み）で
+台帳に追加した系列だが、台帳追加時点では実際にFRED上に存在するかの
+検証は行っていなかった。
+
+#### 対応方針（未定）
+- 正しい系列コードが何であるべきか調査する（FRED検索UIで「Treasury
+  General Account」等のキーワードから代替系列を探す、または
+  `WTREGEN`一系統のみに絞りフォールバック自体を廃止する等の選択肢）
+- `05_main.py`側の対応（正しい系列コードへの置換、またはフォール
+  バック自体の削除）は本エントリの対応方針確定後、別途実装依頼で行う
+  （`[[MACRODATA-LAYER-CONSTRUCTION-1]]`着手順序6-2完了時点では
+  `05_main.py`は一切変更しない方針のため対応保留）
+
+#### 着手条件
+なし。正しい代替系列コードの調査結果を踏まえ対応方針を確定してから
+着手する。
+
+---
+
+### [MACRODATA-FULL-HISTORY-DAILY-REFETCH-1] fetch_series()/fetch_all_series()がstart未指定時に常に全期間履歴を再取得する設計になっている（日次cronが非効率）
+**優先度:** 低〜中（実害は限定的〈FRED APIへの負荷・実行時間増加のみ、
+upsert設計のため正確性への影響はない〉が、`common/market_data/`が
+確立した「日次は直近のみ・全期間取得は一過性の別関数」という設計
+パターンから逸脱している）
+**分類:** 設計改善 / 効率性
+**登録日:** 2026-08-12
+**発見:** `common/macro_data/`定期取得ワークフロー新設・動作確認
+（`fetch_all_series()`の実FRED_API_KEYによるローカル実行、チャット
+記録、2026-08-12）
+
+#### 内容
+`common/macro_data/fetcher.py::fetch_series(series_id, start=None)`は
+`start`未指定時、`observation_start`パラメータをFRED APIへ渡さない
+ため、系列の提供開始日（系列によっては1940〜1970年代）からの**全期間
+履歴**を毎回取得する。`.github/workflows/Macro_Data_Update.yml`
+（毎日UTC10:00実行、`python common/macro_data/fetcher.py`を`start`
+指定なしで呼び出す）はこの関数を経由するため、**日次cronが実行の
+たびに25系列全件・合計約9.5万レコード（初回実測、18MB）を毎回
+再取得する**設計になっている。
+
+これは`common/market_data/fetcher.py`が確立した設計パターン
+（`fetch_daily_prices()`＝日次cronは直近数日分のみ取得・
+`backfill_daily_prices(period/start)`＝全期間取得は定期cronに
+組み込まない一過性の別関数）から逸脱している。`update_series()`は
+日付単位のupsertのため正確性への実害はないが、FRED APIへの負荷・
+GitHub Actions実行時間・git差分サイズが日次cronとしては不必要に
+大きい。
+
+#### 対応方針（未定）
+- `fetcher.py`のCLIへ`--start`引数を追加し、`Macro_Data_Update.yml`の
+  日次cron呼び出し側は直近数日〜数週間分のみを指定する
+  （`common/market_data/`の`fetch_daily_prices()`相当の設計に揃える）
+- 初回の全期間投入は今回実施済みのため、以降は「直近分のみ日次取得・
+  全期間再取得が必要な場合のみ手動で`--start`省略実行」という運用に
+  切替える
+
+#### 着手条件
+なし。次回`common/macro_data/`関連作業時に対応要否を判断する。
 
 ---
 

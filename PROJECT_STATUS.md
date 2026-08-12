@@ -1,6 +1,23 @@
 # PROJECT_STATUS.md — 新一次データベース構築プロジェクト進捗
 
 作成日: 2026-07-23
+更新日: 2026-08-12（`common/macro_data/`の定期取得ワークフロー
+`.github/workflows/Macro_Data_Update.yml`（毎日UTC10:00・
+workflow_dispatch対応）を新設し稼働開始。既存の`MACRO_PULSE_
+Update.yml`（最速`3 13 * * *`＝UTC13:03）・`Market_Pulse_Update.yml`
+（`35 21 * * 1-5`）より確実に先行する時刻に設定。GitHub Actions側の
+workflow_dispatchをこのセッション環境から直接トリガーする手段（`gh`
+CLI・トークン）がなかったため、同一エントリポイントをローカル環境の
+実`FRED_API_KEY`で実行し代替検証。25系列中24系列成功・`series/`へ
+初回実データ投入（約9.5万レコード）、`FTSD`のみFRED上に系列が実在せず
+失敗と判明（`[[MACRODATA-FTSD-SERIES-ID-INVALID-1]]`新規登録）。
+`macro_data_violations_log.json`の警告255件はサンプル確認の結果
+実在する経済事象由来と判断（データ品質問題なし）。副次発見として
+日次cronが毎回全期間履歴を再取得する非効率設計も判明
+（`[[MACRODATA-FULL-HISTORY-DAILY-REFETCH-1]]`新規登録）。
+`05_main.py`・`collect_and_send.py`は今回も変更していない。フェーズ1表
+該当行・冒頭サマリー段落を更新。詳細はBACKLOG.md`[[MACRODATA-LAYER-
+CONSTRUCTION-1]]`参照）
 更新日: 2026-08-12（`common/macro_data/`（FRED統合層）の`fetcher.py`/
 `reader.py`本体を実装。状態を「設計確定（実装未着手）」から「構築中」に
 更新。新規モジュール構築のみが今回のスコープであり、`05_main.py`・
@@ -296,12 +313,14 @@ ASC280セグメントから`tail_kpi_map.json`ベースの銘柄固有カスタ�
 診断ツール2＋周辺ツール2の**全12ファイル切替完了**、詳細は下記表・
 `[[MARKETDATA-LAYER-CONSTRUCTION-1]]`参照）。続けて`common/macro_data/`
 （FRED統合層）は新設事前調査（FRED消費者洗い出し、`MIGRATION_
-CHECKLIST.md`Step1相当）・実装設計確定に続けて`fetcher.py`/`reader.py`
-本体を実装した（**構築中**、詳細は下記表・`[[MACRODATA-LAYER-
-CONSTRUCTION-1]]`参照）。**次の優先タスクはcommon/macro_data/の本番
-消費者切替**（`05_main.py`・`collect_and_send.py`側、重複3系列
-〈`BAMLH0A0HYM2`・`T10Y2Y`・`VIXCLS`〉の解消を含む。GitHub Actions
-ワークフロー新設・過去データ一括投入〈フェーズ2〉は別段階）。
+CHECKLIST.md`Step1相当）・実装設計確定・`fetcher.py`/`reader.py`本体
+実装に続けて、定期取得ワークフロー`Macro_Data_Update.yml`（毎日
+UTC10:00・workflow_dispatch対応）を新設し稼働開始、`series/`へ初回
+実データ投入済み（25系列中24系列成功）（**構築中**、詳細は下記表・
+`[[MACRODATA-LAYER-CONSTRUCTION-1]]`参照）。**次の優先タスクは
+common/macro_data/の本番消費者切替**（`05_main.py`・
+`collect_and_send.py`側、重複3系列〈`BAMLH0A0HYM2`・`T10Y2Y`・
+`VIXCLS`〉の解消を含む。過去データ一括投入〈フェーズ2〉は別段階）。
 
 ## 一次データ層の総数（`INPUT_DATA_TOBE.md`3分類、2026-08-12時点）
 
@@ -369,7 +388,7 @@ market_data/`・`common/macro_data/`新設）への着手を検討する
 `[[AVGO-CIK-HISTORY-WRONG-LEGACY-CIK-1]]`対応）は優先度中〜低のまま
 BACKLOG.mdに残置 |
 | `common/market_data/` 新設（yfinance統合層、`INPUT-A-019〜023`対応） | **完成**（`fetcher.py`・`reader.py`・Daily/Weekly Update workflows完成、本番消費者8＋診断ツール2＋周辺ツール2の**全12ファイル切替完了**、2026-08-12） | `INPUT_DATA_TOBE.md` 2-B参照。日次/週次属性/イベント履歴の3層分離設計。`fetcher.py`（`fetch_daily_prices`/`fetch_weekly_attributes`/`fetch_analyst_events`/`backfill_daily_prices`、`start=`パラメータ対応済み）・`reader.py`（`get_earnings_history`/`get_recommendations_history`/`get_price_on_or_after`/`get_price_series_as_of`含む12種の読み取りAPI）を実装、`Market_Data_Daily_Update.yml`/`Market_Data_Weekly_Update.yml`をworkflow_dispatchで実行確認済み。本番消費者8ファイル（`beta_fetcher.py`・`data_fetcher.py`〈TANUKI VALUATION本体、DCF計算直結〉・`valuation_fetcher.py`〈STONKS SILO〉・`pipeline.py`〈`.calendar`〉・`collect.py`〈Discover〉・`collect_and_send.py`〈Market Pulse〉・`breadth_calculator.py`・`hypecore.py`〈daily/attributes/analyst_historyの3層混在、前提作業3件込みで最複雑〉）・診断ツール2ファイル（`audit.py`・`score_verifier.py`）・周辺ツール2ファイル（`extract_key_facts.py`・`backfill_tech_pulse.py`）が全て完了、実データ全数比較で回帰なしを確認。詳細は`[[MARKETDATA-LAYER-CONSTRUCTION-1]]`・BACKLOG_DONE.md「2026-08-12（完了）」参照 |
-| `common/macro_data/` 新設（FRED統合層、`INPUT-A-024〜047`・`049`対応） | **構築中**（`fetcher.py`/`reader.py`実装完了、2026-08-12。本番消費者（`05_main.py`・`collect_and_send.py`）の切替・cronワークフロー新設は次段階） | `INPUT_DATA_TOBE.md` 2-C参照。系列単位の時系列ストア設計。**着手前に`EXTRACTION_DESIGN_PRINCIPLES.md`（common/sec_data/で発見された5バグの教訓を一般化した抽出設計原則）を確認すること（2026-08-02追記）**。**実装サマリー**: `fetcher.py::fetch_series/update_series/fetch_all_series`（fredapiクライアントをモジュールレベルで1つだけ生成、リトライ3回＋指数バックオフ、保存前検証2項目＋`macro_data_violations_log.json`）・`reader.py::get_latest/get_series/get_value_as_of`・`series_meta.json`（25系列の`fred_release_id`/`obs_to_release_lag`/`category`/`consumers`）を実装。保存形式は`common/macro_data/series/{SERIES_ID}.json`（JSON、`common/market_data/`と統一）。新規テスト`tests/test_macro_data_fetcher.py`・`tests/test_macro_data_reader.py`（計43件）を追加、pytest全体で回帰なしを確認。重複3系列（`BAMLH0A0HYM2`・`T10Y2Y`・`VIXCLS`）解消・`05_main.py`/`collect_and_send.py`の本番消費者切替・GitHub Actionsワークフロー新設・過去データ一括投入（フェーズ2）はいずれも次段階。詳細は`[[MACRODATA-LAYER-CONSTRUCTION-1]]`・BACKLOG_DONE.md「2026-08-12（完了）」参照 |
+| `common/macro_data/` 新設（FRED統合層、`INPUT-A-024〜047`・`049`対応） | **構築中**（`fetcher.py`/`reader.py`実装＋定期取得ワークフロー稼働開始、2026-08-12。本番消費者（`05_main.py`・`collect_and_send.py`）の切替は次段階） | `INPUT_DATA_TOBE.md` 2-C参照。系列単位の時系列ストア設計。**着手前に`EXTRACTION_DESIGN_PRINCIPLES.md`（common/sec_data/で発見された5バグの教訓を一般化した抽出設計原則）を確認すること（2026-08-02追記）**。**実装サマリー**: `fetcher.py::fetch_series/update_series/fetch_all_series`（fredapiクライアントをモジュールレベルで1つだけ生成、リトライ3回＋指数バックオフ、保存前検証2項目＋`macro_data_violations_log.json`）・`reader.py::get_latest/get_series/get_value_as_of`・`series_meta.json`（25系列の`fred_release_id`/`obs_to_release_lag`/`category`/`consumers`）を実装。保存形式は`common/macro_data/series/{SERIES_ID}.json`（JSON、`common/market_data/`と統一）。新規テスト`tests/test_macro_data_fetcher.py`・`tests/test_macro_data_reader.py`（計43件）を追加、pytest全体で回帰なしを確認。**`.github/workflows/Macro_Data_Update.yml`（毎日UTC10:00・workflow_dispatch対応、既存MACRO_PULSE/Market Pulse各cronより最短3時間・最長11時間以上先行）を新設**、実FRED_API_KEYによるローカル代替検証で25系列中24系列成功（`FTSD`はFRED上に系列が実在せず失敗、`[[MACRODATA-FTSD-SERIES-ID-INVALID-1]]`）・`series/`へ初回実データ投入済み（約9.5万レコード）。副次発見: 日次cronが毎回全期間履歴を再取得する非効率設計（`[[MACRODATA-FULL-HISTORY-DAILY-REFETCH-1]]`）。重複3系列（`BAMLH0A0HYM2`・`T10Y2Y`・`VIXCLS`）解消・`05_main.py`/`collect_and_send.py`の本番消費者切替・過去データ一括投入（フェーズ2）はいずれも次段階。詳細は`[[MACRODATA-LAYER-CONSTRUCTION-1]]`・BACKLOG_DONE.md「2026-08-12（完了）」参照 |
 | 取得前提条件の一元管理（`INPUT-B-001〜003`） | 未着手 | `INPUT_DATA_TOBE.md`分類B参照。監視銘柄マスタ・CIKマッピングの管理方法は分類Aの取得と一体で設計する |
 | provenanceメタデータ標準化 | 未着手 | `INPUT_DATA_TOBE.md` 2-D参照（`as_of`/`fetched_at`/`source`/`source_detail`/`fallback_used`） |
 | fetcher/reader分離アクセス制御 | 未着手 | `INPUT_DATA_TOBE.md` 3-B参照 |

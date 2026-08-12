@@ -6,17 +6,20 @@ BACKLOG [[MACRODATA-LAYER-CONSTRUCTION-1]]）。common/market_data/と同型
 構成（fetcher.py がネットワーク取得・保存前検証・保存を担当、reader.py
 が読み取りAPIを提供）。
 
-【スコープ（2026-08-12実装時点）】
-本モジュールは新規構築のみを対象とする。以下は次段階に分離し、今回は
-一切変更していない:
+【スコープ】
+2026-08-12: fetcher.py/reader.py本体を新規構築。続けて同日中に
+`.github/workflows/Macro_Data_Update.yml`（定期実行cron・
+workflow_dispatch）を新設し、本ファイル末尾の`__main__`ブロック
+（`common/market_data/fetcher.py`と同じCLIパターン）から
+`fetch_all_series()`を呼び出す構成にした。
+
+以下は引き続き次段階に分離し、今回は一切変更していない:
 - `05_main.py`（MACRO PULSE）・`collect_and_send.py`（Market Pulse）側の
   本番消費者切替（重複3系列 BAMLH0A0HYM2/T10Y2Y/VIXCLS の解消を含む）
-- GitHub Actionsワークフローの新設（定期実行cron配線。`fetch_all_series()`
-  は将来のcron呼び出し用に実装済みだが、本モジュール単体では呼ばれない）
 - 過去データの一括投入（フェーズ2、過去データ移管）
 
 現時点でこのモジュールを参照する本番消費者は存在しない
-（グリーンフィールド実装）。
+（グリーンフィールド実装、定期実行のみ稼働）。
 
 保存構造:
     common/macro_data/
@@ -285,9 +288,9 @@ def update_series(series_id: str, start: Optional[str] = None,
 def fetch_all_series(series_ids: Optional[List[str]] = None,
                       base_dir: Optional[str] = None) -> List[Dict[str, Any]]:
     """series_meta.jsonの全系列（またはseries_ids指定分）に対し
-    update_series()を順次実行するバッチ関数（将来のcron呼び出し用。
-    今回はGitHub Actionsワークフローの新設・cron配線は行わず、この
-    関数自体のみを実装する）。
+    update_series()を順次実行するバッチ関数。`.github/workflows/
+    Macro_Data_Update.yml`（定期実行cron・workflow_dispatch）から、
+    本ファイル末尾の`__main__`ブロック経由で呼び出される。
 
     Returns:
         各系列のupdate_series()結果のリスト。
@@ -300,3 +303,29 @@ def fetch_all_series(series_ids: Optional[List[str]] = None,
     for series_id in targets:
         results.append(update_series(series_id, base_dir=base))
     return results
+
+
+if __name__ == "__main__":
+    import argparse
+
+    arg_parser = argparse.ArgumentParser(description="common/macro_data 取得CLI")
+    arg_parser.add_argument(
+        "series_ids", nargs="*",
+        help="対象FRED系列コード（省略時はseries_meta.json全系列、"
+             "common/market_data/fetcher.pyのsymbols引数と同じパターン）",
+    )
+    args = arg_parser.parse_args()
+
+    target_series = args.series_ids if args.series_ids else None
+    if target_series:
+        print(f"対象系列数: {len(target_series)}")
+    else:
+        print("対象系列数: series_meta.json全系列")
+
+    all_results = fetch_all_series(series_ids=target_series)
+    total_warnings = sum(len(r["warnings"]) for r in all_results)
+    total_updated = sum(r["updated"] for r in all_results)
+    print(
+        f"\n完了: {len(all_results)}系列処理、"
+        f"更新レコード合計{total_updated}件、警告合計{total_warnings}件"
+    )

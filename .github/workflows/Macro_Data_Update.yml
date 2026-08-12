@@ -1,0 +1,72 @@
+name: Macro Data Update
+
+on:
+  schedule:
+    - cron: '0 10 * * *'  # UTC 10:00 (JST 19:00) 毎日。既存workflow中最速の
+                            # MACRO_PULSE_Update.yml --fill-returns(13:03 UTC)
+                            # より3時間以上前、他4件(21:35/22:07/22:11/22:15 UTC)
+                            # より11時間以上前に確実に先行させる（設計確定事項）
+  workflow_dispatch:
+    inputs:
+      series_ids:
+        description: 'Target FRED series IDs (comma-separated, blank for full 25-series set)'
+        required: false
+        default: ''
+
+env:
+  TZ: Asia/Tokyo
+
+jobs:
+  update-macro-data:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: kaihatsu
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run fetch_all_series
+        env:
+          FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+        run: |
+          if [ -n "${{ github.event.inputs.series_ids }}" ]; then
+            SERIES=$(echo "${{ github.event.inputs.series_ids }}" | tr ',' ' ')
+            python common/macro_data/fetcher.py $SERIES
+          else
+            python common/macro_data/fetcher.py
+          fi
+
+      - name: Commit and push changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config merge.ours.driver true
+          git add common/macro_data/series/ || true
+          git add common/macro_data/macro_data_violations_log.json || true
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Update Macro Data - $(date +'%Y-%m-%d')"
+            git pull --rebase origin kaihatsu
+            git push origin kaihatsu
+          fi
+
+      - name: Summary
+        run: |
+          echo "## Macro Data Update Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          count=$(ls -1 common/macro_data/series/*.json 2>/dev/null | wc -l)
+          echo "series/ 保存系列数: ${count}" >> $GITHUB_STEP_SUMMARY
