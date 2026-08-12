@@ -1,6 +1,25 @@
 # PROJECT_STATUS.md — 新一次データベース構築プロジェクト進捗
 
 作成日: 2026-07-23
+更新日: 2026-08-12（フェーズ2「過去データ移管」の移行方針を確定・記録。
+原則は再取得・再導出、データ提供元が恒久的にAPI提供範囲を制限しており
+再取得が技術的に不可能な場合に限り旧保存先からの例外的移行を許容する
+方針とした。文書ベース調査では移管の定義・完了判定基準がいずれも
+文書上未定義と判明し、続く実データ検証で「移管が必要なのはSEC EDGAR
+のみ」という当初仮説を反証（yfinance旧保存先の一部・FRED旧`05_events.
+csv`にも数ヶ月〜数十年分の時系列が存在）。common/macro_data/の履歴深度
+実測でBAMLH0A0HYM2のみ著しく浅い（785件、2023-08-14〜）ことを発見し、
+原因調査の結果FRED側が2026年4月から提供範囲を直近3年に制限したことが
+根本原因と判明（取得側のバグではないことをコード読解・違反ログ実測で
+確認済み）。全25系列への横展開調査で同種の新規制限に該当するのは
+BAMLH0A0HYM2のみと確認。SEC EDGAR（3銘柄サンプル比較、有意差なし）・
+yfinance（一部旧保存先が数ヶ月〜32ヶ月分の時系列を保持）・FRED・
+取得前提条件（対象外）の現状評価をフェーズ2表の備考欄へ反映。
+`[[MACRODATA-BAMLH0A0HYM2-HISTORY-EXCEPTION-1]]`をBACKLOG.mdへ新規
+登録（未着手、実装は次段階）。実装（実際のデータ投入等）は行っておらず
+方針決定・記録のみ。詳細はBACKLOG_DONE.md`[[PHASE2-MIGRATION-POLICY-
+DECIDED-1]]`・BACKLOG.md`[[MACRODATA-BAMLH0A0HYM2-HISTORY-
+EXCEPTION-1]]`参照）
 更新日: 2026-08-12（`common/macro_data/`の本番消費者2ファイル
 （`05_main.py`・`collect_and_send.py`）を`common.macro_data.reader`経由へ
 全面切替し**完成**。状態を「構築中」から「完成」に更新（`common/
@@ -411,10 +430,28 @@ BACKLOG.mdに残置 |
 
 | データソース | 状態 | 対象範囲 |
 |---|---|---|
-| SEC EDGAR既存データ（`INPUT-A-001〜018`） | 未着手 | `INPUT_DATA_AS_IS.md` 1-A・2-A参照（実測7経路） |
-| yfinance既存データ（`INPUT-A-019〜023`） | 未着手 | `INPUT_DATA_AS_IS.md` 1-B・2-B参照（実測12ファイル。`common/sec_data/audit.py`見落としを2026-08-07訂正、`[[MARKETDATA-AS-IS-AUDIT-PY-OMITTED-1]]`参照） |
-| FRED既存データ（`INPUT-A-024〜047`） | 未着手 | `INPUT_DATA_AS_IS.md` 1-C・2-C参照（実測2サブシステム） |
-| 取得前提条件（`INPUT-B-001〜003`） | 未着手 | `INPUT_DATA_AS_IS.md` 1-D・1-E参照（`monitor_tickers.yaml`・`cik_lookup.csv`／`cik_lookup_result.json`はいずれも現状`config/`配下に存在確認済み） |
+| SEC EDGAR既存データ（`INPUT-A-001〜018`） | 未着手 | `INPUT_DATA_AS_IS.md` 1-A・2-A参照（実測7経路）。**現状評価（2026-08-12投資調査）**: サンプル3銘柄（AAPL/MSFT/XOM）で`company_facts.json`と`annual_*.json`の履歴深度を比較した結果、有意な差は確認できず。`common/sec_data/`のfetcherは初回投入時点で既にSEC EDGAR APIから取得可能な深い履歴（20年分程度）を再取得できている可能性が高い。全105銘柄の精査はしていないため、追加作業の要否は暫定的に「作業不要の可能性が高いが未確定」とする |
+| yfinance既存データ（`INPUT-A-019〜023`） | 未着手 | `INPUT_DATA_AS_IS.md` 1-B・2-B参照（実測12ファイル。`common/sec_data/audit.py`見落としを2026-08-07訂正、`[[MARKETDATA-AS-IS-AUDIT-PY-OMITTED-1]]`参照）。**現状評価（2026-08-12投資調査）**: 旧保存先の一部（hypecore・`market_data.json`・`breadth_data.json`）に、数ヶ月〜32ヶ月分の時系列データが存在することを確認済み。Yahoo Finance API自体は同期間のデータを今も提供しているとみられるため、再取得による対応を検討中（次段階の調査対象） |
+| FRED既存データ（`INPUT-A-024〜047`） | 未着手 | `INPUT_DATA_AS_IS.md` 1-C・2-C参照（実測2サブシステム）。**現状評価（2026-08-12投資調査）**: 全24系列を調査した結果、`BAMLH0A0HYM2`のみが2026年4月からのFRED側新規提供制限（直近3年のみ）に該当し、再取得不可能と確認。下記「移行方針」の「例外」規定を適用し、旧`05_events.csv`（1996-12-31〜2023-08-13分）からの一度限りの移行を実施予定（詳細は`[[MACRODATA-BAMLH0A0HYM2-HISTORY-EXCEPTION-1]]`参照）。他23系列は再取得のみで対応可能と確認済み |
+| 取得前提条件（`INPUT-B-001〜003`） | 未着手 | `INPUT_DATA_AS_IS.md` 1-D・1-E参照（`monitor_tickers.yaml`・`cik_lookup.csv`／`cik_lookup_result.json`はいずれも現状`config/`配下に存在確認済み）。**現状評価（2026-08-12投資調査）**: 対象外と判断（ファイルサイズが小さく、移管・再取得いずれも不要） |
+
+**移行方針（2026-08-12確定）**:
+- **原則**: 過去データは「再取得」（取得元APIから履歴込みで取得し直す）
+  または「再導出」（既存の一次データから計算し直す）を基本とする。
+  旧保存先のファイルをそのままコピーする形の「移管」は原則行わない
+- **例外**: データ提供元が恒久的にAPI経由の提供範囲を制限しており、
+  再取得が技術的に不可能な場合に限り、削除予定の旧保存先データから
+  一度限りの例外的移行を行う。この場合、移行したレコードには
+  provenanceの`source_detail`に例外的移行である旨を明記し、ライブ
+  取得分と区別できるようにする（適用例: `[[MACRODATA-BAMLH0A0HYM2-
+  HISTORY-EXCEPTION-1]]`）
+- **前提**: 旧保存先データは、フェーズ2完了後に不要となったものから
+  順次削除する方針のため、削除前にこの判断を完了させる必要がある
+
+詳細な調査経緯（文書ベース調査での仮説提示、実データ検証による反証、
+FRED全25系列の`observation_start`横断調査等）はBACKLOG_DONE.md
+`[[PHASE2-MIGRATION-POLICY-DECIDED-1]]`参照。実装（`BAMLH0A0HYM2`の
+例外的移行含む）は次段階に分離、本更新は方針決定・記録のみ。
 
 **分類Cはフェーズ1・2の対象外**: `config/segment_config.json`等14件
 （`INPUT-C-001〜014`）は一次データそのものではなく`FIELD_DEFINITIONS.md`
