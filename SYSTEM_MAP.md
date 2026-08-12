@@ -1,5 +1,14 @@
 # SYSTEM MAP — On-a-journey
 
+最終更新: 2026-08-12（新規セクション「common/macro_data/（FRED統合層）」
+を追加。`fetcher.py`（`fetch_series`/`update_series`/`fetch_all_series`、
+fredapiクライアントのモジュールレベル一元化・リトライ3回＋指数
+バックオフ・保存前検証2項目）・`reader.py`（`get_latest`/`get_series`/
+`get_value_as_of`）のAPI構成・保存構造（`series/{SERIES_ID}.json`・
+`series_meta.json`・`macro_data_violations_log.json`）を記載。本番消費者
+（`05_main.py`・`collect_and_send.py`）は未切替である旨も明記。詳細は
+BACKLOG.md`[[MACRODATA-LAYER-CONSTRUCTION-1]]`参照）
+
 最終更新: 2026-08-12（common/market_data/セクションを診断ツール2
 （`audit.py`・`score_verifier.py`）・周辺ツール2（`extract_key_facts.py`・
 `backfill_tech_pulse.py`）切替完了に更新。**本番消費者8＋診断ツール2＋
@@ -1068,6 +1077,62 @@ TANUKI TAIL（docs/portfolio/tail/）← EDGAR RSS / Grok（KPI提案・四半�
   〈調整済み終値使用〉の方が不適切だった」と判明し訂正・クローズ済み
   （`[[MARKETDATA-DAILY-UNADJUSTED-PRICE-DIVIDEND-DRIFT-1]]`、対応不要
   で確定。教訓は`CHAT_RULES.md`「新旧の値が食い違う場合...」参照）。
+
+---
+
+## common/macro_data/（FRED統合層、2026-08-12追記）
+`common/market_data/`と同型のfetcher.py/reader.py分離構成でFRED依存を
+一元化する新層（`[[MACRODATA-LAYER-CONSTRUCTION-1]]`）。
+
+**【状態（2026-08-12時点）】構築中**: 本節が記載する`fetcher.py`/
+`reader.py`本体は実装済みだが、本番消費者（`05_main.py`・
+`collect_and_send.py`）はまだ本モジュールを参照していない
+（グリーンフィールド実装）。本番消費者切替（重複3系列解消含む）・
+GitHub Actionsワークフロー新設・過去データ一括投入（フェーズ2）は
+いずれも次段階で扱う。
+
+- `common/macro_data/fetcher.py`: ネットワーク取得＋検証＋原子的書き込み。
+  `fetch_series(series_id, start=None)`（FRED系列取得の唯一の外部
+  アクセス関数、リトライ3回＋指数バックオフ。`05_main.py::
+  fetch_event_row()`のリトライ実装パターンを踏襲）・
+  `update_series(series_id, start=None)`（`fetch_series()`結果を
+  既存ストアへ日付単位でupsert、保存前検証を実行）・
+  `fetch_all_series(series_ids=None)`（`series_meta.json`の全系列
+  または指定系列へ`update_series()`を順次実行するバッチ関数、将来の
+  cron呼び出し用。今回はcron配線自体は行わずこの関数のみ実装）。
+  fredapiクライアントはモジュールレベルで1つだけ生成し使い回す
+  （現状の各ファイルが呼び出しの都度`Fred()`を個別生成する設計は
+  踏襲しない）。`FRED_API_KEY`環境変数名・クライアント初期化方法
+  （`Fred(api_key=...)`）は`05_main.py::get_fred()`・
+  `collect_and_send.py`側3関数と同一のものを実コード確認の上で踏襲。
+- `common/macro_data/reader.py`: 読み取り専用API。
+  `get_latest(series_id)`・`get_series(series_id, start=None,
+  end=None)`（期間内の全エントリを観測日昇順で返す、観測日を含む
+  ため消費側が期間の連続性を自前で検証できる）・
+  `get_value_as_of(series_id, date, lookback_days=45)`（指定日以前の
+  直近観測値をルックバック窓内で探索、`market_data/reader.py::
+  get_price_on_or_after()`系のAPIパターンを踏襲しつつ探索方向は
+  「date以前」）の3種。reader.py内で外部API呼び出しは一切行わない。
+- 保存構造: `series/{SERIES_ID}.json`（系列単位の時系列ストア、
+  観測日昇順のレコードリスト。各エントリは`value`/`as_of`/
+  `fetched_at`〈ISO8601・JST〉/`source`〈`"FRED"`固定〉/
+  `source_detail`）・`series_meta.json`（25系列の`fred_release_id`/
+  `obs_to_release_lag`/`category`/`consumers`、静的ファイル）・
+  `macro_data_violations_log.json`（単一の共有ログファイル、系列IDを
+  キーに0件でも毎回書き込む。`market_data_violations_log.json`は
+  銘柄ごとに別ファイルだが、macro_dataは単一ファイル内をセクション
+  分割する点が異なる）。
+- 保存前検証: ①同一`as_of`の重複（今回取得バッチ内）②直前値からの
+  変化が1桁（10倍または1/10）以上か、の2項目（`EXTRACTION_DESIGN_
+  PRINCIPLES.md`原則3対応）。
+- `series_meta.json`は25系列全件を機械的に走査して生成
+  （`INDICATOR_CONFIG`12系列＋流動性カード/FOMC/Market Pulse用13系列）。
+  `INDICATOR_CONFIG`にメタが存在しない系列は`fred_release_id`/
+  `obs_to_release_lag`をnullとし`note`フィールドに明記。`consumers`
+  には実際の参照関数名を記録（重複取得3系列`BAMLH0A0HYM2`/`T10Y2Y`/
+  `VIXCLS`は複数の`consumers`を持つ）。
+- 新規テスト`tests/test_macro_data_fetcher.py`・`tests/test_macro_data_
+  reader.py`（計43件）。fredapi呼び出しは全てモック化、実通信なし。
 
 ---
 

@@ -1,5 +1,19 @@
 # On-a-journey — 改善バックログ（全システム）
 
+最終更新: 2026-08-12（`[[MACRODATA-LAYER-CONSTRUCTION-1]]`:
+`common/macro_data/fetcher.py`/`reader.py`本体を実装（**構築中**）。
+`fetch_series`/`update_series`/`fetch_all_series`（fredapiクライアント
+のモジュールレベル一元化・リトライ3回＋指数バックオフ・保存前検証2項目
+＋`macro_data_violations_log.json`）・`get_latest`/`get_series`/
+`get_value_as_of`・25系列分の`series_meta.json`を実装。新規テスト
+`tests/test_macro_data_fetcher.py`・`tests/test_macro_data_reader.py`
+（計43件）を追加、pytest全体771 passed / 2 known-failedで回帰なしを
+確認。今回のスコープは新規モジュール構築のみで、`05_main.py`・
+`collect_and_send.py`側の本番消費者切替（重複3系列解消含む）・GitHub
+Actionsワークフロー新設・過去データ一括投入（フェーズ2）はいずれも
+今回変更していない（次段階）。PROJECT_STATUS.md・SYSTEM_MAP.mdも
+同時更新。詳細は`[[MACRODATA-LAYER-CONSTRUCTION-1]]`参照）
+
 最終更新: 2026-08-12（セッション終了時ブラッシュアップ。遡って
 `[[MACRODATA-LAYER-CONSTRUCTION-1]]`（`common/macro_data/`新設、
 FRED統合層）をマスター追跡エントリとして正式登録（`[[MARKETDATA-
@@ -2482,7 +2496,7 @@ TICKERS-1]]`（S&P500構成銘柄Wikipediaスクレイピングに`FDXF`/`HONA`/
 
 ---
 
-### [MACRODATA-LAYER-CONSTRUCTION-1] common/macro_data/新設（FRED統合層）— 投資調査・設計確定
+### [MACRODATA-LAYER-CONSTRUCTION-1] common/macro_data/新設（FRED統合層）— 構築中（fetcher.py/reader.py実装完了）
 **優先度:** 高（新DB構築プロジェクト フェーズ1の次コンポーネント、
 `common/market_data/`が2026-08-12に全12ファイル切替完了したことに伴う
 次の優先タスク）
@@ -2490,15 +2504,18 @@ TICKERS-1]]`（S&P500構成銘柄Wikipediaスクレイピングに`FDXF`/`HONA`/
 **登録日:** 2026-08-12（本来は事前調査着手時点で登録すべきだったが、
 `common/market_data/`と同様の経緯で未登録のまま投資調査を実施していた
 ため、本エントリで遡って正式登録する）
-**更新日:** 2026-08-12（投資調査完了を受け実装設計を確定。保存形式は
-JSON（`common/market_data/`と統一）・`series_meta.json`新設・
-`fetcher.py`/`reader.py`のAPI・重複3系列の`reader.py`一本化方針を確定
-した。`INPUT_DATA_TOBE.md`/`INPUT_DATA_AS_IS.md`へ設計確定事項を反映、
-`FTSD`（`INPUT-A-049`）を両ファイルへ追加。機械的網羅性証明の再実行で
-`INPUT-A-048`の`INPUT_DATA_AS_IS.md`側反映漏れ〈2026-07-24時点の既存の
-乖離〉も発見・解消し、両ファイルとも66件・差分0件を確認。
-`[[MACRODATA-FTSD-MISSING-FROM-INVENTORY-1]]`は本対応で解消したため
-BACKLOG_DONE.mdへ移動。詳細は下記「設計確定事項」参照）
+**更新日:** 2026-08-12（新規モジュール`common/macro_data/fetcher.py`/
+`reader.py`本体を実装（**構築中**）。`fetch_series`/`update_series`/
+`fetch_all_series`（fredapiクライアントのモジュールレベル一元化・
+リトライ3回＋指数バックオフ・保存前検証2項目＋
+`macro_data_violations_log.json`）・`get_latest`/`get_series`/
+`get_value_as_of`・25系列分の`series_meta.json`を実装。新規テスト
+`tests/test_macro_data_fetcher.py`・`tests/test_macro_data_reader.py`
+（計43件）を追加、pytest全体で回帰なしを確認。今回のスコープは新規
+モジュール構築のみで、`05_main.py`・`collect_and_send.py`側の本番
+消費者切替（重複3系列解消含む）・GitHub Actionsワークフロー新設・
+過去データ一括投入（フェーズ2）はいずれも今回変更していない（次段階）。
+詳細は下記「実装完了事項（fetcher.py/reader.py）」参照）
 **発見:** `common/macro_data/`新設事前調査・FRED消費者洗い出し
 （`MIGRATION_CHECKLIST.md`Step1相当、チャット記録、2026-08-12）
 
@@ -2612,10 +2629,54 @@ Market Pulse1箇所）。`T10Y2Y`・`VIXCLS`にも同型の未記載重複あり
 これらの確定事項はいずれもドキュメント記録のみで、実装コード変更・
 データ再生成は行っていない。
 
-#### 次セッションでの着手順序（2026-08-12時点、設計確定を反映）
-1. `common/macro_data/fetcher.py`/`reader.py`の実装（本設計確定を
-   踏まえた着手。`BAMLH0A0HYM2`・`T10Y2Y`・`VIXCLS`の重複解消3系列の
-   `reader.py`一本化を含む）
+#### 実装完了事項（fetcher.py/reader.py、2026-08-12）
+設計確定事項を踏まえ、`common/macro_data/`の新規モジュールを実装した
+（新規モジュール構築のみがスコープ、本番消費者切替・cronワークフロー
+新設・過去データ一括投入は次段階に分離し今回は一切変更していない）。
+
+**series_meta.json**: `INDICATOR_CONFIG`12系列＋流動性カード/FOMC/
+Market Pulse用13系列（`SP500`/`DGS1`/`DFEDTARU`/`DFEDTARL`/
+`FEDFUNDS`/`WALCL`/`WTREGEN`/`RRPONTSYD`/`WRBWFRBL`/`M2SL`/`FTSD`/
+`VXNCLS`/`DGS3MO`）を実コードから機械的に走査し、`INPUT-A-024`〜`049`
+の25系列全件を`{series_id: {input_id, fred_release_id,
+obs_to_release_lag, category, consumers}}`形式で生成。メタ情報が
+存在しない系列は`note`フィールドに明記、`consumers`には実際の参照
+関数名を記録（重複3系列は複数`consumers`を保持）。
+
+**fetcher.py**: `fetch_series(series_id, start=None)`（FRED外部アクセス
+の唯一の窓口、リトライ3回＋指数バックオフは`05_main.py::
+fetch_event_row()`のパターンを踏襲）・`update_series(series_id,
+start=None)`（日付単位upsert、`value`/`as_of`/`fetched_at`〈JST〉/
+`source`/`source_detail`を付与）・`fetch_all_series(series_ids=None)`
+（`series_meta.json`駆動のバッチ関数、cron配線自体は次段階）。保存前
+検証2項目（①バッチ内`as_of`重複②直前値比1桁以上の変化）を
+`macro_data_violations_log.json`へ0件でも毎回書き込み（単一の共有
+ログファイル、系列IDでセクション分割。`market_data_violations_
+log.json`が銘柄ごと別ファイルなのとは異なる設計）。fredapiクライアント
+はモジュールレベルで1つだけ生成し使い回す（現状の各ファイルが個別に
+`Fred()`を生成する設計は踏襲しない）。`FRED_API_KEY`環境変数名・
+`Fred(api_key=...)`初期化方法は`05_main.py::get_fred()`・
+`collect_and_send.py`側3関数を実コード確認の上で踏襲（新規の変数名は
+導入していない）。
+
+**reader.py**: `get_latest(series_id)`・`get_series(series_id,
+start=None, end=None)`（観測日昇順、観測日を含むため消費側が連続性を
+自前検証可能）・`get_value_as_of(series_id, date, lookback_days=45)`
+（指定日以前の直近値をルックバック窓内で探索、`market_data/reader.py::
+get_price_on_or_after()`系のAPIパターンを踏襲）。外部API呼び出しは
+一切行わない。
+
+**検証**: `tests/test_macro_data_fetcher.py`（リトライ・upsert・
+保存前検証・violations log・fetch_all_series・アトミック書き込み）・
+`tests/test_macro_data_reader.py`（get_latest/get_series/
+get_value_as_ofのルックバック境界含む）を新規追加、計43件。実データ
+（実際のFRED系列名）を使ったモック経由の手動スモークテストで
+upsert・重複検知・桁違い変化検知・ルックバック境界の動作を個別確認
+済み。pytest全体は既知失敗2件〈`[[TEST-STALE-IV-1]]`〉以外の回帰なし。
+
+#### 次セッションでの着手順序（2026-08-12時点、fetcher.py/reader.py実装完了を反映）
+1. 本番消費者切替（`05_main.py`・`collect_and_send.py`の重複3系列
+   〈`BAMLH0A0HYM2`・`T10Y2Y`・`VIXCLS`〉解消を含む）
 2. （本線外）新規発見のうち残る優先度中の2件の対応要否判断:
    `[[MACRODATA-AS-IS-DUPLICATION-UNDERCOUNT-1]]`（ドキュメント訂正）・
    `[[MACRODATA-SCHEDULED-SILENT-GAP-CSCICP-USALOL-1]]`（実データ確認が
@@ -2627,7 +2688,7 @@ Market Pulse1箇所）。`T10Y2Y`・`VIXCLS`にも同型の未記載重複あり
    CLI-TICKERS-SHADOW-1]]`・`[[NETCASH-DUAL-CALC-1]]`等
 
 #### 着手条件
-なし（設計確定済み、実装着手可能）。
+なし（fetcher.py/reader.py実装済み、本番消費者切替は着手可能）。
 
 ---
 
