@@ -2482,7 +2482,7 @@ TICKERS-1]]`（S&P500構成銘柄Wikipediaスクレイピングに`FDXF`/`HONA`/
 
 ---
 
-### [MACRODATA-LAYER-CONSTRUCTION-1] common/macro_data/新設（FRED統合層）— 投資調査・FRED消費者洗い出し完了
+### [MACRODATA-LAYER-CONSTRUCTION-1] common/macro_data/新設（FRED統合層）— 投資調査・設計確定
 **優先度:** 高（新DB構築プロジェクト フェーズ1の次コンポーネント、
 `common/market_data/`が2026-08-12に全12ファイル切替完了したことに伴う
 次の優先タスク）
@@ -2490,6 +2490,15 @@ TICKERS-1]]`（S&P500構成銘柄Wikipediaスクレイピングに`FDXF`/`HONA`/
 **登録日:** 2026-08-12（本来は事前調査着手時点で登録すべきだったが、
 `common/market_data/`と同様の経緯で未登録のまま投資調査を実施していた
 ため、本エントリで遡って正式登録する）
+**更新日:** 2026-08-12（投資調査完了を受け実装設計を確定。保存形式は
+JSON（`common/market_data/`と統一）・`series_meta.json`新設・
+`fetcher.py`/`reader.py`のAPI・重複3系列の`reader.py`一本化方針を確定
+した。`INPUT_DATA_TOBE.md`/`INPUT_DATA_AS_IS.md`へ設計確定事項を反映、
+`FTSD`（`INPUT-A-049`）を両ファイルへ追加。機械的網羅性証明の再実行で
+`INPUT-A-048`の`INPUT_DATA_AS_IS.md`側反映漏れ〈2026-07-24時点の既存の
+乖離〉も発見・解消し、両ファイルとも66件・差分0件を確認。
+`[[MACRODATA-FTSD-MISSING-FROM-INVENTORY-1]]`は本対応で解消したため
+BACKLOG_DONE.mdへ移動。詳細は下記「設計確定事項」参照）
 **発見:** `common/macro_data/`新設事前調査・FRED消費者洗い出し
 （`MIGRATION_CHECKLIST.md`Step1相当、チャット記録、2026-08-12）
 
@@ -2530,7 +2539,8 @@ Market Pulse1箇所）。`T10Y2Y`・`VIXCLS`にも同型の未記載重複あり
 **24系列台帳の正確性確認**: `INPUT_DATA_TOBE.md`のFRED系列台帳
 （`INPUT-A-024`〜`047`、24系列）は主要系列としては網羅的だったが、
 `FTSD`（`WTREGEN`フォールバック先）が1系列漏れていた
-（`[[MACRODATA-FTSD-MISSING-FROM-INVENTORY-1]]`参照）。
+（`[[MACRODATA-FTSD-MISSING-FROM-INVENTORY-1]]`、2026-08-12の設計確定
+作業で`INPUT-A-049`として追加し解消済み・BACKLOG_DONE.mdへ移動）。
 
 **取得頻度・エラーハンドリングの現状確認**:
 - cron: `MACRO_PULSE_Update.yml`（日次×2＋週次×2、4種類のcronが並存）・
@@ -2549,27 +2559,75 @@ Market Pulse1箇所）。`T10Y2Y`・`VIXCLS`にも同型の未記載重複あり
 投資調査の過程で新規発見した4件をBACKLOG登録済み（記録のみ、
 実装なし）: `[[MACRODATA-AS-IS-DUPLICATION-UNDERCOUNT-1]]`（優先度：中）・
 `[[MACRODATA-SCHEDULED-SILENT-GAP-CSCICP-USALOL-1]]`（優先度：低〜中）・
-`[[MACRODATA-FTSD-MISSING-FROM-INVENTORY-1]]`（優先度：低）・
+`[[MACRODATA-FTSD-MISSING-FROM-INVENTORY-1]]`（優先度：低、**2026-08-12
+の設計確定作業で解消・BACKLOG_DONE.mdへ移動済み**）・
 `[[MACRODATA-IMPORT-HISTORY-CONFIG-DRIFT-1]]`（優先度：低）。
 
-#### 次セッションでの着手順序（2026-08-12時点）
-1. `[[MACRODATA-LAYER-CONSTRUCTION-1]]`の実装設計（`BAMLH0A0HYM2`・
-   `T10Y2Y`・`VIXCLS`の重複解消3系列の設計を含めた
-   `common/macro_data/fetcher.py`/`reader.py`設計）
-2. （本線外）新規発見4件のうち優先度中の2件の対応要否判断:
+#### 設計確定事項（2026-08-12、投資調査完了を受けた確定）
+
+**保存形式・スキーマ**:
+- 保存形式は`common/macro_data/series/{SERIES_ID}.json`（系列ごとの
+  JSONファイル、観測日昇順のリスト）に確定。当初案のCSVではなく
+  `common/market_data/`（`daily/{SYMBOL}.json`等）と形式を揃える
+  （2つの新設データ層が別々の保存慣習を持つ状態を避けるため）。
+- 各エントリのスキーマは`INPUT_DATA_TOBE.md`2-D節のprovenance標準
+  （`value`/`as_of`/`fetched_at`/`source`/`source_detail`/
+  `fallback_used`）をそのまま適用。`source`は`"FRED"`固定、
+  `source_detail`に系列コードを含める。
+- 系列単位のメタ情報（`fred_release_id`/`obs_to_release_lag`等、現状
+  `INDICATOR_CONFIG`にフラット埋め込み）は`common/macro_data/
+  series_meta.json`へ切り出す。
+
+**fetcher.py/reader.py API**:
+- `fetcher.py::fetch_series(series_id, start=None)`を外部アクセスの
+  唯一の窓口とし、リトライ＋指数バックオフを全系列で統一する（現状は
+  `05_main.py::fetch_event_row()`/`fred_release_dates()`/
+  `05_import_history.py::_load_ctx_cache()`の3箇所のみ実装という
+  不統一を解消）。保存前に系列ごとの定義域チェック（比率系の範囲外
+  検知、前回値からの桁違い変化検知）を行い、`common/macro_data/
+  macro_data_violations_log.json`（0件でも毎回書き込む、
+  `market_data_violations_log.json`と同型）へ記録する
+  （`EXTRACTION_DESIGN_PRINCIPLES.md`原則3対応）。
+- `reader.py`: `get_latest(series_id)`・`get_series(series_id,
+  start=None, end=None)`・`get_value_as_of(series_id, date)`を提供。
+  `get_series`の返り値は観測日を含み、消費側（VXN50日MA等の「直近N件」
+  ロジック）が期間の連続性を自前で検証できるようにする
+  （`EXTRACTION_DESIGN_PRINCIPLES.md`原則1対応）。
+
+**重複3系列（`BAMLH0A0HYM2`・`T10Y2Y`・`VIXCLS`）の解消方式**:
+`05_main.py::get_financial_context()`・`INDICATOR_CONFIG`の`daily`系列
+ループ・`update_liquidity_csv()`、および`collect_and_send.py`側3関数の
+いずれも独自に`Fred()`を呼ぶのをやめ、全て`reader.py`経由に統一する
+ことで解消する（`TO_BE_FINAL_LIST.md`⑮-final「取得共通化・出力3件
+存続」に対応。出力項目自体は3件とも存続し削除しない）。
+
+**FTSD追加・機械的網羅性証明の再実行**: `FTSD`を`INPUT-A-049`として
+`INPUT_DATA_TOBE.md`・`INPUT_DATA_AS_IS.md`の両方へ追加。分類A件数は
+48件→49件、3分類合計は65件→66件に更新。機械的網羅性証明の再実行時、
+`INPUT-A-048`（税務・一過性項目タグ群52種）が`INPUT_DATA_AS_IS.md`側
+に反映漏れ（2026-07-24時点で発生していた既存の乖離、今回の再実行で
+発覚）していたことが判明したため同ファイルへ追加して解消し、
+再実行結果は両ファイルとも**66件・差分0件**を確認した。
+
+これらの確定事項はいずれもドキュメント記録のみで、実装コード変更・
+データ再生成は行っていない。
+
+#### 次セッションでの着手順序（2026-08-12時点、設計確定を反映）
+1. `common/macro_data/fetcher.py`/`reader.py`の実装（本設計確定を
+   踏まえた着手。`BAMLH0A0HYM2`・`T10Y2Y`・`VIXCLS`の重複解消3系列の
+   `reader.py`一本化を含む）
+2. （本線外）新規発見のうち残る優先度中の2件の対応要否判断:
    `[[MACRODATA-AS-IS-DUPLICATION-UNDERCOUNT-1]]`（ドキュメント訂正）・
    `[[MACRODATA-SCHEDULED-SILENT-GAP-CSCICP-USALOL-1]]`（実データ確認が
    着手条件）
 3. （本線外）過去セッションで蓄積した低優先度課題群一式:
-   `[[MACRODATA-FTSD-MISSING-FROM-INVENTORY-1]]`・
    `[[MACRODATA-IMPORT-HISTORY-CONFIG-DRIFT-1]]`・`[[MARKETDATA-CWAN-
    FROZEN-DATA-SUSPECT-1]]`・`[[MARKETDATA-SP500-SCRAPE-INVALID-
    TICKERS-1]]`・`[[MARKETDATA-VIX9D-DATA-GAP-1]]`・`[[STONKS-SILO-
    CLI-TICKERS-SHADOW-1]]`・`[[NETCASH-DUAL-CALC-1]]`等
 
 #### 着手条件
-なし。設計判断（`get_financial_context()`と`daily`系列の重複取得を
-どう解消するか等）を次セッション冒頭で行った上で実装着手可能。
+なし（設計確定済み、実装着手可能）。
 
 ---
 
@@ -9116,30 +9174,6 @@ ROEフォールバック不可を許容する明示的な設計判断が必要�
 
 #### 着手条件
 なし
-
----
-
-### [MACRODATA-FTSD-MISSING-FROM-INVENTORY-1] FTSD（WTREGENフォールバック先）がINPUT_DATA_TOBE.mdの24系列台帳（INPUT-A-024〜047）に含まれていない
-**優先度:** 低（実装漏れではなくドキュメント台帳の記載漏れ）
-**分類:** ドキュメント不備
-**登録日:** 2026-08-12
-**発見:** `common/macro_data/`新設事前調査・FRED消費者洗い出し
-（チャット記録、2026-08-12）
-
-#### 内容
-`05_main.py::update_liquidity_csv()`の`WTREGEN`（TGA）フォールバック先
-として`FTSD`が実装されている（1959-1960行: `if tga_val is None:
-tga_val, _ = fred_latest(fred, "FTSD", target_date, lookback=21)`）が、
-`INPUT_DATA_TOBE.md`の24系列一覧（`INPUT-A-024`〜`047`）には`FTSD`が
-掲載されていない。実際に現行コードが参照する系列は25系列であり、
-24系列という数字は完全な網羅ではない。
-
-#### 対応方針
-`common/macro_data/`設計時、`INPUT_DATA_TOBE.md`の24系列台帳へ`FTSD`
-（`WTREGEN`のフォールバック専用系列である旨も明記）を追加する。
-
-#### 着手条件
-なし。`common/macro_data/`設計時に台帳へ追加する。
 
 ---
 

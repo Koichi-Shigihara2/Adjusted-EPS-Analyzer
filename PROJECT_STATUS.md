@@ -1,6 +1,19 @@
 # PROJECT_STATUS.md — 新一次データベース構築プロジェクト進捗
 
 作成日: 2026-07-23
+更新日: 2026-08-12（`common/macro_data/`（FRED統合層）の実装設計を確定。
+状態を「投資調査完了（実装未着手）」から「設計確定（実装未着手）」に
+更新。保存形式JSON確定（`common/market_data/`と統一）・
+`series_meta.json`新設・`fetcher.py`/`reader.py`のAPI・重複3系列
+（`BAMLH0A0HYM2`・`T10Y2Y`・`VIXCLS`）の`reader.py`一本化方針を確定し、
+`INPUT_DATA_TOBE.md`/`INPUT_DATA_AS_IS.md`へ反映。`FTSD`を
+`INPUT-A-049`として両ファイルへ追加し分類A件数48件→49件・合計
+65件→66件に更新。機械的網羅性証明の再実行で`INPUT-A-048`の
+`INPUT_DATA_AS_IS.md`側反映漏れ〈2026-07-24時点の既存の乖離〉も発見・
+解消し66件・差分0件を確認。「一次データ層の総数」表・フェーズ1表
+該当行を更新。`[[MACRODATA-FTSD-MISSING-FROM-INVENTORY-1]]`は本対応で
+解消しBACKLOG_DONE.mdへ移動。詳細はBACKLOG.md`[[MACRODATA-LAYER-
+CONSTRUCTION-1]]`参照。実装コード変更・データ再生成なし）
 更新日: 2026-08-12（`common/market_data/`（yfinance統合層）が診断ツール
 2ファイル（`audit.py`・`score_verifier.py`）・周辺ツール2ファイル
 （`extract_key_facts.py`・`backfill_tech_pulse.py`）の切替完了により
@@ -273,20 +286,21 @@ ASC280セグメントから`tail_kpi_map.json`ベースの銘柄固有カスタ�
 診断ツール2＋周辺ツール2の**全12ファイル切替完了**、詳細は下記表・
 `[[MARKETDATA-LAYER-CONSTRUCTION-1]]`参照）。続けて`common/macro_data/`
 （FRED統合層）の新設事前調査（FRED消費者洗い出し、`MIGRATION_
-CHECKLIST.md`Step1相当）を実施し、投資調査完了（実装未着手）の状態
-（詳細は下記表・`[[MACRODATA-LAYER-CONSTRUCTION-1]]`参照）。**次の
-優先タスクはcommon/macro_data/の実装設計**（`BAMLH0A0HYM2`・`T10Y2Y`・
-`VIXCLS`の重複解消3系列を含む`fetcher.py`/`reader.py`設計、着手前に
-`EXTRACTION_DESIGN_PRINCIPLES.md`の3原則を確認）。
+CHECKLIST.md`Step1相当）に続けて実装設計を確定した（保存形式はJSON
+〈`common/market_data/`と統一〉・`series_meta.json`新設・
+`fetcher.py`/`reader.py`のAPI・重複3系列の`reader.py`一本化方針を確定、
+詳細は下記表・`[[MACRODATA-LAYER-CONSTRUCTION-1]]`参照）。**次の
+優先タスクはcommon/macro_data/の実装（`fetcher.py`/`reader.py`の
+実コード作成、本設計確定を踏まえた着手）**。
 
-## 一次データ層の総数（`INPUT_DATA_TOBE.md`3分類、2026-07-24時点）
+## 一次データ層の総数（`INPUT_DATA_TOBE.md`3分類、2026-08-12時点）
 
 | 分類 | 件数 | ID範囲 | フェーズ1・2のスコープ内か |
 |---|---|---|---|
-| A. 一次データ本体 | 48件 | `INPUT-A-001`〜`048` | **対象**（一次データ層構築の主対象） |
+| A. 一次データ本体 | 49件 | `INPUT-A-001`〜`049` | **対象**（一次データ層構築の主対象） |
 | B. 取得前提条件 | 3件 | `INPUT-B-001`〜`003` | **対象**（SEC EDGAR取得〈`INPUT-B-002`/`003`〉・全体の対象銘柄決定〈`INPUT-B-001`〉の前提として、分類Aの取得と一体で構築する） |
 | C. 導出データの入力 | 14件 | `INPUT-C-001`〜`014` | **対象外**（一次データそのものではなく`FIELD_DEFINITIONS.md`導出データ側の入力のため、フェーズ3〈導出データ層の管理方法検討〉で扱う） |
-| **合計** | **65件** | — | — |
+| **合計** | **66件** | — | — |
 
 ---
 
@@ -345,7 +359,7 @@ market_data/`・`common/macro_data/`新設）への着手を検討する
 `[[AVGO-CIK-HISTORY-WRONG-LEGACY-CIK-1]]`対応）は優先度中〜低のまま
 BACKLOG.mdに残置 |
 | `common/market_data/` 新設（yfinance統合層、`INPUT-A-019〜023`対応） | **完成**（`fetcher.py`・`reader.py`・Daily/Weekly Update workflows完成、本番消費者8＋診断ツール2＋周辺ツール2の**全12ファイル切替完了**、2026-08-12） | `INPUT_DATA_TOBE.md` 2-B参照。日次/週次属性/イベント履歴の3層分離設計。`fetcher.py`（`fetch_daily_prices`/`fetch_weekly_attributes`/`fetch_analyst_events`/`backfill_daily_prices`、`start=`パラメータ対応済み）・`reader.py`（`get_earnings_history`/`get_recommendations_history`/`get_price_on_or_after`/`get_price_series_as_of`含む12種の読み取りAPI）を実装、`Market_Data_Daily_Update.yml`/`Market_Data_Weekly_Update.yml`をworkflow_dispatchで実行確認済み。本番消費者8ファイル（`beta_fetcher.py`・`data_fetcher.py`〈TANUKI VALUATION本体、DCF計算直結〉・`valuation_fetcher.py`〈STONKS SILO〉・`pipeline.py`〈`.calendar`〉・`collect.py`〈Discover〉・`collect_and_send.py`〈Market Pulse〉・`breadth_calculator.py`・`hypecore.py`〈daily/attributes/analyst_historyの3層混在、前提作業3件込みで最複雑〉）・診断ツール2ファイル（`audit.py`・`score_verifier.py`）・周辺ツール2ファイル（`extract_key_facts.py`・`backfill_tech_pulse.py`）が全て完了、実データ全数比較で回帰なしを確認。詳細は`[[MARKETDATA-LAYER-CONSTRUCTION-1]]`・BACKLOG_DONE.md「2026-08-12（完了）」参照 |
-| `common/macro_data/` 新設（FRED統合層、`INPUT-A-024〜047`対応） | 投資調査完了（実装未着手、2026-08-12。FRED消費者洗い出し完了） | `INPUT_DATA_TOBE.md` 2-C参照。系列単位の時系列ストア設計。**着手前に`EXTRACTION_DESIGN_PRINCIPLES.md`（common/sec_data/で発見された5バグの教訓を一般化した抽出設計原則）を確認すること（2026-08-02追記）**。FRED呼び出しは2サブシステム（MACRO PULSE `05_main.py`・Market Pulse `collect_and_send.py`）のみと確認、`BAMLH0A0HYM2`・`T10Y2Y`・`VIXCLS`に未解消の重複取得あり（`INPUT_DATA_TOBE.md`記載の「3箇所」は実際には4箇所、`[[MACRODATA-AS-IS-DUPLICATION-UNDERCOUNT-1]]`参照）。24系列台帳への漏れ1件（`FTSD`）・現行構成との乖離1件（`05_import_history.py`独自辞書）・サイレント欠落疑い1件も発見しBACKLOG登録済み。詳細は`[[MACRODATA-LAYER-CONSTRUCTION-1]]`・BACKLOG_DONE.md「2026-08-12（完了）」参照 |
+| `common/macro_data/` 新設（FRED統合層、`INPUT-A-024〜047`・`049`対応） | **設計確定**（実装未着手、2026-08-12。FRED消費者洗い出しに続けて実装設計を確定） | `INPUT_DATA_TOBE.md` 2-C参照。系列単位の時系列ストア設計。**着手前に`EXTRACTION_DESIGN_PRINCIPLES.md`（common/sec_data/で発見された5バグの教訓を一般化した抽出設計原則）を確認すること（2026-08-02追記）**。**確定設計サマリー**: 保存形式は`common/macro_data/series/{SERIES_ID}.json`（JSON、`common/market_data/`と統一）・系列単位メタ情報は`series_meta.json`へ分離・`fetcher.py::fetch_series(series_id, start=None)`とリトライ統一・保存前定義域チェック＋`macro_data_violations_log.json`・`reader.py::get_latest/get_series/get_value_as_of`・重複3系列（`BAMLH0A0HYM2`・`T10Y2Y`・`VIXCLS`）は`reader.py`経由への統一で解消（出力項目自体は3件とも存続）。`FTSD`を`INPUT-A-049`として追加し分類A件数48件→49件に更新、機械的網羅性証明の再実行で`INPUT-A-048`のAS_IS反映漏れも発見・解消し66件・差分0件を確認。残る新規発見3件（`[[MACRODATA-AS-IS-DUPLICATION-UNDERCOUNT-1]]`・`[[MACRODATA-SCHEDULED-SILENT-GAP-CSCICP-USALOL-1]]`・`[[MACRODATA-IMPORT-HISTORY-CONFIG-DRIFT-1]]`）は引き続き対応要否判断待ち。詳細は`[[MACRODATA-LAYER-CONSTRUCTION-1]]`・BACKLOG_DONE.md「2026-08-12（完了）」参照 |
 | 取得前提条件の一元管理（`INPUT-B-001〜003`） | 未着手 | `INPUT_DATA_TOBE.md`分類B参照。監視銘柄マスタ・CIKマッピングの管理方法は分類Aの取得と一体で設計する |
 | provenanceメタデータ標準化 | 未着手 | `INPUT_DATA_TOBE.md` 2-D参照（`as_of`/`fetched_at`/`source`/`source_detail`/`fallback_used`） |
 | fetcher/reader分離アクセス制御 | 未着手 | `INPUT_DATA_TOBE.md` 3-B参照 |

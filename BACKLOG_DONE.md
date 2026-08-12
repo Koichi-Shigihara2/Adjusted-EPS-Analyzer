@@ -4,6 +4,40 @@
 
 ## 2026-08-12（完了）
 
+### ✅ [MACRODATA-FTSD-MISSING-FROM-INVENTORY-1] FTSD（WTREGENフォールバック先）がINPUT_DATA_TOBE.mdの24系列台帳（INPUT-A-024〜047）に含まれていない
+**状態:** 完了
+**優先度:** 低（実装漏れではなくドキュメント台帳の記載漏れ）
+**分類:** ドキュメント不備
+**登録日:** 2026-08-12
+**完了日:** 2026-08-12
+**発見:** `common/macro_data/`新設事前調査・FRED消費者洗い出し
+（チャット記録、2026-08-12）
+
+#### 内容
+`05_main.py::update_liquidity_csv()`の`WTREGEN`（TGA）フォールバック先
+として`FTSD`が実装されている（1959-1960行: `if tga_val is None:
+tga_val, _ = fred_latest(fred, "FTSD", target_date, lookback=21)`）が、
+`INPUT_DATA_TOBE.md`の24系列一覧（`INPUT-A-024`〜`047`）には`FTSD`が
+掲載されていなかった。
+
+#### 対応内容
+`common/macro_data/`実装設計確定作業（`[[MACRODATA-LAYER-
+CONSTRUCTION-1]]`）の一環として対応:
+- `INPUT_DATA_TOBE.md`A-3節（FRED）へ`FTSD`を`INPUT-A-049`として追加
+  （`WTREGEN`のフォールバック専用系列である旨を明記）。分類A件数を
+  48件→49件、3分類合計を65件→66件に更新
+- `INPUT_DATA_AS_IS.md`1-E節（SEC EDGAR/yfinance/FRED ID対応表）へも
+  同一IDで追加
+- 機械的網羅性証明を再実行（`grep -oE 'INPUT-[ABC]-[0-9]+' ... | sort
+  -u`によるID集合突合）した結果、`INPUT-A-048`（税務・一過性項目タグ群
+  52種）が`INPUT_DATA_AS_IS.md`側に反映漏れ（2026-07-24時点で発生して
+  いた既存の別の乖離、今回の再実行で偶発的に発覚）していたことも判明し
+  同ファイルへ追加して解消。再実行結果は両ファイルとも**66件・差分0件**
+
+実装コード変更・データ再生成なし（ドキュメント記録のみ）。
+
+---
+
 ### ✅ [MARKETDATA-LAYER-CONSTRUCTION-1] 着手順序5-2: score_verifier.py切替（診断ツール2/2、全数完了）
 **状態:** 完了
 **優先度:** 高

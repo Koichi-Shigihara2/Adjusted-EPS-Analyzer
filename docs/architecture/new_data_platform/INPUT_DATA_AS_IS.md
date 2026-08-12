@@ -1,6 +1,13 @@
 # INPUT_DATA_AS_IS.md — 一次データ層の現状（AS-IS）
 
 作成日: 2026-07-23
+更新日: 2026-08-12（`common/macro_data/`実装設計確定に伴い、1-E節へ
+`FTSD`（`INPUT-A-049`）を追加。機械的網羅性証明を再実行した結果、
+`INPUT-A-048`（税務・一過性項目タグ群52種）が`INPUT_DATA_TOBE.md`側
+にのみ存在し本ファイルへの反映漏れ（2026-07-24時点で発生していた既存
+の乖離）になっていたことが判明したため、あわせて追加・解消。再実行後
+は両ファイルとも66件・差分0件を確認。分類A件数表記を47件→49件に
+統一。詳細はBACKLOG.md`[[MACRODATA-LAYER-CONSTRUCTION-1]]`参照）
 更新日: 2026-07-23（`INPUT_DATA_TOBE.md`の3分類再構成・ID付番に対応し、
 本ファイルにもID対応表〈1-E〉を新設。両ファイル間のID機械的網羅性証明を
 実施）
@@ -144,13 +151,13 @@ risk_free_rate」は**「FRED非参照（ハードコード0.043）を再確認�
 | `INPUT-C-010` | `src/value/tanuki_valuation/fcf_conversion_config.json` | Damodaran業種別FCF変換率・ticker override | 記載済み（当初考慮漏れ→追加済み、`config/`外に配置されている点も特記） |
 | `INPUT-C-009` | `docs/portfolio/tail/data/tail_kpi_map.json` | TANUKI TAIL KPI設定（AI提案＋人手確定） | 記載済み（ただし`config/`ではなく`docs/`配下、下記2-D参照） |
 
-### 1-E. ID対応表（`INPUT_DATA_TOBE.md`分類A/B/C全64件との対応）
+### 1-E. ID対応表（`INPUT_DATA_TOBE.md`分類A/B/C全66件との対応）
 
-`INPUT_DATA_TOBE.md`が付番した分類A（一次データ本体、47件）・分類B
+`INPUT_DATA_TOBE.md`が付番した分類A（一次データ本体、49件）・分類B
 （取得前提条件、3件）・分類C（導出データの入力、14件）の全IDについて、
 現状（AS-IS）のどの取得経路・保持場所が対応するかを確認した。
 
-#### 分類A: 一次データ本体（47件）— SEC EDGAR（`INPUT-A-001`〜`018`）
+#### 分類A: 一次データ本体（49件）— SEC EDGAR（`INPUT-A-001`〜`018`）
 
 | ID | 現状の取得経路 | 確認状況 |
 |---|---|---|
@@ -162,8 +169,9 @@ risk_free_rate」は**「FRED非参照（ハードコード0.043）を再確認�
 | `INPUT-A-016`（セグメント別売上・KPI） | 経路C3（`xbrl_segment_fetcher.py`） | 確認済み |
 | `INPUT-A-017`（内部統制関連テキスト） | 経路C1（`sec_ctrl_fetcher.py`） | 確認済み |
 | `INPUT-A-018`（直近提出日・提出書類一覧） | 経路C2（`edgar_rss_monitor.py`）・経路H（CIKルックアップ）が使用 | 確認済み |
+| `INPUT-A-048`（税務・一過性項目・銀行業向け詳細タグ群52種） | 経路B（EPS Analyzer`extract_key_facts.py`）が独自にSEC EDGAR company_facts APIから取得。`common/sec_data/data/{TICKER}/company_facts.json`（経路A、既存）に全量含まれているため新規API取得は不要 | 確認済み（`INPUT_DATA_TOBE.md`には2026-07-24付で追加済みだったが本ファイルへの反映漏れがあり、2026-08-12の機械的網羅性証明再実行で発覚・今回追加） |
 
-#### 分類A: 一次データ本体（47件）— yfinance（`INPUT-A-019`〜`023`）
+#### 分類A: 一次データ本体（49件）— yfinance（`INPUT-A-019`〜`023`）
 
 | ID | 現状の取得経路 | 確認状況 |
 |---|---|---|
@@ -173,7 +181,7 @@ risk_free_rate」は**「FRED非参照（ハードコード0.043）を再確認�
 | `INPUT-A-022`（指数・ETF・商品） | Market Pulse(`collect_and_send.py`) | 確認済み（`^GSPC`は内部4重取得） |
 | `INPUT-A-023`（S&P500構成銘柄一括） | Market Pulse(`breadth_calculator.py`) | 確認済み |
 
-#### 分類A: 一次データ本体（47件）— FRED（`INPUT-A-024`〜`047`）
+#### 分類A: 一次データ本体（49件）— FRED（`INPUT-A-024`〜`047`）
 
 | ID | 系列コード | 現状の取得経路 |
 |---|---|---|
@@ -201,12 +209,13 @@ risk_free_rate」は**「FRED非参照（ハードコード0.043）を再確認�
 | `INPUT-A-045` | `M2SL` | MACRO PULSE |
 | `INPUT-A-046` | `VXNCLS` | Market Pulse |
 | `INPUT-A-047` | `DGS3MO` | Market Pulse |
+| `INPUT-A-049` | `FTSD` | MACRO PULSE（`05_main.py::update_liquidity_csv()`、`WTREGEN`フォールバック時のみ） |
 
-全24系列とも現状いずれかのサブシステムから確認済み。`DGS10`
-（risk_free_rate用、`INPUT_DATA_TOBE.md`が分類Aへの新規追加候補〈未採番〉
-とした系列）は現状いずれのサブシステムからも未取得——これは分類A47件の
-IDには含まれないため、機械的網羅性証明（両ファイルのID集合一致）の
-対象外であり、証明結果には影響しない。
+全24系列＋`FTSD`（`INPUT-A-049`）とも現状いずれかのサブシステムから
+確認済み。`DGS10`（risk_free_rate用、`INPUT_DATA_TOBE.md`が分類Aへの
+新規追加候補〈未採番〉とした系列）は現状いずれのサブシステムからも
+未取得——これは分類A49件のIDには含まれないため、機械的網羅性証明
+（両ファイルのID集合一致）の対象外であり、証明結果には影響しない。
 
 #### 分類B: 取得前提条件（3件）
 
@@ -229,13 +238,18 @@ IDには含まれないため、機械的網羅性証明（両ファイルのID�
 | `INPUT-C-013` | `config/sectors.yaml` | 存在確認済み |
 | `INPUT-C-014` | `config/adjustment_items.json` | 存在確認済み |
 
-**機械的網羅性証明（実行結果）**:
+**機械的網羅性証明（実行結果、2026-08-12再実行）**:
 ```
-grep -oE 'INPUT-[ABC]-[0-9]+' INPUT_DATA_TOBE.md | sort -u   → 64件
-grep -oE 'INPUT-[ABC]-[0-9]+' INPUT_DATA_AS_IS.md | sort -u  → 64件
+grep -oE 'INPUT-[ABC]-[0-9]+' INPUT_DATA_TOBE.md | sort -u   → 66件
+grep -oE 'INPUT-[ABC]-[0-9]+' INPUT_DATA_AS_IS.md | sort -u  → 66件
 diff <(上記2つの出力)                                         → 差分0件
 ```
-両ファイルのID集合は完全に一致し、差分は0件であった。分類A47件は全件が
+`FTSD`（`INPUT-A-049`）追加に伴う再実行時、`INPUT-A-048`（税務・一過性
+項目タグ群52種）が`INPUT_DATA_TOBE.md`側にのみ存在し本ファイルへの
+反映漏れ（2026-07-24時点で発生していた既存の乖離、今回の再実行で発覚）
+していたことが判明したため、本ファイル1-E（SEC EDGAR表）へ追加し
+解消した上で、両ファイルのID集合が完全に一致し差分0件であることを
+実際に確認済み。分類A49件は全件が
 現状いずれかの取得経路で実際に取得されていること、分類B3件・分類C14件は
 全件が現状のファイルとして存在することを、上記1-Eの表で個別に確認した。
 
@@ -461,3 +475,13 @@ MACRO PULSE側はFRED専用のCSV群を持つのに対し、Market Pulse側はFR
   記載）。分類A47件は全件が現状いずれかの取得経路で実際に取得されて
   いること、分類B3件・分類C14件は全件が現状ファイルとして存在する
   ことを個別に確認済み
+- **2026-08-12追記（`common/macro_data/`実装設計確定に伴う機械的網羅性
+  証明の再実行）**: `FTSD`（`INPUT-A-049`）を`INPUT_DATA_TOBE.md`・本
+  ファイルの両方へ追加した上で再実行したところ、**`INPUT-A-048`
+  （税務・一過性項目タグ群52種）が`INPUT_DATA_TOBE.md`側にのみ存在し
+  本ファイルへの反映漏れになっていた**（2026-07-24時点で発生していた
+  既存の乖離、今回の再実行で初めて発覚）。本ファイル1-E（SEC EDGAR表）
+  へ追加して解消した上で再度`diff`を実行し、**両ファイルとも66件・
+  差分0件**であることを確認した（実行結果は本ファイル1-E末尾に記載）。
+  分類A49件は全件が現状いずれかの取得経路で実際に取得されていることを
+  再確認済み

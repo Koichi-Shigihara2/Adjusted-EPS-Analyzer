@@ -1,6 +1,17 @@
 # INPUT_DATA_TOBE.md — 一次データ層のTO-BE設計
 
 作成日: 2026-07-23
+更新日: 2026-08-12（`common/macro_data/`実装設計確定を反映。①A-3節
+（FRED、24系列）へ`FTSD`（`WTREGEN`のフォールバック専用系列、
+`[[MACRODATA-FTSD-MISSING-FROM-INVENTORY-1]]`対応）を`INPUT-A-049`
+として追加、分類A件数を48件→49件・合計を65件→66件に更新。②2-C節へ
+保存形式のJSON確定（当初のCSV案から`common/market_data/`と形式統一す
+るため変更）・`series_meta.json`新設・provenance標準の適用方針を追記。
+③3-B節へ`fetcher.py::fetch_series()`/`reader.py`の具体API・保存前
+検証ログ（`macro_data_violations_log.json`）・重複3系列
+（`BAMLH0A0HYM2`・`T10Y2Y`・`VIXCLS`）の`reader.py`一本化方針を追記。
+詳細はBACKLOG.md`[[MACRODATA-LAYER-CONSTRUCTION-1]]`参照。実装コード
+変更・データ再生成なし）
 更新日: 2026-07-23（3分類再構成・ID付番。従来「1-A〜1-D」というソース別
 構成から、性質別の3分類「A: 一次データ本体／B: 取得前提条件／C: 導出
 データの入力」へ再整理し、全項目にID（`INPUT-A-NNN`等）を付番した）
@@ -45,10 +56,10 @@ FIELD_DEFINITIONS.md499項目の分解から導かれた項目には、性質の
 
 | 分類 | 件数 | ID範囲 |
 |---|---|---|
-| A. 一次データ本体 | **48件** | `INPUT-A-001`〜`INPUT-A-048` |
+| A. 一次データ本体 | **49件** | `INPUT-A-001`〜`INPUT-A-049` |
 | B. 取得前提条件 | **3件** | `INPUT-B-001`〜`INPUT-B-003` |
 | C. 導出データの入力 | **14件** | `INPUT-C-001`〜`INPUT-C-014` |
-| **合計** | **65件** | — |
+| **合計** | **66件** | — |
 
 **判定に迷った項目の分類根拠（実コード確認済み）**:
 - `config/split_history.yaml`: `src/value/adjusted_eps_analyzer/pipeline.py`
@@ -77,7 +88,7 @@ FIELD_DEFINITIONS.md499項目の分解から導かれた項目には、性質の
 
 ---
 
-## 分類A: 一次データ本体（48件）
+## 分類A: 一次データ本体（49件）
 
 `FIELD_DEFINITIONS.md`の「データ取得元」列を全件走査し、499項目が最終的に
 依存する一次データを、実際にソースコードを直接確認しながら整理した
@@ -167,6 +178,7 @@ Market Pulseの`collect_and_send.py`/`backfill_tech_pulse.py`）を直接確認�
 | INPUT-A-045 | `M2SL` | M2マネーサプライ | 流動性カード表示 |
 | INPUT-A-046 | `VXNCLS` | ナスダック版VIX(VXN) | Tech Pulse divergence計算 |
 | INPUT-A-047 | `DGS3MO` | 3ヶ月国債利回り | asset_flow短期金利(yfinance `^IRX`の構造的フォールバック先) |
+| INPUT-A-049 | `FTSD` | 財務省一般勘定(TGA)残高、`WTREGEN`のフォールバック専用系列 | NET LIQUIDITY計算（`05_main.py::update_liquidity_csv()`、`WTREGEN`取得失敗時のみ使用） |
 
 **設計上の指摘**: `TANUKI VALUATION`の`risk_free_rate`（DCF計算のCAPM構成
 要素、現状は`0.043`のハードコード定数）は、本来であればこのFRED系列層
@@ -343,6 +355,19 @@ S&P500構成銘柄の一括ダウンロード（`INPUT-A-023`、market breadth�
 に保持する。`common/macro_data/series/{SERIES_ID}.csv`（または同等の
 時系列形式）に、観測日・値・（該当する場合は）公表日・改定履歴を保持する。
 
+**保存形式・スキーマの確定事項（2026-08-12、実装設計投資調査を受けた
+確定）**:
+- 保存形式は`common/macro_data/series/{SERIES_ID}.json`（系列ごとの
+  JSONファイル、観測日昇順のリスト）に確定する。当初案のCSVではなく
+  `common/market_data/`（`daily/{SYMBOL}.json`等）と形式を揃える。
+  理由: 2つの新設データ層が別々の保存慣習を持つ状態を避けるため。
+- 各エントリのスキーマは2-D節のprovenance標準（`value`/`as_of`/
+  `fetched_at`/`source`/`source_detail`/`fallback_used`）をそのまま
+  適用する。`source`は`"FRED"`固定、`source_detail`に系列コードを含める。
+- 系列単位のメタ情報（`fred_release_id`/`obs_to_release_lag`等、現状
+  `INDICATOR_CONFIG`にフラット埋め込み）は`common/macro_data/
+  series_meta.json`へ切り出す。
+
 MACRO PULSEの`INDICATOR_CONFIG`が持つ`fred_release_id`/`obs_to_release_lag`
 等のメタ情報（サプライズ検知・重複判定に必須）は、系列コードに紐づく
 メタデータとしてこのストアの一部に統合する（現状MACRO PULSE内部にのみ
@@ -418,6 +443,29 @@ common/
     reader.py     # 全サブシステムが読み取りに使う唯一のモジュール
 ```
 
+**`common/macro_data/`のAPI確定事項（2026-08-12、実装設計投資調査を
+受けた確定）**:
+- `fetcher.py`: `fetch_series(series_id, start=None)`を外部アクセスの
+  唯一の窓口とし、リトライ＋指数バックオフを全系列で統一する（現状は
+  `05_main.py::fetch_event_row()`/`fred_release_dates()`/
+  `05_import_history.py::_load_ctx_cache()`の3箇所のみ実装、他は
+  素朴なtry/exceptという不統一を解消する）。保存前に系列ごとの定義域
+  チェック（比率系の範囲外検知、前回値からの桁違い変化検知）を行い、
+  `common/macro_data/macro_data_violations_log.json`（0件でも毎回
+  書き込む、`common/market_data/market_data_violations_log.json`と
+  同型）へ記録する（`EXTRACTION_DESIGN_PRINCIPLES.md`原則3対応）。
+- `reader.py`: `get_latest(series_id)`・`get_series(series_id,
+  start=None, end=None)`・`get_value_as_of(series_id, date)`を提供する。
+  `get_series`の返り値は観測日を含み、消費側（VXN50日MA等の「直近N件」
+  ロジック）が期間の連続性を自前で検証できるようにする
+  （`EXTRACTION_DESIGN_PRINCIPLES.md`原則1対応）。
+- 重複取得3系列（`BAMLH0A0HYM2`・`T10Y2Y`・`VIXCLS`）は、`05_main.py::
+  get_financial_context()`・`INDICATOR_CONFIG`の`daily`系列ループ・
+  `update_liquidity_csv()`、および`collect_and_send.py`側3関数の
+  いずれも独自に`Fred()`を呼ぶのをやめ、全て`reader.py`経由に統一する
+  ことで解消する（`TO_BE_FINAL_LIST.md`⑮-final「取得共通化・出力3件
+  存続」に対応。出力項目自体は3件とも存続し削除しない）。
+
 **この設計が現状の重複取得を構造的に防止する理由**:
 - SEC EDGAR: 現状7系統（`common/sec_data`本体1・EPS Analyzer独自1・
   TANUKI TAIL独自3ファイル・手動運用2）に分散しているアクセスコードを
@@ -459,27 +507,30 @@ Market PulseのHYG/LQD比率による代理判定、MACRO PULSEの実際のス�
 
 ## 機械的網羅性証明（INPUT_DATA_AS_IS.mdとの突合）
 
-`INPUT_DATA_TOBE.md`（本ファイル）で付番した分類A/B/C全64件のIDが、
+`INPUT_DATA_TOBE.md`（本ファイル）で付番した分類A/B/C全66件のIDが、
 `INPUT_DATA_AS_IS.md`側にも同一IDで記録され、過不足がないことを機械的に
-確認した。
+確認した（2026-08-12再実行）。
 
 ```
-grep -oE 'INPUT-[ABC]-[0-9]+' INPUT_DATA_TOBE.md | sort -u   → 64件
-grep -oE 'INPUT-[ABC]-[0-9]+' INPUT_DATA_AS_IS.md | sort -u  → 64件
+grep -oE 'INPUT-[ABC]-[0-9]+' INPUT_DATA_TOBE.md | sort -u   → 66件
+grep -oE 'INPUT-[ABC]-[0-9]+' INPUT_DATA_AS_IS.md | sort -u  → 66件
 diff <(上記2つの出力)                                         → 差分0件
 ```
 
-確認の結果、両ファイルのID集合は完全に一致し、差分は0件であった。
-分類A48件は全件が現状（AS-IS）のいずれかの取得経路によって現に取得
-されていること、分類B3件・分類C14件は全件が現状`config/`配下等に
+確認の結果、両ファイルのID集合は完全に一致し、差分は0件であった
+（再実行時、`INPUT-A-048`が`INPUT_DATA_AS_IS.md`側に未反映のまま
+残存していたことが判明したため同ファイルへ追加し解消。詳細は
+`INPUT_DATA_AS_IS.md`「完了報告時の参照用サマリー」2026-08-12追記
+参照）。分類A49件は全件が現状（AS-IS）のいずれかの取得経路によって
+現に取得されていること、分類B3件・分類C14件は全件が現状`config/`配下等に
 現存する設定ファイルとして確認されていることを、`INPUT_DATA_AS_IS.md`
 「ID対応表」で個別に確認済み（詳細は同ファイル参照）。
 
 **新規設計であり現状に対応が存在しないもの**: `DGS10`（10年国債利回り、
-risk_free_rateの動的取得に必要だが現状未取得）は、分類A48件のIDには
+risk_free_rateの動的取得に必要だが現状未取得）は、分類A49件のIDには
 含まれていない（現行のFIELD_DEFINITIONS.md 499項目のいずれの計算式も
 DGS10を直接参照していないため、機械的網羅性証明の対象外。追加が必要と
-判断される場合は分類Aへ次番号（現行48件の次、未採番）として追加する）。
+判断される場合は分類Aへ次番号（現行49件の次、未採番）として追加する）。
 
 ---
 
