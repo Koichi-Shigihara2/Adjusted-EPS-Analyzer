@@ -4482,6 +4482,60 @@ Market Pulseのmarket_data.json）から取得する設計に変更するかを�
 する。手動編集フローがどちらのファイルを対象にしているか（実際の運用
 実態）を確認してから統一方針を決める。
 
+#### 関連情報（追記、2026-08-12）
+本項目は`INPUT_DATA_TOBE.md`分類C（`INPUT-C-008`）に該当し、新DB構築
+プロジェクト フェーズ3（導出データ層の管理方法検討）の一環として扱う。
+同種の設定ファイル配置問題として`[[TAILKPI-CONFIG-LOCATION-1]]`
+（`INPUT-C-009`）・`[[FCFCONFIG-LOCATION-1]]`（`INPUT-C-010`）も参照。
+
+#### 着手条件
+なし
+
+---
+
+### [TAILKPI-CONFIG-LOCATION-1] tail_kpi_map.jsonがconfig/ではなくdocs/portfolio/tail/data/配下に配置されている
+**状態:** 未着手
+**優先度:** 低〜中
+**分類:** 設定ファイル配置
+**登録日:** 2026-08-12
+**発見:** フェーズ3投資調査（`INPUT_DATA_AS_IS.md`2-D、チャット記録、
+2026-08-12）
+
+#### 内容
+`config/tail_kpi_map.json`（TANUKI TAILのKPI設定、AI提案＋人手確定の
+ハイブリッド）が、実際には`config/`ではなく`docs/portfolio/tail/data/`
+配下（TANUKI TAILの生成データと同じディレクトリ）に配置されている。
+`INPUT_DATA_TOBE.md`（`INPUT-C-009`）のTO-BE設計方針は「他の手動設定
+ファイルと同様`config/`配下への集約」。
+
+新DB構築プロジェクト フェーズ3（導出データ層の管理方法検討）の対象
+（分類C、`INPUT-C-009`）。関連: `[[PORTFOLIO-CONFIG-DUP-1]]`
+（`INPUT-C-008`）・`[[FCFCONFIG-LOCATION-1]]`（`INPUT-C-010`）。
+
+#### 着手条件
+なし
+
+---
+
+### [FCFCONFIG-LOCATION-1] fcf_conversion_config.jsonがconfig/ではなくsrc/value/tanuki_valuation/直下に配置されている
+**状態:** 未着手
+**優先度:** 低〜中
+**分類:** 設定ファイル配置
+**登録日:** 2026-08-12
+**発見:** フェーズ3投資調査（`INPUT_DATA_AS_IS.md`2-D、チャット記録、
+2026-08-12）
+
+#### 内容
+`config/fcf_conversion_config.json`（Damodaran業種別FCF変換率等の銘柄別
+上書き設定）が、実際には`config/`ではなく`src/value/tanuki_valuation/`
+直下（TANUKI VALUATIONのロジックファイルと同じディレクトリ）に配置
+されている。`INPUT_DATA_TOBE.md`（`INPUT-C-010`）のTO-BE設計方針は
+「`config/`への集約」。
+
+新DB構築プロジェクト フェーズ3（導出データ層の管理方法検討）の対象
+（分類C、`INPUT-C-010`）。関連: `[[PORTFOLIO-CONFIG-DUP-1]]`
+（`INPUT-C-008`）・`[[TAILKPI-CONFIG-LOCATION-1]]`（`INPUT-C-009`）。
+
 #### 着手条件
 なし
 
