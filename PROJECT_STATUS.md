@@ -1,6 +1,17 @@
 # PROJECT_STATUS.md — 新一次データベース構築プロジェクト進捗
 
 作成日: 2026-07-23
+更新日: 2026-08-12（`common/market_data/`（yfinance統合層）が診断ツール
+2ファイル（`audit.py`・`score_verifier.py`）・周辺ツール2ファイル
+（`extract_key_facts.py`・`backfill_tech_pulse.py`）の切替完了により
+**全12ファイル（本番消費者8＋診断ツール2＋周辺ツール2）が完了**。状態を
+「構築中」から「完成」に更新。続けてフェーズ1の次コンポーネント
+`common/macro_data/`（FRED統合層）の新設事前調査（FRED消費者洗い出し、
+`MIGRATION_CHECKLIST.md`Step1相当）を実施し、状態を「未着手」から
+「投資調査完了（実装未着手）」に更新。フェーズ1表該当2行・冒頭サマリー
+段落を更新。詳細はBACKLOG.md`[[MARKETDATA-LAYER-CONSTRUCTION-1]]`・
+`[[MACRODATA-LAYER-CONSTRUCTION-1]]`・BACKLOG_DONE.md「2026-08-12
+（完了）」参照。実装コード変更なし）
 更新日: 2026-08-11（`common/market_data/`本番消費者8ファイル**8/8切替
 完了**を反映。3/8時点から追加で`pipeline.py`（.calendar）・`collect.py`
 （Discover）・`collect_and_send.py`（Market Pulse）・
@@ -257,15 +268,16 @@ ASC280セグメントから`tail_kpi_map.json`ベースの銘柄固有カスタ�
 一部）を実施し、**2026-08-07に実質完了**（`normalized/`は3系統向けの
 恒久的な設計上の例外を除き全消費者がLayer3へ切替済み、詳細は下記
 表・`[[SECDATA-STORAGE-FRAGMENTATION-1]]`参照）。
-`common/market_data/`（yfinance統合層）は2026-08-11時点で構築中
-（`fetcher.py`/`reader.py`実装・定期実行ワークフロー2件・本番消費者
-8ファイル**8/8切替完了**、詳細は下記表・`[[MARKETDATA-LAYER-
-CONSTRUCTION-1]]`参照）。残るは診断ツール2ファイル
-（`score_verifier.py`・`audit.py`）・周辺ツール2ファイルの切替。
-`common/macro_data/`は投資調査未着手のまま。**次の優先タスクは
-common/market_data/残作業（診断・周辺ツール）の完了、その後
-common/macro_data/の着手検討**（着手前に`EXTRACTION_DESIGN_
-PRINCIPLES.md`の3原則を確認）。
+`common/market_data/`（yfinance統合層）は2026-08-12時点で**完成**
+（`fetcher.py`/`reader.py`実装・定期実行ワークフロー2件・本番消費者8＋
+診断ツール2＋周辺ツール2の**全12ファイル切替完了**、詳細は下記表・
+`[[MARKETDATA-LAYER-CONSTRUCTION-1]]`参照）。続けて`common/macro_data/`
+（FRED統合層）の新設事前調査（FRED消費者洗い出し、`MIGRATION_
+CHECKLIST.md`Step1相当）を実施し、投資調査完了（実装未着手）の状態
+（詳細は下記表・`[[MACRODATA-LAYER-CONSTRUCTION-1]]`参照）。**次の
+優先タスクはcommon/macro_data/の実装設計**（`BAMLH0A0HYM2`・`T10Y2Y`・
+`VIXCLS`の重複解消3系列を含む`fetcher.py`/`reader.py`設計、着手前に
+`EXTRACTION_DESIGN_PRINCIPLES.md`の3原則を確認）。
 
 ## 一次データ層の総数（`INPUT_DATA_TOBE.md`3分類、2026-07-24時点）
 
@@ -332,8 +344,8 @@ market_data/`・`common/macro_data/`新設）への着手を検討する
 単位の個別確認・BBAI/RKLB/SOFI/VRT/ONDSの維持フィールド凍結検討・
 `[[AVGO-CIK-HISTORY-WRONG-LEGACY-CIK-1]]`対応）は優先度中〜低のまま
 BACKLOG.mdに残置 |
-| `common/market_data/` 新設（yfinance統合層、`INPUT-A-019〜023`対応） | 構築中（`fetcher.py`・`reader.py`・Daily/Weekly Update workflows完成、本番消費者8ファイル**8/8切替完了**、2026-08-11） | `INPUT_DATA_TOBE.md` 2-B参照。日次/週次属性/イベント履歴の3層分離設計。`fetcher.py`（`fetch_daily_prices`/`fetch_weekly_attributes`/`fetch_analyst_events`/`backfill_daily_prices`、`start=`パラメータ対応済み）・`reader.py`（`get_earnings_history`/`get_recommendations_history`含む10種の読み取りAPI）を実装、`Market_Data_Daily_Update.yml`/`Market_Data_Weekly_Update.yml`をworkflow_dispatchで実行確認済み。本番消費者切替は`beta_fetcher.py`・`data_fetcher.py`（TANUKI VALUATION本体、DCF計算直結）・`valuation_fetcher.py`（STONKS SILO）・`pipeline.py`（`.calendar`）・`collect.py`（Discover）・`collect_and_send.py`（Market Pulse）・`breadth_calculator.py`・`hypecore.py`（daily/attributes/analyst_historyの3層混在、前提作業3件込みで最複雑）の全8件が完了、実データ全数比較で回帰なしを確認。残るは診断ツール2ファイル（`score_verifier.py`・`audit.py`）・周辺ツール2ファイル。詳細は`[[MARKETDATA-LAYER-CONSTRUCTION-1]]`・BACKLOG_DONE.md「2026-08-11（完了）」参照 |
-| `common/macro_data/` 新設（FRED統合層、`INPUT-A-024〜047`対応） | 未着手 | `INPUT_DATA_TOBE.md` 2-C参照。系列単位の時系列ストア設計。**着手前に`EXTRACTION_DESIGN_PRINCIPLES.md`（common/sec_data/で発見された5バグの教訓を一般化した抽出設計原則）を確認すること（2026-08-02追記）** |
+| `common/market_data/` 新設（yfinance統合層、`INPUT-A-019〜023`対応） | **完成**（`fetcher.py`・`reader.py`・Daily/Weekly Update workflows完成、本番消費者8＋診断ツール2＋周辺ツール2の**全12ファイル切替完了**、2026-08-12） | `INPUT_DATA_TOBE.md` 2-B参照。日次/週次属性/イベント履歴の3層分離設計。`fetcher.py`（`fetch_daily_prices`/`fetch_weekly_attributes`/`fetch_analyst_events`/`backfill_daily_prices`、`start=`パラメータ対応済み）・`reader.py`（`get_earnings_history`/`get_recommendations_history`/`get_price_on_or_after`/`get_price_series_as_of`含む12種の読み取りAPI）を実装、`Market_Data_Daily_Update.yml`/`Market_Data_Weekly_Update.yml`をworkflow_dispatchで実行確認済み。本番消費者8ファイル（`beta_fetcher.py`・`data_fetcher.py`〈TANUKI VALUATION本体、DCF計算直結〉・`valuation_fetcher.py`〈STONKS SILO〉・`pipeline.py`〈`.calendar`〉・`collect.py`〈Discover〉・`collect_and_send.py`〈Market Pulse〉・`breadth_calculator.py`・`hypecore.py`〈daily/attributes/analyst_historyの3層混在、前提作業3件込みで最複雑〉）・診断ツール2ファイル（`audit.py`・`score_verifier.py`）・周辺ツール2ファイル（`extract_key_facts.py`・`backfill_tech_pulse.py`）が全て完了、実データ全数比較で回帰なしを確認。詳細は`[[MARKETDATA-LAYER-CONSTRUCTION-1]]`・BACKLOG_DONE.md「2026-08-12（完了）」参照 |
+| `common/macro_data/` 新設（FRED統合層、`INPUT-A-024〜047`対応） | 投資調査完了（実装未着手、2026-08-12。FRED消費者洗い出し完了） | `INPUT_DATA_TOBE.md` 2-C参照。系列単位の時系列ストア設計。**着手前に`EXTRACTION_DESIGN_PRINCIPLES.md`（common/sec_data/で発見された5バグの教訓を一般化した抽出設計原則）を確認すること（2026-08-02追記）**。FRED呼び出しは2サブシステム（MACRO PULSE `05_main.py`・Market Pulse `collect_and_send.py`）のみと確認、`BAMLH0A0HYM2`・`T10Y2Y`・`VIXCLS`に未解消の重複取得あり（`INPUT_DATA_TOBE.md`記載の「3箇所」は実際には4箇所、`[[MACRODATA-AS-IS-DUPLICATION-UNDERCOUNT-1]]`参照）。24系列台帳への漏れ1件（`FTSD`）・現行構成との乖離1件（`05_import_history.py`独自辞書）・サイレント欠落疑い1件も発見しBACKLOG登録済み。詳細は`[[MACRODATA-LAYER-CONSTRUCTION-1]]`・BACKLOG_DONE.md「2026-08-12（完了）」参照 |
 | 取得前提条件の一元管理（`INPUT-B-001〜003`） | 未着手 | `INPUT_DATA_TOBE.md`分類B参照。監視銘柄マスタ・CIKマッピングの管理方法は分類Aの取得と一体で設計する |
 | provenanceメタデータ標準化 | 未着手 | `INPUT_DATA_TOBE.md` 2-D参照（`as_of`/`fetched_at`/`source`/`source_detail`/`fallback_used`） |
 | fetcher/reader分離アクセス制御 | 未着手 | `INPUT_DATA_TOBE.md` 3-B参照 |

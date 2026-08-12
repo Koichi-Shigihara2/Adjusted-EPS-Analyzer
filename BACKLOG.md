@@ -1,5 +1,15 @@
 # On-a-journey — 改善バックログ（全システム）
 
+最終更新: 2026-08-12（セッション終了時ブラッシュアップ。遡って
+`[[MACRODATA-LAYER-CONSTRUCTION-1]]`（`common/macro_data/`新設、
+FRED統合層）をマスター追跡エントリとして正式登録（`[[MARKETDATA-
+LAYER-CONSTRUCTION-1]]`と同型。投資調査サマリー・新規発見4件への
+リンク・次セッション着手順序を記載）。前回投資調査で言及していたが
+未登録のまま参照していたことが本ブラッシュアップで判明したための
+訂正登録。あわせて`[[MARKETDATA-LAYER-CONSTRUCTION-1]]`エントリ内の
+「次セッションでの着手順序」を`[[MACRODATA-LAYER-CONSTRUCTION-1]]`
+参照に更新。実装コード変更なし）
+
 最終更新: 2026-08-12（`common/macro_data/`新設事前調査（FRED消費者洗い出し、
 `MIGRATION_CHECKLIST.md`Step1相当）で発見した新規4件を登録（記録のみ、
 実装なし）。優先度：中に`[[MACRODATA-AS-IS-DUPLICATION-UNDERCOUNT-1]]`
@@ -2416,16 +2426,20 @@ common/market_data/
 全12ファイル）が完了し、`common/market_data/`構築プロジェクト自体が
 完了した。**
 
-**次セッションでの着手順序（2026-08-12時点、着手順序6-2
-〈backfill_tech_pulse.py〉完了＝`common/market_data/`構築プロジェクト
-完了を反映し最終更新）**:
-1. `common/market_data/`構築プロジェクト自体は完了。次は新DB構築
-   プロジェクトの残フェーズ（`common/macro_data/`新設、FRED統合層）を検討
-2. （本線外・本セッション・過去セッションで蓄積した低優先度課題群一式、
-   優先度は各エントリ参照）:
-   `[[MARKETDATA-CWAN-FROZEN-DATA-SUSPECT-1]]`・`[[MARKETDATA-SP500-
-   SCRAPE-INVALID-TICKERS-1]]`・`[[MARKETDATA-VIX9D-DATA-GAP-1]]`・
-   `[[STONKS-SILO-CLI-TICKERS-SHADOW-1]]`・`[[NETCASH-DUAL-CALC-1]]`等
+**次セッションでの着手順序（2026-08-12時点、`[[MACRODATA-LAYER-
+CONSTRUCTION-1]]`投資調査完了を反映し最終更新）**:
+1. `common/market_data/`構築プロジェクト自体は完了。次は
+   `[[MACRODATA-LAYER-CONSTRUCTION-1]]`（`common/macro_data/`新設、
+   FRED統合層）の実装設計（重複解消3系列＋`fetcher.py`/`reader.py`設計）
+2. （本線外）新規発見4件のうち優先度中の2件の対応要否判断:
+   `[[MACRODATA-AS-IS-DUPLICATION-UNDERCOUNT-1]]`・
+   `[[MACRODATA-SCHEDULED-SILENT-GAP-CSCICP-USALOL-1]]`
+3. （本線外・過去セッションで蓄積した低優先度課題群一式、優先度は
+   各エントリ参照）: `[[MACRODATA-FTSD-MISSING-FROM-INVENTORY-1]]`・
+   `[[MACRODATA-IMPORT-HISTORY-CONFIG-DRIFT-1]]`・`[[MARKETDATA-CWAN-
+   FROZEN-DATA-SUSPECT-1]]`・`[[MARKETDATA-SP500-SCRAPE-INVALID-
+   TICKERS-1]]`・`[[MARKETDATA-VIX9D-DATA-GAP-1]]`・`[[STONKS-SILO-
+   CLI-TICKERS-SHADOW-1]]`・`[[NETCASH-DUAL-CALC-1]]`等
 
 #### hypecore.py切替の前提作業・本体切替（着手順序4-8、2026-08-11完了）
 事前調査で判明した3件の前提作業（daily/バックフィル期間拡張・
@@ -2465,6 +2479,97 @@ TICKERS-1]]`（S&P500構成銘柄Wikipediaスクレイピングに`FDXF`/`HONA`/
 
 #### 着手条件
 なし（未決定事項9件は全件確定済み、実装着手可能）。
+
+---
+
+### [MACRODATA-LAYER-CONSTRUCTION-1] common/macro_data/新設（FRED統合層）— 投資調査・FRED消費者洗い出し完了
+**優先度:** 高（新DB構築プロジェクト フェーズ1の次コンポーネント、
+`common/market_data/`が2026-08-12に全12ファイル切替完了したことに伴う
+次の優先タスク）
+**分類:** アーキテクチャ / 新DB構築プロジェクト フェーズ1
+**登録日:** 2026-08-12（本来は事前調査着手時点で登録すべきだったが、
+`common/market_data/`と同様の経緯で未登録のまま投資調査を実施していた
+ため、本エントリで遡って正式登録する）
+**発見:** `common/macro_data/`新設事前調査・FRED消費者洗い出し
+（`MIGRATION_CHECKLIST.md`Step1相当、チャット記録、2026-08-12）
+
+#### 背景・投資調査サマリー
+`common/market_data/`（yfinance統合層）の全12ファイル切替完了
+（`[[MARKETDATA-LAYER-CONSTRUCTION-1]]`）を受け、新DB構築プロジェクト
+フェーズ1の次コンポーネントとして`common/macro_data/`（FRED統合層）の
+着手前投資調査を実施した。`market_data`着手時の教訓（当初の「11ファイル」
+調査が`common/sec_data/audit.py`1件を見落としていた、
+`[[MARKETDATA-AS-IS-AUDIT-PY-OMITTED-1]]`）を踏まえ、探索範囲を`src/`
+配下に限定せず`common/`・`discover/`配下も含めリポジトリ全体をgrep等で
+網羅的に確認した。
+
+**FRED呼び出し箇所の特定（実コード確認）**:
+- FRED呼び出しは**2サブシステットのみ**（`src/market/macro_pulse/`・
+  `src/market/market_pulse/`）。`common/`・`discover/`配下には現状ゼロ
+  （`INPUT_DATA_AS_IS.md`の「実測2サブシステム」を実データで再確認）
+- MACRO PULSE本番: `05_main.py`（`INDICATOR_CONFIG`辞書12系列＋
+  `get_financial_context()`/`get_ff_current()`/`get_implied_cuts()`/
+  `get_sp500()`/`update_liquidity_csv()`が独自に追加系列を取得）
+- Market Pulse本番: `collect_and_send.py`（`VXNCLS`・`BAMLH0A0HYM2`・
+  `DGS3MO`、3関数がそれぞれ独立に`Fred()`インスタンスを生成）
+- 診断ツール: `05_audit.py`（FRED呼び出しなし、`05_events.csv`の
+  監査のみ、`common/macro_data/`切替の対象外）
+- 周辺ツール: `05_backfill_nfp_mom.py`（一過性、NFP履歴修正済み）・
+  `05_import_history.py`（一過性、独自`FRED_INDICATORS`辞書が現行
+  `INDICATOR_CONFIG`と乖離、`[[MACRODATA-IMPORT-HISTORY-CONFIG-
+  DRIFT-1]]`参照）・`backfill_tech_pulse.py`（`VXNCLS`のみ未切替、
+  QQQ/SPY部分は`[[MARKETDATA-LAYER-CONSTRUCTION-1]]`着手順序6-2で
+  切替済み）
+
+**重複取得パターンの実態確認**: `INPUT_DATA_TOBE.md`が指摘する
+`BAMLH0A0HYM2`重複取得「3箇所」を実データで再検証した結果、実際は
+`get_financial_context()`を含む**4箇所**（MACRO PULSE内部3箇所＋
+Market Pulse1箇所）。`T10Y2Y`・`VIXCLS`にも同型の未記載重複あり
+（詳細は`[[MACRODATA-AS-IS-DUPLICATION-UNDERCOUNT-1]]`参照）。
+
+**24系列台帳の正確性確認**: `INPUT_DATA_TOBE.md`のFRED系列台帳
+（`INPUT-A-024`〜`047`、24系列）は主要系列としては網羅的だったが、
+`FTSD`（`WTREGEN`フォールバック先）が1系列漏れていた
+（`[[MACRODATA-FTSD-MISSING-FROM-INVENTORY-1]]`参照）。
+
+**取得頻度・エラーハンドリングの現状確認**:
+- cron: `MACRO_PULSE_Update.yml`（日次×2＋週次×2、4種類のcronが並存）・
+  `Market_Pulse_Update.yml`（平日日次）
+- メタ情報（`obs_to_release_lag`等）は`INDICATOR_CONFIG`辞書内に
+  フラットなキーとして直接埋め込み。専用configファイルは存在しない
+- リトライ機構があるのは`05_main.py::fetch_event_row()`・
+  `fred_release_dates()`と`05_import_history.py::_load_ctx_cache()`の
+  計3箇所のみ（3回リトライ＋指数バックオフ）。残り大半（`fred_latest()`
+  本体・`update_liquidity_csv()`・Market Pulse側3関数・
+  `backfill_tech_pulse.py`）はリトライなしの素朴なtry/except
+- 共有フェッチャー層は存在せず、各ファイルが個別に`Fred(api_key=...)`
+  クライアントを生成している状態（`market_data`着手前のyfinance分散
+  状態と同型）
+
+投資調査の過程で新規発見した4件をBACKLOG登録済み（記録のみ、
+実装なし）: `[[MACRODATA-AS-IS-DUPLICATION-UNDERCOUNT-1]]`（優先度：中）・
+`[[MACRODATA-SCHEDULED-SILENT-GAP-CSCICP-USALOL-1]]`（優先度：低〜中）・
+`[[MACRODATA-FTSD-MISSING-FROM-INVENTORY-1]]`（優先度：低）・
+`[[MACRODATA-IMPORT-HISTORY-CONFIG-DRIFT-1]]`（優先度：低）。
+
+#### 次セッションでの着手順序（2026-08-12時点）
+1. `[[MACRODATA-LAYER-CONSTRUCTION-1]]`の実装設計（`BAMLH0A0HYM2`・
+   `T10Y2Y`・`VIXCLS`の重複解消3系列の設計を含めた
+   `common/macro_data/fetcher.py`/`reader.py`設計）
+2. （本線外）新規発見4件のうち優先度中の2件の対応要否判断:
+   `[[MACRODATA-AS-IS-DUPLICATION-UNDERCOUNT-1]]`（ドキュメント訂正）・
+   `[[MACRODATA-SCHEDULED-SILENT-GAP-CSCICP-USALOL-1]]`（実データ確認が
+   着手条件）
+3. （本線外）過去セッションで蓄積した低優先度課題群一式:
+   `[[MACRODATA-FTSD-MISSING-FROM-INVENTORY-1]]`・
+   `[[MACRODATA-IMPORT-HISTORY-CONFIG-DRIFT-1]]`・`[[MARKETDATA-CWAN-
+   FROZEN-DATA-SUSPECT-1]]`・`[[MARKETDATA-SP500-SCRAPE-INVALID-
+   TICKERS-1]]`・`[[MARKETDATA-VIX9D-DATA-GAP-1]]`・`[[STONKS-SILO-
+   CLI-TICKERS-SHADOW-1]]`・`[[NETCASH-DUAL-CALC-1]]`等
+
+#### 着手条件
+なし。設計判断（`get_financial_context()`と`daily`系列の重複取得を
+どう解消するか等）を次セッション冒頭で行った上で実装着手可能。
 
 ---
 

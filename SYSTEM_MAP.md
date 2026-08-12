@@ -1,5 +1,15 @@
 # SYSTEM MAP — On-a-journey
 
+最終更新: 2026-08-12（common/market_data/セクションを診断ツール2
+（`audit.py`・`score_verifier.py`）・周辺ツール2（`extract_key_facts.py`・
+`backfill_tech_pulse.py`）切替完了に更新。**本番消費者8＋診断ツール2＋
+周辺ツール2の全12ファイルが完了**。reader.pyのAPI一覧に
+`get_price_on_or_after`・`get_price_series_as_of`を追加（10種→12種）。
+「変更時の影響範囲チェックリスト」の該当2行も「8/8切替済み」から
+「全12ファイル切替済み」表記に更新。詳細はBACKLOG.md
+`[[MARKETDATA-LAYER-CONSTRUCTION-1]]`・BACKLOG_DONE.md「2026-08-12
+（完了）」参照）
+
 最終更新: 2026-08-11（common/market_data/セクションを本番消費者
 **8ファイル8/8切替完了**に更新。pipeline.py・collect.py・
 collect_and_send.py・breadth_calculator.py・hypecore.py（前提作業3件
@@ -1016,11 +1026,16 @@ TANUKI TAIL（docs/portfolio/tail/）← EDGAR RSS / Grok（KPI提案・四半�
   フラグ経由で手動実行。`start=`指定時は`period`より優先、hypecore.py
   切替の前提作業で`start="2021-01-01"`の5.5年分バックフィルに使用）。
 - `common/market_data/reader.py`: 読み取り専用API。
-  `get_latest_price()`・`get_price_series()`・`get_ma_deviation(window)`
-  （移動平均乖離率%を返す、生の移動平均価格そのものは保存しない設計）・
-  `get_attributes()`・`get_calendar()`・`get_analyst_events()`・
-  `get_earnings_history()`・`get_recommendations_history(latest_only)`・
-  `get_index_series()`・`get_sp500_constituents_prices()`の10種。
+  `get_latest_price()`・`get_price_series()`・`get_price_series_as_of(as_of_date)`
+  （`get_price_series()`の「終点＝daily/の最新保存日」を任意の過去日に
+  一般化した版、共通実装`_price_series_ending_at()`を両者で共有。
+  `backfill_tech_pulse.py`切替の前提作業として2026-08-12新設）・
+  `get_price_on_or_after(date)`（`score_verifier.py`切替の前提作業として
+  2026-08-12新設）・`get_ma_deviation(window)`（移動平均乖離率%を返す、
+  生の移動平均価格そのものは保存しない設計）・`get_attributes()`・
+  `get_calendar()`・`get_analyst_events()`・`get_earnings_history()`・
+  `get_recommendations_history(latest_only)`・`get_index_series()`・
+  `get_sp500_constituents_prices()`の12種。
 - 保存構造は3層独立（`daily/{SYMBOL}.json`・`attributes/{SYMBOL}.json`・
   `analyst_history/{SYMBOL}.json`）＋`{SYMBOL}/market_data_violations_log.json`
   （fy_collision_log.json型、セクション独立のread-modify-write）。
@@ -1030,18 +1045,22 @@ TANUKI TAIL（docs/portfolio/tail/）← EDGAR RSS / Grok（KPI提案・四半�
   アナリスト目標株価/revenue_growth/earnings_growth/gross_margins/
   recommendation_mean/short_pct_float/short_ratio/average_volume等）
   専任で、`previousClose`等の価格系フィールドは意図的に含めない。
-- 本番消費者切替（8ファイル**8/8完了**、2026-08-11時点）:
-  `beta_fetcher.py`・`data_fetcher.py`（TANUKI VALUATION本体、DCF計算
-  直結の本丸）・`discover/stonks-silo/src/valuation_fetcher.py`
-  （STONKS SILO）・`pipeline.py`（`.calendar`のみ）・`collect.py`
-  （Discover）・`collect_and_send.py`（Market Pulse）・
-  `breadth_calculator.py`・`hypecore.py`（daily/attributes/
-  analyst_historyの3層すべてが混在する最複雑の消費者、前提作業3件
-  〈daily/バックフィル拡張・attributes/7フィールド追加・
-  analyst_history/2系統追加〉込み）が全て切替済み。残るは診断ツール
-  2ファイル（`score_verifier.py`・`audit.py`）。詳細はBACKLOG.md
-  `[[MARKETDATA-LAYER-CONSTRUCTION-1]]`・BACKLOG_DONE.md
-  「2026-08-11（完了）」参照。
+- 消費者切替（**本番8＋診断ツール2＋周辺ツール2の全12ファイル完了**、
+  2026-08-12時点）:
+  本番消費者8ファイル: `beta_fetcher.py`・`data_fetcher.py`（TANUKI
+  VALUATION本体、DCF計算直結の本丸）・
+  `discover/stonks-silo/src/valuation_fetcher.py`（STONKS SILO）・
+  `pipeline.py`（`.calendar`のみ）・`collect.py`（Discover）・
+  `collect_and_send.py`（Market Pulse）・`breadth_calculator.py`・
+  `hypecore.py`（daily/attributes/analyst_historyの3層すべてが混在する
+  最複雑の消費者、前提作業3件〈daily/バックフィル拡張・attributes/7
+  フィールド追加・analyst_history/2系統追加〉込み）。診断ツール2
+  ファイル: `audit.py`（β乖離監査・カナダ企業判定）・`score_verifier.py`
+  （判定実績の事後検証、`get_price_on_or_after()`新設が前提作業）。
+  周辺ツール2ファイル: `extract_key_facts.py`（株式数フォールバック④）・
+  `backfill_tech_pulse.py`（QQQ/SPY取得、`get_price_series_as_of()`
+  新設が前提作業）。詳細はBACKLOG.md`[[MARKETDATA-LAYER-CONSTRUCTION-1]]`・
+  BACKLOG_DONE.md「2026-08-12（完了）」参照。
 
   切替過程で`daily/`層が`auto_adjust=False`（未調整終値）で保存されて
   いることを発見し、当初「バグ」として登録したが、事実確認調査の結果
@@ -1061,8 +1080,8 @@ TANUKI TAIL（docs/portfolio/tail/）← EDGAR RSS / Grok（KPI提案・四半�
 | tag_definitions.py（TAG_CANDIDATES） | quarterly.py/parser.py双方に波及するため、変更前後で全銘柄のbuild_raw_table/_extract_values出力を比較し影響銘柄を特定（同日生成のcompany_facts.jsonで新旧比較すること。generated_atタイムスタンプ差だけで見かけ上の差分が出るため単純な過去ファイル比較は不可。raw/は2026-08-05にデッドコード除去のため廃止済み、normalized/の`generated_at`フィールドで同様の注意が必要）→ 影響銘柄のみupdate.py → audit.py |
 | contracts.py（FinancialEntry必須キー変更等） | quarterly.py::save_raw_table()・normalizer.py::save_normalized()の検証が全銘柄で走るため、変更後は全105銘柄のupdate.pyを実行しContractViolationが新規発生しないか確認 → report_consistency_check.py |
 | data_fetcher.py（TTMReader・_select_fcf_source） | 全銘柄fcf_list_raw/fcf_5yr_avgに影響するため全銘柄pipeline.py再実行 → report_consistency_check.py |
-| common/market_data/fetcher.py（daily/attributes/analyst_history各層のスキーマ・取得ロジック） | スキーマ変更時は影響銘柄でfetch_daily_prices/fetch_weekly_attributes/fetch_analyst_eventsを再実行しJSON構造を更新 → 本番消費者8ファイル（beta_fetcher.py/data_fetcher.py/valuation_fetcher.py/pipeline.py/collect.py/collect_and_send.py/breadth_calculator.py/hypecore.py、全8/8切替済み）のpipeline.py再実行で反映確認 |
-| common/market_data/reader.py（get_latest_price/get_attributes/get_ma_deviation/get_earnings_history/get_recommendations_history等の読み取りAPI） | 戻り値の意味・キーを変更する場合は本番消費者8ファイル（全8/8切替済み）＋診断ツール2ファイル（score_verifier.py・audit.py、今後切替予定）へ影響するため、変更前に全消費者のgrep洗い出し必須。get_ma_deviation()のwindow引数の意味変更はma200代数逆算（data_fetcher.py）に直結するため特に注意 |
+| common/market_data/fetcher.py（daily/attributes/analyst_history各層のスキーマ・取得ロジック） | スキーマ変更時は影響銘柄でfetch_daily_prices/fetch_weekly_attributes/fetch_analyst_eventsを再実行しJSON構造を更新 → 本番消費者8ファイル（beta_fetcher.py/data_fetcher.py/valuation_fetcher.py/pipeline.py/collect.py/collect_and_send.py/breadth_calculator.py/hypecore.py）のpipeline.py再実行で反映確認。診断ツール2（audit.py/score_verifier.py）・周辺ツール2（extract_key_facts.py/backfill_tech_pulse.py）を含め全12ファイル切替済み |
+| common/market_data/reader.py（get_latest_price/get_attributes/get_ma_deviation/get_earnings_history/get_recommendations_history/get_price_on_or_after/get_price_series_as_of等の読み取りAPI） | 戻り値の意味・キーを変更する場合は本番消費者8ファイル＋診断ツール2ファイル（score_verifier.py・audit.py）＋周辺ツール2ファイル（extract_key_facts.py・backfill_tech_pulse.py）の全12ファイルへ影響するため、変更前に全消費者のgrep洗い出し必須。get_ma_deviation()のwindow引数の意味変更はma200代数逆算（data_fetcher.py）に直結するため特に注意 |
 | extract_key_facts.py | EPS quarterly.json 再生成 → report_consistency_check.py（CHECK-17/19確認）|
 | core_calculator.py / calculator/dcf.py | 影響銘柄のpipeline.py再実行 |
 | calculator/adjustments.py | 影響銘柄のpipeline.py再実行（FCF外れ値・estimate_fcf等）。`check_software_system_reclassification()`（FCF-CONVRATE-DESIGN-LIMIT-1、2026-07-14追加）はconfig書き換えを行わない純関数で、`determine_fcf_base()`と同じ「pipeline.py実行のたびに実績データから再判定」パターンを踏襲している。今後この種の自己補正ロジックを追加する際も同パターンを踏襲すること |

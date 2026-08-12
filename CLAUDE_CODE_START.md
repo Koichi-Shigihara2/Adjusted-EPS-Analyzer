@@ -1,5 +1,19 @@
 # Claude Code 作業開始テンプレート
 
+最終更新: 2026-08-12（セッション終了時ブラッシュアップ。「次セッションの
+一次データ層プロジェクト着手順序」節を、`common/market_data/`の残り
+4ファイル完了を反映して更新：着手順序5-1`audit.py`・5-2`score_verifier.py`
+（診断ツール2/2）・6-1`extract_key_facts.py`・6-2`backfill_tech_pulse.py`
+（周辺ツール2/2）が全て完了し、**本番消費者8＋診断ツール2＋周辺ツール2の
+全12ファイルが完了、`common/market_data/`構築プロジェクト自体が完了**。
+続けて`common/macro_data/`（FRED統合層）の新設事前調査（FRED消費者
+洗い出し、`MIGRATION_CHECKLIST.md`Step1相当）を実施し、ドキュメント
+不備2件・サイレント欠落疑い1件・設定陳腐化1件の新規4件をBACKLOG登録
+（記録のみ、実装未着手）。次のアクションは`[[MACRODATA-LAYER-
+CONSTRUCTION-1]]`の実装設計（重複解消3系列＋`fetcher.py`/`reader.py`
+設計）に変更。詳細はBACKLOG.md`[[MARKETDATA-LAYER-CONSTRUCTION-1]]`・
+BACKLOG_DONE.md「2026-08-12（完了）」参照。実装コード変更なし）
+
 最終更新: 2026-08-11（セッション終了時ブラッシュアップ。「次セッションの
 一次データ層プロジェクト着手順序」節を、本番消費者8ファイル**8/8切替
 完了**（`pipeline.py`・`collect.py`・`collect_and_send.py`・
@@ -74,25 +88,24 @@ git pull --rebase origin kaihatsu
   残るため、`normalized/`は完全廃止できず、この3系統向けに存続する
   設計とする（詳細は`[[SECDATA-STORAGE-FRAGMENTATION-1]]`参照）。
 
-  **次セッションの一次データ層プロジェクト着手順序（2026-08-11更新）**：
+  **次セッションの一次データ層プロジェクト着手順序（2026-08-12更新）**：
   `common/sec_data`統合（フェーズD）は実質完了。`common/market_data/`
-  （yfinance統合層）は設計確定・`fetcher.py`/`reader.py`実装・定期実行
-  ワークフロー（`Market_Data_Daily_Update.yml`/`Market_Data_Weekly_
-  Update.yml`、workflow_dispatchで実行確認済み）実装に続けて、本番
-  消費者切替が**8ファイル全数完了**（`beta_fetcher.py`・
-  `data_fetcher.py`・`valuation_fetcher.py`・`pipeline.py`・
-  `collect.py`・`collect_and_send.py`・`breadth_calculator.py`・
-  `hypecore.py`〈`daily`/`attributes`/`analyst_history`の3層すべてが
-  混在する最複雑の消費者、前提作業3件〈daily/バックフィル期間拡張・
-  attributes/7フィールド追加・analyst_history/2系統追加〉込み〉）。
-  次のアクションは以下の順:
-  1. 着手順序5: 診断ツール2ファイル切替（`score_verifier.py`・
-     `audit.py`のβ乖離監査等、`reader.get_attributes()`経由に切替）
-  2. 着手順序6: 周辺ツール2ファイルの切替（`backfill_tech_pulse.py`・
-     `extract_key_facts.py`、該当あれば）
-  3. フェーズ完了後: `normalized/`廃止相当の判断、または新DB構築
-     プロジェクトの次フェーズ（`common/macro_data/`）検討
-  4. （本線外・本セッションで蓄積した課題群）: `[[MARKETDATA-CWAN-
+  （yfinance統合層）は本番消費者8＋診断ツール2（`score_verifier.py`・
+  `audit.py`）＋周辺ツール2（`extract_key_facts.py`・
+  `backfill_tech_pulse.py`）の**全12ファイル切替完了、構築プロジェクト
+  自体が完了**。続けて`common/macro_data/`（FRED統合層）の新設事前調査
+  （FRED消費者洗い出し、`MIGRATION_CHECKLIST.md`Step1相当）を実施し、
+  投資調査完了（実装未着手）の状態。次のアクションは以下の順:
+  1. `[[MACRODATA-LAYER-CONSTRUCTION-1]]`の実装設計（`BAMLH0A0HYM2`・
+     `T10Y2Y`・`VIXCLS`の重複解消3系列を含む`fetcher.py`/`reader.py`設計、
+     着手前に`EXTRACTION_DESIGN_PRINCIPLES.md`の3原則を確認）
+  2. （本線外）新規発見4件のうち優先度中の2件の対応要否判断:
+     `[[MACRODATA-AS-IS-DUPLICATION-UNDERCOUNT-1]]`（ドキュメント訂正）・
+     `[[MACRODATA-SCHEDULED-SILENT-GAP-CSCICP-USALOL-1]]`（実データ確認
+     が着手条件）
+  3. （本線外・過去セッションで蓄積した低優先度課題群一式）:
+     `[[MACRODATA-FTSD-MISSING-FROM-INVENTORY-1]]`・
+     `[[MACRODATA-IMPORT-HISTORY-CONFIG-DRIFT-1]]`・`[[MARKETDATA-CWAN-
      FROZEN-DATA-SUSPECT-1]]`・`[[MARKETDATA-SP500-SCRAPE-INVALID-
      TICKERS-1]]`・`[[MARKETDATA-VIX9D-DATA-GAP-1]]`・`[[STONKS-SILO-
      CLI-TICKERS-SHADOW-1]]`・`[[NETCASH-DUAL-CALC-1]]`等
@@ -113,7 +126,8 @@ git pull --rebase origin kaihatsu
   LAYER-DESIGN-PHASE-D-STEP2-2]]`（②）・`[[SEC-EDGAR-LAYER-DESIGN-
   PHASE-D-STEP2-1]]`（①TANUKI VALUATION本体）参照。`common/market_data/`
   の詳細はBACKLOG.md`[[MARKETDATA-LAYER-CONSTRUCTION-1]]`・
-  BACKLOG_DONE.md「2026-08-11（完了）」参照
+  `common/macro_data/`の詳細はBACKLOG.md`[[MACRODATA-LAYER-
+  CONSTRUCTION-1]]`・BACKLOG_DONE.md「2026-08-12（完了）」参照
 - src/value/tanuki_valuation/pipeline.py（直近の変更を把握）
 
 ### Step 2: テスト実行
