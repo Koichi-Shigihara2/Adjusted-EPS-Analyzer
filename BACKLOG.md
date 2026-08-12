@@ -2879,31 +2879,34 @@ grep -n "Fred(\|from fredapi\|fred_api_key" src/market/market_pulse/collect_and_
 実装・定期取得ワークフロー・本番消費者2ファイル全数切替が完了し、
 **`common/market_data/`と同じ「完成」状態に到達した**。
 
-#### 次セッションでの着手順序（2026-08-12時点、SEC EDGAR全105銘柄精査完了・フェーズ2対象外確定を反映）
+#### 次セッションでの着手順序（2026-08-12時点、フェーズ2全4データソース結論確定・実質完了を反映）
 1. `common/macro_data/`構築プロジェクト自体は完成。フェーズ2（過去
-   データ移管）の移行方針も確定済み（`[[PHASE2-MIGRATION-POLICY-
-   DECIDED-1]]`）。`BAMLH0A0HYM2`の例外的移行（FRED側2026年4月からの
-   新規提供制限に伴う旧`05_events.csv`からの一度限りの移行）も実装・
-   実行完了済み（`[[MACRODATA-BAMLH0A0HYM2-HISTORY-EXCEPTION-1]]`）。
-   SEC EDGAR過去データ移管もフェーズ2対象外と確定しクローズ済み
-   （全105銘柄精査完了、詳細は`[[PHASE2-SECDATA-FULL-DEPTH-
-   VERIFICATION-1]]`）
-2. フェーズ2の残タスク（1件のみ）:
-   `[[PHASE2-YFINANCE-REFETCH-DESIGN-1]]`（yfinance旧保存先の時系列
-   データ再取得設計、hypecore・market_data.json・breadth_data.json対象）
-3. （本線外）今回発見した2件の対応要否判断:
+   データ移管）も4データソースすべてに結論が確定し**実質完了**:
+   - `[[PHASE2-MIGRATION-POLICY-DECIDED-1]]`（移行方針確定）
+   - `[[MACRODATA-BAMLH0A0HYM2-HISTORY-EXCEPTION-1]]`（FRED、
+     `BAMLH0A0HYM2`のみ例外的移行を実装・実行完了、他23系列は対象外）
+   - `[[PHASE2-SECDATA-FULL-DEPTH-VERIFICATION-1]]`（SEC EDGAR、全105
+     銘柄精査完了・フェーズ2対象外と確定）
+   - `[[PHASE2-YFINANCE-REFETCH-DESIGN-1]]`（yfinance、投資調査の結果
+     移行作業不要・フェーズ2対象外と確定）
+   - 取得前提条件は当初調査時点で対象外と判定済み
+2. 次の選択肢:
+   - フェーズ3（導出データ層の管理方法検討、`PROJECT_STATUS.md`参照）
+     への着手検討
+   - 本線外課題群（下記3〜5）の対応要否判断
+3. （本線外）SEC EDGAR全105銘柄精査で新規発見した異常ケース:
+   `[[SECDATA-ENB-NORMALIZATION-MISSING-1]]`（ENBの正規化データ
+   〈annual_*.json/quarterly_*.json〉が1件も生成されていない、原因調査
+   未着手）
+4. （本線外）今回発見した2件の対応要否判断:
    `[[MACRODATA-FTSD-SERIES-ID-INVALID-1]]`（`FTSD`系列がFRED上に
    存在しない、`05_main.py`側の対応要否）・`[[MACRODATA-FULL-HISTORY-
    DAILY-REFETCH-1]]`（日次cronの全期間再取得の非効率、`--start`
    引数追加等の対応要否）
-4. （本線外）新規発見のうち残る優先度中の2件の対応要否判断:
+5. （本線外）新規発見のうち残る優先度中の2件の対応要否判断:
    `[[MACRODATA-AS-IS-DUPLICATION-UNDERCOUNT-1]]`（ドキュメント訂正）・
    `[[MACRODATA-SCHEDULED-SILENT-GAP-CSCICP-USALOL-1]]`（実データ確認が
    着手条件）
-5. （本線外）SEC EDGAR全105銘柄精査で新規発見した異常ケース:
-   `[[SECDATA-ENB-NORMALIZATION-MISSING-1]]`（ENBの正規化データ
-   〈annual_*.json/quarterly_*.json〉が1件も生成されていない、原因調査
-   未着手）
 6. （本線外）過去セッションで蓄積した低優先度課題群一式:
    `[[MACRODATA-IMPORT-HISTORY-CONFIG-DRIFT-1]]`・`[[MARKETDATA-CWAN-
    FROZEN-DATA-SUSPECT-1]]`・`[[MARKETDATA-SP500-SCRAPE-INVALID-
@@ -2911,9 +2914,8 @@ grep -n "Fred(\|from fredapi\|fred_api_key" src/market/market_pulse/collect_and_
    CLI-TICKERS-SHADOW-1]]`・`[[NETCASH-DUAL-CALC-1]]`等
 
 #### 着手条件
-なし（`common/macro_data/`本体・フェーズ2方針決定・`BAMLH0A0HYM2`例外的
-移行・SEC EDGAR全105銘柄精査はいずれも完了。フェーズ2残タスク1件・
-ENB異常ケース・本線外課題群のみ残置）。
+なし（`common/macro_data/`本体・フェーズ2（4データソースすべて）は
+いずれも完了。フェーズ3着手検討・ENB異常ケース・本線外課題群のみ残置）。
 
 ---
 
@@ -2937,35 +2939,6 @@ ENB（Enbridge Inc.）について、`common/sec_data/data/ENB/`配下に
 なぜENBだけ正規化パイプラインが機能していないのか（銘柄固有のXBRL
 データ構造の問題か、処理時のエラーが握りつぶされているか等）の原因
 調査が必要。原因調査は次回以降に別途着手する。
-
-#### 着手条件
-なし。
-
----
-
-### [PHASE2-YFINANCE-REFETCH-DESIGN-1] yfinance過去データ移管：旧保存先の時系列データを再取得する設計が未着手
-**状態:** 未着手
-**優先度:** 中
-**分類:** データ移行 / 新DB構築プロジェクト フェーズ2（過去データ移管）
-**登録日:** 2026-08-12
-**発見:** フェーズ2投資調査（yfinance旧保存先5ファイルのサンプル確認、
-チャット記録、2026-08-12）
-
-#### 内容
-yfinance旧保存先の一部（`docs/value-monitor/hypecore/data/
-{TICKER}_poc.json`の`monthly[]`配列・`docs/market-monitor/market-pulse/
-data/market_data.json`・`breadth_data.json`）に、数ヶ月〜32ヶ月分の
-時系列データが既に蓄積されていることを確認済み。Yahoo Finance API自体は
-同期間のデータを今も提供しているとみられるため、`[[PHASE2-MIGRATION-
-POLICY-DECIDED-1]]`が確定した原則（「再取得・再導出」を優先し、旧保存
-先の物理コピーは原則行わない）に従い、`common/market_data/`のfetcherを
-拡張して該当期間を再取得する設計が必要である。
-
-#### 対応方針（未定）
-`common/market_data/fetcher.py`の`backfill_daily_prices()`等の既存
-バックフィル関数パターンを踏まえ、hypecore月次相当・Market Pulse日次
-相当の指標をどの期間・どの粒度で再取得するかを設計する。yfinance API側で
-実際に該当期間のデータが取得可能かどうかの事前確認も必要。
 
 #### 着手条件
 なし。

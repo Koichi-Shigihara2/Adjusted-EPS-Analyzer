@@ -403,6 +403,93 @@ ABBV（diff=-4yr）・AMD/CWAN/FCX/JNJ（diff=-2yr）の計6銘柄が異常な
 
 ---
 
+### ✅ [PHASE2-YFINANCE-REFETCH-DESIGN-1] yfinance過去データ移管：投資調査の結果、移行作業不要と確定
+**状態:** 完了
+**優先度:** 中
+**分類:** データ移行 / 新DB構築プロジェクト フェーズ2（過去データ移管）
+**登録日:** 2026-08-12
+**完了日:** 2026-08-12
+**発見:** フェーズ2投資調査（yfinance旧保存先5ファイルのサンプル確認、
+チャット記録、2026-08-12）
+
+#### 調査経緯
+旧保存先3ファイル（`hypecore`の`{TICKER}_poc.json`・`market_data.json`・
+`breadth_data.json`）の全フィールドを実コード（`hypecore.py`・
+`collect_and_send.py`・`breadth_calculator.py`）から精査し、各フィールドが
+「生データ（yfinance直接取得）」か「派生指標（生データからの計算）」かを
+分類した:
+
+- `hypecore`の`monthly[]`: `price`/`volume_monthly`は生データ、
+  `ma50_dev`/`ma200_dev`/`rsi`/`volume_ratio`/`vol_surge`/`from_peak`等は
+  価格・出来高からの派生指標、`stage`/`substage`/各種scoreはhypecore
+  独自の状態機械（完全に派生）。`forward_pe`等`.info`由来フィールドは
+  `compute_scores()`が**最新月にのみ値を設定する設計**であることを実コード
+  で確認（過去月は元から`None`）。`eps_surprise`はyfinance
+  `earnings_history`（直近3〜4四半期のローリング窓、コード内コメントで
+  明記済み）由来。`buy_hold_ratio`はyfinance`recommendations`
+  （絶対日付を持たない現時点スナップショット）由来。`rev_yoy`/`ni_yoy`/
+  `rule40`/`fcf_yield`/`price_iv_ratio`はSEC EDGAR/TANUKI VALUATION由来
+  でyfinance対象外
+- `market_data.json`: `fetch_recent_records()`が既に`common.market_data.
+  reader.get_price_series()`経由（`[[MARKETDATA-LAYER-CONSTRUCTION-1]]`
+  着手順序4-6で切替済み）と確認
+- `breadth_data.json`: `compute_breadth()`が既に`reader.get_price_series
+  (ticker, days=260)`経由でS&P500構成銘柄全銘柄を取得済み
+  （着手順序4-7で切替済み）と確認
+
+`common/market_data/fetcher.py`の設計を確認した結果、`backfill_daily_
+prices(symbols, period=..., start=...)`・`fetch_analyst_events(symbols)`
+が既に期間指定取得に対応済み（2026-08-11のhypecore.py切替作業
+`[[MARKETDATA-LAYER-CONSTRUCTION-1]]`着手順序4-8で構築・実運用済み）と
+判明。
+
+さらに`common/market_data/daily/`・`analyst_history/`の実データを直接
+確認した結果、**必要な履歴の大半が既に取得・保存済み**であることが判明
+した:
+- `daily/`（575銘柄、S&P500全構成銘柄＋監視銘柄＋指数/ETF/商品）:
+  AAPL/PLTR/^GSPC/^VIX/^VIX9D/CL=F/JPY=X/IVW/IVE/^RUT/^NYA等はいずれも
+  **2021-01-04〜2026-08-11**の1,407件（例外: CWANのみ1件、既知の
+  `[[MARKETDATA-CWAN-FROZEN-DATA-SUSPECT-1]]`）
+- `analyst_history/AAPL.json`: `upgrades_downgrades`969件
+  （2012-09-12〜2026-08-10）、`earnings_history`4件のみ
+  （2025-09-30〜2026-06-30、ローリング窓）、`recommendations_history`
+  1件のみ（現時点スナップショット）
+
+Yahoo Finance APIへの一時的なライブテストスクリプトで、PLTR/^GSPCに
+対し`history(start=2021-01-01)`・`history(start=2026-04-01)`・
+`upgrades_downgrades`・`earnings_history`・`recommendations`を実行し、
+上記の分類・既存保存データと完全に一致することを実測確認した
+（一時スクリプトは実行後削除、コミット対象外）。
+
+#### 結論
+**移行作業不要**。旧保存先（hypecore・`market_data.json`・
+`breadth_data.json`）が持つ派生指標（RSI・移動平均乖離率・出来高比率・
+ブレッドス集計値等）の元となる生データ（価格・出来高）は、フェーズ1の
+hypecore.py切替作業（2026-08-11）時点で既に`common/market_data/daily/`
+へ2021-01-04〜の深さで保存済みであり、必要な期間（hypecoreは2021年〜、
+`market_data.json`/`breadth_data.json`は2026年4月〜）を十分にカバー
+している。派生指標はいつでも既存データから再計算可能なため、旧ファイル
+からの移行は不要と判断した。
+
+「どちらも該当しない」と分類したフィールド（`forward_pe`等の`.info`
+由来スナップショット系・`eps_surprise`の直近4四半期より前・
+`buy_hold_ratio`の過去分）についても、旧hypecoreのコード自体が元々
+過去月に値を設定していなかった（最新月のみ実値、過去月は元から
+`None`）ことを確認済みであり、これは移行漏れではなく旧システム自体に
+存在しなかったデータであるため、対応不要と判断した。
+
+#### 対応内容
+`PROJECT_STATUS.md`フェーズ2表のyfinance行を「再取得による対応を検討中
+（次段階の調査対象）」から「フェーズ2対象外と確定（移行作業不要）」に
+更新。BACKLOG.mdの「次セッションでの着手順序」ブロックからyfinance
+残タスクを削除し、フェーズ2全体の完了（SEC EDGAR・yfinance・FRED・
+取得前提条件の4データソースすべてに結論確定）を反映。
+
+実装コード変更・データ変更なし（調査・ドキュメント記録のみ。一時
+スクリプトは実行後削除、コミット対象外）。
+
+---
+
 ### ✅ [MARKETDATA-LAYER-CONSTRUCTION-1] 着手順序5-2: score_verifier.py切替（診断ツール2/2、全数完了）
 **状態:** 完了
 **優先度:** 高
