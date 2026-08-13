@@ -4453,28 +4453,6 @@ concept、105銘柄合計582.2MB）が、本フェーズの一連の投資調査
 
 ---
 
-### [NETCASH-DUAL-CALC-1] net_cashの二重計算・実データ乖離（TANUKI VALUATION vs STONKS SILO）
-**優先度:** 高
-**分類:** データ品質 / 重複計算 / TANUKI VALUATION / STONKS SILO
-**登録日:** 2026-07-23
-**発見:** `TO_BE.md`⑫群・`NAMING_CONVENTIONS.md`問題パターンA（計算ロジックベースの重複再点検）
-
-#### 背景
-TANUKI VALUATION（`SECReader.get_net_cash()`、SEC XBRL・四半期フォールバック・
-セクターガードあり）とSTONKS SILO（`pipeline.py`、cash − yfinance
-`totalDebt`、セクターガードなし・年次データのみ）が同名`net_cash`を独立計算。
-比較可能25銘柄中23銘柄で乖離、うちNET/RBRK/RDWの3銘柄では符号が反転
-（TANUKI側は「純キャッシュ」、STONKS SILO側は同じ銘柄を「純負債」と表示）。
-
-#### 対応方針
-`TO_BE.md`⑫群で確定済みの統一定義（`SECReader.get_net_cash()`を唯一の正とし、
-STONKS SILOの独自計算を廃止してAS-IS-025の値を直接参照する）に従って実装する。
-
-#### 着手条件
-なし
-
----
-
 ### [NETINCOME-DUAL-PIPELINE-1] 純利益の二重抽出パイプライン・符号反転（STONKS SILO vs EPS Analyzer）
 **優先度:** 高
 **分類:** データ品質 / 重複計算 / STONKS SILO / EPS Analyzer

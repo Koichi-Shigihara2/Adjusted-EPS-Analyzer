@@ -94,6 +94,62 @@ pytest `771 passed / 2 known-failed`（`test_iv_formula.py` MSFT/NVDA、
 
 ---
 
+### ✅ [NETCASH-DUAL-CALC-1] net_cashの二重計算・実データ乖離（TANUKI VALUATION vs STONKS SILO）
+**状態:** 完了
+**優先度:** 高
+**分類:** データ品質 / 重複計算 / TANUKI VALUATION / STONKS SILO
+**登録日:** 2026-07-23
+**完了日:** 2026-08-13
+**発見:** `TO_BE.md`⑫群・`NAMING_CONVENTIONS.md`問題パターンA（計算ロジックベースの重複再点検）
+
+#### 背景
+TANUKI VALUATION（`SECReader.get_net_cash()`、SEC XBRL・四半期フォールバック・
+セクターガードあり）とSTONKS SILO（`pipeline.py`、cash − yfinance
+`totalDebt`、セクターガードなし・年次データのみ）が同名`net_cash`を独立計算。
+登録時点（2026-07-23）の調査では比較可能25銘柄中23銘柄で乖離、うち
+NET/RBRK/RDWの3銘柄では符号が反転（TANUKI側は「純キャッシュ」、STONKS
+SILO側は同じ銘柄を「純負債」と表示）していた。
+
+#### 実装前の再確認（2026-08-13、着手前の差分シミュレーション）
+3週間経過後に25銘柄で再突合した結果、乖離銘柄数は22/25（ほぼ同水準で
+再現）だったが、**符号反転は0銘柄となり当初のNET/RBRK/RDW型の反転は
+再現しなかった**（3週間分の四半期決算更新・資金調達等でボーダーライン
+を越えて安定側に転じたためと推定、根本原因の特定はスコープ外）。また
+`net_cash`は`analyzer.py`の`overall_score`/`overall_verdict`（STONKS
+SILOのスコアリング・ランキング）に一切参照されておらず、フロントエンド
+（`index.html`）の単一表示文字列としてのみ消費されていることを確認し、
+**実害範囲はスコアリングには及ばず表示値のみに限定される**と判明した。
+これらの再確認結果を踏まえても対応方針・優先度に変更なしと判断し実装に
+着手した。
+
+#### 対応内容
+`TO_BE.md`⑫群で確定済みの統一定義（`SECReader.get_net_cash()`を唯一の正
+とする）に従って実装:
+- `valuation_fetcher.py`: `data_fetcher.py:562-565`と同じパターンで
+  `market_data.attributes`から`sector`/`industry`を追加取得
+  （セクターガード引数用、デフォルト`"default"`/`""`）
+- `pipeline.py`: 独自計算（cash+STI − yfinance `totalDebt`）を廃止し
+  `SECReader.get_net_cash(ticker, sector=..., industry=...)`経由に統一。
+  net_cash専用だった`latest_bs`/`cash`変数を削除。`total_debt`変数・
+  `val["total_debt"]`（別目的の独立表示）は維持
+
+**検証**: 25銘柄全数で実行しnet_cashがSECReader値に置き換わったことを
+確認（SITMは両方式でBS欠損により`None`、想定通り）。`overall_score`/
+`overall_verdict`の差分2件（IOT・SITM）を検出したが、`git stash`で
+切替前コードを同日実行した結果と比較しnet_cash切替とは無関係のデータ
+更新（コミット済み`results.json`の生成日時が古かったこと）が原因と
+特定・除外した。テストは`test_valuation_fetcher_market_data_switch.py`
+の戻り値キー検証を新スキーマに更新、`test_stonks_silo_pipeline.py`に
+net_cash切替の回帰テスト4件を新規追加。pytest `775 passed / 2
+known-failed`（`test_iv_formula.py` MSFT/NVDA、`[[TEST-STALE-IV-1]]`
+既知バグ）で回帰なし。
+
+これにより`net_cash`の二重計算・データソース不一致が解消され、TANUKI
+VALUATION・STONKS SILOとも`SECReader.get_net_cash()`に統一された。
+コミット`a7d804d26`。
+
+---
+
 ## 2026-08-12（完了）
 
 ### ✅ [MACRODATA-FTSD-MISSING-FROM-INVENTORY-1] FTSD（WTREGENフォールバック先）がINPUT_DATA_TOBE.mdの24系列台帳（INPUT-A-024〜047）に含まれていない
