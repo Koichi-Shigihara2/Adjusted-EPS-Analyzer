@@ -2141,11 +2141,17 @@ ARCH-DATA-1のスコープ拡張（2026-07-16、年次データ正規化3段階�
 
 ## 優先度：高（早急に対応）
 
-### [MARKETDATA-LAYER-CONSTRUCTION-1] common/market_data/新設（yfinance統合層）— 実装完了（切替対象全12ファイル完了）
+### [MARKETDATA-LAYER-CONSTRUCTION-1] common/market_data/新設（yfinance統合層）— 主要切替完了（collect_asset_flow()6資産・低優先度3件は未解決）
 **優先度:** 高（新DB構築プロジェクト フェーズ1の本線、`common/sec_data`
 統合が2026-08-07に実質完了したことに伴う次の優先タスク）
-**状態:** **実装完了**（着手順序4〜6: 本番消費者8＋診断ツール2＋周辺ツール2、
-全12ファイルの切替が完了。`common/market_data/`構築プロジェクト自体が完了）
+**状態:** 本番消費者8＋診断ツール2＋周辺ツール2、全12ファイルの**主要な**
+切替は完了。ただし`collect_and_send.py::collect_asset_flow()`のSHV等
+6資産（SHV/GLD/TLT/LQD/HYG/SPY）は未切替のまま残存
+（`[[MARKETDATA-COLLECT-ASSET-FLOW-UNTRACKED-1]]`、2026-08-13新規登録）、
+低優先度3件（`[[MARKETDATA-CWAN-FROZEN-DATA-SUSPECT-1]]`・
+`[[MARKETDATA-SP500-SCRAPE-INVALID-TICKERS-1]]`・`[[MARKETDATA-VIX9D-
+DATA-GAP-1]]`）は判断保留中。「全12ファイル完了」はファイル単位の
+粒度としては正確だが、関数単位では上記の未切替・未判断が残る
 **分類:** アーキテクチャ / 新DB構築プロジェクト フェーズ1
 **登録日:** 2026-08-07（本来は事前調査着手時点で登録すべきだったが
 未登録のまま3回の投資調査を実施していたため、本エントリで遡って
@@ -2167,6 +2173,13 @@ SCRAPE-INVALID-TICKERS-1]]`・`[[MARKETDATA-VIX9D-DATA-GAP-1]]`・
 未対応）。誤って「バグ」登録した`[[MARKETDATA-DAILY-UNADJUSTED-PRICE-
 DIVIDEND-DRIFT-1]]`は事実確認調査により前提の誤りが判明し訂正・クローズ
 済み。詳細は下記「着手順序」参照）
+**更新日:** 2026-08-13（新DB構築プロジェクト フェーズ1〜3総点検の結果、
+`collect_and_send.py::collect_asset_flow()`のSHV等6資産
+（DGS3MO以外の全6資産）が`_fetch_hist_legacy()`＝yfinance直接呼び出しの
+まま未切替であり、かつBACKLOG.md本体に専用エントリが存在しない
+「追跡漏れ」だったことが判明。`[[MARKETDATA-COLLECT-ASSET-FLOW-
+UNTRACKED-1]]`として新規登録した。見出し・状態欄を「実装完了（全12
+ファイル完了）」から実態に合わせて訂正。実装コード変更なし）
 **発見:** `common/market_data/`新設事前調査・実装設計投資調査（チャット
 記録、2026-08-07）
 
@@ -2523,7 +2536,7 @@ TICKERS-1]]`（S&P500構成銘柄Wikipediaスクレイピングに`FDXF`/`HONA`/
 
 ---
 
-### [MACRODATA-LAYER-CONSTRUCTION-1] common/macro_data/新設（FRED統合層）— 完成（本番消費者切替完了）
+### [MACRODATA-LAYER-CONSTRUCTION-1] common/macro_data/新設（FRED統合層）— 完成（本番消費者2ファイルの範囲。周辺ツール1件は射程外で未切替）
 **優先度:** 高（新DB構築プロジェクト フェーズ1の次コンポーネント、
 `common/market_data/`が2026-08-12に全12ファイル切替完了したことに伴う
 次の優先タスク）
@@ -2539,6 +2552,15 @@ TICKERS-1]]`（S&P500構成銘柄Wikipediaスクレイピングに`FDXF`/`HONA`/
 両ファイルから`Fred(`・`fred_latest(`等の外部API直接呼び出しを完全に
 排除（grep最終確認で残存0件）。切替前後で18項目の値突合を実施し
 **全項目完全一致**（差分0件）。詳細は下記「本番消費者切替完了」参照）
+**更新日:** 2026-08-13（新DB構築プロジェクト フェーズ1〜3総点検の結果、
+「完成（本番消費者切替完了）」の射程は`05_main.py`・
+`collect_and_send.py`の**本番消費者2ファイルに限定**されており、周辺
+ツール`backfill_tech_pulse.py`の`VXNCLS`取得（`Fred(api_key=
+FRED_API_KEY).get_series("VXNCLS", ...)`直接呼び出し）は射程外のまま
+未切替で残存し、かつBACKLOG.md本体に専用エントリがない「追跡漏れ」
+だったことが判明。`[[MACRODATA-BACKFILL-TECH-PULSE-VXNCLS-
+UNTRACKED-1]]`として新規登録した。見出しに射程の限定を明記。実装
+コード変更なし）
 **発見:** `common/macro_data/`新設事前調査・FRED消費者洗い出し
 （`MIGRATION_CHECKLIST.md`Step1相当、チャット記録、2026-08-12）
 
@@ -3102,6 +3124,28 @@ GitHub Actions実行時間・git差分サイズが日次cronとしては不必�
 
 ---
 
+### [MACRODATA-BACKFILL-TECH-PULSE-VXNCLS-UNTRACKED-1] backfill_tech_pulse.pyのVXNCLS取得が未切替のまま、BACKLOG本体に専用エントリがなかった
+**優先度:** 低（一過性ツール、`[[MACRODATA-LAYER-CONSTRUCTION-1]]`
+「本番消費者2ファイル」の射程外だが、FRED直接呼び出し完全排除という
+当初目標には未達）
+**分類:** 追跡漏れ / 未切替箇所
+**登録日:** 2026-08-13
+**発見:** 新DB構築プロジェクト フェーズ1〜3完了状態総点検（チャット
+記録、2026-08-13）
+
+#### 内容
+`src/market/market_pulse/backfill_tech_pulse.py`に`Fred(api_key=
+FRED_API_KEY).get_series("VXNCLS", ...)`の直接呼び出しが現存している
+（`[[MACRODATA-LAYER-CONSTRUCTION-1]]`着手順序6-2で本体切替済みの
+QQQ/SPY部分とは別関数）。この状態は`[[MACRODATA-LAYER-
+CONSTRUCTION-1]]`本文中の一文としてのみ記録されており、専用IDでの
+正式追跡がなかった。
+
+#### 着手条件
+なし。一過性ツールのため優先度低のまま次回低優先度課題群まとめ時。
+
+---
+
 ### [MARKETDATA-CWAN-FROZEN-DATA-SUSPECT-1] CWANのyfinance日次データが1日分・出来高0のフリーズ状態で取得される
 **優先度:** 低（監視銘柄1件のみ・実害は限定的、`daily_price_validation`が
 既に警告フラグ付きで検知・保存継続しており実害顕在化はしていない）
@@ -3220,6 +3264,27 @@ Yahoo Finance自体が2026-07-13〜07-17の5件しか返さず、`period="5d"`�
 #### 着手条件
 なし。優先度中だが実害は現時点でゼロと確認済みのため、次回同種事象の
 再確認時に着手判断する。
+
+---
+
+### [MARKETDATA-COLLECT-ASSET-FLOW-UNTRACKED-1] collect_and_send.py::collect_asset_flow()のSHV等6資産が未切替のまま、BACKLOG未登録だった
+**優先度:** 低〜中（実害未評価、まず記録・追跡対象化が先決）
+**分類:** 追跡漏れ / 未切替箇所
+**登録日:** 2026-08-13
+**発見:** 新DB構築プロジェクト フェーズ1〜3完了状態総点検（チャット
+記録、2026-08-13）
+
+#### 内容
+`[[MARKETDATA-LAYER-CONSTRUCTION-1]]`着手順序4-6実装時（2026-08-11）に
+コード内コメントとして記録されていたが、BACKLOG.md本体には専用
+エントリが存在しなかった。`SHV`がmarket_dataの`INDEX_ETF_COMMODITY_
+SYMBOLS`に未収録のため、`collect_asset_flow()`は`_fetch_hist_legacy()`
+（yfinance直接呼び出し）を使い続けている。`DGS3MO`のみFRED経由に
+切替済みで、資産フロー可視化7資産中6資産（SHV/GLD/TLT/LQD/HYG/SPY）が
+直接API呼び出しのまま。
+
+#### 着手条件
+なし。SHVの`INDEX_ETF_COMMODITY_SYMBOLS`への追加要否判断から。
 
 ---
 
