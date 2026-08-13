@@ -26,6 +26,7 @@ from analyzer import StonksAnalyzer
 from valuation_fetcher import fetch_valuation
 from financial_trend_calculator import compute_vectors, load_all_normalized
 from common.sec_data import tickers
+from common.sec_data.reader import SECReader
 
 
 _OUTPUT_DIR = _REPO_ROOT / "docs" / "value-monitor" / "stonks-silo" / "data"
@@ -100,6 +101,7 @@ def run(tickers: list[str] | None = None) -> dict:
     print(f"対象: {len(target)} 銘柄  {target}")
 
     analyzer = StonksAnalyzer()
+    sec_reader = SECReader()
     results = {}
     errors = {}
 
@@ -127,10 +129,12 @@ def run(tickers: list[str] | None = None) -> dict:
             psr = val["market_cap"] / latest_rev if val["market_cap"] and latest_rev else None
             ev_sales = val["enterprise_value"] / latest_rev if val["enterprise_value"] and latest_rev else None
 
-            latest_bs = data["records"][data["years"][-1]]["bs"]
-            cash = (latest_bs.get("cash_and_equivalents") or 0) + (latest_bs.get("short_term_investments") or 0)
             total_debt = val["total_debt"] or 0
-            net_cash = cash - total_debt if (latest_bs.get("cash_and_equivalents") is not None) else None
+            # [[NETCASH-DUAL-CALC-1]]: 独自計算（cash+STI - yfinance totalDebt）を廃止し、
+            # TANUKI VALUATIONと同じSECReader.get_net_cash()（SEC XBRL・四半期
+            # フォールバック・セクターガードあり）に統一（2026-08-13）。
+            net_cash_data = sec_reader.get_net_cash(ticker, sector=val["sector"], industry=val["industry"])
+            net_cash = net_cash_data["net_cash"] if net_cash_data.get("available") else None
 
             result["valuation"] = {
                 "market_cap":       val["market_cap"],

@@ -49,27 +49,36 @@ class TestFetchValuationNormalCase:
         _patch_market_data(
             monkeypatch, vf,
             latest_price={"date": "2026-08-10", "close": 250.5},
-            attrs={"market_cap": 1_000_000_000, "enterprise_value": 1_050_000_000, "total_debt": 500_000_000},
+            attrs={
+                "market_cap": 1_000_000_000, "enterprise_value": 1_050_000_000, "total_debt": 500_000_000,
+                "sector": "Technology", "industry": "Software",
+            },
         )
         result = vf.fetch_valuation("XYZ")
         assert result["current_price"] == 250.5
         assert result["market_cap"] == 1_000_000_000
         assert result["enterprise_value"] == 1_050_000_000
         assert result["total_debt"] == 500_000_000
+        assert result["sector"] == "Technology"
+        assert result["industry"] == "Software"
         assert result["error"] is None
         assert result["fetched_at"] is not None
 
-    def test_return_keys_unchanged_from_legacy_shape(self, vf, monkeypatch):
-        """戻り値のキー名・個数が旧yfinance版と同一であること
-        （pipeline.py側のval["..."]アクセスを壊さない）"""
+    def test_return_keys_include_sector_industry_for_netcash_dual_calc(self, vf, monkeypatch):
+        """戻り値のキーは旧yfinance版のmarket_cap/current_price/
+        enterprise_value/total_debt/fetched_at/errorに加え、
+        [[NETCASH-DUAL-CALC-1]]でSECReader.get_net_cash()のセクター
+        ガード引数用に追加したsector/industryを含む
+        （pipeline.py側のval["..."]アクセスを壊さない範囲での拡張）"""
         _patch_market_data(
             monkeypatch, vf,
             latest_price={"date": "2026-08-10", "close": 100.0},
-            attrs={"market_cap": 1.0, "enterprise_value": 2.0, "total_debt": 3.0},
+            attrs={"market_cap": 1.0, "enterprise_value": 2.0, "total_debt": 3.0, "sector": "Technology", "industry": "Software"},
         )
         result = vf.fetch_valuation("XYZ")
         assert set(result.keys()) == {
-            "market_cap", "current_price", "enterprise_value", "total_debt", "fetched_at", "error",
+            "market_cap", "current_price", "enterprise_value", "total_debt",
+            "sector", "industry", "fetched_at", "error",
         }
 
 
@@ -89,7 +98,10 @@ class TestFetchValuationNeutralDefaults:
 
     def test_missing_attributes_falls_back_to_none_for_all_attribute_fields(self, vf, monkeypatch):
         """attributes/未取得（reader.get_attributes()がNone）の場合、
-        market_cap/enterprise_value/total_debtが全てNoneに倒れる"""
+        market_cap/enterprise_value/total_debtが全てNoneに倒れる。
+        sector/industryはSECReader.get_net_cash()の_is_insurance_local()が
+        文字列比較を行う前提のため、Noneではなく"default"/""に倒れる
+        （[[NETCASH-DUAL-CALC-1]]）"""
         _patch_market_data(
             monkeypatch, vf,
             latest_price={"date": "2026-08-10", "close": 100.0}, attrs=None,
@@ -99,6 +111,8 @@ class TestFetchValuationNeutralDefaults:
         assert result["enterprise_value"] is None
         assert result["total_debt"] is None
         assert result["current_price"] == 100.0
+        assert result["sector"] == "default"
+        assert result["industry"] == ""
         assert result["error"] is None
 
     def test_both_missing_all_fields_none_no_error(self, vf, monkeypatch):
@@ -108,6 +122,8 @@ class TestFetchValuationNeutralDefaults:
         assert result["current_price"] is None
         assert result["enterprise_value"] is None
         assert result["total_debt"] is None
+        assert result["sector"] == "default"
+        assert result["industry"] == ""
         assert result["error"] is None
 
     def test_market_data_module_unavailable_sets_error(self, vf, monkeypatch):
@@ -119,6 +135,8 @@ class TestFetchValuationNeutralDefaults:
         assert result["current_price"] is None
         assert result["enterprise_value"] is None
         assert result["total_debt"] is None
+        assert result["sector"] == "default"
+        assert result["industry"] == ""
         assert result["error"] is not None
 
     def test_unexpected_exception_sets_error_and_neutral_defaults(self, vf, monkeypatch):
@@ -130,3 +148,5 @@ class TestFetchValuationNeutralDefaults:
         assert result["error"] == "simulated failure"
         assert result["market_cap"] is None
         assert result["current_price"] is None
+        assert result["sector"] == "default"
+        assert result["industry"] == ""
