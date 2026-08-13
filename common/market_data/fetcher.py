@@ -92,6 +92,11 @@ INDEX_ETF_COMMODITY_SYMBOLS: List[str] = [
     # fetch_rsp_spy_divergence()〈sentiment_scoreのrsp_spy_divergence
     # 10.0%〉の算出に必須、2026-08-11追加。SPYは既収録）
     "RSP",
+    # ETF（Market Pulse: collect_and_send.py::collect_asset_flow()、
+    # [[MARKETDATA-COLLECT-ASSET-FLOW-UNTRACKED-1]]で判明した未収録分。
+    # SHV（超短期国債ETF）は資産フロー可視化7資産中の1つで唯一未収録
+    # だったため_fetch_hist_legacy()の対象として残存していた、2026-08-13追加）
+    "SHV",
 ]
 
 

@@ -3,7 +3,6 @@ import sys
 import math
 import urllib.request
 import feedparser
-import yfinance as yf
 import smtplib
 from email.mime.text import MIMEText
 from datetime import datetime, timezone, timedelta
@@ -120,21 +119,6 @@ def _is_nan(x):
         return math.isnan(x)
     except TypeError:
         return False
-
-
-def _fetch_hist_legacy(ticker, period="5d"):
-    """yfinance直接呼び出し版（旧fetch_hist()、[[MARKETDATA-LAYER-
-    CONSTRUCTION-1]]着手順序4-6切替の対象外）。collect_asset_flow()の
-    一部ティッカー（SHV等）が今回の投資調査スコープ外でmarket_data未収録
-    のため、collect_asset_flow()専用のフォールバックとして維持する
-    （別途SHV等の追加要否を判断してから切替を検討する）。
-    """
-    try:
-        t = yf.Ticker(ticker)
-        hist = t.history(period=period)
-        return hist if not hist.empty else None
-    except Exception:
-        return None
 
 
 def fetch_recent_records(ticker, count=2, days=5):
@@ -1253,14 +1237,15 @@ def collect_asset_flow():
     資産クラス間資金フロービジュアライザー用データ収集
     並び順（安全→リスク）: 超短期国債→短期国債→金→長期国債→投資適格社債→HY社債→株式
     short_bond（短期国債）のみFRED API経由（fetch_fred_short_bond参照、MP-IRX-FRED-1）。
-    他6資産はyfinance経由のまま。
+    他6資産はcommon.market_data.reader経由（fetch_recent_records()、VIX/
+    S&P500等の主要指標で既に使われている既存ヘルパーを再利用）。
 
-    [[MARKETDATA-LAYER-CONSTRUCTION-1]]着手順序4-6のスコープ外（2026-08-11
-    実装時に発見）: SHV（超短期国債ETF）がmarket_dataの現行カバレッジ
-    （INDEX_ETF_COMMODITY_SYMBOLS）に未収録のため、本関数は_fetch_hist_
-    legacy()（旧fetch_hist()のyfinance直接呼び出し）を使い続ける。SHV
-    追加要否は別途判断が必要（登録するか判断するまでは全6資産を
-    legacy経路に統一し、資産ごとに取得経路が食い違う状態を避ける）。
+    [[MARKETDATA-COLLECT-ASSET-FLOW-UNTRACKED-1]]の切替（2026-08-13）:
+    SHV（超短期国債ETF）がmarket_dataの現行カバレッジ（INDEX_ETF_
+    COMMODITY_SYMBOLS）に未収録のため本関数は_fetch_hist_legacy()を
+    使い続けていたが、SHVを同シンボルへ追加・バックフィル（daily/には
+    2021-01-04〜の全期間、他資産と同じ1,408件保存済み）した上で6資産
+    全てをreader経由に切替。
     """
     ASSETS = [
         {"key": "ultra_short", "label": "超短期国債", "ticker": "SHV",     "desc": "1-3ヶ月T-Bill ETF"},
@@ -1277,18 +1262,17 @@ def collect_asset_flow():
             result[a["key"]] = fetch_fred_short_bond(a)
             continue
         try:
-            hist = _fetch_hist_legacy(a["ticker"], period="5d")
-            if (hist is None or len(hist) < 2
-                    or _is_nan(hist["Close"].iloc[-1]) or _is_nan(hist["Close"].iloc[-2])):
-                reason = "hist取得失敗（空またはAPI例外）" if hist is None else (
-                    f"データ行数不足（{len(hist)}行）" if len(hist) < 2 else "Close値にNaN混入")
+            records = fetch_recent_records(a["ticker"])
+            if (records is None or records[-1].get("close") is None or records[-2].get("close") is None
+                    or _is_nan(records[-1]["close"]) or _is_nan(records[-2]["close"])):
+                reason = "取得失敗（データ不足またはmarket_data未import）" if records is None else "Close値にNone/NaN混入"
                 print(f"[WARN] asset_flow {a['label']}({a['ticker']}): 取得失敗 - {reason}")
                 result[a["key"]] = None
                 continue
-            latest = float(hist["Close"].iloc[-1])
-            prev   = float(hist["Close"].iloc[-2])
+            latest = records[-1]["close"]
+            prev   = records[-2]["close"]
             chg_pct = (latest - prev) / prev * 100 if prev > 0 else 0
-            date_str = hist.index[-1].astimezone(JST).strftime("%Y-%m-%d")
+            date_str = records[-1]["date"]
             result[a["key"]] = {
                 "label":    a["label"],
                 "ticker":   a["ticker"],
