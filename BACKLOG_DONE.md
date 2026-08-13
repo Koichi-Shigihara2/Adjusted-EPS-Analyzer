@@ -276,6 +276,47 @@ passed / 2 known-failed`（`test_iv_formula.py` MSFT/NVDA、
 
 ---
 
+### ✅ [FRED-HYSPREAD-TRIPLE-FETCH-1] FRED HYスプレッドの3箇所独立取得（クロスサブシステム）
+**状態:** 完了（`[[MACRODATA-LAYER-CONSTRUCTION-1]]`の実装により解消済み、
+BACKLOG登録の追跡漏れをクローズ）
+**優先度:** 中
+**分類:** 効率化 / 重複取得 / MACRO PULSE / Market Pulse
+**登録日:** 2026-07-23
+**完了日:** 2026-08-13（発見は`[[MACRODATA-LAYER-CONSTRUCTION-1]]`実装時
+〈2026-08-12〉、クローズ処理は重複計算パターン棚卸し調査〈チャット記録、
+2026-08-13〉）
+**発見:** `TO_BE.md`⑮群・`FIELD_DEFINITIONS.md`フェーズ10（AS-IS-194/199/371）
+
+#### 内容
+既知だったMACRO PULSE内部2箇所（events.csv用・流動性カード用）に加え、
+Market Pulseの`buy_checklist`判定用取得が3箇所目として完全に独立して
+いた。3箇所とも約40分差で連続的に同一FRED系列`BAMLH0A0HYM2`を独立
+取得しており、1回のfetchで済む構造が3回に分散していた。
+
+#### 対応方針（登録時点）
+`INPUT_DATA_TOBE.md`が設計したFRED統合層（`common/macro_data/`）経由の
+取得に統合する。取得は1回に統合しつつ、加工・表示は各サブシステム側で
+個別に行う設計とする。
+
+#### クローズ経緯（2026-08-13、重複計算パターン棚卸し調査での発見）
+`[[NETCASH-DUAL-CALC-1]]`等3件の実装完了を受けた重複計算パターン11件の
+棚卸し調査で、本項目がBACKLOG.mdに未クローズのまま残存していることを
+発見した。実コードを確認した結果、対応方針通り`[[MACRODATA-LAYER-
+CONSTRUCTION-1]]`（2026-08-12実装）により**既に完全解消済み**と判明:
+- `05_main.py`の3箇所（`fetch_event_row()`・`get_financial_context()`・
+  `update_liquidity_csv()`）は全て`fred_latest()`（`common.macro_data.
+  reader`経由）に統一済み
+- `collect_and_send.py::fetch_hy_spread_from_fred()`も`_mdata_get_series()`
+  （同reader経由）に統一済み
+- 両ファイルへの`Fred(`直接呼び出しはコメント内のみで実コードは0件
+
+`[[MACRODATA-LAYER-CONSTRUCTION-1]]`実装時（2026-08-12）に本項目の
+クローズが漏れていた（`net_cash`/`net_income`/`rule40`と同型の「実装は
+完了したがBACKLOG追跡が追いついていない」パターン）。実装コード変更は
+今回行っていない（記録のみ）。
+
+---
+
 ## 2026-08-12（完了）
 
 ### ✅ [MACRODATA-FTSD-MISSING-FROM-INVENTORY-1] FTSD（WTREGENフォールバック先）がINPUT_DATA_TOBE.mdの24系列台帳（INPUT-A-024〜047）に含まれていない

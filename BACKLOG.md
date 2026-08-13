@@ -5892,29 +5892,6 @@ generated_at`より1日古い値になりうる。`catalyst.py`の同種の`date
 
 ---
 
-### [FRED-HYSPREAD-TRIPLE-FETCH-1] FRED HYスプレッドの3箇所独立取得（クロスサブシステム）
-**優先度:** 中
-**分類:** 効率化 / 重複取得 / MACRO PULSE / Market Pulse
-**登録日:** 2026-07-23
-**発見:** `TO_BE.md`⑮群・`FIELD_DEFINITIONS.md`フェーズ10（AS-IS-194/199/371）
-
-#### 内容
-既知だったMACRO PULSE内部2箇所（events.csv用・流動性カード用）に加え、
-Market Pulseの`buy_checklist`判定用取得が3箇所目として完全に独立している
-ことを確認した。3箇所とも約40分差で連続的に同一FRED系列
-`BAMLH0A0HYM2`を独立取得しており、1回のfetchで済む構造が3回に分散
-している。
-
-#### 対応方針
-`INPUT_DATA_TOBE.md`が設計したFRED統合層（`common/macro_data/`）経由の
-取得に統合する。取得は1回に統合しつつ、加工・表示は各サブシステム側で
-個別に行う設計とする。
-
-#### 着手条件
-なし
-
----
-
 ### [FEARGREED-DUPKEY-BUG-1] fear_greed.previous_close/one_week_agoの重複キーバグ
 **優先度:** 中
 **分類:** バグ / Market Pulse
@@ -6497,10 +6474,25 @@ STONKS SILO（AS-IS-162/163）はマージン（OCF or NI÷Revenue）の直近2�
 
 ---
 
-### [SP500-GSPC-MULTI-FETCH-1] S&P500/^GSPCの複数取得経路（クロスシステム+Market Pulse内4重取得）
-**優先度:** 中
+### [SP500-GSPC-MULTI-FETCH-1] S&P500/^GSPCの複数取得経路（クロスシステム+Market Pulse内4重取得、外部APIコストの実害は解消済み）
+**優先度:** 低（2026-08-13、中から引き下げ。理由は下記「2026-08-13更新」参照）
 **分類:** 効率化 / 重複取得 / MACRO PULSE / Market Pulse
 **登録日:** 2026-07-23
+**更新日:** 2026-08-13（重複計算パターン棚卸し調査〈チャット記録〉で
+実コードを再確認。`collect_and_send.py`の`^GSPC`参照は現在
+`_get_sp500_ma_deviation()`内3箇所（`_md_get_ma_deviation()`×2・
+`_md_get_price_series()`×1）＋`fetch_recent_records()`呼び出し3箇所
+（主要9銘柄ブロック・NYSE Composite divergence用・大型対小型比用）の
+計6箇所に整理されているが、いずれも`common.market_data.reader`経由の
+ローカルファイル読み取りに統一済み（`[[MARKETDATA-LAYER-
+CONSTRUCTION-1]]`実装済み）。**外部API直接呼び出しは0件になっており、
+当初の実害（外部APIコストの無駄な重複）は既に消滅している。**
+一方、対応方針が挙げていた「Market Pulse内部の複数箇所を1回の取得
+結果を使い回す設計に統合する」というコードレベルの集約リファクタリング
+自体は未実施のまま（呼び出し箇所は依然として独立）。実装しても実害
+削減効果はほぼゼロ（ローカルファイル読み取りの重複コストは無視できる
+水準）で、コード整理としての価値のみのため優先度を「中」から「低」へ
+引き下げる）
 **発見:** `FIELD_DEFINITIONS.md`フェーズ1・フェーズ10（AS-IS-190/312）・`CONCEPT_PARAMETER_VARIATIONS.md`軸2概念5
 
 #### 内容
@@ -6510,11 +6502,15 @@ MACRO PULSE（FRED `SP500`優先→stooqフォールバック）とMarket Pulse
 独立にyfinance取得されている（主要9銘柄ブロック・NYSE Composite
 divergence用・大型対小型比用・`sentiment.sub_scores.sp500_ma_dev`及び
 両checklistのMA200判定用）。いずれもキャッシュ・再利用されていない。
+（登録時点＝yfinance直接呼び出し時代の記述。2026-08-13時点の実コード
+状況は上記「更新日」参照）
 
 #### 対応方針
-Market Pulse内部の4箇所はまず1回の取得結果を使い回す設計に統合する
-（低コストで対応可能）。MACRO PULSE・Market Pulse間の統合は
-`INPUT_DATA_TOBE.md`のyfinance統合層設計に委ねる。
+Market Pulse内部の複数箇所はまず1回の取得結果を使い回す設計に統合する
+（低コストで対応可能。ただし2026-08-13時点で外部APIコストの実害は
+解消済みのため、着手はコード整理目的の優先度低タスクとして扱う）。
+MACRO PULSE・Market Pulse間の統合は`INPUT_DATA_TOBE.md`のyfinance
+統合層設計に委ねる（`[[MARKETDATA-LAYER-CONSTRUCTION-1]]`で実施済み）。
 
 #### 着手条件
 なし
