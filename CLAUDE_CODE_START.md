@@ -1,5 +1,22 @@
 # Claude Code 作業開始テンプレート
 
+最終更新: 2026-08-13（「次セッションの一次データ層プロジェクト着手順序」節が
+陳腐化していたのを是正。`[[MACRODATA-LAYER-CONSTRUCTION-1]]`は前回の
+本ファイル更新（直後の2026-08-12エントリ「次のアクションは実装設計に
+変更」）の後、同日中に実装が完了していた：`fetcher.py`/`reader.py`実装・
+`.github/workflows/Macro_Data_Update.yml`新設（定期取得ワークフロー稼働
+開始）・本番消費者2ファイル（`05_main.py`・`collect_and_send.py`）の
+`common.macro_data.reader`経由への全面切替・重複3系列（`BAMLH0A0HYM2`・
+`T10Y2Y`・`VIXCLS`）の`reader.get_latest()`一本化・`BAMLH0A0HYM2`の
+例外的履歴移行まで完了し、切替前後18項目の値突合で完全一致を確認済み
+（BACKLOG.md`[[MACRODATA-LAYER-CONSTRUCTION-1]]`の見出しも「完成（本番
+消費者切替完了）」）。「次のアクションは実装設計」という本ファイルの
+記述が実態と食い違ったまま残っていたため、下記「次セッションの一次
+データ層プロジェクト着手順序」節を実態に合わせて訂正し、次のアクションを
+残存する本線外の低〜中優先度課題群に更新した。訂正自体はユーザーからの
+陳腐化発見依頼による。詳細はBACKLOG.md`[[MACRODATA-LAYER-
+CONSTRUCTION-1]]`参照。実装コード変更なし）
+
 最終更新: 2026-08-12（セッション終了時ブラッシュアップ。「次セッションの
 一次データ層プロジェクト着手順序」節を、`common/market_data/`の残り
 4ファイル完了を反映して更新：着手順序5-1`audit.py`・5-2`score_verifier.py`
@@ -88,27 +105,38 @@ git pull --rebase origin kaihatsu
   残るため、`normalized/`は完全廃止できず、この3系統向けに存続する
   設計とする（詳細は`[[SECDATA-STORAGE-FRAGMENTATION-1]]`参照）。
 
-  **次セッションの一次データ層プロジェクト着手順序（2026-08-12更新）**：
+  **次セッションの一次データ層プロジェクト着手順序（2026-08-13訂正）**：
   `common/sec_data`統合（フェーズD）は実質完了。`common/market_data/`
   （yfinance統合層）は本番消費者8＋診断ツール2（`score_verifier.py`・
   `audit.py`）＋周辺ツール2（`extract_key_facts.py`・
   `backfill_tech_pulse.py`）の**全12ファイル切替完了、構築プロジェクト
-  自体が完了**。続けて`common/macro_data/`（FRED統合層）の新設事前調査
-  （FRED消費者洗い出し、`MIGRATION_CHECKLIST.md`Step1相当）を実施し、
-  投資調査完了（実装未着手）の状態。次のアクションは以下の順:
-  1. `[[MACRODATA-LAYER-CONSTRUCTION-1]]`の実装設計（`BAMLH0A0HYM2`・
-     `T10Y2Y`・`VIXCLS`の重複解消3系列を含む`fetcher.py`/`reader.py`設計、
-     着手前に`EXTRACTION_DESIGN_PRINCIPLES.md`の3原則を確認）
-  2. （本線外）新規発見4件のうち優先度中の2件の対応要否判断:
-     `[[MACRODATA-AS-IS-DUPLICATION-UNDERCOUNT-1]]`（ドキュメント訂正）・
-     `[[MACRODATA-SCHEDULED-SILENT-GAP-CSCICP-USALOL-1]]`（実データ確認
-     が着手条件）
+  自体が完了**。続く`common/macro_data/`（FRED統合層）も**本番消費者2
+  ファイル（`05_main.py`・`collect_and_send.py`）の`common.macro_data.
+  reader`経由への全面切替まで完了し、構築プロジェクト自体が完成**（
+  `fetcher.py`/`reader.py`実装・定期取得ワークフロー稼働・重複3系列
+  `BAMLH0A0HYM2`/`T10Y2Y`/`VIXCLS`の`reader.get_latest()`一本化・
+  `BAMLH0A0HYM2`の例外的履歴移行まで実施済み、切替前後18項目の値突合で
+  完全一致を確認、2026-08-12完了。詳細はBACKLOG.md`[[MACRODATA-LAYER-
+  CONSTRUCTION-1]]`「完成（本番消費者切替完了）」参照）。次のアクションは
+  以下の本線外課題群のみ（本線＝新DB構築プロジェクトのフェーズ1主要
+  コンポーネントは全て完了済み）:
+  1. 優先度中2件の対応要否判断: `[[MACRODATA-AS-IS-DUPLICATION-
+     UNDERCOUNT-1]]`（ドキュメント訂正）・`[[MACRODATA-SCHEDULED-
+     SILENT-GAP-CSCICP-USALOL-1]]`（実データ確認が着手条件）
+  2. macro_data実装過程で新規発見した低〜中優先度課題:
+     `[[MACRODATA-FULL-HISTORY-DAILY-REFETCH-1]]`（日次cronが`start`
+     未指定時に毎回全期間履歴を再取得する非効率設計）・
+     `[[MACRODATA-IMPORT-HISTORY-CONFIG-DRIFT-1]]`・
+     `[[MACRODATA-FTSD-SERIES-ID-INVALID-1]]`（`FTSD`がFRED API上に
+     実在せず取得失敗、旧実装でも同様のため回帰ではなく対応不要・
+     記録のみ）・`backfill_tech_pulse.py`の`VXNCLS`未切替（一過性
+     ツール扱いのため優先度低のまま残置）
+     （`[[MACRODATA-FTSD-MISSING-FROM-INVENTORY-1]]`は2026-08-12の
+     設計確定作業で解消・BACKLOG_DONE.mdへ移動済み）
   3. （本線外・過去セッションで蓄積した低優先度課題群一式）:
-     `[[MACRODATA-FTSD-MISSING-FROM-INVENTORY-1]]`・
-     `[[MACRODATA-IMPORT-HISTORY-CONFIG-DRIFT-1]]`・`[[MARKETDATA-CWAN-
-     FROZEN-DATA-SUSPECT-1]]`・`[[MARKETDATA-SP500-SCRAPE-INVALID-
-     TICKERS-1]]`・`[[MARKETDATA-VIX9D-DATA-GAP-1]]`・`[[STONKS-SILO-
-     CLI-TICKERS-SHADOW-1]]`・`[[NETCASH-DUAL-CALC-1]]`等
+     `[[MARKETDATA-CWAN-FROZEN-DATA-SUSPECT-1]]`・`[[MARKETDATA-SP500-
+     SCRAPE-INVALID-TICKERS-1]]`・`[[MARKETDATA-VIX9D-DATA-GAP-1]]`・
+     `[[STONKS-SILO-CLI-TICKERS-SHADOW-1]]`・`[[NETCASH-DUAL-CALC-1]]`等
 
   切替過程で発見した`daily/`層の`auto_adjust=False`（未調整終値）と
   旧実装`auto_adjust=True`（調整済み終値）の乖離は、当初「バグ」として
