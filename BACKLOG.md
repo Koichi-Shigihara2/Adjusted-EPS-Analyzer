@@ -5937,30 +5937,6 @@ Market Pulseの`buy_checklist`判定用取得が3箇所目として完全に独�
 
 ---
 
-### [RULE40-DEFINITION-MISMATCH-1] Rule of 40の定義相違（HypeCore vs STONKS SILO）とコメント矛盾
-**優先度:** 中
-**分類:** 命名・定義不整合 / HypeCore / STONKS SILO
-**登録日:** 2026-07-23
-**発見:** `FIELD_DEFINITIONS.md`フェーズ5（AS-IS-095/143）・`NAMING_CONVENTIONS.md`問題パターンB・`CONCEPT_PARAMETER_VARIATIONS.md`軸3概念8
-
-#### 内容
-HypeCoreの`rule40`（TTM売上YoY+四半期純利益率）とSTONKS SILOの
-`rule_of_40`（3年CAGR+営業利益率）は期間・利益率の定義がいずれも異なる。
-加えてSTONKS SILOの`DeficitQuality`データクラスの`rule_of_40`フィールド
-には「# 売上成長率 + 営業利益率」というコメントが付いているが、実装は
-単年成長率ではなく3年CAGRを使っており、コード内コメント自体が実装と
-矛盾している。`NAMING_CONVENTIONS.md`は規則2（期間接尾辞）に基づき
-`rule40_yoy_netmargin`/`rule40_cagr3y_opmargin`への改名を提言済み。
-
-#### 対応方針
-`NAMING_CONVENTIONS.md`が提言した命名規則（規則2）を適用する。STONKS SILO
-側のコメントも実装（3年CAGR）に合わせて修正する。
-
-#### 着手条件
-なし
-
----
-
 ### [SECDATA-STORAGE-FRAGMENTATION-1] common/sec_data内のraw/normalized/ttm3系統並存によるスキーマ分岐
 **優先度:** 中
 **分類:** アーキテクチャ / データ品質

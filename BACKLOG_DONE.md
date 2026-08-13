@@ -208,6 +208,74 @@ known-failed`（`test_iv_formula.py` MSFT/NVDA、`[[TEST-STALE-IV-1]]`
 
 ---
 
+### ✅ [RULE40-DEFINITION-MISMATCH-1] Rule of 40の定義相違（HypeCore vs STONKS SILO）とコメント矛盾
+**状態:** 完了
+**優先度:** 中
+**分類:** 命名・定義不整合 / HypeCore / STONKS SILO
+**登録日:** 2026-07-23
+**完了日:** 2026-08-13
+**発見:** `FIELD_DEFINITIONS.md`フェーズ5（AS-IS-095/143）・`NAMING_CONVENTIONS.md`問題パターンB・`CONCEPT_PARAMETER_VARIATIONS.md`軸3概念8
+
+#### 内容
+HypeCoreの`rule40`（TTM売上YoY+四半期純利益率）とSTONKS SILOの
+`rule_of_40`（3年CAGR+営業利益率）は期間・利益率の定義がいずれも異なる。
+加えてSTONKS SILOの`DeficitQuality`データクラスの`rule_of_40`フィールド
+には「# 売上成長率 + 営業利益率」というコメントが付いているが、実装は
+単年成長率ではなく3年CAGRを使っており、コード内コメント自体が実装と
+矛盾していた。
+
+#### 実装前の再確認（2026-08-13、着手前の差分シミュレーション）
+STONKS SILO対象25銘柄で突合した結果、22/25銘柄で両方値あり・うち5銘柄
+（IONQ/LITE/RCAT/S/SITM）で符号反転を確認し、両指標が実質的に別指標
+であることを再確認。加えて`FIELD_DEFINITIONS.md`のAS-IS-038調査で、
+**TANUKI VALUATION（`pipeline.py::_compute_tanuki_score()`）がHypeCoreの
+`{TICKER}_poc.json`から`rule40`を直接読み取り、SELL判定条件
+（`sell_funda`）とfunda加点スコアの直接の入力として使用している**ことを
+新たに発見。改名時はTANUKI VALUATION側の追従修正が必須と判明した。
+
+#### 対応内容
+`NAMING_CONVENTIONS.md`が提言した命名規則（規則2）を適用:
+- **HypeCore**: `hypecore.py`の誤称変数`op_margin`（実際は`NetIncome/
+  Revenue`）を`net_margin`へ改名。`rule40`カラム名・`fundamental_score`
+  集計・出力キーを`rule40_yoy_netmargin`へ改名（4箇所）。
+  `docs/value-monitor/hypecore/data/*_poc.json`103ファイルを`--all`実行
+  で再生成。`index.html`/`detail.html`のソース参照を追従修正（`data-col`
+  属性・内部JS変数名は内部エイリアスとして維持）
+- **TANUKI VALUATION（最重要）**: `pipeline.py::_compute_tanuki_score()`の
+  funda加点判定・`sell_funda`条件・`_generate_score_comment()`呼び出しを
+  新キーに追従。`hypecore_history/{TICKER}.json`自体の出力キーは
+  `"rule40"`のまま維持（累積履歴の新旧混在回避・`stock.html:632`依存を
+  踏まえた判断）
+- **STONKS SILO**: `analyzer.py`の`rule_of_40`→`rule40_cagr3y_opmargin`
+  改名、コメントを実装（3年CAGR）に一致させて修正、`index.html:1053`を
+  追従修正
+- **事前確認で発見した追加修正箇所**（当初スコープ外）:
+  `daily_pick.py`・`tanuki_score/index.html`（HypeCore poc.jsonを独立に
+  参照する別サブシステムTANUKI SCOREへの波及）、
+  `tests/test_pipeline_logic.py`（`_generate_score_comment()`のキーワード
+  引数・`sell_funda`回帰テストのモックpoc.jsonが新キー名前提でないと
+  機能しなくなるため修正）。`common/sec_data/reader.py`等の`op_margin`は
+  TANUKI VALUATIONのRPO計算（`OperatingIncome/Revenue`、正しい命名）で
+  無関係と確認し変更なし
+
+**検証**: `sell_funda`発火有無をTANUKI VALUATIONデータのある100銘柄で
+全数突合し**不一致0件**（現状`sell_funda=True`銘柄は切替前後とも0件）。
+funda加点スコアを103銘柄全数突合し**不一致0件**（+25pt=38/+15pt=43/
++0pt=22の分布で閾値判定の機能を確認）。旧キー`"rule40"`残存は全103
+poc.jsonで0件、リポジトリ全体grepで残存する`rule40`/`rule_of_40`は
+全て意図的に維持した内部エイリアスのみと確認。APGE 1銘柄はpoc.json
+再生成に失敗したが、`git log`で過去に一度も生成されたことがないファイル
+であり、`git stash`での切替前コード実行でも同一エラー（`'rev_yoy'`
+KeyError、rule40とは無関係の財務データ0行によるもの）が再現したため
+**本変更と無関係の既存バグ**と切り分け済み。STONKS SILO 25銘柄は
+`overall_score`/`overall_verdict`完全一致（0件変化）。pytest`781
+passed / 2 known-failed`（`test_iv_formula.py` MSFT/NVDA、
+`[[TEST-STALE-IV-1]]`既知バグ）で回帰なし。
+
+コミット`9c7308f53`。
+
+---
+
 ## 2026-08-12（完了）
 
 ### ✅ [MACRODATA-FTSD-MISSING-FROM-INVENTORY-1] FTSD（WTREGENフォールバック先）がINPUT_DATA_TOBE.mdの24系列台帳（INPUT-A-024〜047）に含まれていない
