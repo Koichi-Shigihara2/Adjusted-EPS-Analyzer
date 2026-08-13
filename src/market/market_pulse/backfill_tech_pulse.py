@@ -8,7 +8,10 @@ market_data.json の tech_pulse が欠落しているエントリを補完する
              （daily/{SYMBOL}.json、元データはfetcher.pyがyfinance経由で
              保存。MARKETDATA-LAYER-CONSTRUCTION-1着手順序6-2で
              yfinance直接呼び出しから切替、2026-08-12）
-  - VXN: FRED API VXNCLS（環境変数 FRED_API_KEY が必要）
+  - VXN: common.macro_data.reader.get_series("VXNCLS")
+         （series/VXNCLS.json、元データはfetcher.pyがFRED経由で保存。
+         MACRODATA-BACKFILL-TECH-PULSE-VXNCLS-UNTRACKED-1でfredapi
+         直接呼び出しから切替、2026-08-13）
   - F&G: market_data.json の fear_greed.score を再利用
          （feargreedchart.com は過去データを提供しないため）
 
@@ -27,8 +30,6 @@ import argparse
 from datetime import datetime, date, timezone, timedelta
 from typing import Any, Dict, List
 
-import pandas as pd
-
 # collect_and_send から divergence 計算の 3 関数をインポート
 # （モジュールレベルの sys.exit を避けるため env チェックは __main__ に移動済み）
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -44,8 +45,6 @@ REPO_ROOT = os.path.dirname(
 JSON_PATH = os.path.join(
     REPO_ROOT, "docs", "market-monitor", "market-pulse", "data", "market_data.json"
 )
-
-FRED_API_KEY = os.getenv("FRED_API_KEY")
 
 # QQQ/SPYの全期間データ（daily/には約1,407件保存済み、2026-08時点）を一度に
 # 取得できるよう十分大きい値を指定する（本来必要なのは各エントリのtarget
@@ -78,6 +77,32 @@ if not HAS_MARKET_DATA:
             sys.path.insert(0, _github_workspace)
         from common.market_data.reader import get_price_series_as_of as _md_get_price_series_as_of
         HAS_MARKET_DATA = True
+    except Exception:
+        pass
+
+# common/macro_data - MACRODATA-BACKFILL-TECH-PULSE-VXNCLS-UNTRACKED-1:
+# VXNCLSのfredapi直接呼び出し（都度Fred()生成）をcommon.macro_data.reader
+# 経由に切替（2026-08-13）。collect_and_send.py・05_main.pyと同じ
+# HAS_MACRO_DATAガード・二段構えsys.path解決パターンを踏襲する
+# （REPO_ROOTは上のmarket_dataブロックで既に計算済みのため流用）。
+HAS_MACRO_DATA = False
+_mdata_get_series = None
+
+try:
+    if REPO_ROOT not in sys.path:
+        sys.path.insert(0, REPO_ROOT)
+    from common.macro_data.reader import get_series as _mdata_get_series
+    HAS_MACRO_DATA = True
+except Exception:
+    pass
+
+if not HAS_MACRO_DATA:
+    try:
+        _github_workspace = os.environ.get("GITHUB_WORKSPACE", "")
+        if _github_workspace and _github_workspace not in sys.path:
+            sys.path.insert(0, _github_workspace)
+        from common.macro_data.reader import get_series as _mdata_get_series
+        HAS_MACRO_DATA = True
     except Exception:
         pass
 
@@ -134,14 +159,22 @@ def _qqq_components(target: date, qqq_series: List[Dict[str, Any]], spy_series: 
         return None, None
 
 
-def _vxn_components(target: date, vxn_series: pd.Series):
-    """指定日時点の vxn_latest / vxn_vs_ma50 を返す"""
+def _vxn_components(target: date, vxn_series: List[Dict[str, Any]]):
+    """指定日時点の vxn_latest / vxn_vs_ma50 を返す。
+
+    vxn_series は common.macro_data.reader.get_series("VXNCLS") 由来の
+    観測日（as_of）昇順レコードリスト（MACRODATA-BACKFILL-TECH-PULSE-
+    VXNCLS-UNTRACKED-1、2026-08-13切替。main()で1回だけ取得し全エントリで
+    使い回す）。計算式自体は旧fredapi実装から変更なし。
+    """
     try:
-        vxn_sub = vxn_series[vxn_series.index <= target]
+        target_str = target.isoformat()
+        vxn_sub = [r for r in vxn_series if r["as_of"] <= target_str]
         if len(vxn_sub) < 50:
             return None, None
-        vxn_latest = round(float(vxn_sub.iloc[-1]), 2)
-        ma50 = float(vxn_sub.iloc[-50:].mean())
+        vxn_latest = round(float(vxn_sub[-1]["value"]), 2)
+        last50 = vxn_sub[-50:]
+        ma50 = sum(float(r["value"]) for r in last50) / 50
         vxn_vs_ma50 = round((vxn_latest / ma50 - 1) * 100, 2)
         return vxn_latest, vxn_vs_ma50
     except Exception as e:
@@ -256,20 +289,23 @@ def main():
         print("[ERROR] QQQ データ取得失敗")
         sys.exit(1)
 
-    # ── FRED VXN 取得 ───────────────────────────────────────────────
+    # ── common.macro_data.reader からVXN取得 ────────────────────────
+    # MACRODATA-BACKFILL-TECH-PULSE-VXNCLS-UNTRACKED-1: fredapi直接呼び出しを
+    # reader.get_series()経由に切替（2026-08-13）。series/VXNCLS.jsonは
+    # 全期間分すでに保存済みの静的データのため、QQQ/SPYと同じ「実行時点で
+    # 1回だけ取得し全エントリで使い回す」設計思想のまま、start省略で全期間
+    # 取得する。
+    print("[INFO] VXN 履歴取得中（common.macro_data.reader経由）...")
     vxn_series = None
-    if FRED_API_KEY:
+    if not HAS_MACRO_DATA:
+        print("[WARN] common.macro_data.reader の import に失敗しました。VXN はスキップします。")
+    else:
         try:
-            from fredapi import Fred
-            start = (datetime.now() - timedelta(days=400)).strftime("%Y-%m-%d")
-            vxn_raw = Fred(api_key=FRED_API_KEY).get_series("VXNCLS", observation_start=start).dropna()
-            vxn_series = vxn_raw.copy()
-            vxn_series.index = pd.to_datetime(vxn_series.index).normalize().date
+            vxn_series = [r for r in _mdata_get_series("VXNCLS") if r.get("value") is not None]
             print(f"[INFO] VXN データ取得完了: {len(vxn_series)} 件")
         except Exception as e:
             print(f"[WARN] VXN 取得失敗: {e}")
-    else:
-        print("[WARN] FRED_API_KEY 未設定。VXN はスキップします。")
+            vxn_series = None
 
     # ── 各エントリを補完 ────────────────────────────────────────────
     filled = 0
