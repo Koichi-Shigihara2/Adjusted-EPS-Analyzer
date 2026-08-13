@@ -176,7 +176,7 @@ class TestFcfComment:
         """直近FCFがマイナス → Comment に「FCFマイナス」を含む（投資フェーズ判定）"""
         pipe = _make_pipe(tmp_path)
         comment = pipe._generate_score_comment(
-            "BUY", upside=50.0, rev_yoy=20.0, rule40=40.0,
+            "BUY", upside=50.0, rev_yoy=20.0, rule40_yoy_netmargin=40.0,
             fcf_base=1_000_000.0, funda=75, fcf_latest=-50_000.0,
         )
         assert "FCFマイナス" in comment
@@ -185,7 +185,7 @@ class TestFcfComment:
         """直近FCFがプラス かつ fcf_base もプラス → Comment に「FCF黒字」を含む"""
         pipe = _make_pipe(tmp_path)
         comment = pipe._generate_score_comment(
-            "BUY", upside=50.0, rev_yoy=20.0, rule40=40.0,
+            "BUY", upside=50.0, rev_yoy=20.0, rule40_yoy_netmargin=40.0,
             fcf_base=1_000_000.0, funda=75, fcf_latest=50_000.0,
         )
         assert "FCF黒字" in comment
@@ -1312,12 +1312,12 @@ class TestDcfReliabilityLowRounding:
         pipe = _make_pipe(tmp_path)
         _write_stonks_json(tmp_path, {})
         # SELLになる条件: 25 <= funda < 50 かつ sell_funda=True
-        # sell_funda = rev_yoy<0 and rule40<20 and fcf_est < fcf_base*0.8
-        # funda: rev_yoy=-5 → +0, rule40=15 → +0, eps_yoy=None → +0, fcf_base>0 → +25 = 25
+        # sell_funda = rev_yoy<0 and rule40_yoy_netmargin<20 and fcf_est < fcf_base*0.8
+        # funda: rev_yoy=-5 → +0, rule40_yoy_netmargin=15 → +0, eps_yoy=None → +0, fcf_base>0 → +25 = 25
         poc_dir = tmp_path / "docs" / "value-monitor" / "hypecore" / "data"
         poc_dir.mkdir(parents=True, exist_ok=True)
         (poc_dir / "SELLTEST_poc.json").write_text(json.dumps({
-            "monthly": [{"stage": 2, "rev_yoy": -5.0, "rule40": 15.0}]
+            "monthly": [{"stage": 2, "rev_yoy": -5.0, "rule40_yoy_netmargin": 15.0}]
         }), encoding="utf-8")
         valuation = {
             "upside_percent": 30.0,
@@ -1439,7 +1439,7 @@ class TestDcfReliabilityPolicyB:
         poc_dir = tmp_path / "docs" / "value-monitor" / "hypecore" / "data"
         poc_dir.mkdir(parents=True, exist_ok=True)
         (poc_dir / "POLICYB_SELL_poc.json").write_text(json.dumps({
-            "monthly": [{"stage": 2, "rev_yoy": -5.0, "rule40": 15.0}]
+            "monthly": [{"stage": 2, "rev_yoy": -5.0, "rule40_yoy_netmargin": 15.0}]
         }), encoding="utf-8")
         valuation = {
             "upside_percent": 30.0,

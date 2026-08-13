@@ -309,7 +309,7 @@ function toggleNarrative(){
 function buildVsMetrics(d,lc){
   const ma=d.ma200_dev??0,rsi=d.rsi??50,fp=d.from_peak??0;
   const fwdPe=d.forward_pe,peg=d.peg_ratio,psr=d.psr;
-  const revYoy=d.rev_yoy,rule40=d.rule40,fcfYield=d.fcf_yield;
+  const revYoy=d.rev_yoy,rule40=d.rule40_yoy_netmargin,fcfYield=d.fcf_yield;
   const epsSurp=d.eps_surprise,upRate=d.analyst_upgrade_rate,volSurge=d.vol_surge;
   const pivRatio=d.price_iv_ratio;
   const f=(v,dec=1,u='%')=>v!=null?`${v>=0&&u==='%'?'+':''}${v.toFixed(dec)}${u}`:'—';

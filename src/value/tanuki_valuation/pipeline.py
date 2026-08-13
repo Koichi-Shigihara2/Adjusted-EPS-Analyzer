@@ -511,7 +511,9 @@ class TanukiValuationPipeline:
         fcf_history = valuation.get("fcf_history", [])
         fcf_latest = fcf_history[-1].get("fcf") if fcf_history else None
 
-        rev_yoy = rule40 = stage = ma200_dev = None
+        # [[RULE40-DEFINITION-MISMATCH-1]]: HypeCore側のpoc.jsonキーが
+        # rule40 → rule40_yoy_netmarginへ改名されたことに追従（2026-08-13）。
+        rev_yoy = rule40_yoy_netmargin = stage = ma200_dev = None
         poc_path = os.path.join(
             self.repo_root, "docs", "value-monitor", "hypecore", "data", f"{ticker}_poc.json"
         )
@@ -522,7 +524,7 @@ class TanukiValuationPipeline:
                 monthly = poc.get("monthly") or []
                 last = monthly[-1] if monthly else {}
                 rev_yoy   = last.get("rev_yoy")
-                rule40    = last.get("rule40")
+                rule40_yoy_netmargin = last.get("rule40_yoy_netmargin")
                 stage     = last.get("stage")
                 ma200_dev = last.get("ma200_dev")
             except Exception:
@@ -537,7 +539,7 @@ class TanukiValuationPipeline:
         # calcFunda (JS移植)
         funda = 0
         funda += 25 if rev_yoy is not None and rev_yoy > 20 else 15 if rev_yoy is not None and rev_yoy >= 0 else 0
-        funda += 25 if rule40  is not None and rule40  > 40 else 15 if rule40  is not None and rule40  >= 20 else 0
+        funda += 25 if rule40_yoy_netmargin is not None and rule40_yoy_netmargin > 40 else 15 if rule40_yoy_netmargin is not None and rule40_yoy_netmargin >= 20 else 0
         funda += 25 if eps_yoy is not None and eps_yoy > 20 else 15 if eps_yoy is not None and eps_yoy >= 0 else 0
         funda += 25 if fcf_base is not None and fcf_base > 0 else 0
 
@@ -572,7 +574,7 @@ class TanukiValuationPipeline:
         fcf_est = valuation.get("fcf_estimation", {}).get("estimated_fcf")
         sell_funda = (
             rev_yoy is not None and rev_yoy < 0
-            and rule40 is not None and rule40 < 20
+            and rule40_yoy_netmargin is not None and rule40_yoy_netmargin < 20
             and (fcf_base is not None and fcf_base < 0
                  or (fcf_est is not None and fcf_base is not None and fcf_est < fcf_base * 0.8))
         )
@@ -619,7 +621,7 @@ class TanukiValuationPipeline:
         else:
             score = Classification.HOLD
 
-        comment = self._generate_score_comment(score, upside, rev_yoy, rule40, fcf_base, funda, fcf_latest)
+        comment = self._generate_score_comment(score, upside, rev_yoy, rule40_yoy_netmargin, fcf_base, funda, fcf_latest)
 
         # FCF-OUTLIER-PREROUNDING-LOSS-1: Policy A/B丸め処理は score/comment を
         # 単純に上書きし、丸め前の分類（元々BUY/TRIM/HOLD等のどれだったか）を
@@ -678,7 +680,7 @@ class TanukiValuationPipeline:
             "rounded_by_policy": _rounded_by_policy,
         }
 
-    def _generate_score_comment(self, score, upside, rev_yoy, rule40, fcf_base, funda, fcf_latest=None) -> str:
+    def _generate_score_comment(self, score, upside, rev_yoy, rule40_yoy_netmargin, fcf_base, funda, fcf_latest=None) -> str:
         """スコアに基づくルールベースコメント（30字程度の日本語）"""
         parts = []
         if score == Classification.GROWTH_PREMIUM:
@@ -3158,7 +3160,18 @@ class TanukiValuationPipeline:
                 "price": last.get("price"),
                 "price_iv_ratio": last.get("price_iv_ratio"),
                 "rev_yoy": last.get("rev_yoy"),
-                "rule40": last.get("rule40"),
+                # [[RULE40-DEFINITION-MISMATCH-1]]: 読み取り元（poc.json）の
+                # キーはrule40_yoy_netmarginへ改名されたため追従するが、
+                # hypecore_history/{TICKER}.json自体の出力キーは"rule40"の
+                # まま維持する（2026-08-13判断）。理由: 本ファイルは日付単位で
+                # 追記されていく累積履歴であり、過去に書き込み済みの全エントリを
+                # 遡って改名しない限りキー名が新旧で混在してしまう。かつ
+                # stock.html:632（`e.rule40`）が本ファイルを直接参照しており、
+                # 出力キー改名にはフロントエンド追従修正も必要になる。実害が
+                # ない（TANUKI VALUATION内部の表示専用フィールド、ARCH-DATA-1系
+                # の計算ロジックには使われない）ため、出力キーは変更しない
+                # 選択とした。
+                "rule40": last.get("rule40_yoy_netmargin"),
                 "ma200_dev": last.get("ma200_dev"),
                 "from_peak": last.get("from_peak"),
             }

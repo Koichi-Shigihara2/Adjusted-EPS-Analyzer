@@ -470,7 +470,7 @@ function renderDetailTable() {
 
     const lastMo  = hc?.monthly?.[hc.monthly.length - 1] ?? null;
     const revYoy  = lastMo?.rev_yoy    ?? null;
-    const rule40  = lastMo?.rule40     ?? null;
+    const rule40  = lastMo?.rule40_yoy_netmargin ?? null;
     const stage   = lastMo?.stage      ?? null;
     const rawUp   = tk?.upside_percent ?? null;
     const fcfBase = tk?.fcf_base?.base_fcf ?? null;

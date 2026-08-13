@@ -258,16 +258,21 @@ def fetch_quarterly_fundamentals(ticker: str) -> pd.DataFrame:
     rev_ttm       = rev.rolling(4).sum()
     rev_ttm_prior = rev_ttm.shift(4).replace(0, np.nan)
     rev_yoy       = (rev_ttm / rev_ttm_prior - 1) * 100
-    ni_yoy     = ni.pct_change(4) * 100 if not ni.empty else pd.Series(dtype=float)
-    op_margin  = (ni / rev.replace(0, np.nan) * 100) if (not ni.empty) else pd.Series(dtype=float)
-    rule40     = rev_yoy + op_margin if not op_margin.empty else pd.Series(dtype=float)
+    ni_yoy      = ni.pct_change(4) * 100 if not ni.empty else pd.Series(dtype=float)
+    # [[RULE40-DEFINITION-MISMATCH-1]]: 旧変数名"op_margin"はNetIncome/Revenue
+    # （純利益率）を計算しており誤称だったため、net_marginへ改名（2026-08-13）。
+    net_margin  = (ni / rev.replace(0, np.nan) * 100) if (not ni.empty) else pd.Series(dtype=float)
+    # rule40 → rule40_yoy_netmargin（TTM売上YoY＋単一四半期純利益率であることを
+    # 明示。NAMING_CONVENTIONS.md規則2、STONKS SILOのrule40_cagr3y_opmarginとの
+    # 定義相違を区別するための改名）。
+    rule40_yoy_netmargin = rev_yoy + net_margin if not net_margin.empty else pd.Series(dtype=float)
 
     result = pd.DataFrame({
-        "rev_yoy":   rev_yoy,
-        "ni_yoy":    ni_yoy,
-        "rule40":    rule40,
-        "ocf":       ocf,
-        "revenue":   rev,
+        "rev_yoy":              rev_yoy,
+        "ni_yoy":               ni_yoy,
+        "rule40_yoy_netmargin": rule40_yoy_netmargin,
+        "ocf":                  ocf,
+        "revenue":              rev,
     }).dropna(how="all")
 
     result.index = pd.to_datetime(result.index)
@@ -578,7 +583,7 @@ def compute_scores(ticker: str) -> pd.DataFrame:
 
     # 実体スコア（高いほど実体良好）
     fund_cols = []
-    for col in ["rev_yoy", "ni_yoy", "rule40", "fcf_yield"]:
+    for col in ["rev_yoy", "ni_yoy", "rule40_yoy_netmargin", "fcf_yield"]:
         if col in df.columns and not df[col].isna().all():
             fund_cols.append(z_score_series(df[col]))
     df["fundamental_score"] = pd.concat(fund_cols, axis=1).mean(axis=1) if fund_cols else np.nan
@@ -985,7 +990,7 @@ def run_poc(ticker: str = "PLTR") -> dict:
             # 財務
             "rev_yoy":            safe(row.get("rev_yoy")),
             "ni_yoy":             safe(row.get("ni_yoy")),
-            "rule40":             safe(row.get("rule40")),
+            "rule40_yoy_netmargin": safe(row.get("rule40_yoy_netmargin")),
             "fcf_yield":          safe(row.get("fcf_yield")),
             # バリュエーション（現時点値）
             "forward_pe":         safe(row.get("forward_pe")),

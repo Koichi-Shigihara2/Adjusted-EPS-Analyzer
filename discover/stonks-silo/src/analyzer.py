@@ -50,7 +50,10 @@ class DeficitQuality:
     score: Optional[float] = None             # 0-100 (高いほど「攻めの赤字」)
 
     # 追加指標
-    rule_of_40: Optional[float] = None        # 売上成長率 + 営業利益率
+    # [[RULE40-DEFINITION-MISMATCH-1]]: rule_of_40 → rule40_cagr3y_opmarginへ
+    # 改名（2026-08-13）。旧コメント「売上成長率」は実装（3年CAGR）と
+    # 食い違っていたため、実装に合わせて修正（NAMING_CONVENTIONS.md規則2）。
+    rule40_cagr3y_opmargin: Optional[float] = None  # 3年CAGR + 営業利益率
     mature_profit: Optional[float] = None     # 純利益 + R&D + SM
     sbc_adjusted_fcf: Optional[float] = None  # FCF - SBC
     sbc_ratio: Optional[float] = None         # SBC ÷ 売上
@@ -241,12 +244,12 @@ class StonksAnalyzer:
             net_income, cagr_3yr, rev_growth, rnd_ratio, sm_ratio, gross_margin
         )
 
-        # Rule of 40（売上成長率 + 営業利益率）
-        rule_of_40 = None
+        # Rule of 40（3年CAGR + 営業利益率）
+        rule40_cagr3y_opmargin = None
         if revenue_san and revenue_san > 0 and cagr_3yr is not None:
             operating_income = pl.get("operating_income")
             if operating_income is not None:
-                rule_of_40 = round(cagr_3yr + operating_income / revenue_san * 100, 1)
+                rule40_cagr3y_opmargin = round(cagr_3yr + operating_income / revenue_san * 100, 1)
 
         # 成熟想定利益（純利益 + R&D + SM）
         mature_profit = None
@@ -368,7 +371,7 @@ class StonksAnalyzer:
             verdict=verdict,
             verdict_reason=reason,
             score=score,
-            rule_of_40=rule_of_40,
+            rule40_cagr3y_opmargin=rule40_cagr3y_opmargin,
             mature_profit=mature_profit,
             mature_profit_note=mature_profit_note,
             sbc_adjusted_fcf=sbc_adjusted_fcf,

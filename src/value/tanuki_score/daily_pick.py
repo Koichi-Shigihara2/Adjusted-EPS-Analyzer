@@ -288,7 +288,10 @@ def build_data_package(stock, mkt):
             "substage_watch":         hc.get("substage_watch"),
             "substage_next":          hc.get("substage_next"),
             "rev_yoy":                hc.get("rev_yoy"),
-            "rule40":                 hc.get("rule40"),
+            # [[RULE40-DEFINITION-MISMATCH-1]]: 読み取り元（poc.json）のキーは
+            # rule40_yoy_netmarginへ改名（2026-08-13）。本パッケージ自体の
+            # 出力キー"rule40"はGrokプロンプト用の内部ラベルのため維持する。
+            "rule40":                 hc.get("rule40_yoy_netmargin"),
             "peg_ratio":              hc.get("peg_ratio"),
             "short_pct_float":        hc.get("short_pct_float"),
             "eps_surprise":           hc.get("eps_surprise"),
