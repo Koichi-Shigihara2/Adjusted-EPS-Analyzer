@@ -2,6 +2,54 @@
 
 ---
 
+## 2026-08-13（完了）
+
+### ✅ [MACRODATA-BACKFILL-TECH-PULSE-VXNCLS-UNTRACKED-1] backfill_tech_pulse.pyのVXNCLS取得が未切替のまま、BACKLOG本体に専用エントリがなかった
+**状態:** 完了
+**優先度:** 低（一過性ツール、`[[MACRODATA-LAYER-CONSTRUCTION-1]]`
+「本番消費者2ファイル」の射程外だが、FRED直接呼び出し完全排除という
+当初目標には未達だった）
+**分類:** 追跡漏れ / 未切替箇所
+**登録日:** 2026-08-13
+**完了日:** 2026-08-13
+**発見:** 新DB構築プロジェクト フェーズ1〜3完了状態総点検（チャット
+記録、2026-08-13）
+
+#### 内容
+`src/market/market_pulse/backfill_tech_pulse.py`に`Fred(api_key=
+FRED_API_KEY).get_series("VXNCLS", ...)`の直接呼び出しが現存していた
+（`[[MACRODATA-LAYER-CONSTRUCTION-1]]`着手順序6-2で本体切替済みの
+QQQ/SPY部分とは別関数）。この状態は`[[MACRODATA-LAYER-
+CONSTRUCTION-1]]`本文中の一文としてのみ記録されており、専用IDでの
+正式追跡がなかった。
+
+#### 対応内容
+事前確認調査（チャット記録、2026-08-13）で①`get_series()`で対応可能
+（QQQ/SPY切替時のような新規API追加は不要）、②51件のmissingエントリ
+全件で切替前後の`vxn_latest`/`vxn_vs_ma50`が完全一致、を確認した上で
+実装:
+- `Fred(api_key=FRED_API_KEY).get_series("VXNCLS", ...)`直接呼び出しを
+  `common.macro_data.reader.get_series("VXNCLS")`経由に置換
+- `_vxn_components()`をpandas Seriesベースからlist-of-dictベース
+  （`target`以前でフィルタ→末尾50件平均）に書き換え
+- `from fredapi import Fred`・`FRED_API_KEY`環境変数・`import pandas as
+  pd`（VXN処理専用）への依存を削除。`collect_and_send.py`・
+  `05_main.py`と同じ`HAS_MACRO_DATA`ガード・二段構えsys.path解決
+  パターンを新設
+
+**検証**: 51件のmissingエントリ全件で`--dry-run`実行し、`git stash`で
+切替前コードとの出力を突合した結果、`tp_score`・`tp_label`・
+`qqq_vs_ma125`・`qqq_vs_spy_20d`・`vxn_vs_ma50`・`fg_score`が
+**全件完全一致**（diff 0件）。`divergence`（value/zscore/signal）は
+`tp_score`/`fear_greed.score`のみに依存する純粋関数のため理論的にも
+一致保証。pytest `771 passed / 2 known-failed`（`test_iv_formula.py`
+MSFT/NVDA、`[[TEST-STALE-IV-1]]`既知バグ）で回帰なし。
+
+これにより`backfill_tech_pulse.py`から外部API直接呼び出しが完全に
+排除された。コミット`4930458e7`。
+
+---
+
 ## 2026-08-12（完了）
 
 ### ✅ [MACRODATA-FTSD-MISSING-FROM-INVENTORY-1] FTSD（WTREGENフォールバック先）がINPUT_DATA_TOBE.mdの24系列台帳（INPUT-A-024〜047）に含まれていない

@@ -2536,7 +2536,7 @@ TICKERS-1]]`（S&P500構成銘柄Wikipediaスクレイピングに`FDXF`/`HONA`/
 
 ---
 
-### [MACRODATA-LAYER-CONSTRUCTION-1] common/macro_data/新設（FRED統合層）— 完成（本番消費者2ファイルの範囲。周辺ツール1件は射程外で未切替）
+### [MACRODATA-LAYER-CONSTRUCTION-1] common/macro_data/新設（FRED統合層）— 完成（本番消費者2ファイル＋周辺ツール1件とも切替完了、外部API直接呼び出し完全排除）
 **優先度:** 高（新DB構築プロジェクト フェーズ1の次コンポーネント、
 `common/market_data/`が2026-08-12に全12ファイル切替完了したことに伴う
 次の優先タスク）
@@ -2561,6 +2561,16 @@ FRED_API_KEY).get_series("VXNCLS", ...)`直接呼び出し）は射程外のま�
 だったことが判明。`[[MACRODATA-BACKFILL-TECH-PULSE-VXNCLS-
 UNTRACKED-1]]`として新規登録した。見出しに射程の限定を明記。実装
 コード変更なし）
+**更新日:** 2026-08-13（`[[MACRODATA-BACKFILL-TECH-PULSE-VXNCLS-
+UNTRACKED-1]]`の切替実装が完了し**解消**（コミット`4930458e7`）。
+`backfill_tech_pulse.py`の`VXNCLS`取得も`Fred(`直接呼び出しから
+`common.macro_data.reader.get_series()`経由に切替済みとなり、
+本番消費者2ファイル＋周辺ツール1件のいずれからも外部API直接呼び出し
+が完全に排除された。51件のmissingエントリ全件で切替前後の出力が
+完全一致（`tp_score`/`tp_label`/`vxn_vs_ma50`等diff 0件）することを
+確認済み、pytest回帰なし。詳細はBACKLOG_DONE.md「2026-08-13
+（完了）」`[[MACRODATA-BACKFILL-TECH-PULSE-VXNCLS-UNTRACKED-1]]`参照。
+見出しから「周辺ツール1件は射程外で未切替」を削除し解消を反映）
 **発見:** `common/macro_data/`新設事前調査・FRED消費者洗い出し
 （`MIGRATION_CHECKLIST.md`Step1相当、チャット記録、2026-08-12）
 
@@ -3121,28 +3131,6 @@ GitHub Actions実行時間・git差分サイズが日次cronとしては不必�
 
 #### 着手条件
 なし。次回`common/macro_data/`関連作業時に対応要否を判断する。
-
----
-
-### [MACRODATA-BACKFILL-TECH-PULSE-VXNCLS-UNTRACKED-1] backfill_tech_pulse.pyのVXNCLS取得が未切替のまま、BACKLOG本体に専用エントリがなかった
-**優先度:** 低（一過性ツール、`[[MACRODATA-LAYER-CONSTRUCTION-1]]`
-「本番消費者2ファイル」の射程外だが、FRED直接呼び出し完全排除という
-当初目標には未達）
-**分類:** 追跡漏れ / 未切替箇所
-**登録日:** 2026-08-13
-**発見:** 新DB構築プロジェクト フェーズ1〜3完了状態総点検（チャット
-記録、2026-08-13）
-
-#### 内容
-`src/market/market_pulse/backfill_tech_pulse.py`に`Fred(api_key=
-FRED_API_KEY).get_series("VXNCLS", ...)`の直接呼び出しが現存している
-（`[[MACRODATA-LAYER-CONSTRUCTION-1]]`着手順序6-2で本体切替済みの
-QQQ/SPY部分とは別関数）。この状態は`[[MACRODATA-LAYER-
-CONSTRUCTION-1]]`本文中の一文としてのみ記録されており、専用IDでの
-正式追跡がなかった。
-
-#### 着手条件
-なし。一過性ツールのため優先度低のまま次回低優先度課題群まとめ時。
 
 ---
 
