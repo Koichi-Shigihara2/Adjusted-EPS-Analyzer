@@ -939,10 +939,11 @@ function buildDetail(ticker, d) {
   latestOCF = (pp.ocf_annual || {})[lastYr] ?? null;
 
   if (hasRecords) {
-    revVals  = years.map(yr => (d.records[yr] || {}).revenue    ?? null);
-    niVals   = years.map(yr => (d.records[yr] || {}).net_income ?? null);
-    latestRev = (d.records[lastYr] || {}).revenue    ?? null;
-    latestNI  = (d.records[lastYr] || {}).net_income ?? null;
+    // NETINCOME-DUAL-PIPELINE-1: net_income → net_income_fy（単年度決算の明示）
+    revVals  = years.map(yr => (d.records[yr] || {}).revenue       ?? null);
+    niVals   = years.map(yr => (d.records[yr] || {}).net_income_fy ?? null);
+    latestRev = (d.records[lastYr] || {}).revenue       ?? null;
+    latestNI  = (d.records[lastYr] || {}).net_income_fy ?? null;
   }
 
   const s1 = dq.score ?? '—';

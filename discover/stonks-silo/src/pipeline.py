@@ -110,10 +110,15 @@ def run(tickers: list[str] | None = None) -> dict:
             data = load_annual_data(ticker, years=_YEARS)
             analysis = analyzer.analyze(data)
             result = _to_dict(analysis)
+            # [[NETINCOME-DUAL-PIPELINE-1]]: 出力表示用フィールドをnet_income_fy
+            # へ改名（単年度決算であることの明示、NAMING_CONVENTIONS.md規則2）。
+            # analyzer.analyze()が参照するdata["records"][yr]["pl"]["net_income"]
+            # （internal scoring用）は変更しない——両者は別スコープであり、
+            # overall_score/overall_verdict算出には無関係（2026-08-13確認済み）。
             result["records"] = {
                 str(yr): {
-                    "revenue":    _to_dict(rec["pl"].get("revenue")),
-                    "net_income": _to_dict(rec["pl"].get("net_income")),
+                    "revenue":       _to_dict(rec["pl"].get("revenue")),
+                    "net_income_fy": _to_dict(rec["pl"].get("net_income")),
                 }
                 for yr, rec in data["records"].items()
             }

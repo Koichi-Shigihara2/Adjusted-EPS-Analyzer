@@ -294,8 +294,15 @@ def calculate_ttm(quarterly_results: List[Dict], end_idx: int) -> Optional[Dict]
     total_net_income = sum(q["gaap_net_income"] for q in ttm_data)
     total_adjustments = sum(q.get("net_adjustment_total", 0) for q in ttm_data)
     avg_shares = sum(q["diluted_shares_used"] for q in ttm_data) / 4
+    # [[NETINCOME-DUAL-PIPELINE-1]]: periodに"TTM "を明示的に前置し、STONKS SILO
+    # の単年度net_income_fyとの混同を防ぐ（NAMING_CONVENTIONS.md規則2）。
+    # netincomeキー自体は改名しない（stock.htmlのupdateChart()等にttm[].
+    # net_incomeへの直接参照が存在しないことを確認済み、2026-08-13）。
+    # 既存の"{start} to {end}"形式・末尾日付を`.split(' to ')[1]`で抽出する
+    # フロントエンド側の解析（stock.html）はプレフィックス追加後も影響を
+    # 受けない（' to '区切り自体は変わらないため）。
     return {
-        "period": f"{ttm_data[0]['filing_date']} to {ttm_data[-1]['filing_date']}",
+        "period": f"TTM {ttm_data[0]['filing_date']} to {ttm_data[-1]['filing_date']}",
         "net_income": total_net_income,
         "adjusted_income": total_net_income + total_adjustments,
         "diluted_shares": avg_shares,

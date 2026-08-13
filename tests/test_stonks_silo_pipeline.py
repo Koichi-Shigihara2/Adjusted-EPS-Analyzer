@@ -171,3 +171,64 @@ class TestRunNetCashSwitch:
         sp.run(["XYZ"])
         assert captured["sector"] == "Technology"
         assert captured["industry"] == "Software"
+
+
+class TestRunNetIncomeFyRename:
+    """[[NETINCOME-DUAL-PIPELINE-1]]: result["records"][yr]["net_income"]が
+    net_income_fyへ改名され、analyzer.analyze()が参照する内部scoring用の
+    data["records"][yr]["pl"]["net_income"]（改名しない）とは独立している
+    ことの回帰テスト。
+    """
+
+    def _patch_common(self, monkeypatch, tmp_path, overall_score=50.0, overall_verdict="WATCH",
+                       pl_net_income=-10.0):
+        data = {
+            "years": [2025],
+            "records": {
+                2025: {
+                    "pl": {"revenue": 100.0, "net_income": pl_net_income, "revenue_sanitized": 100.0},
+                },
+            },
+        }
+        monkeypatch.setattr(sp, "stonks_tickers", lambda: ["XYZ"])
+        monkeypatch.setattr(sp, "load_annual_data", lambda ticker, years=5: data)
+        monkeypatch.setattr(
+            sp.StonksAnalyzer, "analyze",
+            lambda self, d: _make_analysis(overall_score, overall_verdict),
+        )
+        monkeypatch.setattr(
+            sp, "fetch_valuation",
+            lambda ticker: {
+                "market_cap": 1000.0, "current_price": 10.0, "enterprise_value": 900.0,
+                "total_debt": 200.0, "sector": "Technology", "industry": "Software",
+                "fetched_at": "2026-08-13T00:00:00+00:00", "error": None,
+            },
+        )
+        monkeypatch.setattr(
+            sp.SECReader, "get_net_cash",
+            lambda self, ticker, sector=None, industry=None: {"net_cash": 1.0, "available": True},
+        )
+        monkeypatch.setattr(sp, "load_all_normalized", lambda tickers: {})
+        monkeypatch.setattr(sp, "compute_vectors", lambda normalized: {})
+        monkeypatch.setattr(sp, "_OUTPUT_DIR", tmp_path)
+        monkeypatch.setattr(sp, "_OUTPUT_FILE", tmp_path / "results.json")
+
+    def test_records_output_uses_net_income_fy_key(self, monkeypatch, tmp_path):
+        """result["records"][yr]にはnet_income_fyキーが存在し、
+        旧キー名net_incomeは存在しない"""
+        self._patch_common(monkeypatch, tmp_path, pl_net_income=-10.0)
+        result = sp.run(["XYZ"])
+        records = result["tickers"]["XYZ"]["records"]["2025"]
+        assert records["net_income_fy"] == -10.0
+        assert "net_income" not in records
+
+    def test_overall_score_unaffected_by_rename(self, monkeypatch, tmp_path):
+        """内部scoring用のdata["records"][yr]["pl"]["net_income"]は改名して
+        いないため、出力側の改名はoverall_score/overall_verdictに影響しない"""
+        self._patch_common(
+            monkeypatch, tmp_path, overall_score=88.0, overall_verdict="10x_CANDIDATE", pl_net_income=500.0,
+        )
+        result = sp.run(["XYZ"])
+        assert result["tickers"]["XYZ"]["overall_score"] == 88.0
+        assert result["tickers"]["XYZ"]["overall_verdict"] == "10x_CANDIDATE"
+        assert result["tickers"]["XYZ"]["records"]["2025"]["net_income_fy"] == 500.0
