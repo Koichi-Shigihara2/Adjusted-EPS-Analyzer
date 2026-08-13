@@ -150,6 +150,64 @@ VALUATION・STONKS SILOとも`SECReader.get_net_cash()`に統一された。
 
 ---
 
+### ✅ [NETINCOME-DUAL-PIPELINE-1] 純利益の二重抽出パイプライン・符号反転（STONKS SILO vs EPS Analyzer）
+**状態:** 完了
+**優先度:** 高
+**分類:** データ品質 / 重複計算 / STONKS SILO / EPS Analyzer
+**登録日:** 2026-07-23
+**完了日:** 2026-08-13
+**発見:** `TO_BE.md`⑭群（計算ロジックベースの重複再点検）
+
+#### 背景
+同一のSEC XBRL概念（`NetIncomeLoss`）を、STONKS SILO（`common/sec_data`の
+年次正規化パイプライン経由）とEPS Analyzer（自身の`extract_key_facts.py`に
+よる独立四半期XBRL抽出）という2つの独立パイプラインが別々に抽出している。
+登録時点（2026-07-23）の調査では、期間が実質整合する銘柄（AVAV, ESTC）は
+完全一致するが、IONQ/IOT/ONDSの3銘柄はTTMとFY単年度の期間差により
+黒字/赤字が逆転するとされていた。
+
+#### 実装前の再確認（2026-08-13、着手前の差分シミュレーション）
+STONKS SILO対象25銘柄で再突合した結果、**「完全一致」「符号反転」いずれの
+症例銘柄も3週間で総入れ替わりしていた**ことが判明した。AVAV/ESTCの完全
+一致は崩れ（EPS Analyzer側TTM値が変動）、ESTC/LITEで新たに符号反転が
+発生する一方、当初のIONQ/IOT/ONDSは両者とも赤字に揃い反転が再現しなく
+なっていた。STONKS SILO側（年次決算）は3週間前と完全一致し安定していた
+のに対し、EPS Analyzer側のTTM（直近4四半期ローリング窓）が新しい四半期
+データの取り込みで変動したことが原因と判明。**「特定の3銘柄が問題」
+ではなく、どの時点で見ても一定数の銘柄で症例が入れ替わり立ち替わり発生する
+構造的な問題であることが裏付けられ、「パイプラインは統一せず期間ラベルを
+明示する」という対応方針の妥当性がむしろ強まった**。
+
+#### 対応内容
+`TO_BE.md`⑭群の判断（パイプライン自体は統一せず、両者の出力に`TTM`/
+`FY{year}`の期間ラベルを必須で明示する）に従って実装:
+- **Step0（事前確認）**: `stock.html::updateChart()`等を全文精読・grepし、
+  `ttm[].net_income`への直接参照が0件であることを確認した上で、EPS
+  Analyzer側はキー改名よりリスクの低い「periodラベルへの明示追加」を選択
+- **STONKS SILO**: `pipeline.py`の`result["records"][yr]["net_income"]`を
+  `net_income_fy`へ改名（単年度決算の明示）。`analyzer.analyze()`が参照する
+  内部scoring用`data["records"][yr]["pl"]["net_income"]`は別スコープのため
+  変更なし。`index.html:942-945`のフロントエンド参照も追従修正
+- **EPS Analyzer**: `calculate_ttm()`の`period`文字列に`"TTM "`を明示的に
+  前置（`net_income`キー自体は改名しない）。既存の`item.period.split('
+  to ')[1]`によるフロントエンド解析（3箇所）は影響を受けないことを確認
+
+**検証**: STONKS SILO 25銘柄全数で再生成し`overall_score`/`overall_verdict`
+が完全一致（0件変化）を確認。`net_income_fy`キーが正しく追加され旧
+`net_income`キーは残存していないことをデータ構造レベルで確認（ブラウザ
+レンダリングは未実施）。**EPS Analyzer側の本番`ttm.json`一括再生成は
+SEC EDGARへのネットワーク取得を伴うため見送り、次回の定期実行で自然に
+新形式へ移行する設計とした**（`calculate_ttm()`自体の変更はユニットテスト
+で検証済み）。テストは`tests/test_eps_analyzer_ttm_period_label.py`
+新規追加（4件）・`tests/test_stonks_silo_pipeline.py::
+TestRunNetIncomeFyRename`新規追加（2件）。pytest `781 passed / 2
+known-failed`（`test_iv_formula.py` MSFT/NVDA、`[[TEST-STALE-IV-1]]`
+既知バグ）で回帰なし。
+
+コミット`388f4e3c2`。
+
+---
+
 ## 2026-08-12（完了）
 
 ### ✅ [MACRODATA-FTSD-MISSING-FROM-INVENTORY-1] FTSD（WTREGENフォールバック先）がINPUT_DATA_TOBE.mdの24系列台帳（INPUT-A-024〜047）に含まれていない

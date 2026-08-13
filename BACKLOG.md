@@ -4453,29 +4453,6 @@ concept、105銘柄合計582.2MB）が、本フェーズの一連の投資調査
 
 ---
 
-### [NETINCOME-DUAL-PIPELINE-1] 純利益の二重抽出パイプライン・符号反転（STONKS SILO vs EPS Analyzer）
-**優先度:** 高
-**分類:** データ品質 / 重複計算 / STONKS SILO / EPS Analyzer
-**登録日:** 2026-07-23
-**発見:** `TO_BE.md`⑭群（計算ロジックベースの重複再点検）
-
-#### 背景
-同一のSEC XBRL概念（`NetIncomeLoss`）を、STONKS SILO（`common/sec_data`の
-年次正規化パイプライン経由）とEPS Analyzer（自身の`extract_key_facts.py`に
-よる独立四半期XBRL抽出）という2つの独立パイプラインが別々に抽出している。
-期間が実質整合する銘柄（AVAV, ESTC）は完全一致するが、IONQ/IOT/ONDSの
-3銘柄はTTMとFY単年度の期間差により黒字/赤字が逆転する（利用者が両者を
-無意識に比較すると符号を取り違えるリスク）。
-
-#### 対応方針
-`TO_BE.md`⑭群の判断（パイプライン自体は統一せず、両者の出力に
-`TTM`/`FY{year}`の期間ラベルを必須で明示する）に従って実装する。
-
-#### 着手条件
-なし
-
----
-
 ### [MACRO-TRUTHY-ZERO-BUG-1] MACRO PULSE履歴バックフィルのtruthy判定によるゼロ値欠落
 **優先度:** 高
 **分類:** バグ / MACRO PULSE
