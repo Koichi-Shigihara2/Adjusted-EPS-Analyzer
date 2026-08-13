@@ -2961,11 +2961,13 @@ ENB（Enbridge Inc.）について、`common/sec_data/data/ENB/`配下に
 ---
 
 ### [MACRODATA-FTSD-SERIES-ID-INVALID-1] FRED系列コード「FTSD」がFRED API上に実在しない（05_main.pyのWTREGENフォールバックが機能しない可能性）
-**優先度:** 中（本番`05_main.py::update_liquidity_csv()`の既存フォール
-バック経路が実質的に機能していない疑い、ただし`WTREGEN`自体は通常
-正常取得できておりフォールバックが発動する頻度は低いと推定される）
+**優先度:** 中で据え置き（2026-08-13事実確認の結果、実害は極めて稀と
+確認できたため引き上げ不要と判断。ただし機能しないフォールバックを
+放置すべきではないため記録は残す。詳細は下記「追記」参照）
 **分類:** バグ疑い / データソース側の系列コード誤り
 **登録日:** 2026-08-12
+**更新日:** 2026-08-13（事実確認調査完了。原因特定・実害実績確認・
+修正案提示。詳細は下記「追記」参照。実装コード変更なし）
 **発見:** `common/macro_data/`定期取得ワークフロー新設・動作確認
 （`fetch_all_series()`の実FRED_API_KEYによるローカル実行、チャット
 記録、2026-08-12）
@@ -2990,18 +2992,71 @@ target_date, lookback=21)`）が、このフォールバックが実際に発動
 台帳に追加した系列だが、台帳追加時点では実際にFRED上に存在するかの
 検証は行っていなかった。
 
-#### 対応方針（未定）
-- 正しい系列コードが何であるべきか調査する（FRED検索UIで「Treasury
-  General Account」等のキーワードから代替系列を探す、または
-  `WTREGEN`一系統のみに絞りフォールバック自体を廃止する等の選択肢）
-- `05_main.py`側の対応（正しい系列コードへの置換、またはフォール
-  バック自体の削除）は本エントリの対応方針確定後、別途実装依頼で行う
-  （`[[MACRODATA-LAYER-CONSTRUCTION-1]]`着手順序6-2完了時点では
-  `05_main.py`は一切変更しない方針のため対応保留）
+#### 追記（2026-08-13、事実確認調査完了、記録のみ・実装なし）
+
+**原因特定**: `FTSD`は2026-05-08のコミット`8561125f3`（`Co-Authored-By:
+Claude Sonnet 4.6`、NET LIQUIDITY計算のためWTREGEN/RRPONTSYD取得を
+追加した際にフォールバック先として導入）で、実在確認なしに導入されて
+いたことをコミット履歴で確認した。コミットメッセージ・コードいずれにも
+典拠の記載はない。
+
+**正しい代替系列の特定**: FRED検索API（`search_text=treasury general
+account`）で調査した結果、`WDTGAL`（Liabilities and Capital: Deposits
+with F.R. Banks, Other Than Reserve Balances: U.S. Treasury, General
+Account: **Wednesday Level**）が有力な代替候補と判明。`WTREGEN`
+（**Week Average**）と同一カテゴリ・同一期間（2002-12-18〜2026-08-05、
+現在も更新中）・同一単位（Millions USD、週次）でありながら集計方法が
+異なる（週平均 vs 水曜時点値）ため、名目だけの重複ではなく実務上意味の
+あるフォールバックになる。なお同種の旧系列`WLTGAL`・`LDGUST`は2018年に
+DISCONTINUEDと確認済みのため候補外。`search_text=FTSD`はFRED検索でも
+0件ヒットで、類似候補すら存在しない。
+
+**実害実績の確認**: `docs/market-monitor/macro-pulse/data/
+05_liquidity.csv`（2023-01-01〜現在、1302日分）を全件確認した結果、
+`tga`列が空欄なのは**2026-05-31の1件のみ**（前日5/30・翌日6/1は正常
+取得）。この日、`WTREGEN`取得失敗→`FTSD`へフォールバック→`FTSD`も
+無効のため結局取得失敗、という実際の発火・失敗の実績を確認した。
+同日`net_liquidity`列（`=(WALCL−TGA−RRP)/1,000,000`）も算出不能で
+空欄。`stealth_signal`列はその日も"neutral"のまま記録が継続しており
+致命的な誤判定はないが、NET LIQUIDITY系列に1日分の欠測点が生じていた。
+WTREGEN自体の失敗頻度は1302日中1日（約0.08%）で極めて低頻度。
+
+**新アーキテクチャ（`[[MACRODATA-LAYER-CONSTRUCTION-1]]`切替後）での
+位置づけ**: 現行`fred_latest()`は`reader.get_latest()`を呼ぶのみで、
+旧実装が持っていた`target_date`基準・`lookback`日数ウィンドウの制約が
+廃止されている。ローカルの`series/WTREGEN.json`に一度でも値が書き込ま
+れていれば、当日の取得が一時的に失敗しても直近キャッシュ値をそのまま
+返すため、フォールバック発動条件（`reader.get_latest("WTREGEN")`が
+Noneを返す）は「`WTREGEN`系列ファイル自体が存在しない／空」という、
+旧実装よりさらに稀なケースに限定される。初回投入時点でWTREGENは25系列
+中の成功24系列に含まれており、現状ローカルにデータが存在するため、
+現行アーキテクチャ下ではこのフォールバックが発動する可能性はさらに
+低下していると評価できる。ただし「発動条件が稀になったこと」と
+「発動時に機能するか」は別問題であり、後者（`FTSD`が無効）は現在も
+未解消。
+
+**修正案（未実装、次回対応時の実装指針）**:
+1. `05_main.py::update_liquidity_csv()`のフォールバック先を
+   `"FTSD"`→`"WDTGAL"`に変更
+2. `common/macro_data/series_meta.json`に`WDTGAL`エントリを新規追加
+   （`category: "liquidity"`、`consumers: ["05_main.py::
+   update_liquidity_csv (WTREGENフォールバック候補)"]`）。追加すれば
+   `fetch_all_series()`が自動的にバッチ取得対象に含める
+3. `INPUT_DATA_TOBE.md`/`INPUT_DATA_AS_IS.md`の`FTSD`
+   （`INPUT-A-049`）記載を`WDTGAL`に置き換えるか、無効系列だった旨の
+   注記を追加
+
+**優先度判断**: 実害頻度は旧実装でも0.08%、新実装ではさらに稀と推定
+されるため、優先度「中」からの引き上げは不要と判断し据え置く。一方で
+「一度も機能しないフォールバックが存在し続ける」こと自体は望ましくない
+ため、記録は残す。
 
 #### 着手条件
-なし。正しい代替系列コードの調査結果を踏まえ対応方針を確定してから
-着手する。
+次回の低優先度課題群まとめ対応時（`[[MACRODATA-AS-IS-DUPLICATION-
+UNDERCOUNT-1]]`・`[[MACRODATA-SCHEDULED-SILENT-GAP-CSCICP-USALOL-1]]`・
+`[[MACRODATA-IMPORT-HISTORY-CONFIG-DRIFT-1]]`・
+`[[MACRODATA-FULL-HISTORY-DAILY-REFETCH-1]]`等と合わせて着手検討）。
+上記「修正案」を踏まえ、対応方針は事実上確定済み。
 
 ---
 
