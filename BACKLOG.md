@@ -2141,17 +2141,16 @@ ARCH-DATA-1のスコープ拡張（2026-07-16、年次データ正規化3段階�
 
 ## 優先度：高（早急に対応）
 
-### [MARKETDATA-LAYER-CONSTRUCTION-1] common/market_data/新設（yfinance統合層）— 主要切替完了（collect_asset_flow()6資産・低優先度3件は未解決）
+### [MARKETDATA-LAYER-CONSTRUCTION-1] common/market_data/新設（yfinance統合層）— 全12ファイル＋collect_asset_flow()6資産とも切替完了（低優先度3件は判断保留）
 **優先度:** 高（新DB構築プロジェクト フェーズ1の本線、`common/sec_data`
 統合が2026-08-07に実質完了したことに伴う次の優先タスク）
-**状態:** 本番消費者8＋診断ツール2＋周辺ツール2、全12ファイルの**主要な**
-切替は完了。ただし`collect_and_send.py::collect_asset_flow()`のSHV等
-6資産（SHV/GLD/TLT/LQD/HYG/SPY）は未切替のまま残存
-（`[[MARKETDATA-COLLECT-ASSET-FLOW-UNTRACKED-1]]`、2026-08-13新規登録）、
+**状態:** 本番消費者8＋診断ツール2＋周辺ツール2の全12ファイルに加え、
+`collect_and_send.py::collect_asset_flow()`のSHV等6資産
+（SHV/GLD/TLT/LQD/HYG/SPY）も`common.market_data.reader`経由へ切替完了
+（`[[MARKETDATA-COLLECT-ASSET-FLOW-UNTRACKED-1]]`、2026-08-13解消）。
 低優先度3件（`[[MARKETDATA-CWAN-FROZEN-DATA-SUSPECT-1]]`・
 `[[MARKETDATA-SP500-SCRAPE-INVALID-TICKERS-1]]`・`[[MARKETDATA-VIX9D-
-DATA-GAP-1]]`）は判断保留中。「全12ファイル完了」はファイル単位の
-粒度としては正確だが、関数単位では上記の未切替・未判断が残る
+DATA-GAP-1]]`）は引き続き判断保留中
 **分類:** アーキテクチャ / 新DB構築プロジェクト フェーズ1
 **登録日:** 2026-08-07（本来は事前調査着手時点で登録すべきだったが
 未登録のまま3回の投資調査を実施していたため、本エントリで遡って
@@ -2180,6 +2179,19 @@ DIVIDEND-DRIFT-1]]`は事実確認調査により前提の誤りが判明し訂�
 「追跡漏れ」だったことが判明。`[[MARKETDATA-COLLECT-ASSET-FLOW-
 UNTRACKED-1]]`として新規登録した。見出し・状態欄を「実装完了（全12
 ファイル完了）」から実態に合わせて訂正。実装コード変更なし）
+**更新日:** 2026-08-13（`[[MARKETDATA-COLLECT-ASSET-FLOW-
+UNTRACKED-1]]`の切替実装が完了し**解消**（コミット`d021216e8`）。
+`SHV`を`fetcher.py::INDEX_ETF_COMMODITY_SYMBOLS`へ追加・バックフィル
+（他資産と同じ1,408件、2021-01-04〜）した上で、`collect_asset_flow()`の
+SHV/GLD/TLT/LQD/HYG/SPY6資産を`fetch_recent_records()`経由に切替。
+唯一の呼び出し元だった`_fetch_hist_legacy()`・`import yfinance as yf`も
+削除し、`collect_and_send.py`から外部API直接呼び出しが完全に排除
+された。6資産全数で切替前後の出力が完全一致（`value`/`change_pct`/
+`date`のdiff 0件）することを確認済み、pytest回帰なし。低優先度3件
+（CWAN/SP500スクレイピング/VIX9D）は本対応のスコープ外のため引き続き
+判断保留のまま残る。詳細はBACKLOG_DONE.md「2026-08-13（完了）」
+`[[MARKETDATA-COLLECT-ASSET-FLOW-UNTRACKED-1]]`参照。見出しから
+「collect_asset_flow()6資産・低優先度3件は未解決」を削除し解消を反映）
 **発見:** `common/market_data/`新設事前調査・実装設計投資調査（チャット
 記録、2026-08-07）
 
@@ -3252,27 +3264,6 @@ Yahoo Finance自体が2026-07-13〜07-17の5件しか返さず、`period="5d"`�
 #### 着手条件
 なし。優先度中だが実害は現時点でゼロと確認済みのため、次回同種事象の
 再確認時に着手判断する。
-
----
-
-### [MARKETDATA-COLLECT-ASSET-FLOW-UNTRACKED-1] collect_and_send.py::collect_asset_flow()のSHV等6資産が未切替のまま、BACKLOG未登録だった
-**優先度:** 低〜中（実害未評価、まず記録・追跡対象化が先決）
-**分類:** 追跡漏れ / 未切替箇所
-**登録日:** 2026-08-13
-**発見:** 新DB構築プロジェクト フェーズ1〜3完了状態総点検（チャット
-記録、2026-08-13）
-
-#### 内容
-`[[MARKETDATA-LAYER-CONSTRUCTION-1]]`着手順序4-6実装時（2026-08-11）に
-コード内コメントとして記録されていたが、BACKLOG.md本体には専用
-エントリが存在しなかった。`SHV`がmarket_dataの`INDEX_ETF_COMMODITY_
-SYMBOLS`に未収録のため、`collect_asset_flow()`は`_fetch_hist_legacy()`
-（yfinance直接呼び出し）を使い続けている。`DGS3MO`のみFRED経由に
-切替済みで、資産フロー可視化7資産中6資産（SHV/GLD/TLT/LQD/HYG/SPY）が
-直接API呼び出しのまま。
-
-#### 着手条件
-なし。SHVの`INDEX_ETF_COMMODITY_SYMBOLS`への追加要否判断から。
 
 ---
 

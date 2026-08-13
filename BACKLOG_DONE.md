@@ -50,6 +50,50 @@ MSFT/NVDA、`[[TEST-STALE-IV-1]]`既知バグ）で回帰なし。
 
 ---
 
+### ✅ [MARKETDATA-COLLECT-ASSET-FLOW-UNTRACKED-1] collect_and_send.py::collect_asset_flow()のSHV等6資産が未切替のまま、BACKLOG未登録だった
+**状態:** 完了
+**優先度:** 低〜中（実害未評価、まず記録・追跡対象化が先決だった）
+**分類:** 追跡漏れ / 未切替箇所
+**登録日:** 2026-08-13
+**完了日:** 2026-08-13
+**発見:** 新DB構築プロジェクト フェーズ1〜3完了状態総点検（チャット
+記録、2026-08-13）
+
+#### 内容
+`[[MARKETDATA-LAYER-CONSTRUCTION-1]]`着手順序4-6実装時（2026-08-11）に
+コード内コメントとして記録されていたが、BACKLOG.md本体には専用
+エントリが存在しなかった。`SHV`がmarket_dataの`INDEX_ETF_COMMODITY_
+SYMBOLS`に未収録のため、`collect_asset_flow()`は`_fetch_hist_legacy()`
+（yfinance直接呼び出し）を使い続けていた。`DGS3MO`のみFRED経由に
+切替済みで、資産フロー可視化7資産中6資産（SHV/GLD/TLT/LQD/HYG/SPY）が
+直接API呼び出しのままだった。
+
+#### 対応内容
+事前確認調査（チャット記録、2026-08-13）でSHVのyfinance実在確認・
+5資産（GLD/TLT/LQD/HYG/SPY）での切替前後完全一致を確認した上で実装:
+- `common/market_data/fetcher.py::INDEX_ETF_COMMODITY_SYMBOLS`に`SHV`
+  を追加。workflow_dispatchはこのセッションから直接トリガーできない
+  ため、IVW/IVE/RSP/JPY=X追加時と同じ運用パターンでローカル実行により
+  代替検証（`--layer daily`でdaily/SHV.json生成を確認後、
+  `--backfill --start 2021-01-01`で他資産と同じ深度〈1,408件、
+  2021-01-04〜2026-08-12、検証警告0件〉までバックフィル）
+- `collect_and_send.py::collect_asset_flow()`のSHV/GLD/TLT/LQD/HYG/SPY
+  6資産を`_fetch_hist_legacy()`から`fetch_recent_records()`（同ファイル
+  内、VIX/S&P500等で既に使われている既存ヘルパー）経由に置換。
+  `change_pct`計算ロジックは不変
+- 唯一の呼び出し元だった`_fetch_hist_legacy()`と`import yfinance as yf`
+  を削除し、`collect_and_send.py`から外部API直接呼び出しを完全に排除
+
+**検証**: 6資産全数で`git stash`により切替前コードとの出力を突合した
+結果、`value`/`change_pct`/`date`が**全件完全一致**（diff 0件）。
+pytest `771 passed / 2 known-failed`（`test_iv_formula.py` MSFT/NVDA、
+`[[TEST-STALE-IV-1]]`既知バグ）で回帰なし。
+
+これにより`collect_and_send.py`から外部API直接呼び出しが完全に排除
+された。コミット`d021216e8`。
+
+---
+
 ## 2026-08-12（完了）
 
 ### ✅ [MACRODATA-FTSD-MISSING-FROM-INVENTORY-1] FTSD（WTREGENフォールバック先）がINPUT_DATA_TOBE.mdの24系列台帳（INPUT-A-024〜047）に含まれていない
