@@ -9137,7 +9137,7 @@ L264の該当行を、除外判断を反映した表現（例: 該当行を削�
 ---
 
 ### [LAYER3-RPO-CANDIDATE-ORDER-1] layer3_builder.pyのrpo候補統合（union）で総額系タグが長期限定タグより優先され値が大幅変動する
-**優先度:** 中〜高
+**優先度:** 中〜高→**実害調査完了により低（2026-08-15）**
 **分類:** データ品質 / バグ
 **登録日:** 2026-07-24
 **発見:** フェーズA（layer3_builder.py）105銘柄回帰レポート
@@ -9149,21 +9149,54 @@ L264の該当行を、除外判断を反映した表現（例: 該当行を削�
 先に選ばれてしまい、値が大きく変動する（AMZN実データ: 4.4B→25B）。
 15銘柄で差異確認。
 
-#### 影響
+#### 影響（登録時点の記述）
 RPO（残存履行義務）はHypeCore・STONKS SILO等で成長シグナルとして
-参照される指標であり、値の大幅な変動は下流の判定に影響しうる。
+参照される指標であり、値の大幅な変動は下流の判定に影響しうる、と
+記載されていたが、下記「実害調査結果」の通りこの記述自体が実態と
+食い違っていることが判明した。
+
+#### 実害調査結果（2026-08-13〜15、読み取り専用調査・チャット記録）
+①**TANUKI VALUATIONのRPO取得経路**: `core_calculator.py`が呼ぶ
+`SECReader.get_rpo_context()`/`get_rpo_series()`（`reader.py:264-330`）
+は`common/sec_data/normalized/{TICKER}_quarterly_normalized.json`を
+直接読んでおり、**Layer3（`layer3_builder.py`）を一切経由しない**。
+normalized/側のRPOフォールバック候補（`RemainingPerformanceObligation`
+→`ContractWithCustomerLiabilityNoncurrent`→`DeferredRevenueNoncurrent`）
+は本バグの原因である総額系タグ`ContractWithCustomerLiability`を
+そもそも含んでおらず、構造的に別物。
+
+②**フェーズD Step2-1（2026-08-06完了）にrpoが含まれなかった理由**:
+見落としではなく、TANUKI VALUATIONのRPO取得が元々別経路
+（`SECReader`専用メソッド、normalized/直読み）のままで、Layer3切替の
+対象リスト（SharesDiluted/NetIncome/LTDebt/TTM営業利益/Moat入力の
+6項目）に最初から含まれていなかったため。
+
+③**layer3_builder.py側のrpoフィールドの実消費者**: `layer3_builder.py`
+は`rpo`を`NO_CANDIDATE_MERGE_FIELDS`（本バグ対応を意図的に別タスクへ
+委ねる旨のコメント付き）として保持しているが、リポジトリ全体で
+`get_field_entries(store, "rpo")`という呼び出しは0件。「影響」欄が
+挙げていたHypeCore・STONKS SILOも実コードを確認したところ`rpo`/`RPO`
+への参照は一切存在しない（当初の記述自体が誤りだった可能性が高い）。
+
+**結論**: バグを含むコード（layer3_builder.pyのrpo候補統合ロジック）
+自体は現存するが、リポジトリ全体で実際にこれを読む消費者がゼロ
+（TANUKI VALUATIONは別経路、HypeCore・STONKS SILOはそもそも無関係）。
+着手条件の締切（フェーズD Step2-1着手前）は形式的には超過している
+が、rpoがLayer3切替の対象になったことが一度もないため実害はない。
 
 #### 対応方針
 未定。総額系タグと長期のみタグのどちらを正とすべきか（あるいは
 両者を別フィールドとして分離すべきか）の判断が必要。
 [[SCHEMA-NORMALIZED-ISSUES-1]]（旧SCHEMA-SHARESBASIC-CONCEPT-
 MISMATCH-1）と同種の「候補統合時の概念混在」パターンの可能性がある。
+実消費者が現れた場合（RPOをLayer3経由に切替する計画が具体化した場合
+等）に優先度を再度引き上げて対応する。
 
 #### 着手条件
-移行実装計画（SEC_EDGAR_LAYER_DESIGN.md 8章）フェーズD
-（TANUKI VALUATION本体切替）着手前までに解消すること。フェーズB・C
-（audit.py切替・ttm_calculator.py移行）はこのフィールドに依存しない
-ため、それらの着手条件ではない。
+なし（優先度を中〜高→低に格下げ、実消費者が現れた時点で再判断する。
+登録時点の「フェーズD Step2-1着手前までに解消」という締切は、rpoが
+同Step2-1の切替対象に一度も含まれなかったため実質的に意味を持たな
+かったと2026-08-15に確認済み）。
 
 ---
 
