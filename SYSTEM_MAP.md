@@ -1,5 +1,20 @@
 # SYSTEM MAP — On-a-journey
 
+最終更新: 2026-08-13（重複計算パターン4件の解消を反映。STONKS SILO
+（`discover/stonks-silo/src/pipeline.py`）はTANUKI VALUATIONと同じ
+`SECReader.get_net_cash()`を直接参照するよう切替済み（独自の
+`cash - yfinance totalDebt`算出は廃止、`[[NETCASH-DUAL-CALC-1]]`）。
+HypeCore・TANUKI VALUATION・STONKS SILOのRule of 40系フィールドは
+NAMING_CONVENTIONS.md規則2に従い`rule40_yoy_netmargin`（HypeCore、
+旧`rule40`）・`rule40_cagr3y_opmargin`（STONKS SILO、旧`rule_of_40`）へ
+改名し定義の違いを明示（`[[RULE40-DEFINITION-MISMATCH-1]]`）。STONKS
+SILOの`net_income_fy`（単年度）・EPS Analyzerの`net_income_ttm`
+（TTM）も同規則で期間ラベルを明示（統一はしない方針、`[[NETINCOME-
+DUAL-PIPELINE-1]]`）。`common/market_data/`・`common/macro_data/`は
+未追跡だった`collect_asset_flow()`のSHV等6資産・`backfill_tech_
+pulse.py`のVXNCLSも切替完了し、本線タスクは完全に完了。詳細は
+BACKLOG_DONE.md「2026-08-13（完了）」参照）
+
 最終更新: 2026-08-12（common/macro_data/セクションへ`migrate_
 bamlh0a0hym2_history.py`（BAMLH0A0HYM2の例外的履歴移行スクリプト）を
 追記。FRED側が2026年4月から同系列の提供範囲を直近3年に制限したため、

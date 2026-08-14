@@ -1,5 +1,22 @@
 # Claude Code 作業開始テンプレート
 
+最終更新: 2026-08-14（セッション終了時ブラッシュアップ。2026-08-13の
+セッションで完了した以下を反映：①`common/market_data/`の未追跡だった
+`collect_and_send.py::collect_asset_flow()`のSHV等6資産切替
+（`[[MARKETDATA-COLLECT-ASSET-FLOW-UNTRACKED-1]]`）②`common/macro_data/`
+の未追跡だった`backfill_tech_pulse.py`のVXNCLS切替
+（`[[MACRODATA-BACKFILL-TECH-PULSE-VXNCLS-UNTRACKED-1]]`）③重複計算
+パターン4件の解消：`[[NETCASH-DUAL-CALC-1]]`・`[[NETINCOME-DUAL-
+PIPELINE-1]]`・`[[RULE40-DEFINITION-MISMATCH-1]]`（NAMING_CONVENTIONS.md
+規則2適用、TANUKI VALUATIONのsell_funda判定波及も全数検証済み）・
+`[[FRED-HYSPREAD-TRIPLE-FETCH-1]]`（未着手のまま放置されていたが実装は
+既に別プロジェクトで解消済みと判明しクローズ）④`[[SP500-GSPC-MULTI-
+FETCH-1]]`の優先度中→低引き下げ。これにより新DB構築プロジェクトの
+sec_data/market_data/macro_data本線タスクは完了、残るのは本線外・低
+優先度課題群のみとなった。CHAT_RULES.mdへ「『完了』報告済み事項の
+定期再点検」ルールを新規追加。詳細はBACKLOG_DONE.md「2026-08-13
+（完了）」参照。実装コード変更なし）
+
 最終更新: 2026-08-13（「次セッションの一次データ層プロジェクト着手順序」節が
 陳腐化していたのを是正。`[[MACRODATA-LAYER-CONSTRUCTION-1]]`は前回の
 本ファイル更新（直後の2026-08-12エントリ「次のアクションは実装設計に
@@ -105,38 +122,40 @@ git pull --rebase origin kaihatsu
   残るため、`normalized/`は完全廃止できず、この3系統向けに存続する
   設計とする（詳細は`[[SECDATA-STORAGE-FRAGMENTATION-1]]`参照）。
 
-  **次セッションの一次データ層プロジェクト着手順序（2026-08-13訂正）**：
-  `common/sec_data`統合（フェーズD）は実質完了。`common/market_data/`
-  （yfinance統合層）は本番消費者8＋診断ツール2（`score_verifier.py`・
-  `audit.py`）＋周辺ツール2（`extract_key_facts.py`・
-  `backfill_tech_pulse.py`）の**全12ファイル切替完了、構築プロジェクト
-  自体が完了**。続く`common/macro_data/`（FRED統合層）も**本番消費者2
-  ファイル（`05_main.py`・`collect_and_send.py`）の`common.macro_data.
-  reader`経由への全面切替まで完了し、構築プロジェクト自体が完成**（
-  `fetcher.py`/`reader.py`実装・定期取得ワークフロー稼働・重複3系列
-  `BAMLH0A0HYM2`/`T10Y2Y`/`VIXCLS`の`reader.get_latest()`一本化・
-  `BAMLH0A0HYM2`の例外的履歴移行まで実施済み、切替前後18項目の値突合で
-  完全一致を確認、2026-08-12完了。詳細はBACKLOG.md`[[MACRODATA-LAYER-
-  CONSTRUCTION-1]]`「完成（本番消費者切替完了）」参照）。次のアクションは
-  以下の本線外課題群のみ（本線＝新DB構築プロジェクトのフェーズ1主要
-  コンポーネントは全て完了済み）:
-  1. 優先度中2件の対応要否判断: `[[MACRODATA-AS-IS-DUPLICATION-
-     UNDERCOUNT-1]]`（ドキュメント訂正）・`[[MACRODATA-SCHEDULED-
-     SILENT-GAP-CSCICP-USALOL-1]]`（実データ確認が着手条件）
-  2. macro_data実装過程で新規発見した低〜中優先度課題:
-     `[[MACRODATA-FULL-HISTORY-DAILY-REFETCH-1]]`（日次cronが`start`
-     未指定時に毎回全期間履歴を再取得する非効率設計）・
-     `[[MACRODATA-IMPORT-HISTORY-CONFIG-DRIFT-1]]`・
-     `[[MACRODATA-FTSD-SERIES-ID-INVALID-1]]`（`FTSD`がFRED API上に
-     実在せず取得失敗、旧実装でも同様のため回帰ではなく対応不要・
-     記録のみ）・`backfill_tech_pulse.py`の`VXNCLS`未切替（一過性
-     ツール扱いのため優先度低のまま残置）
-     （`[[MACRODATA-FTSD-MISSING-FROM-INVENTORY-1]]`は2026-08-12の
-     設計確定作業で解消・BACKLOG_DONE.mdへ移動済み）
-  3. （本線外・過去セッションで蓄積した低優先度課題群一式）:
-     `[[MARKETDATA-CWAN-FROZEN-DATA-SUSPECT-1]]`・`[[MARKETDATA-SP500-
-     SCRAPE-INVALID-TICKERS-1]]`・`[[MARKETDATA-VIX9D-DATA-GAP-1]]`・
-     `[[STONKS-SILO-CLI-TICKERS-SHADOW-1]]`・`[[NETCASH-DUAL-CALC-1]]`等
+  **次セッションの一次データ層プロジェクト着手順序（2026-08-14訂正）**：
+  `common/sec_data`統合（フェーズD）・`common/market_data/`（yfinance
+  統合層）・`common/macro_data/`（FRED統合層）とも**主要切替は完了**
+  （フェーズD実質完了。market_dataは本番消費者8＋診断ツール2＋周辺
+  ツール2の全12ファイルに加え`collect_and_send.py::collect_asset_
+  flow()`のSHV等6資産も切替完了。macro_dataは本番消費者2ファイル
+  〈`05_main.py`・`collect_and_send.py`〉に加え周辺ツール1件
+  〈`backfill_tech_pulse.py`のVXNCLS〉も切替完了）。2026-08-13
+  セッションで重複計算パターン4件（`[[NETCASH-DUAL-CALC-1]]`・
+  `[[NETINCOME-DUAL-PIPELINE-1]]`・`[[RULE40-DEFINITION-MISMATCH-1]]`・
+  `[[FRED-HYSPREAD-TRIPLE-FETCH-1]]`）も解消済み。**新DB構築
+  プロジェクトのsec_data/market_data/macro_data本線タスクは完了**。
+  次のアクションは以下の本線外・低優先度課題群のみ:
+  1. （本線外・低優先度）重複計算パターン棚卸しで残った5件
+     （2026-08-13）: `[[ERP-DUAL-CALC-1]]`・`[[Q4-IMPLIED-CALC-
+     TRIPLICATION-1]]`・`[[MOAT-CATALOG-DUP-1]]`・`[[SEC-SUBMISSIONS-
+     DUAL-FETCH-1]]`・`[[SP500-GSPC-MULTI-FETCH-1]]`（外部APIコストの
+     実害解消を受け優先度中→低に引き下げ済み）
+  2. （本線外・低優先度）`[[MARKETDATA-CWAN-FROZEN-DATA-SUSPECT-1]]`等、
+     判断保留中の既存課題群: `[[MARKETDATA-SP500-SCRAPE-INVALID-
+     TICKERS-1]]`・`[[MARKETDATA-VIX9D-DATA-GAP-1]]`・`[[STONKS-SILO-
+     CLI-TICKERS-SHADOW-1]]`・`[[MACRODATA-AS-IS-DUPLICATION-
+     UNDERCOUNT-1]]`・`[[MACRODATA-SCHEDULED-SILENT-GAP-CSCICP-
+     USALOL-1]]`・`[[MACRODATA-IMPORT-HISTORY-CONFIG-DRIFT-1]]`・
+     `[[MACRODATA-FULL-HISTORY-DAILY-REFETCH-1]]`・`[[MACRODATA-FTSD-
+     SERIES-ID-INVALID-1]]`
+  3. 新DB構築プロジェクトの次のステップ: sec_data/market_data/
+     macro_dataの新設・切替（本線）は完了したが、`PROJECT_STATUS.md`
+     フェーズ3「`FIELD_DEFINITIONS.md`499項目の新DB参照への切替方針」
+     が調査完了・実装未着手のまま残っている（`common/sec_data/`は
+     既に多数箇所で参照済み、`common/market_data/`・`common/macro_
+     data/`は参照0件）。次のアクションはyfinance/FRED由来で未更新の
+     項目数を数える調査から着手する（「特になし」ではなく、この
+     フェーズ3切替調査が新DB構築プロジェクトの残る展望）
 
   切替過程で発見した`daily/`層の`auto_adjust=False`（未調整終値）と
   旧実装`auto_adjust=True`（調整済み終値）の乖離は、当初「バグ」として
@@ -145,7 +164,10 @@ git pull --rebase origin kaihatsu
   （`[[MARKETDATA-DAILY-UNADJUSTED-PRICE-DIVIDEND-DRIFT-1]]`、対応不要
   で確定）。この教訓は`CHAT_RULES.md`「新旧の値が食い違う場合、新側を
   疑う前に『どちらが目的に対して正しいか』を確認する」として新規
-  ルール化済み。
+  ルール化済み。2026-08-13セッションではこれに続く教訓として「『完了』
+  報告済み事項の定期再点検」（`[[FRED-HYSPREAD-TRIPLE-FETCH-1]]`が
+  実は既に解消済みなのに未クローズのまま残存していた等3パターン）も
+  `CHAT_RULES.md`へ新規ルール化した。
 
   `common/sec_data`統合の詳細はBACKLOG.md`[[SECDATA-STORAGE-
   FRAGMENTATION-1]]`（マスター追跡エントリ、最終状況を記載）・
@@ -155,7 +177,8 @@ git pull --rebase origin kaihatsu
   PHASE-D-STEP2-1]]`（①TANUKI VALUATION本体）参照。`common/market_data/`
   の詳細はBACKLOG.md`[[MARKETDATA-LAYER-CONSTRUCTION-1]]`・
   `common/macro_data/`の詳細はBACKLOG.md`[[MACRODATA-LAYER-
-  CONSTRUCTION-1]]`・BACKLOG_DONE.md「2026-08-12（完了）」参照
+  CONSTRUCTION-1]]`・重複計算パターン4件の詳細はBACKLOG_DONE.md
+  「2026-08-13（完了）」参照
 - src/value/tanuki_valuation/pipeline.py（直近の変更を把握）
 
 ### Step 2: テスト実行
