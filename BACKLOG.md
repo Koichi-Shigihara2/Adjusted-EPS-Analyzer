@@ -6070,7 +6070,8 @@ valのみを参照するロジックには実害なし。period_daysやstartを�
 ---
 
 ### [SCHEMA-NORMALIZED-ISSUES-1] normalized/スキーマ関連の構造的ギャップまとめ（STDebtタグ網羅性劣化・SM/SGA概念混同・LTDebt優先順序逆転・SharesBasic概念不一致・ファイル名annualデータ混在・DAフォールバック欠如）
-**優先度:** 中〜高（内訳: 中〜高2件・中2件・低2件、個別優先度は各項目参照）
+**優先度:** 中〜高（内訳: 中〜高1件・低5件、個別優先度は各項目参照。
+2026-08-15、①②を実害調査完了により中〜高/中→低へ引き下げ）
 **分類:** データ品質 / normalized/スキーマ（common/sec_data統合スキーマ設計関連）
 **登録日:** 2026-07-23〜2026-07-24（統合日: 2026-08-03）
 **発見:** data/quarterly⇔normalizedフィールド網羅性比較調査・Layer2設計調査
@@ -6084,29 +6085,71 @@ valのみを参照するロジックには実害なし。period_daysやstartを�
 参照されている。
 
 ① **STDebtタグ網羅性劣化**（旧SCHEMA-STDEBT-COVERAGE-GAP-1、優先度
-中〜高）: 短期有利子負債（STDebt/short_term_debt）のタグ網羅性が、
-normalized/側（`quarterly.py::FIELD_CONCEPTS`、単一タグ
-`ShortTermBorrowings`のみ・フォールバックなし）でdata/quarterly側
-（`parser.py::XBRL_MAPPING`、9タグ候補＋フォールバック）に対し著しく
-劣化している。10銘柄実データ確認でAAPL 33/51件・XOM 51/51件・
-V 30/51件がnormalized側で**0件**という深刻な乖離を示した（逆にCAT等は
-data/quarterly側が0件でnormalized側に値がある逆転ケースもあり）。
-normalized/はNet Debt計算等の一部経路で既に5系統
-（[[SECDATA-STORAGE-FRAGMENTATION-1]]参照）から参照されているため、
-現時点でもこのタグ抜けが精度に影響している可能性がある。着手条件:
-common/sec_data統合スキーマ設計の確定後。
+中〜高→**実害調査完了により低（2026-08-15）**）: 短期有利子負債
+（STDebt/short_term_debt）のタグ網羅性が、normalized/側
+（`quarterly.py::FIELD_CONCEPTS`、単一タグ`ShortTermBorrowings`のみ・
+フォールバックなし）でdata/quarterly側（`parser.py::XBRL_MAPPING`、
+9タグ候補＋フォールバック）に対し著しく劣化している。10銘柄実データ
+確認でAAPL 33/51件・XOM 51/51件・V 30/51件がnormalized側で**0件**と
+いう深刻な乖離を示した（逆にCAT等はdata/quarterly側が0件でnormalized
+側に値がある逆転ケースもあり）。
 
-② **SM/SGA概念混同**（旧SCHEMA-SM-SGA-CONFLATION-1、優先度中）:
-data/quarterlyは`selling_and_marketing`（純S&M費用）と
+**実害調査結果（2026-08-13〜15、読み取り専用調査・チャット記録）**:
+消費箇所の洗い出しを完了。TANUKI VALUATION本体の主要消費経路
+（`SECReader.get_net_cash()`）は`data/annual_*.json`（parser.py層、
+9タグ候補版）を参照しており、normalized/の劣化版STDebtは経由しない。
+normalized/を恒久的に使い続けると決定済みの3系統（フェーズE恒久的
+例外、`[[SECDATA-STORAGE-FRAGMENTATION-1]]`参照）についても個別に
+確認した:
+- `fetcher.py`（STONKS SILO）: `_BS_FIELDS`に`short_term_debt`単体
+  フィールドは存在せず（`total_debt`のみ）、対象外
+- `dcf_validity_checker.py`（診断ツール）: `common/sec_data/data/
+  {TICKER}/annual_{year}.json`（parser.py層）を参照しており、
+  normalized/は経由しない
+- `stock.html`（TANUKI VALUATION frontend）: normalized/を直接
+  fetchする唯一の系統だが、取得フィールドはCF滝グラフ用の
+  `OCF`/`CapEx`/`Revenue`/`SBC`/`DA`の5つに限定され`STDebt`は対象外。
+  ページ内に表示される`bsAdj.short_term_debt`は`get_net_cash()`が
+  計算済みの値（parser.py層由来）のパススルー表示であり、normalized/
+  の直接読み取りではない
+
+**結論: normalized/のSTDebtタグ網羅性劣化による実害は現時点で確認
+できない**（リポジトリ全体を通じてnormalized/側の劣化版STDebtを
+実際に読む消費者がゼロ）。スキーマ自体の欠陥（`ShortTermBorrowings`
+単一タグ・フォールバックなし）は現存するため、`common/sec_data`統合
+スキーマ設計時の一括解消対象としては残す。着手条件: なし（優先度を
+中〜高→低に格下げ、統合作業と同時対応で可）。
+
+② **SM/SGA概念混同**（旧SCHEMA-SM-SGA-CONFLATION-1、優先度中→
+**実害調査完了により低（2026-08-15）**）: data/quarterlyは
+`selling_and_marketing`（純S&M費用）と
 `selling_general_and_administrative`（SGA総額）を別フィールドとして
 両方保持するが、normalized/は`SM`という単一フィールドしか持たず、
 S&M単体タグが取得できない銘柄（JOBY/NVDA/CIX/ELF/KO等、
 quarterly.py:236-243に明記）では`_FIELD_FALLBACKS["SM"]`経由でSGA
 総額へ静かにフォールバックする。同じ`SM`値が銘柄によって「純S&M」と
 「SGA総額」という異なる意味を持ちうるが、フィールド名からは判別
-できない。投資強度分母等でこのフィールドを使う計算が、銘柄によって
-異なる性質の値を同一フィールドとして扱っている可能性がある。着手
-条件: common/sec_data統合スキーマ設計の確定後。
+できない。
+
+**実害調査結果（2026-08-13〜15、読み取り専用調査・チャット記録）**:
+TANUKI VALUATION本体の`_estimate_ttm_operating_income()`
+（`pipeline.py`、フェーズD Step2-1でLayer3化済み）は
+`get_field_entries(store, "selling_and_marketing")`でLayer3の
+`selling_and_marketing`フィールド（data/quarterly側と同型の分離
+フィールド）を参照しており、normalized/の混同版`SM`は経由しない。
+①と同じ3系統（fetcher.py・dcf_validity_checker.py・stock.html）も
+個別に確認した:
+- `fetcher.py`: `_PL_FIELDS`に`selling_and_marketing`（parser.py層の
+  分離フィールド）を参照するが、normalized/の`SM`ではない
+- `dcf_validity_checker.py`: SM/SGA系フィールドへの参照なし
+- `stock.html`: CF滝グラフの取得フィールド（OCF/CapEx/Revenue/SBC/
+  DA）に`SM`は含まれず対象外
+
+**結論: normalized/のSM/SGA概念混同による実害は現時点で確認できない**
+（リポジトリ全体を通じてnormalized/側の混同版`SM`を実際に読む消費者が
+ゼロ）。スキーマ自体の欠陥は現存するため、統合スキーマ設計時の一括
+解消対象としては残す。着手条件: なし（優先度を中→低に格下げ、統合
+作業と同時対応で可）。
 
 ③ **LTDebt優先順序逆転**（旧SCHEMA-LTDEBT-DOUBLECOUNT-RISK-1、優先度
 中〜高）: 長期有利子負債（LTDebt/long_term_debt）のprimaryタグ優先
@@ -6176,14 +6219,28 @@ TASK, TDY, TSLA, VZ, V, WMT, ZETA`。いずれもstock.htmlのCF滝グラフ
 「SBC・D&A比率」チャートでD&A系列が欠落する（表示のみへの影響、
 TANUKI VALUATION計算結果への実害は上記の通りなし）。
 
+**調査依頼文の前提訂正（2026-08-15）**: ①②の実害調査を進める過程で、
+依頼文が前提としていた「fetcher.py・dcf_validity_checker.pyは
+normalized/直読み継続で確定済み」という記述を実コードで確認したところ
+**誤りと判明した**。両ファイルとも実際には`common/sec_data/data/
+{TICKER}/annual_*.json`（parser.py層）を参照しており、normalized/を
+直接fetchするのは`[[SECDATA-STORAGE-FRAGMENTATION-1]]`が記す
+フェーズE恒久的例外3系統のうち**stock.htmlのみ**（`CLAUDE_CODE_
+START.md`自体の記述「`fetcher.py`・`dcf_validity_checker.py`
+（`data/annual_*.json`依存継続）・stock.html（`normalized/`直接依存
+継続）」が正しかった）。この訂正を経た上で3系統×2フィールド
+（STDebt・SM）の実消費有無を個別に確認し、上記①②の結論に至った。
+
 #### 対応方針
 ①〜⑥のいずれも、`common/sec_data`統合スキーマ（Layer2/Layer3）設計時に
 `parser.py`側の定義（フォールバック網羅性・優先順序とも既に安全性検証
 済み）へ統一することで一括解消する見込み。個別の緊急対応は不要。
 
 #### 着手条件
-①②はcommon/sec_data統合スキーマ設計の確定後。③④⑤⑥は個別の着手条件
-なし（優先度に応じて統合作業と同時対応で可）。
+①〜⑥いずれも個別の着手条件なし（優先度に応じて統合作業と同時対応で
+可。①②は2026-08-15、実害調査完了〈実消費者ゼロ確認〉により
+「common/sec_data統合スキーマ設計の確定後」という着手条件を撤廃し
+優先度低へ格下げ済み）。
 
 ---
 
