@@ -3149,6 +3149,42 @@ GitHub Actions実行時間・git差分サイズが日次cronとしては不必�
 
 ---
 
+### [MACRODATA-FETCH-FAILURE-VISIBILITY-GAP-1] 系列単位の取得失敗がviolations_log.jsonで「正常」と区別できない
+**優先度:** 中（実害は現時点でFTSD1件のみ確認済みだが、今後同様の
+失敗〈系列ID変更・FRED側仕様変更等〉が起きても気づけない構造的リスク）
+**分類:** 設計上のギャップ / 可視性欠如
+**登録日:** 2026-08-15
+**発見:** `common/macro_data/`更新実行実績・データ鮮度の確認調査
+（チャット記録、2026-08-15）
+
+#### 内容
+`fetch_series()`は失敗時に例外を投げずNoneを返す設計（print()ログの
+みでリポジトリには残らない）。`update_series()`はNone時に
+`{"updated": 0, "warnings": []}`を返し`violations_log.json`へ書き込む
+が、この構造は正常に0件警告だった健全な系列と区別がつかない。
+FTSDエントリ（`{"checked_at": ..., "warnings": []}`）が実例。
+`series/{ID}.json`ファイルが存在しないことに能動的に気づかない限り、
+取得失敗を発見できない。
+
+加えて、`fetch_all_series()`のforループには系列単位のtry/exceptが
+なく、予期しない例外（ディスクエラー等）が発生した場合、その系列
+以降の全系列が未処理のままバッチ全体が中断する構造的リスクも
+あわせて確認された（今回の3日間の実行では未発生）。
+
+#### 対応方針（未定）
+- `violations_log.json`に「fetch自体の成否」を示すフィールド
+  （例: `fetch_status: "success"/"failed"/"skipped"`）を追加する
+- `fetch_all_series()`のforループに系列単位のtry/exceptを追加し、
+  1系列の失敗が他系列の処理を止めないようにする
+- 週次等の定期監視（`audit.py`型の診断ツール）で
+  `series_meta.json`の全系列と`series/`ディレクトリの実ファイルを
+  突合し、欠落を検知する仕組みを追加する
+
+#### 着手条件
+なし。対応方針の具体化から。
+
+---
+
 ### [MARKETDATA-CWAN-FROZEN-DATA-SUSPECT-1] CWANのyfinance日次データが1日分・出来高0のフリーズ状態で取得される
 **優先度:** 低（監視銘柄1件のみ・実害は限定的、`daily_price_validation`が
 既に警告フラグ付きで検知・保存継続しており実害顕在化はしていない）
