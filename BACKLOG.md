@@ -2641,7 +2641,9 @@ Market Pulse1箇所）。`T10Y2Y`・`VIXCLS`にも同型の未記載重複あり
   状態と同型）
 
 投資調査の過程で新規発見した4件をBACKLOG登録済み（記録のみ、
-実装なし）: `[[MACRODATA-AS-IS-DUPLICATION-UNDERCOUNT-1]]`（優先度：中）・
+実装なし）: `[[MACRODATA-AS-IS-DUPLICATION-UNDERCOUNT-1]]`（優先度：中、
+**2026-08-13、`[[FRED-HYSPREAD-TRIPLE-FETCH-1]]`と同型の理由で解消・
+BACKLOG_DONE.mdへ移動済み**）・
 `[[MACRODATA-SCHEDULED-SILENT-GAP-CSCICP-USALOL-1]]`（優先度：低〜中）・
 `[[MACRODATA-FTSD-MISSING-FROM-INVENTORY-1]]`（優先度：低、**2026-08-12
 の設計確定作業で解消・BACKLOG_DONE.mdへ移動済み**）・
@@ -2961,10 +2963,11 @@ grep -n "Fred(\|from fredapi\|fred_api_key" src/market/market_pulse/collect_and_
    存在しない、`05_main.py`側の対応要否）・`[[MACRODATA-FULL-HISTORY-
    DAILY-REFETCH-1]]`（日次cronの全期間再取得の非効率、`--start`
    引数追加等の対応要否）
-5. （本線外）新規発見のうち残る優先度中の2件の対応要否判断:
-   `[[MACRODATA-AS-IS-DUPLICATION-UNDERCOUNT-1]]`（ドキュメント訂正）・
+5. （本線外）新規発見のうち残る優先度中1件の対応要否判断:
    `[[MACRODATA-SCHEDULED-SILENT-GAP-CSCICP-USALOL-1]]`（実データ確認が
-   着手条件）
+   着手条件）。`[[MACRODATA-AS-IS-DUPLICATION-UNDERCOUNT-1]]`は
+   2026-08-13、`[[FRED-HYSPREAD-TRIPLE-FETCH-1]]`と同型の理由で解消・
+   BACKLOG_DONE.mdへ移動済み
 6. （本線外）過去セッションで蓄積した低優先度課題群一式:
    `[[MACRODATA-IMPORT-HISTORY-CONFIG-DRIFT-1]]`・`[[MARKETDATA-CWAN-
    FROZEN-DATA-SUSPECT-1]]`・`[[MARKETDATA-SP500-SCRAPE-INVALID-
@@ -3221,8 +3224,11 @@ period=1y）実行時（チャット記録、2026-08-11。前回2026-08-10の同
   Wikipedia側の構造変化のたびに再発しうるため根本原因の特定を優先する
 
 #### 着手条件
-なし。優先度低のため`common/market_data/`本番消費者切替（着手順序4）の
-残作業と並行して余裕があるときに着手する。
+なし。優先度低のため`common/market_data/`本線完了後の低優先度タスクと
+して余裕があるときに着手する（2026-08-13更新: 登録時点の「着手順序4の
+残作業と並行」という前提は、`common/market_data/`本番消費者切替が全数
+完了したことで消滅した。バグ自体〈不正銘柄コードの混入〉は未解消の
+まま有効）。
 
 ---
 
@@ -4137,8 +4143,12 @@ Broadcom Corpの実績を表している可能性がある。2015年の欠落は
 （コスト低〜中）
 
 #### 着手条件
-新DB構築フェーズ1完了後、または実害が実際に発生した場合まで保留。
-実装せず記録のみ。
+**充足済み（2026-08-13更新）**。着手条件だった「新DB構築フェーズ1
+完了」は、`common/sec_data`統合（フェーズD、2026-08-06実質完了）・
+`common/market_data/`・`common/macro_data/`（いずれも2026-08-13本線
+タスク完了）を含め満たされた。対応方針〈案A: 旧CIK差し替え・案B:
+現状維持＋警告表示・案C: 2006-2014年データ削除〉のいずれを採るかの
+判断が必要な状態（実装は未着手のまま）。
 
 ---
 
@@ -6246,6 +6256,23 @@ MISMATCH-1]]の期間接尾辞化等）は該当タスク側で扱うが、命�
 チェックリスト運用（新規フィールド追加時の適用）自体は独立したタスクと
 して管理する。
 
+**2026-08-13追記（実装結果との食い違い）**: `[[NETCASH-DUAL-CALC-1]]`の
+実際の実装（2026-08-13完了）は、想定していた規則1の接尾辞化
+（`net_cash`→`net_cash_sec`）を行わず、**フィールド名`net_cash`を維持
+したまま算出元のみ`SECReader.get_net_cash()`へ統一**した（STONKS
+SILOの独自算出`cash − yfinance totalDebt`を廃止）。これは規則1の趣旨
+（データソースが異なる場合に接尾辞で識別できるようにする）に照らすと
+矛盾ではない解釈も成り立つ：統一後はTANUKI VALUATION・STONKS SILOとも
+同一のデータソース（`SECReader.get_net_cash()`）を参照するようになった
+ため、「データソースが異なる場合」という規則1の適用前提自体が消滅し、
+接尾辞による識別の必要性がなくなったとも言える。一方`[[RULE40-
+DEFINITION-MISMATCH-1]]`の期間接尾辞化（`rule40_yoy_netmargin`・
+`rule40_cagr3y_opmargin`）は想定通り規則2に従って実装済み。個別適用例
+の記載は「命名規則の適用＝機械的な接尾辞付与」ではなく「適用要否は
+統一後のデータソース同一性を踏まえて都度判断する」という運用実態に
+即した表現に将来更新することが望ましい（本エントリの対応方針自体
+〈チェックリスト運用〉には影響しないため、記録として付記するのみ）。
+
 #### 対応方針
 新規フィールド追加時に`NAMING_CONVENTIONS.md`の適用チェックリストを
 参照する運用をCLAUDE_CODE_START.md等に明記する。既存フィールドの一括
@@ -7871,52 +7898,6 @@ ARCH-DATA-1残課題③調査結果を反映）」参照）。本タスクはこ
 #### 着手条件
 なし（ただし新規銘柄登録はいつでも発生しうるため、着手を
 先延ばしにする前提にはしないこと）
-
----
-
-### [MACRODATA-AS-IS-DUPLICATION-UNDERCOUNT-1] INPUT_DATA_TOBE.mdが指摘するBAMLH0A0HYM2重複取得「3箇所」は実際には4箇所。T10Y2Y・VIXCLSにも同型の未記載重複が存在する
-**優先度:** 中（`common/macro_data/`着手前にドキュメント訂正・母集団の
-正確な把握が必要）
-**分類:** ドキュメント不備 / 調査範囲の見落とし
-**登録日:** 2026-08-12
-**発見:** `common/macro_data/`新設事前調査・FRED消費者洗い出し
-（チャット記録、2026-08-12）
-
-#### 内容
-`INPUT_DATA_TOBE.md`（147行・436-439行）は`BAMLH0A0HYM2`（HYスプレッド）
-の重複取得を「MACRO PULSE内部2箇所＋Market Pulse1箇所＝計3箇所」と
-記載しているが、`05_main.py`の通常実行（`main()`、フラグなし）を実コード
-で追跡した結果、以下の**3箇所**が無条件に実行されることを確認した:
-1. `get_financial_context()`（763-794行、786行で`fred_latest(fred,
-   "BAMLH0A0HYM2", ...)`）— `main()`冒頭（2185行）で必ず実行
-2. `fetch_event_row("HY Spread", ...)`（934行、`INDICATOR_CONFIG`の
-   `daily`3系列ループ内、2217-2223行）— 必ず実行
-3. `update_liquidity_csv()`（1956行）— `main()`末尾（2255行）で必ず実行
-
-これに`collect_and_send.py::fetch_hy_spread_from_fred()`（Market Pulse）
-を加えると**計4箇所**。ドキュメントは①`get_financial_context()`を
-見落としており、MACRO PULSE内部は2箇所ではなく3箇所が正しい。
-
-さらに、同一構造の未記載重複が`T10Y2Y`・`VIXCLS`にも存在する:
-`get_financial_context()`（785行`T10Y2Y`・787行`VIXCLS`）と
-`fetch_event_row("Yield Curve 10Y-2Y"/"VIX", ...)`
-（`INDICATOR_CONFIG`経由の`fred_id`再取得）がそれぞれ独立に同一系列を
-再取得しており、`fin_ctx`にすでに取得済みの値があるにもかかわらず
-`daily`系列自身の行を作る際は再フェッチする設計になっている。
-ドキュメントは`BAMLH0A0HYM2`のみを重複例として挙げているが、
-`T10Y2Y`・`VIXCLS`（いずれもMACRO PULSE内部2箇所）にも同型の重複が
-存在する。
-
-#### 対応方針（未定）
-- `INPUT_DATA_TOBE.md`の該当記載（147行・436-439行）を「MACRO PULSE
-  内部3箇所＋Market Pulse1箇所＝計4箇所」に訂正する
-- `T10Y2Y`・`VIXCLS`の2箇所重複も追記する
-- `common/macro_data/fetcher.py`設計時、`get_financial_context()`が
-  `INDICATOR_CONFIG`の`daily`系列と重複取得しない構造（`fin_ctx`の
-  値をそのまま`daily`系列の`actual`にも流用する等）を検討する
-
-#### 着手条件
-なし。`common/macro_data/`設計時にこれら3系列の重複解消を含めること。
 
 ---
 

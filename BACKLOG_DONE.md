@@ -317,6 +317,58 @@ CONSTRUCTION-1]]`（2026-08-12実装）により**既に完全解消済み**と�
 
 ---
 
+### ✅ [MACRODATA-AS-IS-DUPLICATION-UNDERCOUNT-1] INPUT_DATA_TOBE.mdが指摘するBAMLH0A0HYM2重複取得「3箇所」は実際には4箇所。T10Y2Y・VIXCLSにも同型の未記載重複が存在する
+**状態:** 完了（`[[FRED-HYSPREAD-TRIPLE-FETCH-1]]`と同型の理由で
+クローズ、対応方針は実装完了により順序性の意味を失ったと判断）
+**優先度:** 中
+**分類:** ドキュメント不備 / 調査範囲の見落とし
+**登録日:** 2026-08-12
+**完了日:** 2026-08-13（「不要になったBACKLOG項目の確認」調査
+〈チャット記録〉での発見を受けたクローズ処理）
+**発見:** `common/macro_data/`新設事前調査・FRED消費者洗い出し
+（チャット記録、2026-08-12）
+
+#### 内容
+`INPUT_DATA_TOBE.md`（147行・436-439行）が「MACRO PULSE内部2箇所＋
+Market Pulse1箇所＝計3箇所」と記載していた`BAMLH0A0HYM2`の重複取得は
+実際には4箇所（`get_financial_context()`の見落とし1箇所を含む）で
+あり、同型の未記載重複が`T10Y2Y`・`VIXCLS`にも存在すると判明していた。
+
+#### 対応方針（登録時点）
+①`INPUT_DATA_TOBE.md`の箇所数記載訂正（3→4箇所、`T10Y2Y`・`VIXCLS`の
+重複も追記）②`common/macro_data/fetcher.py`設計時に
+`get_financial_context()`が`INDICATOR_CONFIG`の`daily`系列と重複取得
+しない構造を検討する、の2点。
+
+#### クローズ経緯（2026-08-13、「不要になったBACKLOG項目の確認」
+読み取り専用調査での発見）
+`[[FRED-HYSPREAD-TRIPLE-FETCH-1]]`（本項目と同じBAMLH0A0HYM2重複取得
+問題を扱う別エントリ、`TO_BE.md`⑮群由来）が実は`[[MACRODATA-LAYER-
+CONSTRUCTION-1]]`実装〈2026-08-12〉により既に解消済みだったことが
+判明・クローズされたのと同じセッションで、本項目も実質的に同型の
+状態にあることを発見した。対応方針②（重複取得しない構造への変更）は
+`MACRODATA-LAYER-CONSTRUCTION-1`実装により事実上達成済みと確認できる:
+`05_main.py`の3箇所（`get_financial_context()`・`fetch_event_row()`・
+`update_liquidity_csv()`）はいずれも`fred_latest()`（`common.macro_
+data.reader`経由）に統一済みで、`BAMLH0A0HYM2`・`T10Y2Y`・`VIXCLS`の
+3系列とも外部FRED APIへの直接呼び出しは0件になっている（実データ確認
+済み、`[[FRED-HYSPREAD-TRIPLE-FETCH-1]]`クローズ記録と同一の確認結果）。
+
+残る対応方針①（`INPUT_DATA_TOBE.md`の箇所数記載訂正）は、登録時点では
+「`common/macro_data/`着手前にドキュメント訂正・母集団の正確な把握が
+必要」という優先度中の理由付けだったが、`common/macro_data/`の実装
+自体が完了した今となっては「実装前にドキュメントを正しておく」という
+順序性の前提が消滅している。訂正すべき数値（3→4箇所）自体は事実として
+今も正しいが、単なる過去の設計ドキュメントの記載精度の問題であり、
+本エントリが元々意図していた「実装への悪影響を防ぐための事前訂正」
+という目的はもはや成立しないため、本エントリをクローズする。
+`INPUT_DATA_TOBE.md`の記載精度そのものについては、必要であれば別途
+軽微なドキュメント修正として扱う（BACKLOG登録の対象外）。
+
+実装コード変更は今回行っていない（記録のみ）。
+
+---
+
 ## 2026-08-12（完了）
 
 ### ✅ [MACRODATA-FTSD-MISSING-FROM-INVENTORY-1] FTSD（WTREGENフォールバック先）がINPUT_DATA_TOBE.mdの24系列台帳（INPUT-A-024〜047）に含まれていない
