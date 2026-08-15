@@ -923,8 +923,12 @@ python -m src.value.adjusted_eps_analyzer.pipeline --ticker [TICKER]
 # "データなし"で失敗する場合は cik_lookup.csv の eps 列を false に設定する
 
 # Step 6: Discover 監視リストに追加
+# 2026-08-15: docs/portfolio/data/discover_config.json への同期は
+# Discover_Config_Sync.yml が自動実行するため、shutil.copy()による
+# 手動コピーは不要（[[DISCOVER-CONFIG-DUAL-MGMT-1]]）。push後、数分内に
+# ワークフローが自動同期する。
 python3 -c "
-import json, shutil
+import json
 from datetime import date
 ticker = '[TICKER]'
 with open('config/discover_config.json', encoding='utf-8') as f:
@@ -934,7 +938,6 @@ if ticker not in config.get('tickers', {}):
     config['last_updated'] = str(date.today())
     with open('config/discover_config.json', 'w', encoding='utf-8') as f:
         json.dump(config, f, ensure_ascii=False, indent=2)
-    shutil.copy('config/discover_config.json', 'docs/portfolio/data/discover_config.json')
     print(f'{ticker} をDiscover監視リストに追加しました')
 else:
     print(f'{ticker} はすでに登録済みです')
@@ -1146,15 +1149,15 @@ with open('config/beta_config.json', 'w') as f:
 "
 
 # discover_config.json から削除
+# 2026-08-15: docs/側同期はDiscover_Config_Sync.ymlが自動実行
+# （[[DISCOVER-CONFIG-DUAL-MGMT-1]]）
 python3 -c "
-import json, shutil
+import json
 with open('config/discover_config.json') as f:
     d = json.load(f)
 d['tickers'] = {k: v for k, v in d['tickers'].items() if k != '[TICKER]'}
 with open('config/discover_config.json', 'w', encoding='utf-8') as f:
     json.dump(d, f, ensure_ascii=False, indent=2)
-shutil.copy('config/discover_config.json',
-            'docs/portfolio/data/discover_config.json')
 "
 
 # monitor_tickers.yaml から削除
