@@ -4646,69 +4646,8 @@ HTTP経由でfetch不可能なことを実測で確認済み（`SYSTEM_MAP.md`�
 
 ---
 
-### [TAILKPI-CONFIG-LOCATION-1] tail_kpi_map.jsonがconfig/ではなくdocs/portfolio/tail/data/配下に配置されている
-**状態:** 未着手
-**優先度:** 低〜中
-**分類:** 設定ファイル配置
-**登録日:** 2026-08-12
-**発見:** フェーズ3投資調査（`INPUT_DATA_AS_IS.md`2-D、チャット記録、
-2026-08-12）
-
-#### 内容
-`config/tail_kpi_map.json`（TANUKI TAILのKPI設定、AI提案＋人手確定の
-ハイブリッド）が、実際には`config/`ではなく`docs/portfolio/tail/data/`
-配下（TANUKI TAILの生成データと同じディレクトリ）に配置されている。
-`INPUT_DATA_TOBE.md`（`INPUT-C-009`）のTO-BE設計方針は「他の手動設定
-ファイルと同様`config/`配下への集約」。
-
-新DB構築プロジェクト フェーズ3（導出データ層の管理方法検討）の対象
-（分類C、`INPUT-C-009`）。関連: `[[PORTFOLIO-CONFIG-DUP-1]]`
-（`INPUT-C-008`）・`[[FCFCONFIG-LOCATION-1]]`（`INPUT-C-010`）。
-
-**確認結果（2026-08-15、フェーズ3合同設計調査）**: 消費者は全て
-Pythonバックエンド（`.github/workflows/TANUKI_TAIL_KPI_Update.yml`・
-`TANUKI_TAIL_RSS_Monitor.yml`・`src/tail/kpi_proposer.py`・
-`src/tail/xbrl_segment_fetcher.py`）で、フロントエンドからの直接
-`fetch()`は無いと確認済み。GitHub Pages配信制約（`SYSTEM_MAP.md`
-「`config/`と`docs/`の配置原則」参照）の対象外であり、TO-BE方針
-「`config/`への集約」は変更不要・そのまま実装可能。
-
-#### 着手条件
-なし
-
----
-
-### [FCFCONFIG-LOCATION-1] fcf_conversion_config.jsonがconfig/ではなくsrc/value/tanuki_valuation/直下に配置されている
-**状態:** 未着手
-**優先度:** 低〜中
-**分類:** 設定ファイル配置
-**登録日:** 2026-08-12
-**発見:** フェーズ3投資調査（`INPUT_DATA_AS_IS.md`2-D、チャット記録、
-2026-08-12）
-
-#### 内容
-`config/fcf_conversion_config.json`（Damodaran業種別FCF変換率等の銘柄別
-上書き設定）が、実際には`config/`ではなく`src/value/tanuki_valuation/`
-直下（TANUKI VALUATIONのロジックファイルと同じディレクトリ）に配置
-されている。`INPUT_DATA_TOBE.md`（`INPUT-C-010`）のTO-BE設計方針は
-「`config/`への集約」。
-
-新DB構築プロジェクト フェーズ3（導出データ層の管理方法検討）の対象
-（分類C、`INPUT-C-010`）。関連: `[[PORTFOLIO-CONFIG-DUP-1]]`
-（`INPUT-C-008`）・`[[TAILKPI-CONFIG-LOCATION-1]]`（`INPUT-C-009`）。
-
-**確認結果（2026-08-15、フェーズ3合同設計調査）**: 消費者は
-`src/value/tanuki_valuation/calculator/adjustments.py`（Pythonバック
-エンド、ローカルファイル探索）と`value-monitor/admin.html`のGitHub
-Contents API経由アクセス（パスを問わず機能）のみで、フロントエンド
-からの直接`fetch()`は無いと確認済み。GitHub Pages配信制約
-（`SYSTEM_MAP.md`「`config/`と`docs/`の配置原則」参照）の対象外であり、
-TO-BE方針「`config/`への集約」は変更不要・そのまま実装可能。
-
-#### 着手条件
-なし
-
----
+（[[TAILKPI-CONFIG-LOCATION-1]]・[[FCFCONFIG-LOCATION-1]]は2026-08-15
+実装完了、BACKLOG_DONE.md「2026-08-15（完了）」参照）
 
 ### [RISK-FREE-RATE-HARDCODE-1] risk_free_rateの常時ハードコード（0.043固定）
 **優先度:** 高

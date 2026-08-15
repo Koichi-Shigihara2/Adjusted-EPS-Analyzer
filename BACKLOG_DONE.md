@@ -4,6 +4,113 @@
 
 ## 2026-08-15（完了）
 
+### ✅ [TAILKPI-CONFIG-LOCATION-1] tail_kpi_map.jsonがconfig/ではなくdocs/portfolio/tail/data/配下に配置されている
+**状態:** 完了
+**優先度:** 低〜中
+**分類:** 設定ファイル配置
+**登録日:** 2026-08-12
+**完了日:** 2026-08-15
+**発見:** フェーズ3投資調査（`INPUT_DATA_AS_IS.md`2-D、チャット記録、
+2026-08-12）
+
+#### 内容（登録時点）
+`config/tail_kpi_map.json`（TANUKI TAILのKPI設定、AI提案＋人手確定の
+ハイブリッド）が、実際には`config/`ではなく`docs/portfolio/tail/data/`
+配下（TANUKI TAILの生成データと同じディレクトリ）に配置されていた。
+`INPUT_DATA_TOBE.md`（`INPUT-C-009`）のTO-BE設計方針は「他の手動設定
+ファイルと同様`config/`配下への集約」。
+
+#### 実装内容（2026-08-15、フェーズ3合同設計調査からの直接実装）
+消費者が全てPythonバックエンドでGitHub Pages配信制約の対象外と確認
+済みのため、`git mv`で`docs/portfolio/tail/data/tail_kpi_map.json`
+→`config/tail_kpi_map.json`へ移動し、以下の参照元を修正:
+- `.github/workflows/TANUKI_TAIL_KPI_Update.yml`（Python open()パス）
+- `.github/workflows/TANUKI_TAIL_RSS_Monitor.yml`（`git add`対象パス）
+- `src/tail/kpi_proposer.py`（`KPI_MAP_PATH`定数・docstring）
+- `src/tail/xbrl_segment_fetcher.py`（`KPI_MAP_PATH`定数）
+- `CLAUDE_CODE_START.md`（新規銘柄登録手順Step T6の`git add`パス）
+- `.gitattributes`（`config/tail_kpi_map.json`に`merge=ours`を個別付与。
+  CIが自動追記・コミットする運用が続くため、`docs/portfolio/tail/data/`
+  時代の自動コンフリクト解決挙動を維持）
+- `INPUT_DATA_AS_IS.md`・`INPUT_DATA_TOBE.md`（移動完了の追記）
+
+#### 検証結果
+- `grep -rn`で旧パス文字列の残存なしを確認
+- `kpi_proposer.py`・`xbrl_segment_fetcher.py`をローカルimportし、
+  `KPI_MAP_PATH`が新パスを指し実ファイルが存在することを確認
+- GitHub Actionsワークフロー2件はローカル実行不可のため、YAMLの
+  パス記述の静的確認で代替
+- pytest: 781 passed / 2 failed（既知`[[TEST-STALE-IV-1]]` MSFT/NVDA、
+  本変更と無関係）
+
+#### 関連
+`[[PORTFOLIO-CONFIG-DUP-1]]`（`INPUT-C-008`）・`[[FCFCONFIG-LOCATION-1]]`
+（`INPUT-C-010`）・`[[DISCOVER-CONFIG-DUAL-MGMT-1]]`と合わせた
+フェーズ3合同設計調査（2026-08-15）の一環。
+
+---
+
+### ✅ [FCFCONFIG-LOCATION-1] fcf_conversion_config.jsonがconfig/ではなくsrc/value/tanuki_valuation/直下に配置されている
+**状態:** 完了
+**優先度:** 低〜中
+**分類:** 設定ファイル配置
+**登録日:** 2026-08-12
+**完了日:** 2026-08-15
+**発見:** フェーズ3投資調査（`INPUT_DATA_AS_IS.md`2-D、チャット記録、
+2026-08-12）
+
+#### 内容（登録時点）
+`config/fcf_conversion_config.json`（Damodaran業種別FCF変換率等の銘柄別
+上書き設定）が、実際には`config/`ではなく`src/value/tanuki_valuation/`
+直下（TANUKI VALUATIONのロジックファイルと同じディレクトリ）に配置
+されていた。`INPUT_DATA_TOBE.md`（`INPUT-C-010`）のTO-BE設計方針は
+「`config/`への集約」。
+
+#### 実装内容（2026-08-15、フェーズ3合同設計調査からの直接実装）
+消費者が全てPythonバックエンド・GitHub Contents API経由アクセス
+（パスを問わず機能）のみでGitHub Pages配信制約の対象外と確認済みの
+ため、`git mv`で`src/value/tanuki_valuation/fcf_conversion_config.json`
+→`config/fcf_conversion_config.json`へ移動し、以下の参照元を修正:
+- `src/value/tanuki_valuation/calculator/adjustments.py`
+  （`estimate_fcf_from_eps()`の自動探索候補パス。同一ディレクトリ
+  `calculator/`指定の旧候補は元々一致したことのない誤候補と判明した
+  ため削除し、リポジトリルート起点の絶対パスとCWD相対パスの2候補に
+  整理）
+- `docs/value-monitor/admin.html`（`FCF_PATH`定数）
+- `SYSTEM_MAP.md`（パイプライン変更時影響範囲チェックリストの参照
+  パス）
+- `INPUT_DATA_AS_IS.md`・`INPUT_DATA_TOBE.md`（移動完了の追記）
+
+#### 検証結果
+- `grep -rn`で旧パス文字列の残存なしを確認
+- pytest: 781 passed / 2 failed（既知`[[TEST-STALE-IV-1]]` MSFT/NVDA、
+  本変更と無関係）。`fcf_conversion_config.json`を参照するテスト2件
+  （`test_divergence_sign_guard.py`・`test_estimate_fcf_ma_addback.py`）
+  はいずれも`config_path`を明示指定するfixtureのため今回の移動の
+  影響を受けないことを事前確認済み
+- `common/sec_data/audit.py`: 正常95・警告5（既存WARNのみ、本変更由来
+  の新規NGなし）
+- `common/sec_data/report_consistency_check.py`: NG=0・WARN=78件
+  （移動前と不変）
+- **全100銘柄再生成（`pipeline.py --skip-risk`）を実施し、移動前後で
+  FCF転換率関連フィールド（`conversion_rate`・`estimated_fcf`・
+  `fcf_estimation`・report.txtの変換率表示）に実質差分がないことを
+  確認**。成功100/失敗0、検証PASS=67 WARN=32 FAIL=1（FAIL=LYFTのみ、
+  「理論株価がゼロ以下（FCF恒久マイナス銘柄）」という移動前から
+  存在する既存の異常検知であり、本変更による新規回帰ではないことを
+  `git diff`で確認済み）。唯一の例外として、CWANの`adj_net_income`/
+  `estimated_fcf`が浮動小数点16桁目でのみ異なる（相対誤差約9×10⁻¹⁷、
+  `conversion_rate`自体は1.61で完全一致）浮動小数点丸め誤差を検出、
+  実害なしと判断
+
+#### 関連
+`[[PORTFOLIO-CONFIG-DUP-1]]`（`INPUT-C-008`）・
+`[[TAILKPI-CONFIG-LOCATION-1]]`（`INPUT-C-009`）・
+`[[DISCOVER-CONFIG-DUAL-MGMT-1]]`と合わせたフェーズ3合同設計調査
+（2026-08-15）の一環。
+
+---
+
 ### ✅ [MACRODATA-IMPORT-HISTORY-CONFIG-DRIFT-1] 05_import_history.pyの独自FRED_INDICATORS辞書がINDICATOR_CONFIGと乖離（2系列多い・2系列少ない）
 **状態:** 完了（案B〈common.macro_data.reader経由への作り直し〉を採用
 し実装完了）
