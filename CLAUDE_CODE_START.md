@@ -1,5 +1,53 @@
 # Claude Code 作業開始テンプレート
 
+最終更新: 2026-08-16（**セッション終了時ブラッシュアップ・本日
+セッションサマリー**。フェーズ3完了後の残作業として`[[FCFCONFIG-
+MISSING-DETECTION-WEAK-1]]`・`[[EPSANALYZER-ADMIN-ORPHAN-PAGE-1]]`・
+`[[CONFIG-LOAD-SILENT-FALLBACK-1]]`（着手条件なしの残2件）を実施した
+（`79d623ceb`以降の作業。フェーズ3完了記録自体は`79d623ceb`で完了
+済み、本エントリでは重複記録しない）。
+
+**実装完了（コミットハッシュ付き）**:
+- `[[FCFCONFIG-MISSING-DETECTION-WEAK-1]]`（CHECK-33新設）
+  `027c6868c`/`73bff7fbc`（後にCHECK-34へ統合、下記参照）
+- `[[EPSANALYZER-ADMIN-ORPHAN-PAGE-1]]`（死蔵ページ削除）
+  `9e2e0fd9d`/`806502eb6`
+- `[[CONFIG-LOAD-SILENT-FALLBACK-1]]`登録`bf080bb35`、部分実装
+  （CHECK-34、7件中4件）`3241a360e`/`dea525ea3`
+
+**CHAT_RULES.mdへの運用ルール追加2件**:
+- git add・破壊的git操作の事故防止 `12e3c9679`
+- ローカル環境固有の検証ノイズ `f8272834c`
+
+**確立した設計原則**: サイレント破損の検知は「チェッカー独自の代理
+判定ではなく、本番コードが実際に使う解決ロジックそのものを呼び出す」
+（CHECK-32〜34共通、`SYSTEM_MAP.md`に記録済み）。横展開はレジストリ
+テーブル方式を採用し、個別チェック関数を対象数分作らず、
+`resolve_*_path()`の切り出し＋`_CONFIG_LOADER_REGISTRY`への1エントリ
+追記で済む構造にした。
+
+**スコープが登録前確認で変わった事例**: `rpo_config.json`単体の課題
+として登録する予定だったが、登録前の横断確認で同型パターンが7ファイル
+に及ぶと判明し、`[[CONFIG-LOAD-SILENT-FALLBACK-1]]`として横断項目に
+変更した（個別登録していれば残り6ファイルは追跡されないまま残って
+いた）。
+
+**環境要因による検証ノイズ2件**: `core.autocrlf`によるCRLF誤検知、
+`ALPHA_VANTAGE_API_KEY`未設定による`EPS_DISCREPANCY`欠落。いずれも
+原因特定の上で`CHAT_RULES.md`に記録済み（EPS Analyzer側の生成データは
+環境要因による差分を含むためコミット対象から除外し、コード変更のみ
+コミットした）。
+
+**次セッションの着手候補**: `[[CONFIG-LOAD-SILENT-FALLBACK-1]]`
+残り3件（`prompts.yaml`・`maturity_config.json`・`segment_config.json`/
+`growth_options_config.json`、着手条件なし）。ただし`maturity_
+config.json`/`segment_config.json`はWACC/DCF計算コアに直結し全銘柄
+再生成の検証コストが高いため、優先度は低いまま。それ以外は
+`[[RISK-FREE-RATE-HARDCODE-1]]`等、既存の本線外・優先度高課題群も
+候補（詳細はBACKLOG.md参照）。
+
+詳細はBACKLOG_DONE.md「2026-08-16（完了）」参照。
+
 最終更新: 2026-08-15（**セッション終了時ブラッシュアップ・本日
 セッションサマリー**。フェーズ3合同設計調査（Bグループ・Aグループ・
 未登録11件調査）を通じて実施した以下を記録する。
