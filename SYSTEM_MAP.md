@@ -1,5 +1,18 @@
 # SYSTEM MAP — On-a-journey
 
+最終更新: 2026-08-15（新DB構築プロジェクトのフィールド単位の完了確認・
+`05_import_history.py`の復旧を反映。`FIELD_DEFINITIONS.md`499項目
+単位での新DB参照切替状況を集計した結果、yfinance/FRED由来18項目
+〈TANUKI VALUATIONの`data_fetcher.py`・Discoverの`collect.py`・
+Market Pulseの`collect_and_send.py`/`breadth_calculator.py`・MACRO
+PULSEの`05_main.py`〉が全件`common/market_data/`・`common/macro_
+data/`へ切替済みと確認（消費者ファイル単位・重複計算パターン単位に
+続く3つ目の粒度での完了確認）。また`05_import_history.py`（一過性の
+一括過去投入ツール）が`05_main.py`の`get_fred()`削除〈2026-08-12〉に
+巻き込まれ3日間実行不能だった状態を発見・復旧し、`common.macro_data.
+reader`経由の設計へ統合した（`[[MACRODATA-IMPORT-HISTORY-
+CONFIG-DRIFT-1]]`）。詳細はBACKLOG_DONE.md「2026-08-15（完了）」参照）
+
 最終更新: 2026-08-13（重複計算パターン4件の解消を反映。STONKS SILO
 （`discover/stonks-silo/src/pipeline.py`）はTANUKI VALUATIONと同じ
 `SECReader.get_net_cash()`を直接参照するよう切替済み（独自の

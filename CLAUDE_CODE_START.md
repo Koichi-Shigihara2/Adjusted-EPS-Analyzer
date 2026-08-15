@@ -1,5 +1,28 @@
 # Claude Code 作業開始テンプレート
 
+最終更新: 2026-08-15（セッション終了時ブラッシュアップ。2026-08-15の
+セッションで完了した以下を反映：①BACKLOG項目の棚卸しクローズ・優先度
+引き下げ複数件（`[[MACRODATA-AS-IS-DUPLICATION-UNDERCOUNT-1]]`クローズ・
+`[[AVGO-CIK-HISTORY-WRONG-LEGACY-CIK-1]]`/`[[MARKETDATA-SP500-SCRAPE-
+INVALID-TICKERS-1]]`/`[[NAMING-CONVENTIONS-APPLY-1]]`着手条件更新・
+`[[SCHEMA-NORMALIZED-ISSUES-1]]`①②/`[[LAYER3-RPO-CANDIDATE-ORDER-1]]`
+優先度引き下げ）②新規発見2件のBACKLOG登録：`[[MACRODATA-FETCH-
+FAILURE-VISIBILITY-GAP-1]]`（macro_data取得失敗の可視化設計欠如）・
+`[[MACRO-PULSE-STALENESS-DISCLOSURE-GAP-1]]`（景気サイクルフェーズ
+複合スコアの鮮度注記欠如）③`[[MACRODATA-IMPORT-HISTORY-CONFIG-
+DRIFT-1]]`対応完了：`05_import_history.py`を`common.macro_data.
+reader`経由に作り直し（案B）。当初「設定乖離」という問題設定だったが
+実装過程で「実行不能〈AttributeError〉」というより深刻な実態が判明・
+復旧した④`FIELD_DEFINITIONS.md`499項目の新DB参照切替状況を集計する
+投資調査を実施し、yfinance/FRED由来18項目が全件切替済みと確認（フィー
+ルド単位でも本線タスクの完了を確認）。SEC EDGAR由来4件（AS-IS-129・
+266・273・395）はsec_data側フェーズDでの対応状況が未検証のまま残る。
+CHAT_RULES.mdへ「本番消費者リスト外の間接依存が切替に巻き込まれて
+破損する」パターンを`[[MACRODATA-IMPORT-HISTORY-CONFIG-DRIFT-1]]`の
+事例として追記。詳細はBACKLOG_DONE.md「2026-08-15（完了）」参照。
+実装コード変更あり（`05_import_history.py`のみ、検証済み・pytest回帰
+なし）)
+
 最終更新: 2026-08-14（セッション終了時ブラッシュアップ。2026-08-13の
 セッションで完了した以下を反映：①`common/market_data/`の未追跡だった
 `collect_and_send.py::collect_asset_flow()`のSHV等6資産切替
@@ -122,40 +145,49 @@ git pull --rebase origin kaihatsu
   残るため、`normalized/`は完全廃止できず、この3系統向けに存続する
   設計とする（詳細は`[[SECDATA-STORAGE-FRAGMENTATION-1]]`参照）。
 
-  **次セッションの一次データ層プロジェクト着手順序（2026-08-14訂正）**：
+  **次セッションの一次データ層プロジェクト着手順序（2026-08-15訂正）**：
   `common/sec_data`統合（フェーズD）・`common/market_data/`（yfinance
-  統合層）・`common/macro_data/`（FRED統合層）とも**主要切替は完了**
-  （フェーズD実質完了。market_dataは本番消費者8＋診断ツール2＋周辺
-  ツール2の全12ファイルに加え`collect_and_send.py::collect_asset_
-  flow()`のSHV等6資産も切替完了。macro_dataは本番消費者2ファイル
-  〈`05_main.py`・`collect_and_send.py`〉に加え周辺ツール1件
-  〈`backfill_tech_pulse.py`のVXNCLS〉も切替完了）。2026-08-13
-  セッションで重複計算パターン4件（`[[NETCASH-DUAL-CALC-1]]`・
-  `[[NETINCOME-DUAL-PIPELINE-1]]`・`[[RULE40-DEFINITION-MISMATCH-1]]`・
-  `[[FRED-HYSPREAD-TRIPLE-FETCH-1]]`）も解消済み。**新DB構築
-  プロジェクトのsec_data/market_data/macro_data本線タスクは完了**。
+  統合層）・`common/macro_data/`（FRED統合層）とも**主要切替は完了**。
+  2026-08-15、`FIELD_DEFINITIONS.md`499項目単位での新DB参照切替状況を
+  集計する投資調査を実施し、yfinance/FRED由来18項目が全件切替済みと
+  実コードで確認した（詳細はBACKLOG.md`[[MARKETDATA-LAYER-
+  CONSTRUCTION-1]]`・`[[MACRODATA-LAYER-CONSTRUCTION-1]]`の
+  2026-08-15付注記参照）。**新DB構築プロジェクトは消費者ファイル単位・
+  重複計算パターン単位・フィールド単位の3つの粒度全てで本線タスクの
+  完了を確認できた**。`[[MACRODATA-IMPORT-HISTORY-CONFIG-DRIFT-1]]`
+  対応（`05_import_history.py`を`common.macro_data.reader`経由に
+  作り直し）も完了し、当初「設定乖離」という軽微な問題設定だったが
+  投資調査で「実行不能」というより深刻な実態が判明・復旧した。
   次のアクションは以下の本線外・低優先度課題群のみ:
-  1. （本線外・低優先度）重複計算パターン棚卸しで残った5件
-     （2026-08-13）: `[[ERP-DUAL-CALC-1]]`・`[[Q4-IMPLIED-CALC-
-     TRIPLICATION-1]]`・`[[MOAT-CATALOG-DUP-1]]`・`[[SEC-SUBMISSIONS-
-     DUAL-FETCH-1]]`・`[[SP500-GSPC-MULTI-FETCH-1]]`（外部APIコストの
-     実害解消を受け優先度中→低に引き下げ済み）
-  2. （本線外・低優先度）`[[MARKETDATA-CWAN-FROZEN-DATA-SUSPECT-1]]`等、
-     判断保留中の既存課題群: `[[MARKETDATA-SP500-SCRAPE-INVALID-
+  1. （本線外・低優先度）これまでの本線外課題群: `[[ERP-DUAL-CALC-1]]`・
+     `[[Q4-IMPLIED-CALC-TRIPLICATION-1]]`・`[[MOAT-CATALOG-DUP-1]]`・
+     `[[SEC-SUBMISSIONS-DUAL-FETCH-1]]`・`[[SP500-GSPC-MULTI-
+     FETCH-1]]`（重複計算パターン棚卸しで残った5件、外部APIコストの
+     実害解消を受け優先度中→低に引き下げ済み）・`[[MARKETDATA-CWAN-
+     FROZEN-DATA-SUSPECT-1]]`・`[[MARKETDATA-SP500-SCRAPE-INVALID-
      TICKERS-1]]`・`[[MARKETDATA-VIX9D-DATA-GAP-1]]`・`[[STONKS-SILO-
-     CLI-TICKERS-SHADOW-1]]`・`[[MACRODATA-AS-IS-DUPLICATION-
-     UNDERCOUNT-1]]`・`[[MACRODATA-SCHEDULED-SILENT-GAP-CSCICP-
-     USALOL-1]]`・`[[MACRODATA-IMPORT-HISTORY-CONFIG-DRIFT-1]]`・
-     `[[MACRODATA-FULL-HISTORY-DAILY-REFETCH-1]]`・`[[MACRODATA-FTSD-
-     SERIES-ID-INVALID-1]]`
-  3. 新DB構築プロジェクトの次のステップ: sec_data/market_data/
-     macro_dataの新設・切替（本線）は完了したが、`PROJECT_STATUS.md`
-     フェーズ3「`FIELD_DEFINITIONS.md`499項目の新DB参照への切替方針」
-     が調査完了・実装未着手のまま残っている（`common/sec_data/`は
-     既に多数箇所で参照済み、`common/market_data/`・`common/macro_
-     data/`は参照0件）。次のアクションはyfinance/FRED由来で未更新の
-     項目数を数える調査から着手する（「特になし」ではなく、この
-     フェーズ3切替調査が新DB構築プロジェクトの残る展望）
+     CLI-TICKERS-SHADOW-1]]`・`[[MACRODATA-SCHEDULED-SILENT-GAP-
+     CSCICP-USALOL-1]]`・`[[MACRODATA-FULL-HISTORY-DAILY-REFETCH-1]]`・
+     `[[MACRODATA-FTSD-SERIES-ID-INVALID-1]]`・`[[LAYER3-RPO-
+     CANDIDATE-ORDER-1]]`・`[[SCHEMA-NORMALIZED-ISSUES-1]]`①②
+     （判断保留中の既存課題群、いずれも実害調査済みで優先度低のまま
+     対応方針未確定）
+  2. （本線外・新規）2026-08-15セッションで新規発見した2件、対応方針
+     未定: `[[MACRODATA-FETCH-FAILURE-VISIBILITY-GAP-1]]`（macro_data
+     系列単位の取得失敗がviolations_log.jsonで「正常」と区別できない
+     設計上のギャップ）・`[[MACRO-PULSE-STALENESS-DISCLOSURE-GAP-1]]`
+     （景気サイクルフェーズ複合スコアで、CFNAI・Building Permitsに
+     鮮度注記が欠けている）
+  3. sec_data側フェーズDでのSEC EDGAR由来4件（AS-IS-129・266・273・
+     395）の対応状況確認: `FIELD_DEFINITIONS.md`499項目調査
+     （2026-08-15）ではyfinance/FRED由来18件のみを検証対象とし、
+     SEC EDGAR由来4件はsec_data側フェーズDでの新DB参照切替状況を
+     未検証のまま残した。次回、`common/sec_data/reader`経由への
+     切替状況を個別に確認する調査から着手する
+  4. 新DB構築プロジェクトの完全な区切り: sec_data/market_data/
+     macro_dataの新設・切替という**本線タスクは完了**。以降は本線外・
+     低優先度課題（上記1・2）とsec_data側の残検証（上記3）の順次対応
+     のみで、新規の大規模構築フェーズは予定されていない
 
   切替過程で発見した`daily/`層の`auto_adjust=False`（未調整終値）と
   旧実装`auto_adjust=True`（調整済み終値）の乖離は、当初「バグ」として
@@ -167,7 +199,11 @@ git pull --rebase origin kaihatsu
   ルール化済み。2026-08-13セッションではこれに続く教訓として「『完了』
   報告済み事項の定期再点検」（`[[FRED-HYSPREAD-TRIPLE-FETCH-1]]`が
   実は既に解消済みなのに未クローズのまま残存していた等3パターン）も
-  `CHAT_RULES.md`へ新規ルール化した。
+  `CHAT_RULES.md`へ新規ルール化した。2026-08-15セッションでは、
+  「本番消費者リスト外の間接依存（動的import経由）が切替に巻き込まれて
+  破損する」パターン（`05_import_history.py`が`05_main.py`の`get_fred`
+  削除に巻き込まれ3日間気づかれず実行不能だった事例）を4件目の実例
+  として同ルールへ追記した。
 
   `common/sec_data`統合の詳細はBACKLOG.md`[[SECDATA-STORAGE-
   FRAGMENTATION-1]]`（マスター追跡エントリ、最終状況を記載）・

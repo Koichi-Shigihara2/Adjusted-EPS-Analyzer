@@ -80,7 +80,7 @@ BACKLOG.mdの`[[MOAT-CATALOG-DUP-1]]`（ドキュメント重複カタログ）�
 - TANUKI: `net_cash_sec`（`SECReader.get_net_cash()`由来、四半期フォールバックあり）
 - STONKS SILO: 独自算出を廃止し`net_cash_sec`を直接参照（TO_BE.md⑫の統一定義通り）
 
-**実装結果との差異（2026-08-13追記）**: `[[NETCASH-DUAL-CALC-1]]`の
+**実装結果との差異（2026-08-15追記）**: `[[NETCASH-DUAL-CALC-1]]`の
 実際の実装は、上記の想定（`net_cash_sec`への接尾辞化）を行わず、
 フィールド名`net_cash`を維持したまま算出元のみ`SECReader.
 get_net_cash()`へ統一した（STONKS SILOの独自算出を廃止し同一関数を
