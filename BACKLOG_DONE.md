@@ -4,6 +4,62 @@
 
 ## 2026-08-15（完了）
 
+### ✅ [PORTFOLIO-CONFIG-DUP-1] Portfolio保有データの二重保持・同期処理不在
+**状態:** 完了
+**優先度:** 高
+**分類:** データ品質 / Portfolio
+**登録日:** 2026-07-23
+**完了日:** 2026-08-15
+**発見:** `INPUT_DATA_AS_IS.md`2-D（一次データ層AS-IS調査）
+
+#### 内容（登録時点）
+`config/portfolio.json`と`docs/portfolio/data/portfolio.json`はバイト
+完全一致の重複ファイルだった。`value-monitor/admin.html::savePortfolio()`
+が`commitMultipleFiles()`で両方を同一コミット内にdual-writeしていた
+ため実害（ドリフト）は発生していなかったが、`config/portfolio.json`を
+読むPythonコードはゼロ件（死蔵ファイル）で、二重管理そのものが不要な
+複雑性だった。
+
+#### 実装内容（2026-08-15、フェーズ3合同設計調査 Aグループ実装）
+Step 1で`config/portfolio.json`にPython消費者が存在しないことを
+再確認した上で実施:
+- `value-monitor/admin.html`の`PORTFOLIO_PATH`定数を`config/
+  portfolio.json`→`docs/portfolio/data/portfolio.json`に変更
+- `savePortfolio()`を`commitMultipleFiles`（dual-write）から単一パスの
+  `commitFile`（single-write）へ簡素化。保存後のSHA更新もPUTレスポンス
+  （`result.content.sha`）から直接取得する方式に変更（再fetch不要）
+- `config/portfolio.json`を`git rm`で削除
+- `INPUT_DATA_AS_IS.md`・`INPUT_DATA_TOBE.md`（計4箇所）に移動完了の
+  追記
+- Portfolioタブのadmin.html UIに保存先バージョン表記
+  「保存先: docs/portfolio/data/portfolio.json（v2、2026-08-15〜。
+  config/への保存は廃止）」を追加（ブラウザキャッシュ起因の分岐状態を
+  Koichiさんが目視確認できるようにするため）
+
+#### 検証結果
+- `grep -rn`で旧パス文字列の残存確認: コード上の残存なし
+  （BACKLOG/AS-IS/TO-BE等のドキュメントの履歴的言及・アーカイブ
+  ファイルのみ）
+- `.gitattributes`に`config/portfolio.json`のエントリは元々存在せず、
+  削除対応も不要と確認
+- pytest: 781 passed / 2 failed（既知`[[TEST-STALE-IV-1]]`、無関係）
+- `common/sec_data/audit.py`: 正常95・警告5（既存WARNのみ）
+- `common/sec_data/report_consistency_check.py --fail-on-ng`: NG=0・
+  WARN=78件（不変）
+- `src/portfolio/snapshot.py`（`docs/portfolio/data/portfolio.json`を
+  読む既存コード）はパス変更なし・影響なしを確認
+
+#### 関連
+`[[TAILKPI-CONFIG-LOCATION-1]]`・`[[FCFCONFIG-LOCATION-1]]`・
+`[[DISCOVER-CONFIG-DUAL-MGMT-1]]`と合わせたフェーズ3合同設計調査
+（2026-08-15）の一環。`[[DISCOVER-CONFIG-DUAL-MGMT-1]]`は実装直前調査で
+`config/discover_config.json`にPython消費者（`collect.py`・
+`registration_validator.py`）が見つかり、本項目と同型の解決法が
+そのまま適用できないと判明したため実装を停止・設計再検討中
+（BACKLOG.md参照、未完了）。
+
+---
+
 ### ✅ [TAILKPI-CONFIG-LOCATION-1] tail_kpi_map.jsonがconfig/ではなくdocs/portfolio/tail/data/配下に配置されている
 **状態:** 完了
 **優先度:** 低〜中

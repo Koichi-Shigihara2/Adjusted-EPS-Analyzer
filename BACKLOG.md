@@ -4596,58 +4596,43 @@ Market Pulseのmarket_data.json）から取得する設計に変更するかを�
 
 ---
 
-### [PORTFOLIO-CONFIG-DUP-1] Portfolio保有データの二重保持・同期処理不在
-**優先度:** 高
-**分類:** データ品質 / Portfolio
-**登録日:** 2026-07-23
-**発見:** `INPUT_DATA_AS_IS.md`2-D（一次データ層AS-IS調査）
-
-#### 背景
-`config/portfolio.json`と`docs/portfolio/data/portfolio.json`はバイト
-完全一致の重複ファイルであることを確認した。`config/`側を参照する
-Pythonコードは見つからない（読み手ゼロの死蔵ファイル）。Discoverの
-`discover_config.json`/`theme_config.json`二重管理（既知バグ）と同型の
-手動コピー依存パターンが、Portfolioの保有データについても存在する
-可能性が高い。
-
-**訂正（2026-08-15、フェーズ3合同設計調査）**: 「両ファイルを同期する
-自動処理は見当たらず」という上記の記述は不正確だった。実際には
-`value-monitor/admin.html::savePortfolio()`が`commitMultipleFiles()`
-で`config/portfolio.json`と`docs/portfolio/data/portfolio.json`の両方を
-**同一GitHub APIコミット内でdual-write**しており、admin.html経由の
-編集である限り自動的に同期されている（`git log --follow`実測: 両ファイル
-の全コミット履歴が2026-06-03以降完全一致）。実害（ドリフト）は現状
-発生していない。「`config/`側を参照するPythonコードが見つからない」
-という記述は正確なため維持する。
-
-#### 対応方針
-**修正（2026-08-15）**: 当初案「どちらか一方を唯一の保持場所と定める」
-は維持しつつ、方向を確定する。`docs/portfolio/data/portfolio.json`を
-唯一の正とし、`config/portfolio.json`を廃止する。`value-monitor/
-admin.html`の`savePortfolio()`を`commitMultipleFiles`（dual-write）
-から単一パスの`commitFile`（single-write）へ簡素化する。
-
-理由: GitHub Pagesの公開ソースは`docs/`配下のみであり、`config/`は
-HTTP経由でfetch不可能なことを実測で確認済み（`SYSTEM_MAP.md`「`config/`
-と`docs/`の配置原則」参照）。`INPUT_DATA_TOBE.md`旧記載の「`config/`を
-唯一の保持場所に」という方針はこの制約と技術的に矛盾するため撤回した
-（`INPUT_DATA_TOBE.md`INPUT-C-008も同日付で修正済み）。加えて
-`config/portfolio.json`を読むPythonコードが現状ゼロ件である実態にも
-`docs/`側への統一の方が整合する。
-
-#### 関連情報（追記、2026-08-12）
-本項目は`INPUT_DATA_TOBE.md`分類C（`INPUT-C-008`）に該当し、新DB構築
-プロジェクト フェーズ3（導出データ層の管理方法検討）の一環として扱う。
-同種の設定ファイル配置問題として`[[TAILKPI-CONFIG-LOCATION-1]]`
-（`INPUT-C-009`）・`[[FCFCONFIG-LOCATION-1]]`（`INPUT-C-010`）も参照。
-
-#### 着手条件
-なし（設計方針は確定済み。実装は2026-08-15時点で未着手、別依頼で対応）
+（[[PORTFOLIO-CONFIG-DUP-1]]は2026-08-15実装完了、BACKLOG_DONE.md
+「2026-08-15（完了）」参照）
 
 ---
 
 （[[TAILKPI-CONFIG-LOCATION-1]]・[[FCFCONFIG-LOCATION-1]]は2026-08-15
 実装完了、BACKLOG_DONE.md「2026-08-15（完了）」参照）
+
+### [FCFCONFIG-MISSING-DETECTION-WEAK-1] fcf_conversion_config.json不在の検知力が弱い（標準出力WARNのみ、パイプライン停止なし）
+**優先度:** 低〜中
+**分類:** データ品質 / 監視・検知
+**登録日:** 2026-08-15
+**発見:** `[[FCFCONFIG-LOCATION-1]]`実装中（Bグループ実装、フェーズ3
+合同設計調査の追加指示対応）
+
+#### 内容
+`src/value/tanuki_valuation/calculator/adjustments.py::estimate_fcf_from_eps()`
+は`fcf_conversion_config.json`が見つからない場合、例外を投げず
+`applied=False`・`conversion_rate=0`でraw_fcfへフォールバックする。
+
+2026-08-15、この状態が`report_consistency_check.py`にも検知されない
+サイレント破損経路（`[[TTM-PASCALCASE-KEY-STALE-1]]`と同型）だったため、
+標準出力への明示的なWARN出力（`print`）を追加したが、**100銘柄バッチ
+実行のログに埋もれるため検知力は限定的**。従来の`latest.json`のnote欄
+記録と同じ「記録はされるが誰も見ない」構造であり、根本解決ではない。
+
+#### 対応方針
+`report_consistency_check.py`に該当CHECKを新設し、設定ファイル不在を
+NGとして検出してパイプラインを止める（`--fail-on-ng`ゲートで捕捉可能に
+する）。CHECK番号の採番・実装は既存のCHECK追加パターン
+（`_check_fixed_registry_integrity()`等）を踏襲する。
+
+#### 着手条件
+なし。`report_consistency_check.py`のCHECK追加を行うタイミングで
+合わせて対応する。
+
+---
 
 ### [RISK-FREE-RATE-HARDCODE-1] risk_free_rateの常時ハードコード（0.043固定）
 **優先度:** 高
@@ -5901,12 +5886,13 @@ overrideにも健全性チェックを適用する③許容範囲の基準を1�
 実装調査でも変わらず該当するため維持する。
 
 #### 対応方針
-**修正（2026-08-15）**: 当初案「`docs/portfolio/data/`のコピーを廃止し、
-`index.html`が`config/`側を直接参照する設計に変更する」は**GitHub Pages
-配信制約により技術的に不可能**と判明したため撤回する。実測により
-`config/`配下はHTTP経由で一切fetchできないことを確認済み（`https://
-koichi-shigihara2.github.io/On-a-journey/config/portfolio.json`→404、
-`SYSTEM_MAP.md`「`config/`と`docs/`の配置原則」参照）。
+**修正（2026-08-15、1回目）**: 当初案「`docs/portfolio/data/`のコピーを
+廃止し、`index.html`が`config/`側を直接参照する設計に変更する」は
+**GitHub Pages配信制約により技術的に不可能**と判明したため撤回する。
+実測により`config/`配下はHTTP経由で一切fetchできないことを確認済み
+（`https://koichi-shigihara2.github.io/On-a-journey/config/
+portfolio.json`→404、`SYSTEM_MAP.md`「`config/`と`docs/`の配置原則」
+参照）。
 
 方針を逆方向に変更する：`docs/portfolio/data/discover_config.json`・
 `theme_config.json`を唯一の正とし、`discover/admin.html`の書き込み先を
@@ -5915,8 +5901,40 @@ koichi-shigihara2.github.io/On-a-journey/config/portfolio.json`→404、
 正はいずれも`docs/`側）。admin.html側にも基本的なバリデーション
 （重複チェック・必須項目チェック）を追加する方針は変更なし。
 
+**再修正（2026-08-15、2回目、実装直前調査で判明）**: 上記1回目修正案は
+**`discover_config.json`について致命的な見落としがあった**ため実装を
+停止し撤回する。`config/discover_config.json`には`docs/`側コピーとは
+独立にPython消費者が2件存在することが実装直前の`grep -rn`調査で
+判明した：
+- `src/discover/collect.py::load_config()`（52行目）— **Discover
+  パイプライン本体`main()`が呼び出す**（409行目）。フォールバックなし。
+  `config/discover_config.json`を削除すると次回`Discover_Update.yml`
+  実行時に`FileNotFoundError`でクラッシュする
+- `common/sec_data/registration_validator.py`（39行目）— 銘柄登録監査
+  ツール（P1-Step6「discover_config.json未登録」チェック・
+  P4-DiscoverOrphan「孤立エントリ」チェック）が`config/discover_config.json`
+  を直接参照
+
+**`discover_config.json`と`theme_config.json`は実は非対称**（`theme_config.json`
+はPython消費者ゼロで1回目修正案がそのまま成立する一方、
+`discover_config.json`は`config/`側がバックエンドパイプラインの
+真の入力であり、単純な「フロントエンド重複コピーの削除」問題ではない）。
+
+**現時点の暫定結論（実装は次回依頼を待つ）**: `discover_config.json`に
+ついては`config/`側を唯一の正（バックエンド入力）として維持し、
+`docs/portfolio/data/discover_config.json`は表示専用の自動同期コピーと
+する設計へ再修正する必要がある。現状の同期手段（`shutil.copy()`一回限り、
+`theme_config.json`は同期手段自体なし）を、`[[PORTFOLIO-CONFIG-DUP-1]]`
+で実装した`admin.html::savePortfolio()`の`commitMultipleFiles`
+（dual-write）パターンと同型の仕組みに置き換えることで恒久解消できる
+見込み。`theme_config.json`は元々Python消費者がないため、同じdual-write
+方式に統一しても矛盾はない（`config/`・`docs/`両方を唯一の正とする
+のではなく、`config/`を正・`docs/`を自動追従コピーとする非対称設計）。
+admin.html側バリデーション追加の方針は変更なし。
+
 #### 着手条件
-なし
+なし。ただし上記「再修正」の設計（dual-write方式への統一）を実装前に
+確定させること。
 
 ---
 
