@@ -1550,6 +1550,15 @@ def estimate_fcf_from_eps(
         config_path = next((p for p in candidates if os.path.exists(p)), None)
 
     if config_path is None or not os.path.exists(config_path):
+        # config_path解決の失敗（配置ミス・移動漏れ等）は、latest.jsonの
+        # note欄に記録されるだけでは見落とされやすく、report_consistency_
+        # check.pyもこの状態を検知しない（サイレント破損リスク、
+        # [[TTM-PASCALCASE-KEY-STALE-1]]と同型）。標準出力へも明示的に
+        # WARN出力する（2026-08-15、FCFCONFIG-LOCATION-1移動後の
+        # 安全対策として追加）。
+        print(f"   ⚠️  fcf_conversion_config.json が見つかりません "
+              f"(config_path={config_path!r})。FCF推定はraw_fcfへ"
+              f"フォールバックします（ticker={ticker}）")
         return FCFEstimationResult(
             applied=False, method="raw_fcf",
             adj_net_income=0, conversion_rate=0,
