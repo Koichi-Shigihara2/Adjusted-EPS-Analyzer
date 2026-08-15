@@ -4604,16 +4604,36 @@ Market Pulseのmarket_data.json）から取得する設計に変更するかを�
 
 #### 背景
 `config/portfolio.json`と`docs/portfolio/data/portfolio.json`はバイト
-完全一致の重複ファイルであることを確認した。両ファイルを同期する自動処理は
-見当たらず、`config/`側を参照するPythonコードも見つからない。Discoverの
+完全一致の重複ファイルであることを確認した。`config/`側を参照する
+Pythonコードは見つからない（読み手ゼロの死蔵ファイル）。Discoverの
 `discover_config.json`/`theme_config.json`二重管理（既知バグ）と同型の
 手動コピー依存パターンが、Portfolioの保有データについても存在する
 可能性が高い。
 
+**訂正（2026-08-15、フェーズ3合同設計調査）**: 「両ファイルを同期する
+自動処理は見当たらず」という上記の記述は不正確だった。実際には
+`value-monitor/admin.html::savePortfolio()`が`commitMultipleFiles()`
+で`config/portfolio.json`と`docs/portfolio/data/portfolio.json`の両方を
+**同一GitHub APIコミット内でdual-write**しており、admin.html経由の
+編集である限り自動的に同期されている（`git log --follow`実測: 両ファイル
+の全コミット履歴が2026-06-03以降完全一致）。実害（ドリフト）は現状
+発生していない。「`config/`側を参照するPythonコードが見つからない」
+という記述は正確なため維持する。
+
 #### 対応方針
-どちらか一方を唯一の保持場所と定め、もう一方は参照専用（または廃止）に
-する。手動編集フローがどちらのファイルを対象にしているか（実際の運用
-実態）を確認してから統一方針を決める。
+**修正（2026-08-15）**: 当初案「どちらか一方を唯一の保持場所と定める」
+は維持しつつ、方向を確定する。`docs/portfolio/data/portfolio.json`を
+唯一の正とし、`config/portfolio.json`を廃止する。`value-monitor/
+admin.html`の`savePortfolio()`を`commitMultipleFiles`（dual-write）
+から単一パスの`commitFile`（single-write）へ簡素化する。
+
+理由: GitHub Pagesの公開ソースは`docs/`配下のみであり、`config/`は
+HTTP経由でfetch不可能なことを実測で確認済み（`SYSTEM_MAP.md`「`config/`
+と`docs/`の配置原則」参照）。`INPUT_DATA_TOBE.md`旧記載の「`config/`を
+唯一の保持場所に」という方針はこの制約と技術的に矛盾するため撤回した
+（`INPUT_DATA_TOBE.md`INPUT-C-008も同日付で修正済み）。加えて
+`config/portfolio.json`を読むPythonコードが現状ゼロ件である実態にも
+`docs/`側への統一の方が整合する。
 
 #### 関連情報（追記、2026-08-12）
 本項目は`INPUT_DATA_TOBE.md`分類C（`INPUT-C-008`）に該当し、新DB構築
@@ -4622,7 +4642,7 @@ Market Pulseのmarket_data.json）から取得する設計に変更するかを�
 （`INPUT-C-009`）・`[[FCFCONFIG-LOCATION-1]]`（`INPUT-C-010`）も参照。
 
 #### 着手条件
-なし
+なし（設計方針は確定済み。実装は2026-08-15時点で未着手、別依頼で対応）
 
 ---
 
@@ -4644,6 +4664,14 @@ Market Pulseのmarket_data.json）から取得する設計に変更するかを�
 新DB構築プロジェクト フェーズ3（導出データ層の管理方法検討）の対象
 （分類C、`INPUT-C-009`）。関連: `[[PORTFOLIO-CONFIG-DUP-1]]`
 （`INPUT-C-008`）・`[[FCFCONFIG-LOCATION-1]]`（`INPUT-C-010`）。
+
+**確認結果（2026-08-15、フェーズ3合同設計調査）**: 消費者は全て
+Pythonバックエンド（`.github/workflows/TANUKI_TAIL_KPI_Update.yml`・
+`TANUKI_TAIL_RSS_Monitor.yml`・`src/tail/kpi_proposer.py`・
+`src/tail/xbrl_segment_fetcher.py`）で、フロントエンドからの直接
+`fetch()`は無いと確認済み。GitHub Pages配信制約（`SYSTEM_MAP.md`
+「`config/`と`docs/`の配置原則」参照）の対象外であり、TO-BE方針
+「`config/`への集約」は変更不要・そのまま実装可能。
 
 #### 着手条件
 なし
@@ -4668,6 +4696,14 @@ Market Pulseのmarket_data.json）から取得する設計に変更するかを�
 新DB構築プロジェクト フェーズ3（導出データ層の管理方法検討）の対象
 （分類C、`INPUT-C-010`）。関連: `[[PORTFOLIO-CONFIG-DUP-1]]`
 （`INPUT-C-008`）・`[[TAILKPI-CONFIG-LOCATION-1]]`（`INPUT-C-009`）。
+
+**確認結果（2026-08-15、フェーズ3合同設計調査）**: 消費者は
+`src/value/tanuki_valuation/calculator/adjustments.py`（Pythonバック
+エンド、ローカルファイル探索）と`value-monitor/admin.html`のGitHub
+Contents API経由アクセス（パスを問わず機能）のみで、フロントエンド
+からの直接`fetch()`は無いと確認済み。GitHub Pages配信制約
+（`SYSTEM_MAP.md`「`config/`と`docs/`の配置原則」参照）の対象外であり、
+TO-BE方針「`config/`への集約」は変更不要・そのまま実装可能。
 
 #### 着手条件
 なし
@@ -5918,11 +5954,27 @@ overrideにも健全性チェックを適用する③許容範囲の基準を1�
 `saveDiscoverConfig()`は内容検証を一切行わず、テーマID重複・空ラベル・
 不正な色コードもエラーなく保存されてしまう。
 
+**実態の追加確認（2026-08-15、フェーズ3合同設計調査）**: `theme_config.json`
+には`shutil.copy()`同期手順自体が存在しない（`CLAUDE_CODE_START.md`の
+新規銘柄登録手順は`discover_config.json`限定）。2026-06-04の一度きりの
+手動コピー（コミット`2e99c8844`）以降、`theme_config.json`のdocs/側
+コピーには更新経路が実質存在しない。バリデーション欠如に関する記述は
+実装調査でも変わらず該当するため維持する。
+
 #### 対応方針
-`docs/portfolio/data/`のコピーを廃止し、`index.html`が`config/`側を直接
-参照する設計に変更する（[[PORTFOLIO-CONFIG-DUP-1]]と同型の問題であり
-合わせて設計するのが望ましい）。admin.html側にも基本的なバリデーション
-（重複チェック・必須項目チェック）を追加する。
+**修正（2026-08-15）**: 当初案「`docs/portfolio/data/`のコピーを廃止し、
+`index.html`が`config/`側を直接参照する設計に変更する」は**GitHub Pages
+配信制約により技術的に不可能**と判明したため撤回する。実測により
+`config/`配下はHTTP経由で一切fetchできないことを確認済み（`https://
+koichi-shigihara2.github.io/On-a-journey/config/portfolio.json`→404、
+`SYSTEM_MAP.md`「`config/`と`docs/`の配置原則」参照）。
+
+方針を逆方向に変更する：`docs/portfolio/data/discover_config.json`・
+`theme_config.json`を唯一の正とし、`discover/admin.html`の書き込み先を
+`config/`側から`docs/portfolio/data/`側へ変更する（`config/`側は廃止）。
+[[PORTFOLIO-CONFIG-DUP-1]]と同型の問題であり、方向性も統一する（唯一の
+正はいずれも`docs/`側）。admin.html側にも基本的なバリデーション
+（重複チェック・必須項目チェック）を追加する方針は変更なし。
 
 #### 着手条件
 なし

@@ -416,6 +416,45 @@ GitHub Actions（クラウド・端末状態非依存）と同等の可用性は
 
 ---
 
+## `config/`と`docs/`の配置原則（GitHub Pages配信制約、2026-08-15追記）
+
+**GitHub Pagesの公開ソースは`kaihatsu`ブランチの`docs/`配下であり、
+`config/`配下はHTTP経由で一切fetchできない。** 2026-08-15、実際に
+稼働中の公開URLへ直接アクセスして実測済み:
+
+```
+GET https://koichi-shigihara2.github.io/On-a-journey/config/portfolio.json          → 404
+GET https://koichi-shigihara2.github.io/On-a-journey/portfolio/data/portfolio.json  → 200
+```
+
+したがって**フロントエンド（ブラウザのJS）が`fetch()`で読むJSONは
+必ず`docs/`配下に置く**。`config/`へ移動してはならない。`config/`は
+Pythonバックエンド専用ディレクトリとして扱う。
+
+`admin.html`等が使うGitHub Contents API（`https://api.github.com/
+repos/.../contents/{path}`）はパスが`config/`でも`src/`でも`docs/`でも
+区別なくアクセス可能（Pages非公開の`src/value/tanuki_valuation/
+fcf_conversion_config.json`を実際に読み書きしている実績あり）。ただし
+`Authorization: token`ヘッダーにPAT（個人アクセストークン）が必須で、
+未認証アクセスは60req/hour/IPと極めて低いレート制限のため、**不特定
+多数が閲覧する表示ページの代替経路にはならない**（admin.html等、単一の
+管理者が使う管理画面限定で成立する経路）。
+
+**再発防止の記録（過去に同一の取り違えが3回、独立に発生）**:
+
+| ファイル | 経緯 |
+|---|---|
+| `portfolio.json` | 2026-05-23 21:37 `config/`のみに作成→66分後の22:43、`4ff1f1992`「portfolio.jsonをdocs/以下に配置・fetchパス修正」でdocs/コピーを追加 |
+| `discover_config.json` | 2026-05-23 `config/`に作成（`ee1b6ddad`）→同日中に`7875c6be1`「discover_config配置・認証DOM修正」でdocs/コピーを追加 |
+| `theme_config.json` | 2026-05-31 `config/`のみに作成→4日後の06-04、`2e99c8844`「docs/ 全HTMLリンク整合性修正」で「GitHub Pagesから参照可能に」とコミットメッセージに明記した上でdocs/コピーを追加 |
+
+新規に手動設定ファイルを追加する際、フロントエンドから直接fetchする
+想定であれば最初から`docs/`配下に置くこと。詳細な調査経緯は
+`BACKLOG.md`の`[[PORTFOLIO-CONFIG-DUP-1]]`・`[[DISCOVER-CONFIG-
+DUAL-MGMT-1]]`参照。
+
+---
+
 ## データフロー（上流→下流）
 【SECデータ取得層】
 SEC EDGAR
