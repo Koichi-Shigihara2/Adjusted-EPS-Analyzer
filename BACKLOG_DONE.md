@@ -4,6 +4,117 @@
 
 ## 2026-08-15（完了）
 
+### ✅ [DISCOVER-CONFIG-DUAL-MGMT-1] Discoverのconfig二重管理・admin.htmlバリデーション欠如
+**状態:** 完了
+**優先度:** 中
+**分類:** データ品質 / Discover
+**登録日:** 2026-07-23
+**完了日:** 2026-08-15
+**発見:** `FIELD_DEFINITIONS.md`フェーズ7（依頼文名指し）・
+`RETROSPECTIVE_2026-07-22.md`c項#11
+
+#### 内容（登録時点）
+管理画面`admin.html`は`config/discover_config.json`・`config/theme_config.json`
+にGitHub API経由で直接コミットするが、表示画面`docs/discover/index.html`は
+別パス`docs/portfolio/data/discover_config.json`・`theme_config.json`
+（コピー）を参照していた。同期は新規銘柄登録手順の`shutil.copy()`一回限り
+の処理に依存（`theme_config.json`は同期手段自体なし）しており、
+admin.html経由の直接編集は反映されないズレが発生しうる状態だった。加えて
+`admin.html`の`saveThemeConfig()`/`saveDiscoverConfig()`は内容検証を
+一切行わなかった。
+
+#### 設計変遷（2回の方針転換を経て確定）
+1回目修正案（`docs/`側を唯一の正とし`config/`側を削除、
+`[[PORTFOLIO-CONFIG-DUP-1]]`と同型）は、実装直前の`grep -rn`調査で
+`config/discover_config.json`に独立したPython消費者2件
+（`src/discover/collect.py::load_config()`—Discoverパイプライン本体の
+入力、`common/sec_data/registration_validator.py`—銘柄登録監査）が
+見つかったため撤回。`config/`側を削除すると本番パイプラインが破壊される
+ことが判明し、`[[PORTFOLIO-CONFIG-DUP-1]]`とは逆方向の非対称設計に
+再修正した。
+
+さらに、書き手の網羅調査（Step 1）で`config/discover_config.json`の
+書き手が**3種類**（`value-monitor/admin.html`〈既にdual-write実装済み〉・
+`discover/admin.html`〈single-write〉・`CLAUDE_CODE_START.md`新規銘柄
+登録手順の`shutil.copy()`）存在することが判明し、「admin.htmlに
+dual-writeを実装する」という初期の再設計案も、書き手ごとに同期処理が
+分散する構造的欠陥を残すと判断し、GitHub Actionsによる一元的な自動同期
+方式へ最終決定した。
+
+#### 実装内容（2026-08-15、フェーズ3合同設計調査 最終実装）
+
+**Step 1: 書き手の網羅調査**
+| 書き手 | discover_config.json | theme_config.json | 方式 |
+|---|---|---|---|
+| `value-monitor/admin.html`（`addCandidateToWatch()`・`saveDiscoverConfig()`） | ○ | — | dual-write（既存） |
+| `discover/admin.html`（`saveDiscoverConfig()`・`saveThemeConfig()`） | ○ | ○ | single-write（config/のみ） |
+| `CLAUDE_CODE_START.md`新規銘柄登録手順（Step 6・削除手順） | ○ | — | `shutil.copy()`一回限り |
+| Claude Code経由の直接編集 | ○（可能性） | ○（可能性） | 手動 |
+| `common/sec_data/registration_validator.py` | 読み取りのみ（書き込みなし、再確認済み） | — | — |
+| GitHub Actionsワークフロー | なし | なし | — |
+
+書き手が3種類以上と判明したため、GitHub Actionsによる自動同期を採用。
+
+**Step 2: 同期方式**
+- `.github/workflows/Discover_Config_Sync.yml`新設。
+  `config/discover_config.json`・`config/theme_config.json`への`push`を
+  トリガーに`docs/portfolio/data/`側へコピーしてコミット・push
+  （`workflow_dispatch`も併設）
+- `config/`側を唯一の正（バックエンド入力）、`docs/`側を表示専用の
+  自動追従コピーと位置づける非対称設計を確定
+- `value-monitor/admin.html`の既存dual-write（`addCandidateToWatch()`・
+  `saveDiscoverConfig()`）も新ワークフローと重複するため単一パスの
+  `commitFile`（config/のみ）へ簡素化。「書き手ごとに同期処理を分散
+  実装しない」原則を徹底
+- `CLAUDE_CODE_START.md`の`shutil.copy()`手順（Step 6・削除手順の2箇所）
+  を削除。**時間差の許容性判断**: 新規銘柄登録はユーザー向けリアルタイム
+  操作ではなくバックエンドのバッチ設定作業であり、ワークフロー完了まで
+  の数分の遅延は許容できると判断（登録直後に`docs/discover/index.html`
+  を閲覧する運用は想定されない）
+
+**Step 3: 同期漏れ検知（サイレント破損対策）**
+- `common/sec_data/report_consistency_check.py`に**CHECK-32**を新設
+  （`_check_discover_config_sync()`）。`config/`・`docs/`側のJSON
+  パース後の内容を比較し、不一致をNGとして検出
+- **重要な実装上の教訓**: 当初はファイル内容のバイト単位（テキスト）
+  比較を実装したが、Windows環境の`core.autocrlf=true`により`git
+  checkout`後のファイル実体がCRLF/LFで異なりうる（gitの管理下では
+  「変更なし」と判定される差異）ことが実測で判明し、誤検知（false
+  NG）を起こすと分かった。JSONパース後の内容比較（`json.load()`で
+  読んでからオブジェクト比較）に変更し、改行コード差では発火せず
+  実際の内容差でのみ発火することを実測で確認した
+
+**Step 4: admin.htmlバリデーション追加（別コミット）**
+- `discover/admin.html`に`validateThemes()`を新設し、`saveThemeConfig()`
+  にテーマID重複・空ラベル・不正な色コード（`#rrggbb`形式チェック）の
+  バリデーションを追加。エラー時は保存を中断しエラー一覧を表示
+- `.msg`のCSSに`white-space:pre-line`を追加（複数行エラーメッセージの
+  折り返し表示に必要な副次修正）
+
+#### 検証結果
+- pytest: 781 passed / 2 failed（既知`[[TEST-STALE-IV-1]]`、無関係）
+- `common/sec_data/audit.py`: 正常95・警告5（既存WARNのみ）
+- `common/sec_data/report_consistency_check.py --fail-on-ng`: NG=0・
+  WARN=78件（CHECK-32含め不変）。CHECK-32単体でも、意図的に
+  `docs/portfolio/data/theme_config.json`の内容を変更してNG-32が発火
+  すること、復元後NG=0に戻ることを実測確認済み
+- `src/discover/collect.py::load_config()`を実行し
+  `config/discover_config.json`が正常に読めることを確認（99 tickers）
+- `Discover_Config_Sync.yml`はGitHub Actions側の実行環境がローカルに
+  ないため、YAML構文の妥当性（`yaml.safe_load()`）とcpコマンド対象
+  パスの実在を静的確認して代替。push後の実発火はGitHub Actions側の
+  実行ログで別途確認が必要
+
+#### 関連
+`[[PORTFOLIO-CONFIG-DUP-1]]`・`[[TAILKPI-CONFIG-LOCATION-1]]`・
+`[[FCFCONFIG-LOCATION-1]]`と合わせたフェーズ3合同設計調査（2026-08-15）
+の最終項目。これにより登録済み分類C関連4件（`INPUT-C-008/009/010`＋
+本項目）が全て完了。判断基準（Pythonバックエンドが読むか否か）は
+`SYSTEM_MAP.md`「`config/`↔`docs/`重複ファイルの解消パターン」に
+明文化済み。
+
+---
+
 ### ✅ [PORTFOLIO-CONFIG-DUP-1] Portfolio保有データの二重保持・同期処理不在
 **状態:** 完了
 **優先度:** 高

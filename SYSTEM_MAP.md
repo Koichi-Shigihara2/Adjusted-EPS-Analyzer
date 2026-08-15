@@ -453,6 +453,23 @@ repos/.../contents/{path}`）はパスが`config/`でも`src/`でも`docs/`で�
 `BACKLOG.md`の`[[PORTFOLIO-CONFIG-DUP-1]]`・`[[DISCOVER-CONFIG-
 DUAL-MGMT-1]]`参照。
 
+### `config/`↔`docs/`重複ファイルの解消パターン（2件の実例、2026-08-15）
+
+`config/`と`docs/`の両方に同名ファイルが存在する重複は、**「Pythonバック
+エンドが読むか否か」で解消の方向が逆になる**。次に同種の判断をする際は
+以下の基準に従うこと（毎回投資調査から出発しない）:
+
+| 消費者の実態 | 唯一の正 | 解消方法 | 実例 |
+|---|---|---|---|
+| Pythonバックエンドの読み手がゼロ（フロントエンドのみが`fetch()`で読む） | `docs/`側 | `config/`側を削除し`docs/`側に一本化。admin.html等の書き込み経路もdocs/側へ変更 | `[[PORTFOLIO-CONFIG-DUP-1]]`（`config/portfolio.json`を削除、`docs/portfolio/data/portfolio.json`に統一） |
+| Pythonバックエンドの読み手が存在する（パイプライン本体の入力等） | `config/`側 | `config/`側は削除できない（削除すると本番パイプラインが壊れる）。`docs/`側は表示専用の自動追従コピーとして残し、`config/`への変更をトリガーに`docs/`へ自動同期するGitHub Actionsワークフローを新設する（書き手が複数存在する場合、書き手ごとに同期処理を分散実装せず1箇所に集約する） | `[[DISCOVER-CONFIG-DUAL-MGMT-1]]`（`config/discover_config.json`は`src/discover/collect.py`・`common/sec_data/registration_validator.py`が読むため削除不可。`Discover_Config_Sync.yml`新設で`docs/portfolio/data/`側を自動追従させる） |
+
+**判断の初手は必ず「Pythonバックエンドの読み手を`grep -rn`で網羅的に
+洗い出す」こと。** `[[DISCOVER-CONFIG-DUAL-MGMT-1]]`は当初「読み手ゼロ」
+という誤った前提でPORTFOLIO-CONFIG-DUP-1と同じ解消方法（`config/`側
+削除）を実装しようとし、実装直前の調査で`collect.py`という致命的な
+読み手を発見して停止した経緯がある（詳細はBACKLOG_DONE.md参照）。
+
 ---
 
 ## データフロー（上流→下流）
