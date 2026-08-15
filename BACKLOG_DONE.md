@@ -100,10 +100,25 @@ dual-writeを実装する」という初期の再設計案も、書き手ごと�
   すること、復元後NG=0に戻ることを実測確認済み
 - `src/discover/collect.py::load_config()`を実行し
   `config/discover_config.json`が正常に読めることを確認（99 tickers）
-- `Discover_Config_Sync.yml`はGitHub Actions側の実行環境がローカルに
-  ないため、YAML構文の妥当性（`yaml.safe_load()`）とcpコマンド対象
-  パスの実在を静的確認して代替。push後の実発火はGitHub Actions側の
-  実行ログで別途確認が必要
+- **`Discover_Config_Sync.yml`の実発火確認（追記、2026-08-15）**:
+  リポジトリが公開（`private: false`）であることを利用し、未認証
+  GitHub REST APIで実際に検証した。`config/theme_config.json`の
+  ラベルを一時的に変更してpush→run発火・`completed`/`success`・
+  `docs/portfolio/data/theme_config.json`への自動反映を確認、続けて
+  元のラベルに復元してpush→再度発火・成功・復元反映まで確認
+  （コミット`bb0486952`→`27a6bc386`〈bot〉、`73abb40b0`→`f8f2f89d2`
+  〈bot〉）。同期後`report_consistency_check.py --fail-on-ng`で
+  NG=0を維持することも確認済み
+- **`config/discover_config.json`側は実発火未検証**（`theme_config.json`
+  でのみ実データ検証を実施。`discover_config.json`はDiscoverパイプ
+  ライン本体の入力のため実データテスト対象外とし、代わりに
+  `on.push.paths`のエントリ・`cp`コマンドのコピー元/コピー先・
+  `git add`対象の3点をYAMLパーサー〈`yaml.safe_load()`〉で構造的に
+  抽出し、実在パスとの文字列完全一致を`test -f`で確認する静的確認に
+  留めた。3点とも不一致なし。次回、通常運用で新規銘柄登録または
+  admin.html経由の編集が発生した際に、`docs/portfolio/data/
+  discover_config.json`が自動追従していることを確認すれば実証が
+  完了する）
 
 #### 関連
 `[[PORTFOLIO-CONFIG-DUP-1]]`・`[[TAILKPI-CONFIG-LOCATION-1]]`・
