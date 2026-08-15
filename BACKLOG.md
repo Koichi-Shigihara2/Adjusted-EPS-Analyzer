@@ -6086,6 +6086,20 @@ DESIGN.md`への参照を持たなかったため、本エントリの「次セ�
 構造だった）。再発防止策はCHAT_RULES.md「文書横断整合性チェック」
 （2026-08-06追加）参照。
 
+**新DB構築プロジェクト最終確認（2026-08-15）**: `FIELD_DEFINITIONS.md`
+499項目単位での新DB参照切替状況を集計する投資調査を完了。SEC EDGAR
+由来4件（AS-IS-129・266・273・395）はいずれも意図的にフェーズD
+（Layer3統合）の対象外と確定済みで、記載も現状と一致することを確認
+（AS-IS-129は`[[LAYER3-FETCHER-SELECTION-PHILOSOPHY-MISMATCH-1]]`に
+よるSTONKS SILO `fetcher.py`の現状維持確定、AS-IS-266・273はEPS
+Analyzerの独立ライブ取得設計、AS-IS-395はTANUKI TAILのリアルタイム
+監視専用ファイルによる対象外）。既に確認済みのyfinance/FRED由来18件
+（`[[MARKETDATA-LAYER-CONSTRUCTION-1]]`・`[[MACRODATA-LAYER-
+CONSTRUCTION-1]]`の2026-08-15付注記参照）と合わせ、**新DB構築
+プロジェクト（sec_data/market_data/macro_data）は消費者ファイル単位・
+重複計算パターン単位・フィールド単位の全ての粒度で完了確認済み**と
+なった。
+
 #### 着手条件
 なし（着手条件だった「[[CAPEX-SIGN-UNNORMALIZED-1]]の対応方針確定」は
 2026-07-24の実装完了により満たされた。raw/撤去は完了、
