@@ -2,6 +2,93 @@
 
 ---
 
+## 2026-08-16（完了）
+
+### ✅ [CONFIG-LOAD-SILENT-FALLBACK-1]（部分対応） config/設定ファイル読み込み失敗時のサイレントフォールバックが複数箇所に存在
+**状態:** 部分対応完了（4/7件）。残り3件はBACKLOG.mdに`[[CONFIG-LOAD-
+SILENT-FALLBACK-1]]`として残存（着手条件なし）
+**優先度:** 低〜中
+**分類:** データ品質 / 監視・検知
+**登録日:** 2026-08-15
+**完了日（部分）:** 2026-08-16
+**発見:** `[[FCFCONFIG-MISSING-DETECTION-WEAK-1]]`実装中の観察事項
+
+#### 内容（登録時点）
+`config/`配下の設定ファイルを読み込むローダー関数の多くが、ファイル
+読み込み失敗時に例外を投げずハードコードされたフォールバック値へ
+静かに切り替わる。7ファイルを対象に登録（悪質度別分類は登録時点の
+記録を参照）。
+
+#### Step 0: 実装方式の判断（2026-08-16）
+7ファイルの読み込みロジックは4つの独立したPythonモジュール
+（`adjustments.py`・`data_fetcher.py`・EPS Analyzer`pipeline.py`・
+`maturity_config.py`/`segment_config.py`）に分散しており、共通
+ローダーは存在しないため集約は不採用。個別チェック関数をファイル数分
+作る代わりに、`report_consistency_check.py`に`_CONFIG_LOADER_
+REGISTRY`（表示名・sys.path追加先・モジュール名・解決関数名の
+テーブル）を持つ汎用チェック関数`_check_config_loaders_resolvable()`
+を1つ実装する方式を採用。CHECK-33（`fcf_conversion_config.json`専用）
+はこのレジストリの1エントリとして統合し、専用関数
+`_check_fcf_conversion_config_resolvable()`は廃止した。
+
+#### 実装内容（4/7件、CHECK-34として統合）
+悪質度「完全サイレント（ログ出力なし）」の3件＋統合対象1件を実装:
+
+- `config/rpo_config.json`: `adjustments.py`に`resolve_rpo_config_
+  path()`を関数抽出、`_load_rpo_config()`から呼ぶよう変更
+- `config/beta_config.json`: `data_fetcher.py`に`resolve_beta_
+  config_path()`を関数抽出、`_load_beta_config()`から呼ぶよう変更
+- `config/split_history.yaml`: EPS Analyzer`pipeline.py`に
+  `resolve_split_history_path()`を関数抽出、`load_split_history()`
+  から呼ぶよう変更
+- `config/fcf_conversion_config.json`: 既存`resolve_fcf_conversion_
+  config_path()`をレジストリに統合（CHECK-33→CHECK-34）
+
+import方式は対象モジュールの構造に応じ`"flat"`（`src.value.
+tanuki_valuation`配下、`__init__.py`の`.wacc`import失敗を回避）・
+`"package"`（`src.value.adjusted_eps_analyzer`配下、相対import
+使用のためフルパッケージimportが必要）の2種類をレジストリで使い分けた。
+
+**未実装3件**（`prompts.yaml`・`maturity_config.json`・
+`segment_config.json`/`growth_options_config.json`）は着手条件なしの
+まま`[[CONFIG-LOAD-SILENT-FALLBACK-1]]`としてBACKLOG.mdに残存
+（理由: 既に`[ERROR]`/`Warning`ログがあり相対的に緊急性が低く、
+`maturity_config.json`/`segment_config.json`はWACC/DCF計算コアに
+直結し変更影響の検証コストが高いため）。
+
+#### 検証結果
+- 発火確認: 4ファイルそれぞれで一時退避→NG-34発火→復元→NG=0復帰を
+  実測確認（`CHAT_RULES.md`「git add・破壊的git操作の事故防止」
+  パターン1に従い、退避・復元中はコミットせず、各確認後に`git
+  status --short`クリーンを確認してから次に進んだ）
+- pytest: 781 passed / 2 failed（既知`[[TEST-STALE-IV-1]]`、無関係）
+- `common/sec_data/audit.py`: 正常95・警告5（既存WARNのみ）
+- `common/sec_data/report_consistency_check.py --fail-on-ng`: NG=0・
+  WARN=78件（CHECK-34含め不変）
+- **全銘柄再生成（TANUKI VALUATION 100銘柄）**でRPO・β・FCF転換率
+  関連フィールドの差分完全ゼロを確認（GOOGL`application_rate=1.0`も
+  維持）
+- EPS Analyzer側は`split_history.yaml`登録9銘柄（NOW/NVDA/AVGO/
+  CPRT/WMT/LRCX/CELH/KLAC/TSLA、`apply_split_adjustments()`の処理
+  対象はこの9銘柄のみのためAPI費用配慮で範囲限定）を再生成し
+  `split_adjusted`関連フィールドの差分ゼロを確認。CELHで
+  `EPS_DISCREPANCY`関連フィールドに差分を検出したが、
+  `check_eps_discrepancy()`の`ALPHA_VANTAGE_API_KEY`未設定時
+  early-return（今回変更なし・本ローカル環境にキー未設定と確認済み）
+  が原因と特定、実装とは無関係と判断しEPS Analyzer側の生成データは
+  コミット対象から除外した（コード変更のみコミット）
+
+#### 一般化した設計原則
+`SYSTEM_MAP.md`「config/読み込み失敗の横断検知（CHECK-32〜34の
+一般化原則）」に記録済み。追加実装時はレジストリパターンを踏襲する
+こと。
+
+#### 関連
+`[[FCFCONFIG-MISSING-DETECTION-WEAK-1]]`（CHECK-33の元実装、本対応で
+CHECK-34へ統合）。
+
+---
+
 ## 2026-08-15（完了）
 
 ### ✅ [EPSANALYZER-ADMIN-ORPHAN-PAGE-1] adjusted_eps_analyzer/admin/配下が存在しないconfig/パスをfetchする孤立ページ

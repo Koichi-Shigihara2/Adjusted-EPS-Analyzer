@@ -470,6 +470,44 @@ DUAL-MGMT-1]]`参照。
 削除）を実装しようとし、実装直前の調査で`collect.py`という致命的な
 読み手を発見して停止した経緯がある（詳細はBACKLOG_DONE.md参照）。
 
+### config/読み込み失敗の横断検知（CHECK-32〜34の一般化原則、2026-08-16追記）
+
+`report_consistency_check.py`のCHECK-32（`_check_discover_config_sync()`）・
+CHECK-33（fcf_conversion_config.json専用、CHECK-34へ統合済み・廃止）・
+CHECK-34（`_check_config_loaders_resolvable()`）は、いずれも同一原則
+「**チェッカー独自の代理判定（`os.path.exists()`・バイト比較等）ではなく、
+本番コードが実際に使う解決/比較ロジックそのものを呼び出して検証する**」
+に基づく。
+
+CHECK-34では、この原則を**複数ファイルへ横展開する際の設計パターン**を
+確立した:
+
+- 設定ファイルの読み込みロジックは`config/`配下のファイルごとに別々の
+  Pythonモジュールへ分散しており、共通ローダーは存在しない（TANUKI
+  VALUATION側3モジュール・EPS Analyzer側1モジュールに分散）。共通化は
+  大規模リファクタリングになるため、既存の読み込み関数から**パス解決
+  部分だけ**を`resolve_<name>_path()`として個別に切り出す方が既存動作を
+  壊すリスクが低い
+- チェッカー側は個別チェック関数をファイル数分作らず、
+  `_CONFIG_LOADER_REGISTRY`（表示名・sys.path追加先・モジュール名・
+  解決関数名のテーブル）を1つ持ち、汎用チェック関数`_check_config_
+  loaders_resolvable()`が1つでテーブルを走査する。新しいファイルを
+  対象に追加する際は、対象モジュールに`resolve_*_path()`を1つ追加し、
+  レジストリに1エントリ追記するだけで済む（個別チェック関数の増殖を
+  防ぐ）
+- import方式は対象モジュールのパッケージ構造に依存する。`src.value.
+  tanuki_valuation`配下は`__init__.py`が`.wacc`importで失敗しフル
+  パッケージimportができないため、`sys.path`にモジュールのディレクト
+  リを追加してモジュール名だけでimportする`"flat"`方式を使う（既存
+  テスト`tests/test_divergence_sign_guard.py`等と同じパターン）。
+  `src.value.adjusted_eps_analyzer`配下は相対import（`from .module
+  import ...`）を使っているため`"package"`方式（`REPO_ROOT`起点の
+  フルドット区切りパスでimport）が必要
+- `[[CONFIG-LOAD-SILENT-FALLBACK-1]]`では7件中4件（悪質度の高い
+  「完全サイレント」3件＋統合対象1件）を実装、残り3件は着手条件なしの
+  ままBACKLOGに残した（詳細はBACKLOG_DONE.md参照）。追加実装時はこの
+  レジストリパターンを踏襲すること
+
 ---
 
 ## データフロー（上流→下流）
