@@ -52,7 +52,7 @@
     .form-input:focus{outline:none;border-color:var(--acc)}
 
     /* Status message */
-    .msg{font-family:var(--mono);font-size:12px;padding:8px 12px;border-radius:4px;margin-top:10px;display:none}
+    .msg{font-family:var(--mono);font-size:12px;padding:8px 12px;border-radius:4px;margin-top:10px;display:none;white-space:pre-line}
     .msg.ok{background:rgba(16,185,129,.1);color:var(--grn);border:1px solid var(--grn);display:block}
     .msg.err{background:rgba(244,63,94,.1);color:var(--red);border:1px solid var(--red);display:block}
 
@@ -274,8 +274,39 @@ function addThemeRow() {
   renderTickerEditor();
 }
 
+// テーマ設定のバリデーション（テーマID重複・空ラベル・不正な色コード）
+// [[DISCOVER-CONFIG-DUAL-MGMT-1]] BACKLOG記載の対応方針に基づき追加。
+// エラーメッセージの配列を返す（問題なければ空配列）。
+function validateThemes(themes) {
+  const errors = [];
+  const seenIds = new Set();
+  themes.forEach((t, i) => {
+    const label = (t.label ?? '').trim();
+    if (!label) {
+      errors.push(`#${i + 1}行目: ラベルが空です`);
+    }
+    if (!t.id) {
+      errors.push(`#${i + 1}行目: IDが空です`);
+    } else if (seenIds.has(t.id)) {
+      errors.push(`#${i + 1}行目: テーマID「${t.id}」が重複しています`);
+    } else {
+      seenIds.add(t.id);
+    }
+    if (!/^#[0-9a-fA-F]{6}$/.test(t.color ?? '')) {
+      errors.push(`#${i + 1}行目: 色コード「${t.color}」が不正です（#rrggbb形式で指定してください）`);
+    }
+  });
+  return errors;
+}
+
 async function saveThemeConfig() {
-  _themeConfig.themes = collectThemes();
+  const themes = collectThemes();
+  const errors = validateThemes(themes);
+  if (errors.length > 0) {
+    showMsg('theme-msg', 'err', '✗ 保存できません:\n' + errors.join('\n'));
+    return;
+  }
+  _themeConfig.themes = themes;
   const content = JSON.stringify(_themeConfig, null, 2);
   try {
     const res = await commitFile(THEME_PATH, content, 'chore: update theme_config.json', _themeSha);
