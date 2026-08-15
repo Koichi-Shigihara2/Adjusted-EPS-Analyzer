@@ -4614,6 +4614,57 @@ BACKLOG_DONE.md「2026-08-15（完了）」参照）
 
 ---
 
+### [CONFIG-LOAD-SILENT-FALLBACK-1] config/設定ファイル読み込み失敗時のサイレントフォールバックが複数箇所に存在
+**優先度:** 低〜中
+**分類:** データ品質 / 監視・検知
+**登録日:** 2026-08-15
+**発見:** `[[FCFCONFIG-MISSING-DETECTION-WEAK-1]]`実装中の観察事項
+（当初`rpo_config.json`単体の課題として想定されていたが、登録前確認で
+同型パターンが広範に存在すると判明したため横断的な1項目として登録）
+
+#### 内容
+`config/`配下の設定ファイルを読み込むローダー関数の多くが、ファイル
+読み込み失敗時に例外を投げずハードコードされたフォールバック値へ
+静かに切り替わる。`report_consistency_check.py`によるNG検知が
+できているのは`fcf_conversion_config.json`（`[[FCFCONFIG-LOCATION-1]]`
+のCHECK-33、2026-08-15対応済み）のみで、他は検知対象外。
+
+実コード確認済み（2026-08-15）:
+
+| ファイル | ローダー | ファイル不存在時のログ | フォールバック値の性質 |
+|---|---|---|---|
+| `config/rpo_config.json` | `adjustments.py::_load_rpo_config()` | **なし（完全サイレント）** | もっともらしい偽装データ（15銘柄whitelist・industry_keywords・min_rpo_revenue_ratio、実configとほぼ同一内容） |
+| `config/beta_config.json` | `data_fetcher.py::_load_beta_config()` | **なし（完全サイレント）**（`search_paths`が全滅した場合。読み込みエラー時のみ`[WARN]`あり） | 空辞書（βオーバーライドなし） |
+| `config/split_history.yaml` | `adjusted_eps_analyzer/pipeline.py`の分割履歴ローダー | **なし（完全サイレント）**（読み込みエラー時のみ`Warning:`あり） | 空辞書（遡及補正なし） |
+| `config/prompts.yaml` | `ai_analyzer.py::load_prompt()` | `Warning:`あり | もっともらしい偽装データ（`DEFAULT_PROMPT`定数） |
+| `config/maturity_config.json` | `maturity_config.py::_ensure_loaded()` | `[ERROR]`あり | デフォルトプロファイルのみ（銘柄別設定は全て失われる） |
+| `config/segment_config.json`・`growth_options_config.json` | `segment_config.py::_load_json()` | `[ERROR]`あり | 空辞書 |
+
+**`rpo_config.json`の実害確認結果（登録前検証）**: フォールバック値と
+実configの唯一の差分は`GOOGL`（RPO $467.6Bの明示登録、2026-06-10
+追加）。GOOGL実データを検証したところ、`sector=Communication
+Services`により`SECTOR_RATES`テーブル経由で同一の`application_
+rate=1.0`に到達し、RPO/Revenue比率（1.16）も閾値0.30を大きく上回る
+ため、**現状は最終出力への実害なし**と確認済み。ただしこれは偶然の
+産物（sector fallbackが結果的に同じ値になっただけ）であり、将来
+whitelistに追加される銘柄がsector fallbackで異なる結果になる場合や、
+`min_rpo_revenue_ratio`未満の銘柄が追加された場合は実害が生じうる。
+他ファイル（`beta_config.json`・`prompts.yaml`等）の実害は未検証。
+
+#### 対応方針
+`[[FCFCONFIG-MISSING-DETECTION-WEAK-1]]`（CHECK-33）と同じ方式
+（解決/読み込みロジックを関数抽出し`report_consistency_check.py`から
+呼んでNG検出）を、悪質度の高いもの（完全サイレント＋もっともらしい
+偽装データ: `rpo_config.json`・`prompts.yaml`）から優先して横展開する。
+`[ERROR]`ログが既にあるもの（`maturity_config.json`・
+`segment_config.json`等）は相対的に優先度が低い。CHECK番号は
+CHECK-34以降を採番する。
+
+#### 着手条件
+なし
+
+---
+
 ### [RISK-FREE-RATE-HARDCODE-1] risk_free_rateの常時ハードコード（0.043固定）
 **優先度:** 高
 **分類:** データ品質 / TANUKI VALUATION / DCF計算
