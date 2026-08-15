@@ -1,5 +1,67 @@
 # Claude Code 作業開始テンプレート
 
+最終更新: 2026-08-15（**セッション終了時ブラッシュアップ・本日
+セッションサマリー**。フェーズ3合同設計調査（Bグループ・Aグループ・
+未登録11件調査）を通じて実施した以下を記録する。
+
+**実装完了（コミットハッシュ付き）**:
+- `[[TAILKPI-CONFIG-LOCATION-1]]`（`config/tail_kpi_map.json`へ移動）
+  `80890c711`
+- `[[FCFCONFIG-LOCATION-1]]`（`config/fcf_conversion_config.json`へ
+  移動）`493e8843a`（+設定ファイル不在時のWARN追加`7e69f8025`）
+- `[[PORTFOLIO-CONFIG-DUP-1]]`（`config/portfolio.json`廃止・`docs/`
+  一本化）`e97741f54`/`eaf3016cb`
+- `[[DISCOVER-CONFIG-DUAL-MGMT-1]]`（`Discover_Config_Sync.yml`新設・
+  `report_consistency_check.py`CHECK-32新設）`20a173a76`/`80bcf5f57`
+- フェーズ3完了記録`27b38e953`、CHAT_RULES.md追記`d69a8e879`
+
+**確定した設計判断**:
+- `config/`配下はGitHub Pages非公開（実測404）。過去3回同一の取り違え
+  （`portfolio.json`・`discover_config.json`・`theme_config.json`）が
+  独立に発生していた事実と併せてSYSTEM_MAP.mdに恒久記録
+- `config/`↔`docs/`重複ファイルの解消は、Pythonバックエンドの読み手の
+  有無で方向が逆になる（読み手ゼロ→`docs/`側に一本化、読み手あり→
+  `config/`側を正としつつ`docs/`側を自動追従させる）。この判断基準を
+  SYSTEM_MAP.mdに明文化
+- `_meta`スキーマ標準（`NAMING_CONVENTIONS.md`規則8）。既存3件
+  （`segment_config`/`growth_options_config`/`maturity_config`）が
+  既に統一済みのスキーマを標準化、既存ファイルへの遡及適用はしない
+- 新DB構築プロジェクト フェーズ1〜3完了、次の本線は未定
+
+**実装直前に停止した前提の誤り3件（本セッションで再発防止価値が
+最も高い部分）**:
+- 架空の追記の指摘（`docs/quality/quality_checker.html`→
+  `docs/quality-monitor/quality_checker.html`と2回にわたり存在しない
+  パスが提示された。`common/sec_data/quality_checker.py`という無関係な
+  既存BACKLOG項目`[[QUALITY-CHECKER-CLEANUP-1]]`との取り違えが発生源と
+  推測される）
+- 結論が似た別調査の同一視（`[[SCHEMA-NORMALIZED-ISSUES-1]]`6290行目の
+  「調査依頼文の前提訂正」は、本セッションのフロントエンド28ファイル
+  横断点検とは対象範囲が異なる別調査だったが、結論文が酷似していたため
+  同一視されかけた）
+- 削除不可のファイルを削除しようとした（`config/discover_config.json`は
+  `src/discover/collect.py`〈Discoverパイプライン本体〉・
+  `common/sec_data/registration_validator.py`の入力であり、
+  `[[PORTFOLIO-CONFIG-DUP-1]]`と同型の「`docs/`側へ一本化・`config/`側
+  廃止」という解決法は実装直前の`grep -rn`調査で致命的だと判明し停止）
+
+**発見したサイレント破損経路2件**:
+- `adjustments.py::estimate_fcf_from_eps()`が設定ファイル不在時に例外を
+  投げずraw_fcfへフォールバックする経路（標準出力へのWARN追加で
+  緩和、恒久対策は`[[FCFCONFIG-MISSING-DETECTION-WEAK-1]]`として
+  記録のみ）
+- `report_consistency_check.py`CHECK-32の初期実装がバイト単位比較で
+  誤検知していた（Windows`core.autocrlf=true`環境での`git checkout`
+  後のCRLF/LF差、gitからは「変更なし」判定される差異。JSON意味比較に
+  修正）
+
+**セッション終了時レビューで発見・修正した文書間の矛盾1件**: 本ファイル
+自身に「`CHAT_RULES.md`「本線の定義」節の更新要否も、次の本線が定まった
+時点で判断すること」という記述が残っていたが、同節は既に
+`27b38e953`で更新済みだったため、この矛盾を訂正した。
+
+詳細はBACKLOG_DONE.md「2026-08-15（完了）」参照）
+
 最終更新: 2026-08-15（**新DB構築プロジェクト フェーズ3「導出データ層の
 管理方法検討」完了、これによりフェーズ1〜3が全て完了**。分類C14件の
 うち登録済み5件（`[[DISCOVER-CONFIG-DUAL-MGMT-1]]`〈`INPUT-C-006/007`〉・
@@ -17,7 +79,9 @@ ADMIN-ORPHAN-PAGE-1]]`として新規登録、既存`[[RPO-ADMIN-1]]`に
 次セッション開始時は、残存する本線外・低優先度課題群〈下記既存の
 1・2・3〉への対応、または新たな本線をBACKLOG.mdの優先順位・
 PROJECT_STATUS.mdを踏まえて判断することから始める。`CHAT_RULES.md`
-「本線の定義」節の更新要否も、次の本線が定まった時点で判断すること。
+「本線の定義」節は**既に更新済み**（旧本線＝フェーズ1を取り消し線化・
+「次の本線は未定」を記録、コミット`27b38e953`）。次の本線が定まった
+時点で、同節に新本線を追記すること。
 詳細はPROJECT_STATUS.md冒頭・BACKLOG_DONE.md「2026-08-15（完了）」
 参照。実装コード変更なし）
 
