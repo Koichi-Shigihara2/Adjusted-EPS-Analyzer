@@ -4652,29 +4652,10 @@ CHECK-34で確立したレジストリテーブル方式（`SYSTEM_MAP.md`
 
 ---
 
-### [RISK-FREE-RATE-HARDCODE-1] risk_free_rateの常時ハードコード（0.043固定）
-**優先度:** 高
-**分類:** データ品質 / TANUKI VALUATION / DCF計算
-**登録日:** 2026-07-23
-**発見:** `FIELD_DEFINITIONS.md`フェーズ6（AS-IS-013）・`INPUT_DATA_TOBE.md`1-C
-
-#### 背景
-`calculate_wacc()`のデフォルト引数として`risk_free_rate=0.043`が固定値の
-まま使われ続けており、実勢金利をその都度取得する設計になっていない。
-TANUKI VALUATIONの理論株価計算（AS-IS-002/004/006等、全銘柄のDCF計算の
-中核）に組み込まれる定数であり、影響範囲はTANUKI VALUATION対象銘柄全件
-（現状100銘柄）。`market_return=10%固定`も同様に根拠コメントなしの
-ハードコード。MACRO PULSEはFRED `DGS1`で実勢金利を都度取得しているのと
-対照的。
-
-#### 対応方針
-FRED `DGS10`（10年国債利回り）を都度取得する設計へ切り替えるか、固定値
-維持のまま「実勢金利非追随」である旨を明示するかを判断する。切り替える
-場合は`INPUT_DATA_TOBE.md`が設計したFRED統合層（`common/macro_data/`）
-経由の取得を前提とする。
-
-#### 着手条件
-なし
+（[[RISK-FREE-RATE-HARDCODE-1]]は2026-08-16調査完了、優先度「高」は
+実態と乖離していたと判明し「低」へ訂正の上、現状維持〈対応不要〉で
+BACKLOG_DONE.mdへ移設。詳細はBACKLOG_DONE.md「2026-08-16（完了）」
+参照）
 
 ---
 

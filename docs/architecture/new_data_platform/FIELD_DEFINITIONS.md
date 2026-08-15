@@ -362,6 +362,28 @@ discover_config.json）は、バリデーションなしで直接GitHubにコミ
   動的取得の仕組みは持たない。ERP（AS-IS-055/056）はこの固定値を
   そのままリスクフリーレートとして使うため、実勢金利が変動してもERPの
   「金利側」の要素は追随しない。
+  **【2026-08-16追記・`[[RISK-FREE-RATE-HARDCODE-1]]`調査完了】**
+  `risk_free_rate`が影響するのはAS-IS-002（参考①β込みIV）・
+  AS-IS-004（参考②Rfのみ割引IV）・AS-IS-055/056（ERP）の3系統のみ。
+  **メインIV（AS-IS-001`intrinsic_value_per_share`・AS-IS-006
+  `upside_percent`「統一クラスタの唯一の正」）は`market_return`
+  （10%固定）のみで割り引かれており、`risk_free_rate`はこの計算
+  経路に一切登場しない**（`core_calculator.py:495, 640-641`で実測
+  確認）。`_compute_tanuki_score()`（TANUKI SCORE分類）も
+  `upside_percent`のみを参照し、上記3系統は判定に使われない。
+  固定値`0.043`は2026-04-12の初回コミットから変更履歴が
+  なく（`git log -S`で確認）、影響範囲が参考表示に限定されることを
+  踏まえ、**正規化固定レートとして意図的に維持する設計判断**として
+  `[[RISK-FREE-RATE-HARDCODE-1]]`をBACKLOG_DONE.mdへ移設した
+  （詳細は同ファイル参照）。
+  **設計上の性質（バグではない、必読）**: `WACC = Rf + β×(Rm-Rf)`
+  という実装のため`dWACC/dRf = 1-β`となり、**β>1の銘柄では
+  risk_free_rateを上げるとβ込みWACC（参考①）が下がる**という直感に
+  反する符号反転が起きる（実測: AAPL β=1.086でRf +0.2pp→WACC
+  -0.017pp・参考①IV +0.26%、KO β=0.342でRf +0.2pp→WACC +0.132pp・
+  参考①IV -3.42%）。これは`Rm=10%固定`という設計の必然的帰結
+  （Rmを固定したままRfを動かすとERP=Rm-Rfが縮むため）であり、将来
+  この符号反転を見て「計算式がおかしい」と誤って判断しないこと。
 - **PERのみHypeCoreバリュエーションパネル（AS-IS-122）でフォールバックが
   ない非対称構造**: PS/PEG/EV-EBITDAはTANUKIデータ欠落時にHypeCore自身の
   `poc.json`へフォールバックするが、PERだけはTANUKIの`comps.per`のみを
