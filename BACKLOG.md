@@ -2969,10 +2969,11 @@ grep -n "Fred(\|from fredapi\|fred_api_key" src/market/market_pulse/collect_and_
    2026-08-13、`[[FRED-HYSPREAD-TRIPLE-FETCH-1]]`と同型の理由で解消・
    BACKLOG_DONE.mdへ移動済み
 6. （本線外）過去セッションで蓄積した低優先度課題群一式:
-   `[[MACRODATA-IMPORT-HISTORY-CONFIG-DRIFT-1]]`・`[[MARKETDATA-CWAN-
-   FROZEN-DATA-SUSPECT-1]]`・`[[MARKETDATA-SP500-SCRAPE-INVALID-
-   TICKERS-1]]`・`[[MARKETDATA-VIX9D-DATA-GAP-1]]`・`[[STONKS-SILO-
-   CLI-TICKERS-SHADOW-1]]`・`[[NETCASH-DUAL-CALC-1]]`等
+   `[[MARKETDATA-CWAN-FROZEN-DATA-SUSPECT-1]]`・`[[MARKETDATA-SP500-
+   SCRAPE-INVALID-TICKERS-1]]`・`[[MARKETDATA-VIX9D-DATA-GAP-1]]`・
+   `[[STONKS-SILO-CLI-TICKERS-SHADOW-1]]`等（`[[MACRODATA-IMPORT-
+   HISTORY-CONFIG-DRIFT-1]]`・`[[NETCASH-DUAL-CALC-1]]`は解消済み・
+   BACKLOG_DONE.mdへ移動済み）
 
 #### 着手条件
 なし（`common/macro_data/`本体・フェーズ1・フェーズ2はいずれも完了。
@@ -9817,42 +9818,6 @@ ROEフォールバック不可を許容する明示的な設計判断が必要�
 
 #### 着手条件
 なし
-
----
-
-### [MACRODATA-IMPORT-HISTORY-CONFIG-DRIFT-1] 05_import_history.pyの独自FRED_INDICATORS辞書がINDICATOR_CONFIGと乖離（2系列多い・2系列少ない）
-**優先度:** 低（一過性ツール、通常運用では実行されない）
-**分類:** 設定の陳腐化
-**登録日:** 2026-08-12
-**発見:** `common/macro_data/`新設事前調査・FRED消費者洗い出し
-（チャット記録、2026-08-12）
-
-#### 内容
-`05_import_history.py`（一過性の一括過去投入ツール、どのワークフロー
-からも参照されない手動実行専用）が独自に保持する`FRED_INDICATORS`辞書
-（131-145行）は、`05_main.py`の現行`INDICATOR_CONFIG`と以下の通り
-乖離している:
-- **多い**（現行`INDICATOR_CONFIG`に存在しない2系列）:
-  `CSCICP03USM665S`（CB Consumer Confidence）・`USALOLITONOSTSAM`
-  （Conference Board LEI）。`[[MACRODATA-SCHEDULED-SILENT-GAP-CSCICP-
-  USALOL-1]]`参照
-- **少ない**（現行`INDICATOR_CONFIG`にあるが`FRED_INDICATORS`に
-  存在しない2系列）: `GACDFSA066MSFRBPHI`（Philadelphia Fed
-  Manufacturing）・`CFNAI`（Chicago Fed National Activity）
-
-このため、現状の`05_import_history.py fred`コマンドを実行しても、
-Philadelphia Fed・Chicago Fedの過去データは投入されず、逆に既に
-追跡対象外の2指標（CB Consumer Confidence・Conference Board LEI）の
-過去データが投入されてしまう。
-
-#### 対応方針（未定）
-- `common/macro_data/`統合時に本ツール自体を作り直すか、`FRED_INDICATORS`
-  を`INDICATOR_CONFIG`から動的生成する形に修正するか判断する
-- 判断までの間、本ツールを実行する場合は`--indicators`引数で対象を
-  明示的に絞り込み、乖離した2系列を誤って投入しないよう注意する
-
-#### 着手条件
-なし。`common/macro_data/`統合時にこのツール自体を見直すか判断する。
 
 ---
 

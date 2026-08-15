@@ -2,6 +2,85 @@
 
 ---
 
+## 2026-08-15（完了）
+
+### ✅ [MACRODATA-IMPORT-HISTORY-CONFIG-DRIFT-1] 05_import_history.pyの独自FRED_INDICATORS辞書がINDICATOR_CONFIGと乖離（2系列多い・2系列少ない）
+**状態:** 完了（案B〈common.macro_data.reader経由への作り直し〉を採用
+し実装完了）
+**優先度:** 低→（実装過程で「実行不能」という更に深刻な実態が判明、
+下記経緯参照）
+**分類:** 設定の陳腐化
+**登録日:** 2026-08-12
+**完了日:** 2026-08-15
+**発見:** `common/macro_data/`新設事前調査・FRED消費者洗い出し
+（チャット記録、2026-08-12）
+
+#### 内容（登録時点）
+`05_import_history.py`（一過性の一括過去投入ツール、どのワークフロー
+からも参照されない手動実行専用）が独自に保持する`FRED_INDICATORS`辞書
+（131-145行）は、`05_main.py`の現行`INDICATOR_CONFIG`と以下の通り
+乖離していた:
+- **多い**（現行`INDICATOR_CONFIG`に存在しない2系列）:
+  `CSCICP03USM665S`（CB Consumer Confidence）・`USALOLITONOSTSAM`
+  （Conference Board LEI）
+- **少ない**（現行`INDICATOR_CONFIG`にあるが`FRED_INDICATORS`に
+  存在しない2系列）: `GACDFSA066MSFRBPHI`（Philadelphia Fed
+  Manufacturing）・`CFNAI`（Chicago Fed National Activity）
+
+#### 投資調査で判明した実態（2026-08-15、対応方針決定調査）
+当初「設定乖離」という軽微な問題設定だったが、実際には**もっと深刻な
+実行不能状態**にあることが判明した。`05_main.py`の`[[MACRODATA-LAYER-
+CONSTRUCTION-1]]`実装（2026-08-12）で`get_fred()`関数が削除された際、
+`05_import_history.py`側のモジュールレベル参照
+（`get_fred = _m.get_fred`、71行目）が追従修正されないまま残置され、
+`fred`・`csv`・`liquidity`いずれのサブコマンドを実行してもimport時点で
+`AttributeError`により即座にクラッシュする状態になっていた（一過性・
+低頻度実行のツールだったため、この切替の影響範囲確認漏れが2026-08-15
+まで3日間気づかれずに残っていた）。
+
+投資調査では対応方針の選択肢3案（案A: FRED_INDICATORSを
+INDICATOR_CONFIGから動的生成／案B: common.macro_data.reader経由の
+一過性バックフィルツールとして作り直す／案C: 現状維持）を整理し、
+**案Bを推奨**した。当初「案Bはコストが高い」と想定されていたが、
+`common/macro_data/series/*.json`に既に深い履歴（対象24系列中、
+最も古い系列で1939年〜、いずれも十分な深さ）が定期取得ワークフローで
+蓄積済みだったため、**FRED APIへの再アクセスなしにローカルJSONを
+05_events.csv形式へ変換するだけで実現でき、想定より低コストで完了
+できた**。
+
+#### 対応内容（実装、コミット`df9af528b`）
+- 独自`FRED_INDICATORS`辞書を廃止し、`05_main.py::INDICATOR_CONFIG`を
+  単一の正として参照するよう変更（CB Consumer Confidence・
+  Conference Board LEIを除外、Philadelphia Fed Manufacturing・
+  Chicago Fed National Activityを追加、当初の乖離を解消）
+- `import_from_fred()`・`backfill_liquidity()`のFRED API直接呼び出し
+  （`fred.get_series()`）を`common.macro_data.reader.get_series()`
+  経由のローカルJSON読み取りに置換（外部API呼び出し・レート制限
+  対策・リトライロジックが不要に）
+- `_load_ctx_cache()`/`_CTX_CACHE`（fredapi直接呼び出し時代のAPIコール
+  削減キャッシュ）を廃止し、`_lookup_ctx()`を`common.macro_data.
+  reader.get_value_as_of()`経由に置換
+- `import_from_csv()`の壊れた`get_fred()`/`_load_ctx_cache()`依存も
+  除去
+- 壊れた`get_fred`参照を完全除去し、`05_main.py`が既に確立済みの
+  `HAS_MACRO_DATA`ガード・`_md_reader`を再利用（二重実装を回避）
+
+**検証**: `git stash`で修正前コードを実行し`AttributeError`での
+即時クラッシュを再現確認した上で、修正後は`fred`・`csv`・`liquidity`
+全3サブコマンドが正常終了することを確認（単一指標指定・
+`--overwrite`・全指標デフォルト実行の各パターン）。生成される行の
+フォーマット（`regime`/`ff_rate`/`yc_10y2y`/`hy_spread`/`vix`等の
+コンテキスト列）が既存行と同一スキーマであることも確認。検証用の
+一時的なデータ書き込みは全て元の状態へ復元済みで、実データへの変更は
+コミットに含まれない。pytest全体`803 passed / 2 known-failed`
+（`test_iv_formula.py` MSFT/NVDA、`[[TEST-STALE-IV-1]]`既知課題、
+本変更とは無関係）で回帰なしを確認。
+
+これにより、`05_import_history.py`は実行不能状態から復旧し、
+`common/macro_data/`を単一の正とするアーキテクチャへ統合された。
+
+---
+
 ## 2026-08-13（完了）
 
 ### ✅ [MACRODATA-BACKFILL-TECH-PULSE-VXNCLS-UNTRACKED-1] backfill_tech_pulse.pyのVXNCLS取得が未切替のまま、BACKLOG本体に専用エントリがなかった
