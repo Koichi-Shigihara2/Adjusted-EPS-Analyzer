@@ -2543,6 +2543,14 @@ TICKERS-1]]`（S&P500構成銘柄Wikipediaスクレイピングに`FDXF`/`HONA`/
 なった（`[[MARKETDATA-LAYER-CONSTRUCTION-1]]`本体には影響なし、独立した
 作業ロスのみ）。今回は検証完了後直ちにコミット・pushを実施し再発を防止。
 
+**注記（2026-08-15、フィールド単位の切替完了確認）**: `FIELD_
+DEFINITIONS.md`499項目単位での新DB参照切替状況を集計する投資調査を
+実施した結果、`common/market_data/`（yfinance）由来の一次データ8件
+（AS-IS-032・262・312・320・321・322・325・362）が全件切替済みである
+ことを実コードで確認した（詳細は`PROJECT_STATUS.md`フェーズ3参照）。
+ファイル単位（本エントリの全12ファイル＋asset_flow）の切替完了に加え、
+フィールド単位でも本線タスクの完了を確認できた。
+
 #### 着手条件
 なし（未決定事項9件は全件確定済み、実装着手可能）。
 
@@ -2975,10 +2983,19 @@ grep -n "Fred(\|from fredapi\|fred_api_key" src/market/market_pulse/collect_and_
    HISTORY-CONFIG-DRIFT-1]]`・`[[NETCASH-DUAL-CALC-1]]`は解消済み・
    BACKLOG_DONE.mdへ移動済み）
 
+**注記（2026-08-15、フィールド単位の切替完了確認）**: `FIELD_
+DEFINITIONS.md`499項目単位での新DB参照切替状況を集計する投資調査を
+実施した結果、`common/macro_data/`（FRED）由来の一次データ10件
+（AS-IS-190・192・194・197・199・200・210・211・212・352）が全件
+切替済みであることを実コードで確認した（詳細は`PROJECT_STATUS.md`
+フェーズ3参照）。ファイル単位（本番消費者2ファイル＋周辺ツール1件）の
+切替完了に加え、フィールド単位でも本線タスクの完了を確認できた。
+
 #### 着手条件
 なし（`common/macro_data/`本体・フェーズ1・フェーズ2はいずれも完了。
-フェーズ3は分類C3件のBACKLOG登録まで完了、残り11件の検討・
-`FIELD_DEFINITIONS.md`切替調査・ENB異常ケース・本線外課題群のみ残置）。
+フェーズ3は分類C3件のBACKLOG登録・`FIELD_DEFINITIONS.md`切替調査
+（2026-08-15完了）まで完了、残り11件の検討・ENB異常ケース・本線外
+課題群のみ残置）。
 
 ---
 

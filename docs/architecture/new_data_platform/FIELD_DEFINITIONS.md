@@ -3,6 +3,12 @@
 作成日: 2026-07-22
 出発点: `TO_BE_FINAL_LIST.md`（ステップ6・7確定後の499項目、データ性質分類済み）
 
+**注記（2026-08-15、新DB参照切替状況の集計調査で発見）**: 各フェーズの
+見出し件数（対象1〜10、フェーズ1〜10）を単純合計すると486件となり、
+冒頭記載の「499件」と13件の差異がある。原因調査・修正は本注記の範囲外
+（新DB参照切替状況とは別の、本文書自体の既存の集計不整合として記録のみ
+に留める）。
+
 ## 本ドキュメントの位置づけ
 
 499項目を、簡単なものから順に定義していく。本ドキュメントは複数フェーズに
@@ -163,30 +169,30 @@ yfinanceの単一フィールドをそのまま格納しているはずの項目
 
 | AS-IS ID(元) | サブシステム | 表示名 | プログラム名称 | 定義 | データ取得元 | データ性質分類 |
 |---|---|---|---|---|---|---|
-| AS-IS-032 | TANUKI VALUATION | PER/PEG/PS/EV_EBITDA/移動平均/予想EPS/アナリスト目標/配当利回り/配当性向/インサイダー保有等（束ね行） | `per, peg, ps, ev_ebitda, ma200, forward_eps, analyst_target_*, dividend_yield, payout_ratio, insider_*` | yfinance `.info`辞書の複数フィールドをそのまま格納（`per`のみtrailingPE優先/forwardPEフォールバックの選択あり） | yfinance: `trailingPE`/`forwardPE`/`pegRatio`/`priceToSalesTrailing12Months`/`enterpriseToEbitda`等（`data_fetcher.py:513-541`） | 一次データ |
+| AS-IS-032 | TANUKI VALUATION | PER/PEG/PS/EV_EBITDA/移動平均/予想EPS/アナリスト目標/配当利回り/配当性向/インサイダー保有等（束ね行） | `per, peg, ps, ev_ebitda, ma200, forward_eps, analyst_target_*, dividend_yield, payout_ratio, insider_*` | yfinance `.info`辞書の複数フィールドをそのまま格納（`per`のみtrailingPE優先/forwardPEフォールバックの選択あり） | yfinance: `trailingPE`/`forwardPE`/`pegRatio`/`priceToSalesTrailing12Months`/`enterpriseToEbitda`等（`data_fetcher.py:513-541`） | 一次データ **[2026-08-15追記: common/market_data/へ切替済み]** |
 | AS-IS-129 | STONKS SILO | 年次売上高・純利益 | `records`（yr→{revenue, net_income}） | SEC年次決算の売上高・純利益をそのまま抽出 | SEC EDGAR: `pl.revenue`/`pl.net_income`（`common/sec_data`経由、`pipeline.py:111-117`） | 一次データ |
-| AS-IS-190 | MACRO PULSE | S&P500現在値 | （`tk-sp`表示、フィールド名なし） | S&P500指数終値 | FRED: `SP500`系列優先、失敗時stooqへフォールバック（`05_main.py:get_sp500()`825-830） | 一次データ。**複数取得経路あり**: Market Pulse(AS-IS-312内包)もyfinanceで独自にS&P500を取得（下記参照） |
-| AS-IS-192 | MACRO PULSE | 10Y-2Y SPREAD | （`tk-yc`表示） | 米国10年債-2年債利回り格差 | FRED: `T10Y2Y`系列（`INDICATOR_CONFIG["Yield Curve 10Y-2Y"]`、`05_main.py:fetch_event_row()`） | 一次データ |
-| AS-IS-194 | MACRO PULSE | HY SPREAD（ticker用） | （`tk-hy`表示） | ハイイールド債OASスプレッド | FRED: `BAMLH0A0HYM2`系列（`05_main.py:fetch_event_row()`309-317） | 一次データ。**複数取得経路あり**: MACRO PULSE内部でAS-IS-199と重複取得、Market Pulseとも重複（TO_BE.md⑮群参照） |
-| AS-IS-197 | MACRO PULSE | M2マネーサプライ | （`liqGrid`カード表示） | M2マネーサプライ | FRED: `M2SL`系列（`05_main.py:update_liquidity_csv()`1952） | 一次データ |
-| AS-IS-199 | MACRO PULSE | HYスプレッド（流動性カード用） | （`renderLiquidityCards()`表示） | ハイイールド債OASスプレッド | FRED: `BAMLH0A0HYM2`系列（`05_main.py:update_liquidity_csv()`1956） | 一次データ。**AS-IS-194と同一系列の重複取得**（TO_BE.md⑮群、統一候補） |
-| AS-IS-200 | MACRO PULSE | FRBバランスシート | （`renderLiquidityCards()`表示） | FRB総資産 | FRED: `WALCL`系列（`05_main.py`1954） | 一次データ |
+| AS-IS-190 | MACRO PULSE | S&P500現在値 | （`tk-sp`表示、フィールド名なし） | S&P500指数終値 | FRED: `SP500`系列優先、失敗時stooqへフォールバック（`05_main.py:get_sp500()`825-830） | 一次データ。**複数取得経路あり**: Market Pulse(AS-IS-312内包)もyfinanceで独自にS&P500を取得（下記参照） **[2026-08-15追記: common/macro_data/へ切替済み]** |
+| AS-IS-192 | MACRO PULSE | 10Y-2Y SPREAD | （`tk-yc`表示） | 米国10年債-2年債利回り格差 | FRED: `T10Y2Y`系列（`INDICATOR_CONFIG["Yield Curve 10Y-2Y"]`、`05_main.py:fetch_event_row()`） | 一次データ **[2026-08-15追記: common/macro_data/へ切替済み]** |
+| AS-IS-194 | MACRO PULSE | HY SPREAD（ticker用） | （`tk-hy`表示） | ハイイールド債OASスプレッド | FRED: `BAMLH0A0HYM2`系列（`05_main.py:fetch_event_row()`309-317） | 一次データ。**複数取得経路あり**: MACRO PULSE内部でAS-IS-199と重複取得、Market Pulseとも重複（TO_BE.md⑮群参照） **[2026-08-15追記: common/macro_data/へ切替済み、重複取得自体もFRED-HYSPREAD-TRIPLE-FETCH-1で解消済み]** |
+| AS-IS-197 | MACRO PULSE | M2マネーサプライ | （`liqGrid`カード表示） | M2マネーサプライ | FRED: `M2SL`系列（`05_main.py:update_liquidity_csv()`1952） | 一次データ **[2026-08-15追記: common/macro_data/へ切替済み]** |
+| AS-IS-199 | MACRO PULSE | HYスプレッド（流動性カード用） | （`renderLiquidityCards()`表示） | ハイイールド債OASスプレッド | FRED: `BAMLH0A0HYM2`系列（`05_main.py:update_liquidity_csv()`1956） | 一次データ。**AS-IS-194と同一系列の重複取得**（TO_BE.md⑮群、統一候補） **[2026-08-15追記: common/macro_data/へ切替済み、重複取得自体もFRED-HYSPREAD-TRIPLE-FETCH-1で解消済み]** |
+| AS-IS-200 | MACRO PULSE | FRBバランスシート | （`renderLiquidityCards()`表示） | FRB総資産 | FRED: `WALCL`系列（`05_main.py`1954） | 一次データ **[2026-08-15追記: common/macro_data/へ切替済み]** |
 | AS-IS-205 | MACRO PULSE | ステルス流動性LAYER1（FRB政策意図） | （`stealthLayer1`表示） | Fed政策レジーム文字列の再表示 | `05_fed_context.csv`の`regime`列（AS-IS-182/183と同一値、MACRO PULSE内部の重複表示） | 一次データ |
-| AS-IS-210 | MACRO PULSE | REPO残高 | （ステルスカード内metric） | オーバーナイトリバースレポ残高 | FRED: `RRPONTSYD`系列（×1000でMillions換算、`05_main.py`1962-1963） | 一次データ |
-| AS-IS-211 | MACRO PULSE | 準備預金 | （ステルスカード内metric） | 銀行準備預金残高 | FRED: `WRBWFRBL`系列（`05_main.py`1966-1967） | 一次データ |
-| AS-IS-212 | MACRO PULSE | TGA残高 | （ステルスカード内metric） | 財務省一般勘定残高 | FRED: `WTREGEN`系列、失敗時`FTSD`（`05_main.py`1957-1960） | 一次データ |
-| AS-IS-262 | Discover | 翌営業日騰落率 | `price_change_next_day` | 銘柄の翌営業日株価騰落率 | yfinance: `history(period="2d")`（`collect.py:get_price_change`295-307） | 一次データ |
+| AS-IS-210 | MACRO PULSE | REPO残高 | （ステルスカード内metric） | オーバーナイトリバースレポ残高 | FRED: `RRPONTSYD`系列（×1000でMillions換算、`05_main.py`1962-1963） | 一次データ **[2026-08-15追記: common/macro_data/へ切替済み]** |
+| AS-IS-211 | MACRO PULSE | 準備預金 | （ステルスカード内metric） | 銀行準備預金残高 | FRED: `WRBWFRBL`系列（`05_main.py`1966-1967） | 一次データ **[2026-08-15追記: common/macro_data/へ切替済み]** |
+| AS-IS-212 | MACRO PULSE | TGA残高 | （ステルスカード内metric） | 財務省一般勘定残高 | FRED: `WTREGEN`系列、失敗時`FTSD`（`05_main.py`1957-1960） | 一次データ **[2026-08-15追記: common/macro_data/へ切替済み（WTREGEN・FTSDフォールバックとも）。ただしFTSD自体は`[[MACRODATA-FTSD-SERIES-ID-INVALID-1]]`によりFRED上に系列が実在せず常時失敗する既知の別課題が残存]** |
+| AS-IS-262 | Discover | 翌営業日騰落率 | `price_change_next_day` | 銘柄の翌営業日株価騰落率 | yfinance: `history(period="2d")`（`collect.py:get_price_change`295-307） | 一次データ **[2026-08-15追記: common/market_data/へ切替済み]** |
 | AS-IS-266 | EPS Analyzer | 決算提出日・会計期末・会計年度・四半期 | `quarters[].filing_date/period_end/fiscal_year/quarter` | XBRL提出書類のメタデータ | SEC EDGAR: XBRLタグ由来（`extract_key_facts.py:extract_quarterly_facts`） | 一次データ |
 | AS-IS-273 | EPS Analyzer | 銘柄コード・会社名・最終提出日 | `ticker/company_name/latest_filing_date` | 銘柄基本情報 | SEC EDGAR: `company_name`は`cik_lookup.csv`→SEC Submissions APIの順にフォールバック（`pipeline.py:generate_summary`） | 一次データ |
 | AS-IS-298 | TANUKI SCORE | 前日選出ticker | `ticker`（history.json各エントリ） | 前日選出銘柄コード（画面非表示、内部処理用） | システム内部（`daily_pick.py`自身が前回実行結果を記録） | 一次データ |
-| AS-IS-312 | Market Pulse | 米10年債/VIX指数/ドル円/日経平均/S&P500/NASDAQ/WTI原油/金/HYG/LQD終値 | （束ね行、フィールド名は指標ごとに個別） | 各種市場指標の終値 | yfinance: `history()`（`collect_and_send.py`67-73等） | 一次データ。**S&P500は複数取得経路あり**（MACRO PULSEのAS-IS-190と重複、下記参照） |
-| AS-IS-320 | Market Pulse | S&P500グロース(IVW) | （value/change_percent/dateの束ね） | グロースETF終値 | yfinance: `history()` | 一次データ（`value`部分のみ。`change_percent`は`(change/prev)*100`で計算される導出値、下記注記参照） |
-| AS-IS-321 | Market Pulse | S&P500バリュー(IVE) | 同上 | バリューETF終値 | yfinance: `history()` | 一次データ（同上の注記が適用） |
-| AS-IS-322 | Market Pulse | Russell2000小型(RUT) | 同上 | 小型株指数終値 | yfinance: `history()` | 一次データ（同上の注記が適用） |
-| AS-IS-325 | Market Pulse | VIX9D | （value/change/change_percent/dateの束ね） | VIX9D終値 | yfinance: `^VIX9D` `history()` | 一次データ（同上の注記が適用） |
+| AS-IS-312 | Market Pulse | 米10年債/VIX指数/ドル円/日経平均/S&P500/NASDAQ/WTI原油/金/HYG/LQD終値 | （束ね行、フィールド名は指標ごとに個別） | 各種市場指標の終値 | yfinance: `history()`（`collect_and_send.py`67-73等） | 一次データ。**S&P500は複数取得経路あり**（MACRO PULSEのAS-IS-190と重複、下記参照） **[2026-08-15追記: common/market_data/へ切替済み]** |
+| AS-IS-320 | Market Pulse | S&P500グロース(IVW) | （value/change_percent/dateの束ね） | グロースETF終値 | yfinance: `history()` | 一次データ（`value`部分のみ。`change_percent`は`(change/prev)*100`で計算される導出値、下記注記参照） **[2026-08-15追記: common/market_data/へ切替済み]** |
+| AS-IS-321 | Market Pulse | S&P500バリュー(IVE) | 同上 | バリューETF終値 | yfinance: `history()` | 一次データ（同上の注記が適用） **[2026-08-15追記: common/market_data/へ切替済み]** |
+| AS-IS-322 | Market Pulse | Russell2000小型(RUT) | 同上 | 小型株指数終値 | yfinance: `history()` | 一次データ（同上の注記が適用） **[2026-08-15追記: common/market_data/へ切替済み]** |
+| AS-IS-325 | Market Pulse | VIX9D | （value/change/change_percent/dateの束ね） | VIX9D終値 | yfinance: `^VIX9D` `history()` | 一次データ（同上の注記が適用） **[2026-08-15追記: common/market_data/へ切替済み]** |
 | AS-IS-333 | Market Pulse | サブスコア実値（ツールチップ表示） | `sub_scores.{key}.raw` | センチメントサブスコア算出前の生値 | 各サブスコアの元となる生データ（VIX・MA乖離等）をそのまま保持 | 一次データ |
-| AS-IS-352 | Market Pulse | VXN終値 | `tech_pulse.components.vxn_latest` | ナスダック版VIX終値 | yfinance/FRED: `VXNCLS`（`fetch_vxn_from_fred()`、GitHub Actions環境での`^IRX`障害を機にFRED切替） | 一次データ |
-| AS-IS-362 | Market Pulse | 資産クラス別終値 | `asset_flow.{key}.value` | 資産クラス別ETF/指数の終値 | yfinance: `history()` | 一次データ |
+| AS-IS-352 | Market Pulse | VXN終値 | `tech_pulse.components.vxn_latest` | ナスダック版VIX終値 | yfinance/FRED: `VXNCLS`（`fetch_vxn_from_fred()`、GitHub Actions環境での`^IRX`障害を機にFRED切替） | 一次データ **[2026-08-15追記: common/macro_data/へ切替済み]** |
+| AS-IS-362 | Market Pulse | 資産クラス別終値 | `asset_flow.{key}.value` | 資産クラス別ETF/指数の終値 | yfinance: `history()` | 一次データ **[2026-08-15追記: common/market_data/へ切替済み（`[[MARKETDATA-COLLECT-ASSET-FLOW-UNTRACKED-1]]`、2026-08-13実施）]** |
 | AS-IS-395 | TANUKI TAIL | 提出日 | `filing_date` | 10-Q提出日 | SEC EDGAR: `submissions API`（`sec_ctrl_fetcher.py`） | 一次データ |
 | AS-IS-406 | TANUKI TAIL | 銘柄コード | `ticker`（review_queue.json） | レビュー対象銘柄コード | システム内部（`edgar_rss_monitor.py`が新規提出検知時に記録） | 一次データ |
 | AS-IS-407 | TANUKI TAIL | 対象四半期 | `quarter`（review_queue.json） | レビュー対象四半期 | システム内部（同上） | 一次データ |

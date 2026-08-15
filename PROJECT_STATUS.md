@@ -1,6 +1,16 @@
 # PROJECT_STATUS.md — 新一次データベース構築プロジェクト進捗
 
 作成日: 2026-07-23
+更新日: 2026-08-15（フェーズ3「`FIELD_DEFINITIONS.md`499項目の新DB
+参照への切替方針」の投資調査完了を反映。499項目中、yfinance/FRED由来
+の一次データ18件が全件`common/market_data/`・`common/macro_data/`へ
+切替済みであることを実コードベースで確認した（`FIELD_DEFINITIONS.md`
+側の記載は2026-07-22時点のまま更新されていなかったため、該当行へ
+切替済み注記を追加）。SEC EDGAR由来4件はsec_data側フェーズDでの対応
+状況が本調査では未検証のまま残る。これにより、新DB構築プロジェクトの
+sec_data/market_data/macro_data本線タスクは、消費者ファイル単位に
+加えフィールド単位でも実質的な完了を確認できた。詳細はBACKLOG.md
+`[[SECDATA-STORAGE-FRAGMENTATION-1]]`参照。実装コード変更なし）
 更新日: 2026-08-13（セッション終了時ブラッシュアップ。フェーズ1
 `common/market_data/`・`common/macro_data/`両行に、未追跡のまま残って
 いた切替2件の完了を追記：`collect_and_send.py::collect_asset_flow()`の
@@ -546,7 +556,7 @@ HISTORY-EXCEPTION-1]]`参照）。SEC EDGAR・yfinance分の結論確定は
 
 | 項目 | 状態 |
 |---|---|
-| `FIELD_DEFINITIONS.md` 499項目の新DB参照への切替方針 | 未着手。`common/sec_data/`は既に13箇所で参照済みと確認済み（フェーズ3投資調査）、`common/market_data/`・`common/macro_data/`は0件。次のアクションは対象件数（yfinance/FRED由来で未更新の項目数）を数える調査から |
+| `FIELD_DEFINITIONS.md` 499項目の新DB参照への切替方針 | **調査完了（2026-08-15）**。499項目中、一次データ29件をyfinance/FRED/SEC EDGAR/システム内部に分類した結果、yfinance/FRED由来18件（AS-IS-032・190・192・194・197・199・200・210・211・212・262・312・320・321・322・325・352・362）は**全件`common/market_data/`・`common/macro_data/`への切替が実コードで確認済み**（`data_fetcher.py`・`05_main.py`・`collect.py`・`collect_and_send.py`・`breadth_calculator.py`いずれも直接呼び出し0件）。`FIELD_DEFINITIONS.md`側の「データ取得元」列記載（2026-07-22時点のまま）が現状と乖離していたため、該当18件に切替済み注記を追記した。SEC EDGAR由来4件（AS-IS-129・266・273・395）については、sec_data側フェーズDでの対応状況は本調査では未検証（別途確認が必要）。残り477件は新DB化対象外（システム内部・手動入力・導出データの非カタログ入力等） |
 | 分類C14件（`INPUT-C-001〜014`）の管理方法検討（`config/`外配置2件の是正、Portfolio二重保持の是正等） | 着手済み。分類C14件のうち3件をBACKLOG登録済み（実装は未着手）: `[[PORTFOLIO-CONFIG-DUP-1]]`（`INPUT-C-008`、Portfolio二重保持）・`[[TAILKPI-CONFIG-LOCATION-1]]`（`INPUT-C-009`、config外配置）・`[[FCFCONFIG-LOCATION-1]]`（`INPUT-C-010`、config外配置）。残り11件（`INPUT-C-001〜007`・`011〜014`）は未着手 |
 
 ---
