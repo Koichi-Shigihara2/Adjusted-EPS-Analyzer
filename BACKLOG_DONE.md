@@ -103,6 +103,29 @@
   `conversion_rate`自体は1.61で完全一致）浮動小数点丸め誤差を検出、
   実害なしと判断
 
+#### 追加対応（2026-08-15、サイレント破損対策）
+`config_path`解決が失敗した場合（None or 実ファイル不在）、従来は
+`latest.json`のnote欄に記録されるのみで標準出力への警告がなく、
+`report_consistency_check.py`もこの状態を検知しないサイレント破損経路
+だった（`[[TTM-PASCALCASE-KEY-STALE-1]]`と同型リスク）。標準出力への
+明示的なWARN出力（print）を追加し、以下を実行時に検証:
+- 存在しない`config_path`を明示指定し、追加したWARNが実際に発火する
+  ことを確認
+- `config_path=None`のまま実行し、自動探索が`config/fcf_conversion_
+  config.json`を正しく解決すること（AMZNで`applied=True`・
+  `conversion_rate=0.55`・`ticker_override`由来と判定）を確認
+- `ticker_overrides`対象6銘柄（AMZN/GOOGL/MSFT/META/MRVL/CEG）全件で
+  overrideが実際に適用されていることを確認（「差分ゼロ」検証が
+  空振りでないことの裏付け）
+- 全100銘柄を再度再生成し、FCF転換率関連フィールドの差分が完全ゼロ
+  であることを再確認（前回検出したCWANの浮動小数点丸め誤差も含め
+  再現なし）。pytest 781 passed/2 known failed、audit.py 正常95・
+  警告5、report_consistency_check.py NG=0・WARN=78件、いずれも不変
+
+`.gitattributes`への`merge=ours`追加は見送り（バックエンドによる
+自動書き込みなし、`admin.html`経由の手動編集のみのため。
+`tail_kpi_map.json`とは性質が異なると判断）。
+
 #### 関連
 `[[PORTFOLIO-CONFIG-DUP-1]]`（`INPUT-C-008`）・
 `[[TAILKPI-CONFIG-LOCATION-1]]`（`INPUT-C-009`）・
