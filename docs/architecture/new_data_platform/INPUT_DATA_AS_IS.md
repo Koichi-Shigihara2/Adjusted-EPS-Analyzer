@@ -138,7 +138,7 @@ risk_free_rate」は**「FRED非参照（ハードコード0.043）を再確認�
 | `INPUT-C-005` | `config/beta_config.json` | β値オーバーライド | 記載済み |
 | `INPUT-C-006` | `config/discover_config.json` | 銘柄別テーマ・区分 | 記載済み |
 | `INPUT-C-007` | `config/theme_config.json` | テーママスタ | 記載済み |
-| `INPUT-C-008` | `config/portfolio.json` | 保有株数・取得単価 | 記載済み（ただし保持場所が`docs/portfolio/data/portfolio.json`と重複、2-Dで詳述） |
+| `INPUT-C-008` | `config/portfolio.json` | 保有株数・取得単価 | 記載済み（ただし保持場所が`docs/portfolio/data/portfolio.json`と重複、2-Dで詳述）。**【2026-08-15追記】`[[PORTFOLIO-CONFIG-DUP-1]]`実装完了、`config/portfolio.json`は削除・`docs/portfolio/data/portfolio.json`に統一済み** |
 | `INPUT-C-014` | `config/adjustment_items.json` | EPS Analyzerの調整項目カテゴリ・XBRLタグ定義（`version: "2026-04"`） | 記載済み（当初考慮漏れ→追加済み） |
 | `INPUT-C-011` | `config/prompts.yaml` | Grok/AI分析プロンプトテンプレート（`adjustment_analysis`等） | 記載済み（当初考慮漏れ→追加済み、重要） |
 | `INPUT-C-013` | `config/sectors.yaml` | セクター/業種のキーワードマッピング | 記載済み（当初考慮漏れ→追加済み。実コード確認の結果、`sector_classifier_v2.py`経由でEPS Analyzerの調整項目除外に使われる分類C項目と判明） |
@@ -230,7 +230,7 @@ risk_free_rate」は**「FRED非参照（ハードコード0.043）を再確認�
 | ID | ファイル | 現状の存在確認 |
 |---|---|---|
 | `INPUT-C-001`（`segment_config.json`）、`INPUT-C-002`（`growth_options_config.json`）、`INPUT-C-003`（`maturity_config.json`）、`INPUT-C-004`（`rpo_config.json`）、`INPUT-C-005`（`beta_config.json`）、`INPUT-C-006`（`discover_config.json`）、`INPUT-C-007`（`theme_config.json`） | いずれも`config/`配下（1-D表参照） | 存在確認済み |
-| `INPUT-C-008` | `config/portfolio.json` | 存在確認済み。ただし`docs/portfolio/data/portfolio.json`と重複（2-D参照） |
+| `INPUT-C-008` | `config/portfolio.json` | 存在確認済み。ただし`docs/portfolio/data/portfolio.json`と重複（2-D参照）。**【2026-08-15追記】実装完了、`docs/portfolio/data/portfolio.json`に統一済み** |
 | `INPUT-C-009` | `docs/portfolio/tail/data/tail_kpi_map.json` | 存在確認済み。`config/`外に配置（2-D参照）。**【2026-08-15追記】実装完了、`config/tail_kpi_map.json`へ移動済み** |
 | `INPUT-C-010` | `src/value/tanuki_valuation/fcf_conversion_config.json` | 存在確認済み。`config/`外に配置（2-D参照）。**【2026-08-15追記】実装完了、`config/fcf_conversion_config.json`へ移動済み** |
 | `INPUT-C-011` | `config/prompts.yaml` | 存在確認済み |

@@ -404,7 +404,8 @@ MACRO PULSEが使う`T10Y2Y`（`INPUT-A-024`）等と全く同じストア・同
 
 分類B（`INPUT-B-001〜003`）・分類C（`INPUT-C-001〜014`）の手動設定
 ファイルにも、更新者・更新日時を`_meta`フィールド等で明示することを
-推奨する（現状は`config/portfolio.json`の`last_updated`のように一部
+推奨する（現状は`docs/portfolio/data/portfolio.json`の`last_updated`
+〈2026-08-15、`config/portfolio.json`から統一済み〉のように一部
 ファイルのみ独自に持つ慣行であり、統一されていない）。
 
 ---
@@ -554,7 +555,8 @@ DGS10を直接参照していないため、機械的網羅性証明の対象外
   参照先の不一致）は一次データ層の設計とは別軸の問題（手動入力データの
   同期バグ）であり、本ドキュメントでは設計対象に含めていない。ただし
   Portfolio（`INPUT-C-008`、`config/portfolio.json`と`docs/portfolio/
-  data/portfolio.json`の重複）については、同型の同期リスクとして
+  data/portfolio.json`の重複〈2026-08-15実装完了、`docs/portfolio/
+  data/portfolio.json`に統一済み〉）については、同型の同期リスクとして
   分類Cの「唯一の保持場所」設計に含めた
 - `common/sec_data`の`raw/`・`normalized/`・`ttm/`統合時にどちらのスキーマ
   を正とするか（特に`normalized/`をAS-IS-071バグの温床として廃止するか、
