@@ -4,6 +4,49 @@
 
 ## 2026-08-15（完了）
 
+### ✅ [EPSANALYZER-ADMIN-ORPHAN-PAGE-1] adjusted_eps_analyzer/admin/配下が存在しないconfig/パスをfetchする孤立ページ
+**状態:** 完了
+**優先度:** 低
+**分類:** フロントエンド / 死蔵コード
+**登録日:** 2026-08-15
+**完了日:** 2026-08-15
+**発見:** フェーズ3未登録11件調査（2026-08-15）
+
+#### 内容（登録時点）
+`docs/value-monitor/adjusted_eps_analyzer/admin/`配下（`index.html`＋
+`admin.js`）が、素の`fetch('../config/sectors.yaml')`・
+`fetch('../config/adjustment_items.json')`で存在しないディレクトリを
+参照していた（404実測確認済み）。他のどのページからもリンクされて
+おらず、現行の`admin.html`（同名機能を持つ別ファイル、GitHub Contents
+API経由の正しい実装）とは別の古い試作版の置き去りと推測された。
+
+#### 実装内容（2026-08-15、着手条件なしの残2件対応）
+削除前の最終確認として、`admin/index.html`・`admin/admin.js`への
+参照をリポジトリ全体で`grep -rn`により再確認（表記ゆれ・相対リンク・
+`site-nav.js`/`site-header.js`経由の間接参照も含む）。**参照ゼロを
+再確認**した上で`git rm -r docs/value-monitor/adjusted_eps_analyzer/
+admin/`で削除。削除対象を`ls`で目視確認し、現行の`admin.html`（削除
+対象外）が無傷であることも確認した。
+
+`INPUT_DATA_TOBE.md`のINPUT-C-013（`sectors.yaml`）・INPUT-C-014
+（`adjustment_items.json`）の行に、死蔵ページ削除完了と、両ファイルの
+編集経路が手動ファイル編集のみで確定した旨を追記。
+
+#### 検証結果
+- pytest: 781 passed / 2 failed（既知`[[TEST-STALE-IV-1]]`、無関係）
+- `common/sec_data/audit.py`: 正常95・警告5（既存WARNのみ）
+- `common/sec_data/report_consistency_check.py --fail-on-ng`: NG=0・
+  WARN=78件（不変）
+- 削除後、`docs/`配下全体で`adjusted_eps_analyzer/admin/`への参照が
+  残っていないことを再確認（歴史的記述としてのBACKLOG.md/
+  INPUT_DATA_TOBE.mdの言及以外はゼロ）
+
+#### 関連
+`INPUT-C-013`・`INPUT-C-014`（`INPUT_DATA_TOBE.md`分類C表）の実質的な
+編集経路が「手動ファイル編集のみ」で確定した根拠。
+
+---
+
 ### ✅ [FCFCONFIG-MISSING-DETECTION-WEAK-1] fcf_conversion_config.json不在の検知力が弱い（標準出力WARNのみ、パイプライン停止なし）
 **状態:** 完了
 **優先度:** 低〜中
