@@ -4604,33 +4604,8 @@ Market Pulseのmarket_data.json）から取得する設計に変更するかを�
 （[[TAILKPI-CONFIG-LOCATION-1]]・[[FCFCONFIG-LOCATION-1]]は2026-08-15
 実装完了、BACKLOG_DONE.md「2026-08-15（完了）」参照）
 
-### [FCFCONFIG-MISSING-DETECTION-WEAK-1] fcf_conversion_config.json不在の検知力が弱い（標準出力WARNのみ、パイプライン停止なし）
-**優先度:** 低〜中
-**分類:** データ品質 / 監視・検知
-**登録日:** 2026-08-15
-**発見:** `[[FCFCONFIG-LOCATION-1]]`実装中（Bグループ実装、フェーズ3
-合同設計調査の追加指示対応）
-
-#### 内容
-`src/value/tanuki_valuation/calculator/adjustments.py::estimate_fcf_from_eps()`
-は`fcf_conversion_config.json`が見つからない場合、例外を投げず
-`applied=False`・`conversion_rate=0`でraw_fcfへフォールバックする。
-
-2026-08-15、この状態が`report_consistency_check.py`にも検知されない
-サイレント破損経路（`[[TTM-PASCALCASE-KEY-STALE-1]]`と同型）だったため、
-標準出力への明示的なWARN出力（`print`）を追加したが、**100銘柄バッチ
-実行のログに埋もれるため検知力は限定的**。従来の`latest.json`のnote欄
-記録と同じ「記録はされるが誰も見ない」構造であり、根本解決ではない。
-
-#### 対応方針
-`report_consistency_check.py`に該当CHECKを新設し、設定ファイル不在を
-NGとして検出してパイプラインを止める（`--fail-on-ng`ゲートで捕捉可能に
-する）。CHECK番号の採番・実装は既存のCHECK追加パターン
-（`_check_fixed_registry_integrity()`等）を踏襲する。
-
-#### 着手条件
-なし。`report_consistency_check.py`のCHECK追加を行うタイミングで
-合わせて対応する。
+（[[FCFCONFIG-MISSING-DETECTION-WEAK-1]]は2026-08-15実装完了、
+BACKLOG_DONE.md「2026-08-15（完了）」参照）
 
 ---
 

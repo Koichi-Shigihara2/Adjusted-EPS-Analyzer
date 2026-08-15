@@ -4,6 +4,62 @@
 
 ## 2026-08-15（完了）
 
+### ✅ [FCFCONFIG-MISSING-DETECTION-WEAK-1] fcf_conversion_config.json不在の検知力が弱い（標準出力WARNのみ、パイプライン停止なし）
+**状態:** 完了
+**優先度:** 低〜中
+**分類:** データ品質 / 監視・検知
+**登録日:** 2026-08-15
+**完了日:** 2026-08-15
+**発見:** `[[FCFCONFIG-LOCATION-1]]`実装中（Bグループ実装、フェーズ3
+合同設計調査の追加指示対応）
+
+#### 内容（登録時点）
+`estimate_fcf_from_eps()`は`fcf_conversion_config.json`が見つからない
+場合、例外を投げず`applied=False`・`conversion_rate=0`でraw_fcfへ
+フォールバックする。標準出力へのWARN出力は追加済みだったが、100銘柄
+バッチ実行のログに埋もれるため検知力は限定的だった。
+
+#### 実装内容（2026-08-15、着手条件なしの残2件対応）
+**方式の判断**: `report_consistency_check.py`独自の`os.path.exists()`
+チェックでは「ファイルは存在するが`adjustments.py`の探索ロジックからは
+見えない」状態を検出できないため、`adjustments.py`の実際のパス解決
+ロジックをそのまま呼び出して検証する方式を採用（CHECK-32で得た教訓
+「バイト比較という代理の検証ではなくJSON意味比較という本当に検証
+したいことを見る」と同型の判断）。
+
+- `adjustments.py`: `config_path=None`時の解決ロジックを
+  `resolve_fcf_conversion_config_path()`として関数抽出
+  （`estimate_fcf_from_eps()`からも同一関数を呼ぶよう置換、動作は
+  変更なし）
+- `report_consistency_check.py`: **CHECK-33**新設
+  （`_check_fcf_conversion_config_resolvable()`）。`sys.path`に
+  `calculator/`を追加し`adjustments.py`の関数を直接importして呼ぶ
+  （既存テストのimportパターンを踏襲）。CHECK-32と同じくティッカー
+  非依存の単発チェックとして`run_checks()`から1回だけ呼ぶ構成
+
+#### 検証結果
+- 発火確認: `config/fcf_conversion_config.json`を一時退避しNG-33の
+  発火を実測確認、復元後にNG=0へ復帰することを確認。`git status`
+  クリーン・ファイル内容の差分なしも確認済み
+- pytest: 781 passed / 2 failed（既知`[[TEST-STALE-IV-1]]`、無関係）
+- `common/sec_data/audit.py`: 正常95・警告5（既存WARNのみ）
+- `common/sec_data/report_consistency_check.py --fail-on-ng`: NG=0・
+  WARN=78件（CHECK-33含め不変）
+
+#### 観察事項（実装せず記録のみ）
+`_load_rpo_config()`（`rpo_config.json`）にも同型のサイレント
+フォールバック経路がある。ただし`fcf_conversion_config.json`より
+悪質な変種で、ファイル不在時に「明らかに何もしていない」値ではなく、
+ハードコードされたもっともらしいデフォルト値（15銘柄のwhitelist等）に
+静かにフォールバックし、WARN出力すらない。「動いているように見えて
+本番設定を使っていない」という発見しにくいパターン。必要なら別途
+BACKLOG登録を検討（未登録）。
+
+#### 関連
+`[[FCFCONFIG-LOCATION-1]]`（`INPUT-C-010`）の派生課題。
+
+---
+
 ### ✅ [DISCOVER-CONFIG-DUAL-MGMT-1] Discoverのconfig二重管理・admin.htmlバリデーション欠如
 **状態:** 完了
 **優先度:** 中
