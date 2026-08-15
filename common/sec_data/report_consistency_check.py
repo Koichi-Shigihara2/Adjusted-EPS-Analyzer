@@ -260,36 +260,90 @@ def _check_discover_config_sync() -> list[str]:
     return ng
 
 
-def _check_fcf_conversion_config_resolvable() -> list[str]:
-    """CHECK-33: fcf_conversion_config.jsonが、adjustments.pyの実際の
-    パス解決ロジック（resolve_fcf_conversion_config_path()）で解決
-    できるかを検証する（[[FCFCONFIG-MISSING-DETECTION-WEAK-1]]）。
+# CHECK-34: config/設定ファイル読み込みの横断解決チェック用レジストリ
+# （[[CONFIG-LOAD-SILENT-FALLBACK-1]]）。CHECK-32/33で確立した
+# 「代理の検証（チェッカー独自のos.path.exists()）ではなく、本番コードの
+# 解決ロジックそのものを呼び出して検証する」原則を、個別チェック関数を
+# ファイル数分作るのではなく1つの汎用関数+データテーブルへ一般化した
+# （CHECK-33のfcf_conversion_config.json専用実装はこのテーブルの1エントリ
+# として統合済み、専用関数は廃止）。
+# import_style:
+#   "flat"    - sys.pathにmodule_dirを追加し、モジュール名だけでimportする
+#               （src.value.tanuki_valuation配下は__init__.pyの.wacc import
+#               失敗によりフルパッケージimportができないため、既存テストと
+#               同じflat importパターンを使う）
+#   "package" - REPO_ROOT起点のフルドット区切りパスでimportする
+#               （src.value.adjusted_eps_analyzer配下は相対import
+#               〈from .module import ...〉を使っているためflat importでは
+#               動かず、パッケージとしてimportする必要がある）
+_CONFIG_LOADER_REGISTRY = [
+    {
+        "label": "config/rpo_config.json",
+        "import_style": "flat",
+        "module_dir": os.path.join(REPO_ROOT, "src", "value", "tanuki_valuation", "calculator"),
+        "module": "adjustments",
+        "func": "resolve_rpo_config_path",
+    },
+    {
+        "label": "config/beta_config.json",
+        "import_style": "flat",
+        "module_dir": os.path.join(REPO_ROOT, "src", "value", "tanuki_valuation"),
+        "module": "data_fetcher",
+        "func": "resolve_beta_config_path",
+    },
+    {
+        "label": "config/fcf_conversion_config.json",
+        "import_style": "flat",
+        "module_dir": os.path.join(REPO_ROOT, "src", "value", "tanuki_valuation", "calculator"),
+        "module": "adjustments",
+        "func": "resolve_fcf_conversion_config_path",
+    },
+    {
+        "label": "config/split_history.yaml",
+        "import_style": "package",
+        "module_dir": None,
+        "module": "src.value.adjusted_eps_analyzer.pipeline",
+        "func": "resolve_split_history_path",
+    },
+]
 
-    単純な`os.path.exists(REPO_ROOT + '/config/fcf_conversion_
-    config.json')`のようなチェッカー独自の存在確認だと、「ファイルは
-    あるがadjustments.pyの探索ロジックからは見えない」という状態
-    （実行環境依存のパス解決失敗）を検出できない。CHECK-32で得た教訓
-    （バイト比較という代理の検証ではなくJSON意味比較という本当に
-    検証したいことを見る）と同型の判断として、チェッカー独自の判定を
-    実装せず、本番コードの解決ロジックそのものを呼び出して検証する。
+
+def _check_config_loaders_resolvable() -> list[str]:
+    """CHECK-34: config/配下の設定ファイルが、各モジュールの実際の
+    パス解決ロジックで解決できるかを_CONFIG_LOADER_REGISTRY駆動で
+    横断検証する（[[CONFIG-LOAD-SILENT-FALLBACK-1]]）。
 
     ティッカー非依存の単発チェックのため、check_ticker()内ではなく
     run_checks()から直接1回だけ呼ばれる。NGメッセージのリストを返す。
     """
-    _calc_dir = os.path.join(REPO_ROOT, "src", "value", "tanuki_valuation", "calculator")
-    if _calc_dir not in sys.path:
-        sys.path.insert(0, _calc_dir)
-    from adjustments import resolve_fcf_conversion_config_path  # noqa: E402
+    import importlib
 
-    resolved = resolve_fcf_conversion_config_path()
-    if resolved is None or not os.path.exists(resolved):
-        return [
-            f"  [NG-33 fcf_conversion_config未解決] adjustments.pyの自動探索"
-            f"ロジックがconfig_pathを解決できない (resolved={resolved!r})。"
-            f"FCF推定が全銘柄でraw_fcfへサイレントにフォールバックしている"
-            f"可能性（自動修正なし）"
-        ]
-    return []
+    ng: list[str] = []
+    for entry in _CONFIG_LOADER_REGISTRY:
+        label = entry["label"]
+        try:
+            if entry["import_style"] == "flat":
+                if entry["module_dir"] not in sys.path:
+                    sys.path.insert(0, entry["module_dir"])
+                mod = importlib.import_module(entry["module"])
+            else:
+                mod = importlib.import_module(entry["module"])
+            resolver = getattr(mod, entry["func"])
+            resolved = resolver()
+        except Exception as e:
+            ng.append(
+                f"  [NG-34 config読み込み解決失敗] {label}: "
+                f"{entry['module']}.{entry['func']}()の呼び出しでエラー ({e})"
+            )
+            continue
+        if resolved is None or not os.path.exists(resolved):
+            ng.append(
+                f"  [NG-34 config読み込み解決失敗] {label}: "
+                f"{entry['module']}.{entry['func']}()がパスを解決できない "
+                f"(resolved={resolved!r})。読み込み処理がサイレントに"
+                f"フォールバック値を使用している可能性（自動修正なし）"
+            )
+    return ng
 
 
 def _check_fixed_registry_integrity(ticker: str) -> list[str]:
@@ -1281,12 +1335,13 @@ def run_checks(args=None) -> tuple[int, int]:
         flagged.append(("[GLOBAL]", discover_sync_ng, []))
         total_ng += len(discover_sync_ng)
 
-    # CHECK-33: ティッカー非依存の単発チェック（fcf_conversion_config.json解決）。
+    # CHECK-34: ティッカー非依存の単発チェック（config/設定ファイル読み込み
+    # の横断解決チェック、_CONFIG_LOADER_REGISTRY駆動）。
     # CHECK-32と同様、--tickerフィルタの有無に関わらず常時実行する。
-    fcf_config_ng = _check_fcf_conversion_config_resolvable()
-    if fcf_config_ng:
-        flagged.append(("[GLOBAL]", fcf_config_ng, []))
-        total_ng += len(fcf_config_ng)
+    config_loader_ng = _check_config_loaders_resolvable()
+    if config_loader_ng:
+        flagged.append(("[GLOBAL]", config_loader_ng, []))
+        total_ng += len(config_loader_ng)
 
     if not flagged:
         if not quiet:

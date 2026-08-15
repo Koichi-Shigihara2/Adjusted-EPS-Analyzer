@@ -389,9 +389,22 @@ def _is_insurance(ticker: str, sector: Optional[str], industry: str) -> bool:
     return sector == "Insurance"
 
 
+def resolve_rpo_config_path() -> Optional[str]:
+    """rpo_config.jsonのパス解決ロジック（report_consistency_check.pyの
+    設定ファイル読み込み横断チェックと共用するため、2026-08-16に
+    _load_rpo_config()から切り出した。[[CONFIG-LOAD-SILENT-FALLBACK-1]]、
+    resolve_fcf_conversion_config_path()と同型パターン）。
+
+    Returns:
+        解決できたパス（存在確認済み）、解決できなければNone
+    """
+    config_path = str(Path(__file__).parents[4] / "config" / "rpo_config.json")
+    return config_path if os.path.exists(config_path) else None
+
+
 def _load_rpo_config() -> Dict[str, Any]:
     """rpo_config.json を読み込む（存在しない場合はデフォルト値を返す）"""
-    config_path = Path(__file__).parents[4] / "config" / "rpo_config.json"
+    config_path = resolve_rpo_config_path()
     try:
         with open(config_path, encoding="utf-8") as f:
             return json.load(f)

@@ -345,12 +345,16 @@ def build_rice_annual_shape(ttm_series: list[dict]) -> list[dict]:
     return result
 
 
-def _load_beta_config() -> Dict[str, Any]:
-    """
-    config/beta_config.json を読み込む
+def resolve_beta_config_path() -> Optional[str]:
+    """beta_config.jsonのパス解決ロジック（report_consistency_check.pyの
+    設定ファイル読み込み横断チェックと共用するため、2026-08-16に
+    _load_beta_config()から切り出した。[[CONFIG-LOAD-SILENT-FALLBACK-1]]）。
 
     GitHub Actions 実行時は GITHUB_WORKSPACE から、
     ローカル実行時はファイルの相対パスで解決する。
+
+    Returns:
+        解決できたパス（存在確認済み）、解決できなければNone
     """
     search_paths = []
 
@@ -367,14 +371,24 @@ def _load_beta_config() -> Dict[str, Any]:
     except Exception:
         pass
 
-    for path in search_paths:
-        if os.path.exists(path):
-            try:
-                with open(path, encoding="utf-8") as f:
-                    return json.load(f)
-            except Exception as e:
-                print(f"   [WARN] beta_config.json 読み込みエラー: {e}")
-                return {}
+    return next((p for p in search_paths if os.path.exists(p)), None)
+
+
+def _load_beta_config() -> Dict[str, Any]:
+    """
+    config/beta_config.json を読み込む
+
+    GitHub Actions 実行時は GITHUB_WORKSPACE から、
+    ローカル実行時はファイルの相対パスで解決する。
+    """
+    path = resolve_beta_config_path()
+    if path is not None:
+        try:
+            with open(path, encoding="utf-8") as f:
+                return json.load(f)
+        except Exception as e:
+            print(f"   [WARN] beta_config.json 読み込みエラー: {e}")
+            return {}
 
     return {}
 

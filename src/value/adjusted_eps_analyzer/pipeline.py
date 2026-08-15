@@ -137,10 +137,22 @@ def check_eps_discrepancy(ticker: str, quarterly_results: List[Dict]) -> Dict[st
 
     return discrepancies
 
+def resolve_split_history_path() -> Optional[str]:
+    """split_history.yamlのパス解決ロジック（report_consistency_check.pyの
+    設定ファイル読み込み横断チェックと共用するため、2026-08-16に
+    load_split_history()から切り出した。[[CONFIG-LOAD-SILENT-FALLBACK-1]]）。
+
+    Returns:
+        解決できたパス（存在確認済み）、解決できなければNone
+    """
+    path = os.path.join(PROJECT_ROOT, "config", "split_history.yaml")
+    return path if os.path.exists(path) else None
+
+
 def load_split_history() -> Dict[str, List[Dict]]:
     """config/split_history.yaml を読み込む。ファイルがなければ {} を返す。"""
-    path = os.path.join(PROJECT_ROOT, "config", "split_history.yaml")
-    if not os.path.exists(path):
+    path = resolve_split_history_path()
+    if path is None:
         return {}
     try:
         with open(path, 'r', encoding='utf-8') as f:
