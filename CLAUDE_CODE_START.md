@@ -1098,7 +1098,7 @@ python src/tail/text_kpi_extractor.py --ticker {TICKER}
 
 # Step T6: コミット
 git add docs/portfolio/tail/data/kpi_proposals/ \
-        docs/portfolio/tail/data/tail_kpi_map.json \
+        config/tail_kpi_map.json \
         docs/portfolio/tail/data/kpi/
 git commit -m "feat: TANUKI TAIL {TICKER} 銘柄追加 layer2/layer3 初期データ"
 git pull --rebase origin kaihatsu

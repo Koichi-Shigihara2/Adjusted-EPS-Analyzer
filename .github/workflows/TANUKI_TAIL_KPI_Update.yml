@@ -43,10 +43,10 @@ jobs:
         run: |
           INPUT="${{ github.event.inputs.ticker }}"
           if [ -z "$INPUT" ]; then
-            # tail_kpi_map.json のキーを全銘柄として使用
+            # tail_kpi_map.json のキーを全銘柄として使用（2026-08-15 config/へ移動）
             TICKERS=$(python3 -c "
           import json
-          with open('docs/portfolio/tail/data/tail_kpi_map.json') as f:
+          with open('config/tail_kpi_map.json') as f:
               data = json.load(f)
           print(' '.join(data.keys()))
           ")

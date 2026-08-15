@@ -12,7 +12,8 @@ TANUKI TAIL — kpi_proposer.py
 
 出力:
     docs/portfolio/tail/data/kpi_proposals/{ticker}_proposal.json
-    docs/portfolio/tail/data/tail_kpi_map.json（auto_fetchable=true 分を自動追記）
+    config/tail_kpi_map.json（auto_fetchable=true 分を自動追記、2026-08-15
+    docs/portfolio/tail/data/から移動）
 環境変数:
     XAI_API_KEY  xAI Grok API キー（必須）
 """
@@ -35,7 +36,9 @@ repo_root  = os.path.abspath(os.path.join(script_dir, "..", ".."))
 DATA_DIR          = os.path.join(repo_root, "docs", "portfolio", "tail", "data")
 POSITIONS_DIR     = os.path.join(DATA_DIR, "positions")
 KPI_PROPOSALS_DIR = os.path.join(DATA_DIR, "kpi_proposals")
-KPI_MAP_PATH      = os.path.join(DATA_DIR, "tail_kpi_map.json")
+# tail_kpi_map.jsonはPythonバックエンド専用の手動設定ファイルのため
+# config/配下に配置（TAILKPI-CONFIG-LOCATION-1、2026-08-15移動）
+KPI_MAP_PATH      = os.path.join(repo_root, "config", "tail_kpi_map.json")
 CIK_LOOKUP_PATH   = os.path.join(repo_root, "config", "cik_lookup.csv")
 
 JST = ZoneInfo("Asia/Tokyo")

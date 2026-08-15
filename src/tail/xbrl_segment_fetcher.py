@@ -37,9 +37,9 @@ except ImportError:
 script_dir = os.path.dirname(os.path.abspath(__file__))
 repo_root  = os.path.abspath(os.path.join(script_dir, "..", ".."))
 
-KPI_MAP_PATH = os.path.join(
-    repo_root, "docs", "portfolio", "tail", "data", "tail_kpi_map.json"
-)
+# tail_kpi_map.jsonはPythonバックエンド専用の手動設定ファイルのため
+# config/配下に配置（TAILKPI-CONFIG-LOCATION-1、2026-08-15移動）
+KPI_MAP_PATH = os.path.join(repo_root, "config", "tail_kpi_map.json")
 OUTPUT_DIR = os.path.join(
     repo_root, "docs", "portfolio", "tail", "data", "kpi"
 )
