@@ -166,6 +166,44 @@ snake_case前提の表記である。common/sec_data/normalized/（PascalCase、
 と同じ運用方針に従い、統合スキーマへの実際の移行タスク実装時に、該当
 フィールドのみ順次snake_caseへ揃える。
 
+### 規則8: `config/`配下に新規の手動設定ファイルを追加する場合、`_meta`スキーマを標準とする（2026-08-15策定）
+
+`config/segment_config.json`・`config/growth_options_config.json`・
+`config/maturity_config.json`の3件は、以下の同一スキーマの`_meta`を
+既に持っている（誰かが意図して揃えた結果と見られる）:
+
+```json
+{
+  "_meta": {
+    "description": "...",
+    "encoding": "UTF-8",
+    "updated_at": "2026-06-15",
+    "schema_version": "1.0"
+  }
+}
+```
+
+`config/`配下に**新規の手動設定ファイルを追加する場合**は、このスキーマを
+標準として採用すること。
+
+**既存ファイルへの遡及適用は行わない**（実害がなく、変更自体が
+リスクになるため）。現状は下記のように混在している（フェーズ3
+未登録11件調査、2026-08-15）:
+
+| 状態 | 該当ファイル |
+|---|---|
+| 上記スキーマで統一済み（3件） | `segment_config.json`・`growth_options_config.json`・`maturity_config.json` |
+| 単一キーのみ（形式バラバラ、4件） | `discover_config.json`/`portfolio.json`（`last_updated`）・`adjustment_items.json`（`version`）・`beta_config.json`/`fcf_conversion_config.json`（`_comment`のみ、更新日時なし） |
+| メタ情報なし（6件） | `rpo_config.json`・`theme_config.json`・`tail_kpi_map.json`・`prompts.yaml`・`split_history.yaml`・`sectors.yaml` |
+
+**例外・要注意**: `config/tail_kpi_map.json`はトップレベルが
+`{ticker: [...]}`という辞書であり、`.github/workflows/
+TANUKI_TAIL_KPI_Update.yml`（51行目付近、`data.keys()`でCLI引数
+未指定時の対象ticker一覧を構築）が**トップレベルキー全てをticker名
+として扱う**。このファイルに将来`_meta`を追加する場合、`_meta`という
+文字列がticker名として下流に渡ってしまうため、**同ワークフロー側の
+修正が前提条件になる**。
+
 ## 適用チェックリスト（新規フィールド追加時）
 
 新しい出力項目を追加する際、以下を確認する:

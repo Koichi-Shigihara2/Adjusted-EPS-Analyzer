@@ -208,20 +208,20 @@ Market Pulseの`collect_and_send.py`/`backfill_tech_pulse.py`）を直接確認�
 
 | ID | ファイル | 内容 | 消費先（導出データ側の計算） |
 |---|---|---|---|
-| INPUT-C-001 | `config/segment_config.json` | セグメント別加重成長率の手動設定 | growth.rate（AS-IS-012） |
-| INPUT-C-002 | `config/growth_options_config.json` | 成長オプション（TAM/浸透率/FCFマージン等）の銘柄別手動設定 | growth_options（AS-IS-016） |
-| INPUT-C-003 | `config/maturity_config.json` | DCF成熟プロファイル（2段階/3段階、フェーズ年数・成長率）の銘柄別設定 | maturity_profile（AS-IS-017）、terminal_growth（AS-IS-059） |
-| INPUT-C-004 | `config/rpo_config.json` | RPO（残存履行義務）調整設定 | rpo_adjustment（AS-IS-024） |
-| INPUT-C-005 | `config/beta_config.json` | β値のセクター別デフォルト・手動オーバーライド（生のβ自体は`INPUT-A-020`） | wacc.value/beta（AS-IS-013） |
+| INPUT-C-001 | `config/segment_config.json` | セグメント別加重成長率の手動設定 | growth.rate（AS-IS-012）。**【2026-08-15調査完了・現状維持】`_meta:{description,encoding,updated_at,schema_version}`を既に保持し、`growth_options_config.json`・`maturity_config.json`と同一スキーマで統一済み。`value-monitor/admin.html`に編集UIあり（commitMultipleFiles経由）。実害報告なし、対応不要と判断（`[[SECDATA-STORAGE-FRAGMENTATION-1]]`系フェーズ3未登録11件調査）** |
+| INPUT-C-002 | `config/growth_options_config.json` | 成長オプション（TAM/浸透率/FCFマージン等）の銘柄別手動設定 | growth_options（AS-IS-016）。**【2026-08-15調査完了・現状維持】INPUT-C-001と同一理由（`_meta`統一済み・admin.html編集UIあり・実害なし）** |
+| INPUT-C-003 | `config/maturity_config.json` | DCF成熟プロファイル（2段階/3段階、フェーズ年数・成長率）の銘柄別設定 | maturity_profile（AS-IS-017）、terminal_growth（AS-IS-059）。**【2026-08-15調査完了・現状維持】INPUT-C-001と同一理由（`_meta`統一済み・admin.html編集UIあり・実害なし）** |
+| INPUT-C-004 | `config/rpo_config.json` | RPO（残存履行義務）調整設定 | rpo_adjustment（AS-IS-024）。**【2026-08-15調査完了・現状維持】`_meta`相当のメタ情報を持たず、admin.html編集UIも存在しない（手動JSON編集のみ）が、この欠如は既存`[[RPO-ADMIN-1]]`（2026-06-26登録）で既に捕捉済みのため重複登録しない。同項目に本調査での再確認・`_meta`欠如の追記のみ実施** |
+| INPUT-C-005 | `config/beta_config.json` | β値のセクター別デフォルト・手動オーバーライド（生のβ自体は`INPUT-A-020`） | wacc.value/beta（AS-IS-013）。**【2026-08-15調査完了・現状維持】`value-monitor/admin.html`に編集UIあり（commitFile経由）。`_comment`はあるが更新日時等の`_meta`相当は持たない。実害報告なし、対応不要と判断** |
 | INPUT-C-006 | `config/discover_config.json` | 銘柄別テーマ・区分・メモ | Discoverのカタリスト・テーマ関連導出データ |
 | INPUT-C-007 | `config/theme_config.json` | テーママスタ（ID/ラベル/カラー） | Discoverのテーマ分類関連導出データ |
 | INPUT-C-008 | `docs/portfolio/data/portfolio.json` | 保有株数・平均取得単価（ブローカー別） | Portfolio総資産評価額（AS-IS-391/392等）。**【2026-08-15修正】唯一の保持場所を`docs/portfolio/data/portfolio.json`とする（`config/portfolio.json`側は廃止）。理由: GitHub Pagesの公開ソースは`docs/`配下のみであり、`config/`はHTTP経由でfetch不可能なことを実測で確認済み（`https://.../config/portfolio.json`→404、`https://.../portfolio/data/portfolio.json`→200、`SYSTEM_MAP.md`「`config/`と`docs/`の配置原則」参照）。当初案「`config/`を唯一の保持場所に」はこの制約と技術的に矛盾するため撤回。また`config/portfolio.json`を読むPythonコードは現状ゼロ件であり、実際の読み取りは既に全て`docs/`側経由という実態にも整合する。根拠は`[[PORTFOLIO-CONFIG-DUP-1]]`2026-08-15付フェーズ3合同設計調査** |
 | INPUT-C-009 | `config/tail_kpi_map.json` | TANUKI TAILのKPI設定（AI提案＋人手確定のハイブリッド） | TANUKI TAILのセグメントKPI関連導出データ。現状`config/`ではなく`docs/portfolio/tail/data/`配下（生成データと同居）に置かれているため、TO-BEでは他の手動設定ファイルと同様`config/`配下への集約を設計方針とする。**【2026-08-15確認】消費者は全てPythonバックエンド（GitHub Actionsワークフロー2件・`kpi_proposer.py`・`xbrl_segment_fetcher.py`）でフロントエンドからの直接fetchは無く、GitHub Pages制約の対象外と確認済み。本方針は変更不要、そのまま実装可能（`[[TAILKPI-CONFIG-LOCATION-1]]`参照）** |
 | INPUT-C-010 | `config/fcf_conversion_config.json` | Damodaran業種別FCF変換率等の銘柄別上書き（`ticker_overrides`含む） | FCF変換率関連の導出データ。現状は`src/value/tanuki_valuation/`直下（`config/`外）に配置されており、TO-BEでは`config/`への集約を設計方針とする。**【2026-08-15確認】消費者は`adjustments.py`（Pythonバックエンド）と`admin.html`のGitHub Contents API経由アクセス（パスを問わず機能）のみで、フロントエンドからの直接fetchは無く、GitHub Pages制約の対象外と確認済み。本方針は変更不要、そのまま実装可能（`[[FCFCONFIG-LOCATION-1]]`参照）** |
-| INPUT-C-011 | `config/prompts.yaml` | Grok/AI分析プロンプトテンプレート集約（EPS調整分析・カタリスト予測・TANUKI TAIL Stage2シナリオ等） | 392件の導出データのうちAI生成コンテンツ全般。その生成品質・再現性を左右するプロンプト自体を一次データ層に準じる管理対象として扱う（プロンプトの変更履歴・バージョン管理も将来的な設計対象） |
-| INPUT-C-012 | `config/split_history.yaml` | 株式分割の遡及補正用手動記録（比率・効力発生日） | `apply_split_adjustments()`が`quarterly_results`（EPS Analyzer導出データ、AS-IS-267）へ事後適用する遡及補正。**実コード確認: SEC EDGAR取得後のderived計算に対する入力であり、取得前提条件（分類B）ではない** |
-| INPUT-C-013 | `config/sectors.yaml` | セクター/業種のキーワードマッピング | `sector_classifier_v2.py`経由でEPS Analyzerの調整項目除外リスト（`adjusted_eps`計算、AS-IS-267）に投入。**実コード確認: `classifier.classify()`→`get_exclusions_for_sector()`という経路で導出データ側の計算に使われており、取得前提条件ではない** |
-| INPUT-C-014 | `config/adjustment_items.json` | EPS Analyzerの調整項目カテゴリ・XBRLタグ定義 | `adjustment_detector.py::load_adjustment_items()`が`adjusted_eps`（AS-IS-267）の調整項目検出ロジックに直接投入 |
+| INPUT-C-011 | `config/prompts.yaml` | Grok/AI分析プロンプトテンプレート集約（EPS調整分析・カタリスト予測・TANUKI TAIL Stage2シナリオ等） | 392件の導出データのうちAI生成コンテンツ全般。その生成品質・再現性を左右するプロンプト自体を一次データ層に準じる管理対象として扱う（プロンプトの変更履歴・バージョン管理も将来的な設計対象）。**【2026-08-15調査完了・現状維持】編集UIなし（手動編集のみ）。低頻度・専門知識を要する編集であり、GitHub上での直接編集＋PRレビューの方が管理方法として適切と判断、編集UIを作る動機がない** |
+| INPUT-C-012 | `config/split_history.yaml` | 株式分割の遡及補正用手動記録（比率・効力発生日） | `apply_split_adjustments()`が`quarterly_results`（EPS Analyzer導出データ、AS-IS-267）へ事後適用する遡及補正。**実コード確認: SEC EDGAR取得後のderived計算に対する入力であり、取得前提条件（分類B）ではない**。**【2026-08-15調査完了・現状維持】INPUT-C-011と同一理由（低頻度・専門知識を要する編集、編集UI不要と判断）** |
+| INPUT-C-013 | `config/sectors.yaml` | セクター/業種のキーワードマッピング | `sector_classifier_v2.py`経由でEPS Analyzerの調整項目除外リスト（`adjusted_eps`計算、AS-IS-267）に投入。**実コード確認: `classifier.classify()`→`get_exclusions_for_sector()`という経路で導出データ側の計算に使われており、取得前提条件ではない**。**【2026-08-15調査完了・現状維持】`docs/value-monitor/adjusted_eps_analyzer/admin/`の編集UIは存在するが、実在しないパス（`../config/sectors.yaml`）をfetchする死蔵ページと判明（`[[EPSANALYZER-ADMIN-ORPHAN-PAGE-1]]`として別途登録）。実質的な編集経路は手動ファイル編集のみで、これはINPUT-C-011と同一理由により対応不要と判断** |
+| INPUT-C-014 | `config/adjustment_items.json` | EPS Analyzerの調整項目カテゴリ・XBRLタグ定義 | `adjustment_detector.py::load_adjustment_items()`が`adjusted_eps`（AS-IS-267）の調整項目検出ロジックに直接投入。**【2026-08-15調査完了・現状維持】`version:"2026-04"`という軽量メタのみ保持。編集UIは`[[EPSANALYZER-ADMIN-ORPHAN-PAGE-1]]`と同じ死蔵ページのみで実質手動編集。実害報告なし、対応不要と判断** |
 
 **対象外と判定した項目（一次データ層3分類のいずれにも該当しない）**:
 `config/warn_acknowledged.json`（品質ゲートの確認済み状態台帳）・

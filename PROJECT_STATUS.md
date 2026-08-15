@@ -1,6 +1,21 @@
 # PROJECT_STATUS.md — 新一次データベース構築プロジェクト進捗
 
 作成日: 2026-07-23
+更新日: 2026-08-15（**フェーズ3「導出データ層の管理方法検討」完了**。
+分類C14件のうち、登録済み5件（`INPUT-C-006/007`〈`[[DISCOVER-CONFIG-
+DUAL-MGMT-1]]`〉・`INPUT-C-008`〈`[[PORTFOLIO-CONFIG-DUP-1]]`〉・
+`INPUT-C-009`〈`[[TAILKPI-CONFIG-LOCATION-1]]`〉・`INPUT-C-010`
+〈`[[FCFCONFIG-LOCATION-1]]`〉）は実装完了、残り9件（`INPUT-C-001〜005`・
+`011〜014`）は調査の上「現状維持が妥当」と判断し完了とした（判断根拠は
+`INPUT_DATA_TOBE.md`分類C表の各行注記参照）。`_meta`スキーマの標準化
+方針は`NAMING_CONVENTIONS.md`規則8に新規策定（既存ファイルへの遡及
+適用はしない）。調査過程で発見した死蔵ページ1件を`[[EPSANALYZER-
+ADMIN-ORPHAN-PAGE-1]]`として新規登録、既存`[[RPO-ADMIN-1]]`に
+`_meta`欠如の追記を実施。**これにより新DB構築プロジェクトのフェーズ
+1〜3が全て完了した**。次の本線は未定（次セッション開始時に
+BACKLOG.mdの優先順位に従い判断すること。CHAT_RULES.md「本線の定義」
+節も参照し、必要なら更新する）。詳細はBACKLOG_DONE.md「2026-08-15
+（完了）」参照）
 更新日: 2026-08-15（フェーズ3のSEC EDGAR由来4件（AS-IS-129・266・273・
 395）の検証を完了。いずれも意図的にLayer3化対象外と確定済みで、
 `FIELD_DEFINITIONS.md`の記載も現状と一致していることを確認した
@@ -564,12 +579,12 @@ HISTORY-EXCEPTION-1]]`参照）。SEC EDGAR・yfinance分の結論確定は
 `config/`外配置（`INPUT-C-009`/`010`）等の是正要否は、フェーズ3
 （導出データ層の管理方法検討）で扱う。
 
-## フェーズ3: 導出データ層の管理方法検討（分類C14件を含む、**2026-08-12着手**）
+## フェーズ3: 導出データ層の管理方法検討（分類C14件を含む、**2026-08-12着手・2026-08-15完了**）
 
 | 項目 | 状態 |
 |---|---|
 | `FIELD_DEFINITIONS.md` 499項目の新DB参照への切替方針 | **調査完了（2026-08-15）**。499項目中、一次データ29件をyfinance/FRED/SEC EDGAR/システム内部に分類した結果、yfinance/FRED由来18件（AS-IS-032・190・192・194・197・199・200・210・211・212・262・312・320・321・322・325・352・362）は**全件`common/market_data/`・`common/macro_data/`への切替が実コードで確認済み**（`data_fetcher.py`・`05_main.py`・`collect.py`・`collect_and_send.py`・`breadth_calculator.py`いずれも直接呼び出し0件）。`FIELD_DEFINITIONS.md`側の「データ取得元」列記載（2026-07-22時点のまま）が現状と乖離していたため、該当18件に切替済み注記を追記した。**SEC EDGAR由来4件（AS-IS-129・266・273・395）は全件検証完了（2026-08-15）**。いずれも意図的にLayer3化対象外と確定済みで、記載も現状と一致（AS-IS-129のみ、フェーズD対象外である旨の軽量注記を追加。AS-IS-129はSTONKS SILOの`fetcher.py`選択思想の違いにより`[[LAYER3-FETCHER-SELECTION-PHILOSOPHY-MISMATCH-1]]`で現状維持確定、AS-IS-266・273はEPS Analyzerの独立ライブ取得設計によりフェーズD対象外、AS-IS-395はTANUKI TAILの`sec_ctrl_fetcher.py`〈リアルタイム監視専用、フェーズD対象の`quarterly_review_generator.py`等とは別ファイル〉）。残り477件は新DB化対象外（システム内部・手動入力・導出データの非カタログ入力等） |
-| 分類C14件（`INPUT-C-001〜014`）の管理方法検討（`config/`外配置2件の是正、Portfolio二重保持の是正等） | **登録済み4件が全て実装完了（2026-08-15）**: `[[TAILKPI-CONFIG-LOCATION-1]]`（`INPUT-C-009`、`config/tail_kpi_map.json`へ移動完了・コミット`80890c711`）・`[[FCFCONFIG-LOCATION-1]]`（`INPUT-C-010`、`config/fcf_conversion_config.json`へ移動完了・コミット`493e8843a`）・`[[PORTFOLIO-CONFIG-DUP-1]]`（`INPUT-C-008`、`config/portfolio.json`を廃止し`docs/portfolio/data/portfolio.json`へ一本化・コミット`e97741f54`/`eaf3016cb`）・`[[DISCOVER-CONFIG-DUAL-MGMT-1]]`（`INPUT-C`番号なし、`config/discover_config.json`をPythonバックエンド〈`collect.py`・`registration_validator.py`〉の入力として維持しつつ`docs/portfolio/data/`側を`Discover_Config_Sync.yml`〈新設〉で自動追従させる非対称設計に確定・実装完了、同期漏れ検知として`report_consistency_check.py`にCHECK-32新設・コミット`20a173a76`/`80bcf5f57`）。残り11件（`INPUT-C-001〜007`・`011〜014`）は未着手。フェーズ3の登録済み課題はこれで全完了 |
+| 分類C14件（`INPUT-C-001〜014`）の管理方法検討（`config/`外配置2件の是正、Portfolio二重保持の是正等） | **完了（2026-08-15）**。**対応済み5件**: `[[TAILKPI-CONFIG-LOCATION-1]]`（`INPUT-C-009`、`config/tail_kpi_map.json`へ移動完了・コミット`80890c711`）・`[[FCFCONFIG-LOCATION-1]]`（`INPUT-C-010`、`config/fcf_conversion_config.json`へ移動完了・コミット`493e8843a`）・`[[PORTFOLIO-CONFIG-DUP-1]]`（`INPUT-C-008`、`config/portfolio.json`を廃止し`docs/portfolio/data/portfolio.json`へ一本化・コミット`e97741f54`/`eaf3016cb`）・`[[DISCOVER-CONFIG-DUAL-MGMT-1]]`（`INPUT-C-006`/`007`、`config/discover_config.json`をPythonバックエンド〈`collect.py`・`registration_validator.py`〉の入力として維持しつつ`docs/portfolio/data/`側を`Discover_Config_Sync.yml`〈新設〉で自動追従させる非対称設計に確定・実装完了、同期漏れ検知として`report_consistency_check.py`にCHECK-32新設・コミット`20a173a76`/`80bcf5f57`）。**調査完了・現状維持が妥当と判断した9件**: `INPUT-C-001〜005`（`_meta`統一済み3件＋admin.html編集UIあり2件、実害なし）・`INPUT-C-011〜014`（低頻度・専門知識を要する編集はGitHub直接編集の方が適切、または既存の死蔵ページ問題〈`[[EPSANALYZER-ADMIN-ORPHAN-PAGE-1]]`〉に集約）。個別の判断根拠は`INPUT_DATA_TOBE.md`分類C表の各行注記を参照。`rpo_config.json`（`INPUT-C-004`）の編集UI欠如は既存`[[RPO-ADMIN-1]]`で捕捉済み（重複登録せず追記のみ）。`_meta`スキーマの標準化方針は`NAMING_CONVENTIONS.md`規則8に記録（既存ファイルへの遡及適用はしない）。フェーズ3はこれで完了 |
 
 ---
 

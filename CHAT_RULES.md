@@ -100,11 +100,17 @@ Claude Codeからの完了報告を受け取った際、チャット側Claudeは
 （重複ではなく、上位ルールをどう運用するかの実務的な補足）。
 
 ### 本線の定義
-現在の本線は「新DB構築プロジェクト フェーズ1」（2026-07-23決定）:
-1. SEC EDGAR統合（`common/sec_data/`のraw/normalized/ttm統合、EPS
-   Analyzer・TANUKI TAILの独自アクセス経路の集約）
-2. yfinance統合（`common/market_data/`新設）
-3. FRED統合（`common/macro_data/`新設）
+~~現在の本線は「新DB構築プロジェクト フェーズ1」（2026-07-23決定）:~~
+~~1. SEC EDGAR統合（`common/sec_data/`のraw/normalized/ttm統合、EPS~~
+~~   Analyzer・TANUKI TAILの独自アクセス経路の集約）~~
+~~2. yfinance統合（`common/market_data/`新設）~~
+~~3. FRED統合（`common/macro_data/`新設）~~
+
+**（2026-08-15追記）** 上記フェーズ1に続き、フェーズ2（過去データ移管の
+要否判断）・フェーズ3（導出データ層の管理方法検討）も完了した。**新DB
+構築プロジェクト（フェーズ1〜3）は全て完了**。**次の本線は未定**
+（次セッション開始時にBACKLOG.mdの優先順位・PROJECT_STATUS.mdを踏まえて
+判断する）。詳細はPROJECT_STATUS.md冒頭・CLAUDE_CODE_START.md参照。
 
 本線が変更された場合は、この節を更新すること（更新履歴として旧本線を
 取り消し線で残す運用でよい）。

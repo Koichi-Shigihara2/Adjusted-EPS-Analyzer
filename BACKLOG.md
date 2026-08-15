@@ -4634,6 +4634,45 @@ NGとして検出してパイプラインを止める（`--fail-on-ng`ゲート�
 
 ---
 
+### [EPSANALYZER-ADMIN-ORPHAN-PAGE-1] adjusted_eps_analyzer/admin/配下が存在しないconfig/パスをfetchする孤立ページ
+**優先度:** 低
+**分類:** フロントエンド / 死蔵コード
+**登録日:** 2026-08-15
+**発見:** フェーズ3未登録11件調査（2026-08-15）
+
+#### 内容
+`docs/value-monitor/adjusted_eps_analyzer/admin/`配下（`index.html`＋
+`admin.js`）が、素の`fetch('../config/sectors.yaml')`・
+`fetch('../config/adjustment_items.json')`で
+`docs/value-monitor/adjusted_eps_analyzer/config/`という**存在しない
+ディレクトリ**を参照している。
+
+実測確認済み:
+```
+GET https://koichi-shigihara2.github.io/.../adjusted_eps_analyzer/config/sectors.yaml → 404
+GET https://koichi-shigihara2.github.io/.../adjusted_eps_analyzer/admin/index.html    → 200（ページ自体は開ける）
+```
+
+他のどのページからもリンクされていない（`grep -rn`で参照ゼロ）。最終
+更新は2026-03-24。現行の`docs/value-monitor/adjusted_eps_analyzer/
+admin.html`（同名機能を持つ別ファイル）は2026-05-24更新でGitHub
+Contents API経由の正しい実装になっており、`admin/`配下は古い試作版が
+置き去りにされたまま残存していると推測される。
+
+`config/sectors.yaml`・`config/adjustment_items.json`
+（`INPUT-C-013`・`INPUT-C-014`）自体の実質的な編集経路が手動ファイル
+編集のみになっている一因でもある。
+
+#### 対応方針
+当該ディレクトリ（`docs/value-monitor/adjusted_eps_analyzer/admin/`）の
+削除、または正しいパス（GitHub Contents API経由）への修正。削除前に
+他からの参照がないことを再度`grep -rn`で確認する。
+
+#### 着手条件
+なし
+
+---
+
 ### [RISK-FREE-RATE-HARDCODE-1] risk_free_rateの常時ハードコード（0.043固定）
 **優先度:** 高
 **分類:** データ品質 / TANUKI VALUATION / DCF計算
@@ -8956,8 +8995,14 @@ report_consistency_check.py L42で参照されているが、
 admin.htmlにUI編集機能が存在しない。
 RPOプレミアムを付与・変更する際は手動JSONファイル編集が必要。
 
+**再確認（追記、2026-08-15、フェーズ3未登録11件調査）**: 編集UI欠如を
+再確認済み（`INPUT-C-004`）。加えて`rpo_config.json`は`_meta`相当の
+メタ情報（更新者・更新日時）も持たないことが判明した。管理UI追加時は
+`_meta`付与（`NAMING_CONVENTIONS.md`規則8参照）も併せて検討対象とする。
+
 #### 対応方針
-admin.htmlにrpo_config.jsonの編集UIセクションを追加する。
+admin.htmlにrpo_config.jsonの編集UIセクションを追加する。追加時は
+`_meta`フィールドの付与も併せて検討する（2026-08-15追記）。
 
 ---
 
