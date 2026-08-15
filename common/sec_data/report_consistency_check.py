@@ -260,6 +260,38 @@ def _check_discover_config_sync() -> list[str]:
     return ng
 
 
+def _check_fcf_conversion_config_resolvable() -> list[str]:
+    """CHECK-33: fcf_conversion_config.jsonが、adjustments.pyの実際の
+    パス解決ロジック（resolve_fcf_conversion_config_path()）で解決
+    できるかを検証する（[[FCFCONFIG-MISSING-DETECTION-WEAK-1]]）。
+
+    単純な`os.path.exists(REPO_ROOT + '/config/fcf_conversion_
+    config.json')`のようなチェッカー独自の存在確認だと、「ファイルは
+    あるがadjustments.pyの探索ロジックからは見えない」という状態
+    （実行環境依存のパス解決失敗）を検出できない。CHECK-32で得た教訓
+    （バイト比較という代理の検証ではなくJSON意味比較という本当に
+    検証したいことを見る）と同型の判断として、チェッカー独自の判定を
+    実装せず、本番コードの解決ロジックそのものを呼び出して検証する。
+
+    ティッカー非依存の単発チェックのため、check_ticker()内ではなく
+    run_checks()から直接1回だけ呼ばれる。NGメッセージのリストを返す。
+    """
+    _calc_dir = os.path.join(REPO_ROOT, "src", "value", "tanuki_valuation", "calculator")
+    if _calc_dir not in sys.path:
+        sys.path.insert(0, _calc_dir)
+    from adjustments import resolve_fcf_conversion_config_path  # noqa: E402
+
+    resolved = resolve_fcf_conversion_config_path()
+    if resolved is None or not os.path.exists(resolved):
+        return [
+            f"  [NG-33 fcf_conversion_config未解決] adjustments.pyの自動探索"
+            f"ロジックがconfig_pathを解決できない (resolved={resolved!r})。"
+            f"FCF推定が全銘柄でraw_fcfへサイレントにフォールバックしている"
+            f"可能性（自動修正なし）"
+        ]
+    return []
+
+
 def _check_fixed_registry_integrity(ticker: str) -> list[str]:
     """CHECK-31: fixed_registry.json登録済みのticker×年度について、
     annual_{year}.jsonの現在のsnapshot_hashがregistry記録時のものと
@@ -1248,6 +1280,13 @@ def run_checks(args=None) -> tuple[int, int]:
     if discover_sync_ng:
         flagged.append(("[GLOBAL]", discover_sync_ng, []))
         total_ng += len(discover_sync_ng)
+
+    # CHECK-33: ティッカー非依存の単発チェック（fcf_conversion_config.json解決）。
+    # CHECK-32と同様、--tickerフィルタの有無に関わらず常時実行する。
+    fcf_config_ng = _check_fcf_conversion_config_resolvable()
+    if fcf_config_ng:
+        flagged.append(("[GLOBAL]", fcf_config_ng, []))
+        total_ng += len(fcf_config_ng)
 
     if not flagged:
         if not quiet:

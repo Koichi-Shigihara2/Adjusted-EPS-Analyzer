@@ -1492,6 +1492,30 @@ def check_software_system_reclassification(
     )
 
 
+def resolve_fcf_conversion_config_path() -> Optional[str]:
+    """fcf_conversion_config.jsonの自動探索ロジック（config/へ移動済み、
+    FCFCONFIG-LOCATION-1、2026-08-15）。
+
+    estimate_fcf_from_eps()のconfig_path=None時の解決ロジックと同一。
+    report_consistency_check.pyのCHECK-33が「ファイルが存在するか」
+    ではなく「本番コードが実際に解決できるか」を検証するために、
+    2026-08-15に独立関数として切り出した
+    （[[FCFCONFIG-MISSING-DETECTION-WEAK-1]]、CHECK-32と同型の判断:
+    代理の検証ではなく本当に検証したいことを見る）。
+
+    Returns:
+        解決できたパス（存在確認済み）、解決できなければNone
+    """
+    _repo_root = os.path.abspath(
+        os.path.join(os.path.dirname(__file__), '..', '..', '..', '..')
+    )
+    candidates = [
+        os.path.join(_repo_root, 'config', 'fcf_conversion_config.json'),
+        'config/fcf_conversion_config.json',
+    ]
+    return next((p for p in candidates if os.path.exists(p)), None)
+
+
 def estimate_fcf_from_eps(
     ticker: str,
     raw_fcf: float,
@@ -1536,18 +1560,9 @@ def estimate_fcf_from_eps(
 
     # ── 設定ファイルの読み込み ──
     if config_path is None:
-        # config/へ移動済み（FCFCONFIG-LOCATION-1、2026-08-15）。
-        # 旧候補のうち同一ディレクトリ（calculator/）指定は元々一致した
-        # ことがない誤候補だったため削除。リポジトリルート起点の絶対パスと
-        # CWD相対パス（repo_rootから実行される通常運用向け）の2候補のみ残す。
-        _repo_root = os.path.abspath(
-            os.path.join(os.path.dirname(__file__), '..', '..', '..', '..')
-        )
-        candidates = [
-            os.path.join(_repo_root, 'config', 'fcf_conversion_config.json'),
-            'config/fcf_conversion_config.json',
-        ]
-        config_path = next((p for p in candidates if os.path.exists(p)), None)
+        # 解決ロジックはresolve_fcf_conversion_config_path()に切り出し済み
+        # （report_consistency_check.pyのCHECK-33と共用するため、2026-08-15）
+        config_path = resolve_fcf_conversion_config_path()
 
     if config_path is None or not os.path.exists(config_path):
         # config_path解決の失敗（配置ミス・移動漏れ等）は、latest.jsonの
