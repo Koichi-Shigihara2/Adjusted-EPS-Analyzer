@@ -148,8 +148,8 @@ risk_free_rate」は**「FRED非参照（ハードコード0.043）を再確認�
 | `INPUT-B-003` | `config/cik_lookup_result.json` | CIKルックアップ結果キャッシュ | 記載済み（当初考慮漏れ→追加済み） |
 | — | `config/warn_acknowledged.json` | `report_consistency_check.py`のWARN確認済み台帳 | 対象外と判定（下記参照、IDなし） |
 | — | `config/workflow_dependencies.json` | ワークフロー依存関係定義（System Health用） | 対象外と判定（下記参照、IDなし） |
-| `INPUT-C-010` | `src/value/tanuki_valuation/fcf_conversion_config.json` | Damodaran業種別FCF変換率・ticker override | 記載済み（当初考慮漏れ→追加済み、`config/`外に配置されている点も特記） |
-| `INPUT-C-009` | `docs/portfolio/tail/data/tail_kpi_map.json` | TANUKI TAIL KPI設定（AI提案＋人手確定） | 記載済み（ただし`config/`ではなく`docs/`配下、下記2-D参照） |
+| `INPUT-C-010` | `src/value/tanuki_valuation/fcf_conversion_config.json` | Damodaran業種別FCF変換率・ticker override | 記載済み（当初考慮漏れ→追加済み、`config/`外に配置されている点も特記）。**【2026-08-15追記】`[[FCFCONFIG-LOCATION-1]]`実装完了、`config/fcf_conversion_config.json`へ移動済み** |
+| `INPUT-C-009` | `docs/portfolio/tail/data/tail_kpi_map.json` | TANUKI TAIL KPI設定（AI提案＋人手確定） | 記載済み（ただし`config/`ではなく`docs/`配下、下記2-D参照）。**【2026-08-15追記】`[[TAILKPI-CONFIG-LOCATION-1]]`実装完了、`config/tail_kpi_map.json`へ移動済み** |
 
 ### 1-E. ID対応表（`INPUT_DATA_TOBE.md`分類A/B/C全66件との対応）
 
@@ -231,8 +231,8 @@ risk_free_rate」は**「FRED非参照（ハードコード0.043）を再確認�
 |---|---|---|
 | `INPUT-C-001`（`segment_config.json`）、`INPUT-C-002`（`growth_options_config.json`）、`INPUT-C-003`（`maturity_config.json`）、`INPUT-C-004`（`rpo_config.json`）、`INPUT-C-005`（`beta_config.json`）、`INPUT-C-006`（`discover_config.json`）、`INPUT-C-007`（`theme_config.json`） | いずれも`config/`配下（1-D表参照） | 存在確認済み |
 | `INPUT-C-008` | `config/portfolio.json` | 存在確認済み。ただし`docs/portfolio/data/portfolio.json`と重複（2-D参照） |
-| `INPUT-C-009` | `docs/portfolio/tail/data/tail_kpi_map.json` | 存在確認済み。`config/`外に配置（2-D参照） |
-| `INPUT-C-010` | `src/value/tanuki_valuation/fcf_conversion_config.json` | 存在確認済み。`config/`外に配置（2-D参照） |
+| `INPUT-C-009` | `docs/portfolio/tail/data/tail_kpi_map.json` | 存在確認済み。`config/`外に配置（2-D参照）。**【2026-08-15追記】実装完了、`config/tail_kpi_map.json`へ移動済み** |
+| `INPUT-C-010` | `src/value/tanuki_valuation/fcf_conversion_config.json` | 存在確認済み。`config/`外に配置（2-D参照）。**【2026-08-15追記】実装完了、`config/fcf_conversion_config.json`へ移動済み** |
 | `INPUT-C-011` | `config/prompts.yaml` | 存在確認済み |
 | `INPUT-C-012` | `config/split_history.yaml` | 存在確認済み |
 | `INPUT-C-013` | `config/sectors.yaml` | 存在確認済み |
@@ -288,7 +288,7 @@ docs/value-monitor/adjusted_eps_analyzer/data/{TICKER}/quarterly.json
 docs/value-monitor/adjusted_eps_analyzer/data/{TICKER}/ttm.json
 
 docs/portfolio/tail/data/rss_state.json                # 新規提出監視状態
-docs/portfolio/tail/data/tail_kpi_map.json             # KPI設定
+config/tail_kpi_map.json                                # KPI設定（2026-08-15、docs/portfolio/tail/data/から移動）
 docs/portfolio/tail/data/ctrl/{TICKER}/{FYQ}.json      # 内部統制個別
 docs/portfolio/tail/data/ctrl/{TICKER}/index.json      # 内部統制インデックス
 docs/portfolio/tail/data/ctrl/{TICKER}/latest.json     # 内部統制最新
@@ -339,7 +339,8 @@ MACRO PULSE側はFRED専用のCSV群を持つのに対し、Market Pulse側はFR
 ### 2-D. 手動入力データ
 
 `config/`ディレクトリへの集約が概ね徹底されているが、**2つの例外**を
-確認した:
+確認した（**【2026-08-15追記】両方とも`[[FCFCONFIG-LOCATION-1]]`・
+`[[TAILKPI-CONFIG-LOCATION-1]]`実装完了により`config/`へ移動済み**）:
 
 1. **`fcf_conversion_config.json`**は`config/`ではなく
    `src/value/tanuki_valuation/`直下に配置されている（TANUKI VALUATION

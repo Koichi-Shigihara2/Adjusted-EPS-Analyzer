@@ -433,8 +433,8 @@ Pythonバックエンド専用ディレクトリとして扱う。
 
 `admin.html`等が使うGitHub Contents API（`https://api.github.com/
 repos/.../contents/{path}`）はパスが`config/`でも`src/`でも`docs/`でも
-区別なくアクセス可能（Pages非公開の`src/value/tanuki_valuation/
-fcf_conversion_config.json`を実際に読み書きしている実績あり）。ただし
+区別なくアクセス可能（Pages非公開の`config/fcf_conversion_config.json`
+を実際に読み書きしている実績あり）。ただし
 `Authorization: token`ヘッダーにPAT（個人アクセストークン）が必須で、
 未認証アクセスは60req/hour/IPと極めて低いレート制限のため、**不特定
 多数が閲覧する表示ページの代替経路にはならない**（admin.html等、単一の
@@ -1282,7 +1282,7 @@ FRED分の過去データ移管は実質完了、SEC EDGAR・yfinance分は次�
 | extract_key_facts.py | EPS quarterly.json 再生成 → report_consistency_check.py（CHECK-17/19確認）|
 | core_calculator.py / calculator/dcf.py | 影響銘柄のpipeline.py再実行 |
 | calculator/adjustments.py | 影響銘柄のpipeline.py再実行（FCF外れ値・estimate_fcf等）。`check_software_system_reclassification()`（FCF-CONVRATE-DESIGN-LIMIT-1、2026-07-14追加）はconfig書き換えを行わない純関数で、`determine_fcf_base()`と同じ「pipeline.py実行のたびに実績データから再判定」パターンを踏襲している。今後この種の自己補正ロジックを追加する際も同パターンを踏襲すること |
-| src/value/tanuki_valuation/fcf_conversion_config.json（`estimate_fcf_from_eps()`が参照。ticker_overrides / sector_conversion_rates） | 影響銘柄のpipeline.py再実行（EPS推定FCFのconversion_rate変更時）。sector_conversion_ratesのキーはDamodaran業種カテゴリの省略形（下記beta_config.json/SECTOR_TO_DAMODARANと同一タクソノミー）だが、114分類中10分類（`Software_System_Mature`/`_SaaS`分割後）しかカバーしておらず、該当なしの銘柄は一律default(0.70)になる点に注意（[[FCF-CONVRATE-DESIGN-LIMIT-1]]参照。SECTOR-FCF-RATE-BROKEN-1で2026-07-14完了、Software_Systemグループ分割も2026-07-14完了）。`Software_System`（未分割・0.80）はIOT/QBTS/RBRK/S/SOUN等の判定保留銘柄向けに残置している |
+| config/fcf_conversion_config.json（`estimate_fcf_from_eps()`が参照。ticker_overrides / sector_conversion_rates。2026-08-15、`src/value/tanuki_valuation/`から移動） | 影響銘柄のpipeline.py再実行（EPS推定FCFのconversion_rate変更時）。sector_conversion_ratesのキーはDamodaran業種カテゴリの省略形（下記beta_config.json/SECTOR_TO_DAMODARANと同一タクソノミー）だが、114分類中10分類（`Software_System_Mature`/`_SaaS`分割後）しかカバーしておらず、該当なしの銘柄は一律default(0.70)になる点に注意（[[FCF-CONVRATE-DESIGN-LIMIT-1]]参照。SECTOR-FCF-RATE-BROKEN-1で2026-07-14完了、Software_Systemグループ分割も2026-07-14完了）。`Software_System`（未分割・0.80）はIOT/QBTS/RBRK/S/SOUN等の判定保留銘柄向けに残置している |
 | `FCF_CYCLICAL_VOLATILITY_TICKERS`（FCF-CONVRATE②、TRUST-SUMMARY-EPIC-1、2026-07-18新設。業界サイクルにより固定転換率が実態を表現できないと個別原因分析で確定した銘柄の手動リスト。閾値〈cv・divergence_ratio〉による自動判定はLLYがDOCNを両軸で上回るなど数学的に分離不可能と判明済みのため不採用） | `stock.html`（バナー表示）と`pipeline.py`（report.txtのdivergence_ratio表示）の**2箇所に同一のSetが独立定義**されており、共通configファイル経由ではない。3件目以降を追加する場合は個別原因分析（業界サイクル起因かどうかの確認）を経た上で**両ファイルに同期して追記**すること（片方のみの追記だとバナー・report.txtの表示が食い違う）。Classification判定ロジックには一切参照されない表示専用の定数（`FCF_LOW_RELIABILITY_SECTORS`と並ぶ第2の個別ティッカーベース信頼性フラグ機構。既存のFCF_LOW_RELIABILITY_SECTORSは業種ベース・stock.html単独定義で、pipeline.py側の対応はない） |
 | `GROWTH_STRUCTURAL_MISMATCH_TICKERS`（GROWTH-STRUCTURAL-MISMATCH-CANDIDATES-1、TRUST-SUMMARY-EPIC-1段階1可視化、2026-07-20新設。ハイパーグロース事業と成熟業種平均〈Damodaran業種分類〉との構造的ミスマッチが原因分析で確定した14銘柄〈AMD/NVDA/ONDS/ASTS/BKNG/BROS/ELF/KULR/LLY/TER/XOM/ALAB/IONQ/RCAT〉の手動リスト。`FCF_CYCLICAL_VOLATILITY_TICKERS`と同型の設計） | `stock.html`（`#growth-sanity-container`内のsanityHTMLバナー）と`pipeline.py`（report.txtの[4. 成長率根拠]セクション、signals/warnings表示直後）の**2箇所に同一のSetが独立定義**されており、共通configファイル経由ではない。TERのみ業界平均比ではなく自社実績比での警告のため注記文言を専用に分岐させている。追加・削除時は両ファイルへの同期を忘れないこと。Classification判定ロジックには一切参照されない表示専用の定数 |
 | config/beta_config.json（`overrides[ticker].sector`。`data_fetcher.py::_load_beta_config()`が正しいパスで読み込む共通ローダーで、`core_calculator.py::estimate_fcf_from_eps()`〈FCF転換率〉と`pipeline.py::_load_beta_sector()`〈growth_sanity向け〉の両方から参照される） | 影響銘柄のpipeline.py再実行。`sector`値は`growth_sanity.py::SECTOR_TO_DAMODARAN`の「beta_config.json形式」ブロック（例: `Semiconductor`/`Software_Internet`/`Aerospace_Defense`/`Software_System_Mature`/`Software_System_SaaS`）のキー形式で統一すること |

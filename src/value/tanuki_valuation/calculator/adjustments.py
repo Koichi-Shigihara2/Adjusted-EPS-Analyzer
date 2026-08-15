@@ -1522,7 +1522,8 @@ def estimate_fcf_from_eps(
         diluted_shares: 希薄化後株式数
         sector: セクター（beta_config.jsonのsector値）
         eps_data_dir: EPSアナライザーのdataディレクトリ
-        config_path: fcf_conversion_config.jsonのパス（Noneで自動探索）
+        config_path: fcf_conversion_config.jsonのパス（Noneで自動探索、
+            2026-08-15よりconfig/配下）
         fcf_outlier_action: FCF外れ値の処置（"excluded"の場合はフォールバック）
         industry: yfinance industry文字列（業種別FCF定義切り替え用）
         fcf_cv: determine_fcf_base()が算出したFCF変動係数（安定性判定用）
@@ -1535,11 +1536,16 @@ def estimate_fcf_from_eps(
 
     # ── 設定ファイルの読み込み ──
     if config_path is None:
-        # pipelineから見た相対パス候補
+        # config/へ移動済み（FCFCONFIG-LOCATION-1、2026-08-15）。
+        # 旧候補のうち同一ディレクトリ（calculator/）指定は元々一致した
+        # ことがない誤候補だったため削除。リポジトリルート起点の絶対パスと
+        # CWD相対パス（repo_rootから実行される通常運用向け）の2候補のみ残す。
+        _repo_root = os.path.abspath(
+            os.path.join(os.path.dirname(__file__), '..', '..', '..', '..')
+        )
         candidates = [
-            os.path.join(os.path.dirname(__file__), 'fcf_conversion_config.json'),
-            os.path.join(os.path.dirname(__file__), '..', 'fcf_conversion_config.json'),
-            'fcf_conversion_config.json',
+            os.path.join(_repo_root, 'config', 'fcf_conversion_config.json'),
+            'config/fcf_conversion_config.json',
         ]
         config_path = next((p for p in candidates if os.path.exists(p)), None)
 
