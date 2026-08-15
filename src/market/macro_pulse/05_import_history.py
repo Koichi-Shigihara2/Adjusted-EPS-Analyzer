@@ -3,23 +3,29 @@
 MACRO PULSE v6.0 — 過去データ一括投入スクリプト
 ================================================
 使用方法:
-  python 05_import_history.py --source <CSV_FILE> --indicator <INDICATOR_NAME>
   python 05_import_history.py fred --from 2001-01-01
+  python 05_import_history.py csv --source <CSV_FILE> --indicator <INDICATOR_NAME>
+  python 05_import_history.py liquidity --from 2023-01-01
 
 機能:
-  1. --auto-fred: FRED から過去データを一括取得して 05_events.csv に投入
-  2. --source: tradingeconomics 等から手動DLした CSV を変換して投入
+  1. fred: common/macro_data/series/（common.macro_data.reader経由）
+     から過去データを一括取得して 05_events.csv に投入
+  2. csv: tradingeconomics 等から手動DLした CSV を変換して投入
+  3. liquidity: common/macro_data/series/ から過去の流動性データを
+     一括取得して 05_liquidity.csv にバックフィル
 
-対応指標（FRED自動）:
+対応指標（FRED自動、05_main.py::INDICATOR_CONFIGを単一の正として参照。
+MACRODATA-IMPORT-HISTORY-CONFIG-DRIFT-1対応、2026-08-15、独自辞書は
+廃止済み）:
+  Philadelphia Fed Manufacturing, Chicago Fed National Activity,
   NFP, Initial Claims 4W MA, Michigan Inflation 1Y, Michigan Inflation 5Y,
-  CB Consumer Confidence, Building Permits,
-  Yield Curve 10Y-2Y, HY Spread, VIX,
-  Michigan Consumer Sentiment（UMCSENT: 1978年〜）,
-  Conference Board LEI / OECD CLI（USALOLITONOSTSAM: 1955年〜）
+  Michigan Consumer Sentiment, Building Permits,
+  Sahm Rule Recession Indicator,
+  Yield Curve 10Y-2Y, HY Spread, VIX
 
 手入力指標（FREDに月次公式データなし）:
   ※ ISM PMIは8指標体制から除外済み（スコア計算対象外）
-  → --source オプションでCSVを渡す（各指標公式サイトまたはFREDから手動DL）
+  → csv サブコマンド（--source）でCSVを渡す（各指標公式サイトまたはFREDから手動DL）
 
 入力CSVフォーマット（手入力指標用）:
   date,actual,consensus
@@ -29,11 +35,16 @@ MACRO PULSE v6.0 — 過去データ一括投入スクリプト
 
 注意:
   - 既存 event_id は上書きしない（--overwrite フラグで上書き可）
-  - fed_context.csv の最新 regime を全行に適用（金融環境はダミー）
+  - 金融環境（regime/ff_rate/yc_10y2y/hy_spread/vix）はcommon.macro_
+    data.readerのローカルJSONから履歴日付ごとに取得する
   - sp500_t0〜t20 は後から --fill-returns で補完
+  - fred/liquidityサブコマンドはFRED APIを直接呼ばず、common/macro_
+    data/fetcher.pyが定期取得ワークフローで蓄積済みのローカルデータ
+    （series/{ID}.json）のみを参照する。対象系列が未蓄積の場合は
+    common/macro_data/側の取得を先に完了させること
 """
 
-import os, sys, time, json, logging, argparse
+import os, sys, json, logging, argparse
 from datetime import datetime, timedelta, date
 
 import pandas as pd
@@ -68,7 +79,6 @@ make_event_id        = _m.make_event_id
 load_events          = _m.load_events
 save_events          = _m.save_events
 fred_latest          = _m.fred_latest
-get_fred             = _m.get_fred
 get_ff_current       = _m.get_ff_current
 _fmt                 = _m._fmt
 _safe_float          = _m._safe_float
@@ -76,43 +86,32 @@ LIQUIDITY_PATH       = _m.LIQUIDITY_PATH
 LIQUIDITY_COLUMNS    = _m.LIQUIDITY_COLUMNS
 update_liquidity_csv = _m.update_liquidity_csv
 
-# ─────────────────────────────────────────────────────────────────
-#  金融環境キャッシュ（全期間を一括取得してメモリに保持）
-# ─────────────────────────────────────────────────────────────────
-_CTX_CACHE: dict = {}   # {series_id: pd.Series}
+# common/macro_data - MACRODATA-IMPORT-HISTORY-CONFIG-DRIFT-1対応
+# （2026-08-15）: 旧`get_fred()`（05_main.pyがMACRODATA-LAYER-
+# CONSTRUCTION-1実装時〈2026-08-12〉に削除済み）への依存を撤去し、
+# `_m`（05_main.py）が既に確立済みのHAS_MACRO_DATAガード・_md_reader
+# をそのまま再利用する（このファイルは`_spec.loader.exec_module(_m)`で
+# 05_main.pyを完全実行済みのため、sys.path解決を再度行う必要はない）。
+HAS_MACRO_DATA = _m.HAS_MACRO_DATA
+_md_reader     = _m._md_reader
 
-def _load_ctx_cache(fred, from_date: str, to_date: str):
-    global _CTX_CACHE
-    series_ids = ["T10Y2Y", "BAMLH0A0HYM2", "VIXCLS", "DFEDTARU", "DFEDTARL"]
-    for sid in series_ids:
-        if sid in _CTX_CACHE:
-            continue
-        for attempt in range(3):
-            try:
-                s = fred.get_series(sid, observation_start=from_date, observation_end=to_date)
-                _CTX_CACHE[sid] = s.dropna() if s is not None else pd.Series(dtype=float)
-                logger.info(f"[CTX cache] {sid}: {len(_CTX_CACHE[sid])} obs")
-                time.sleep(0.5)
-                break
-            except Exception as e:
-                wait = 2 ** attempt
-                logger.warning(f"[CTX cache] {sid} attempt {attempt+1}: {e} -> retry {wait}s")
-                time.sleep(wait)
-        else:
-            _CTX_CACHE[sid] = pd.Series(dtype=float)
-
+# ─────────────────────────────────────────────────────────────────
+#  金融環境コンテキスト（common.macro_data.reader経由、ローカルJSON
+#  読み取りのみのためAPIキャッシュは不要——旧_CTX_CACHE/_load_ctx_cache()
+#  はfredapi直接呼び出し時代のAPIコール削減策だったが、reader.get_
+#  value_as_of()はファイル読み取りのみで完結するため毎回呼び出して
+#  も軽量。get_value_as_of()のdocstring自身が本関数の旧実装
+#  （_lookup_ctxの「target_date以前・lookback日以内の直近値」
+#  パターン）を踏襲した設計である旨を明記している）
+# ─────────────────────────────────────────────────────────────────
 def _lookup_ctx(series_id: str, target_date):
-    s = _CTX_CACHE.get(series_id)
-    if s is None or s.empty:
+    if not HAS_MACRO_DATA:
         return None
-    td = pd.Timestamp(target_date)
-    s_before = s[s.index <= td]
-    if s_before.empty:
-        return None
-    return float(s_before.iloc[-1])
+    rec = _md_reader.get_value_as_of(series_id, target_date, lookback_days=45)
+    return rec["value"] if rec else None
 
-def get_historical_context(fred, target_date) -> dict:
-    """キャッシュから指定日付の金融環境スナップショットを返す（API呼び出しなし）"""
+def get_historical_context(target_date) -> dict:
+    """common.macro_data.reader経由で指定日付の金融環境スナップショットを返す"""
     ctx = {"regime": "", "ff_rate": "", "yc_10y2y": "", "hy_spread": "", "vix": "", "cuts_implied": ""}
     yc    = _lookup_ctx("T10Y2Y",       target_date)
     hy    = _lookup_ctx("BAMLH0A0HYM2", target_date)
@@ -126,55 +125,40 @@ def get_historical_context(fred, target_date) -> dict:
     return ctx
 
 # ─────────────────────────────────────────────────────────────────
-#  FRED 一括取得
+#  FRED 一括取得（common.macro_data.reader経由、ローカルJSON読み取り）
+#  MACRODATA-IMPORT-HISTORY-CONFIG-DRIFT-1対応（2026-08-15）:
+#  独自FRED_INDICATORS辞書（INDICATOR_CONFIGと乖離していた）を廃止し、
+#  05_main.py::INDICATOR_CONFIGを唯一の正とする。common/macro_data/
+#  fetcher.pyが定期取得ワークフローで既に深い履歴を蓄積済みのため、
+#  本関数はFRED APIを直接呼ばずcommon/macro_data/series/{ID}.jsonを
+#  読み取るだけで完結する（外部API呼び出し・レート制限対策は不要）。
 # ─────────────────────────────────────────────────────────────────
-FRED_INDICATORS = {
-    "NFP":                         "PAYEMS",
-    "Initial Claims 4W MA":        "IC4WSA",
-    "Michigan Inflation 1Y":       "MICH",
-    "Michigan Inflation 5Y":       "T5YIE",
-    "CB Consumer Confidence":      "CSCICP03USM665S",
-    "Building Permits":            "PERMIT",
-    "Yield Curve 10Y-2Y":          "T10Y2Y",
-    "HY Spread":                   "BAMLH0A0HYM2",
-    "VIX":                         "VIXCLS",
-    # スコア計算に必要な指標（追加）
-    "Michigan Consumer Sentiment": "UMCSENT",           # 1978年〜
-    "Conference Board LEI":        "USALOLITONOSTSAM",  # OECD CLI 1955年〜
-    "Sahm Rule Recession Indicator": "SAHMCURRENT",     # 1949年〜
-}
-
 def import_from_fred(from_date: str, to_date: str, overwrite: bool = False,
                      indicators: list = None):
-    fred = get_fred()
-    if fred is None:
-        logger.error("FRED client unavailable. Set FRED_API_KEY.")
+    if not HAS_MACRO_DATA:
+        logger.error("common.macro_data.reader が利用できません（import失敗）。")
         sys.exit(1)
-
-    logger.info("金融環境系列をキャッシュ中（T10Y2Y / HY / VIX / FF上下限）...")
-    _load_ctx_cache(fred, from_date, to_date)
 
     events    = load_events()
     existing  = set(events["event_id"].tolist()) if not events.empty else set()
     new_rows  = []
 
-    target_indicators = indicators or list(FRED_INDICATORS.keys())
+    target_indicators = indicators or list(INDICATOR_CONFIG.keys())
 
     for ind_name in target_indicators:
-        fred_id = FRED_INDICATORS.get(ind_name)
+        fred_id = INDICATOR_CONFIG.get(ind_name, {}).get("fred_id")
         if not fred_id:
-            logger.warning(f"[{ind_name}] FRED IDなし。スキップ。")
+            logger.warning(f"[{ind_name}] FRED IDなし（INDICATOR_CONFIG未登録）。スキップ。")
             continue
 
-        logger.info(f"[{ind_name}] FRED ID={fred_id} を取得中...")
+        logger.info(f"[{ind_name}] FRED ID={fred_id} をcommon/macro_data/から取得中...")
         try:
-            s = fred.get_series(fred_id,
-                                observation_start=from_date,
-                                observation_end=to_date)
-            if s is None or s.empty:
-                logger.warning(f"[{ind_name}] データなし")
+            records = _md_reader.get_series(fred_id, start=from_date, end=to_date)
+            if not records:
+                logger.warning(f"[{ind_name}] データなし（common/macro_data/series/{fred_id}.json未生成の可能性）")
                 continue
-            s = s.dropna()
+
+            s = pd.Series({pd.Timestamp(r["as_of"]): r["value"] for r in records}).sort_index()
 
             if ind_name == "NFP":
                 # MACRO-NFP-1: PAYEMSは雇用者数の「水準」のため、
@@ -182,14 +166,14 @@ def import_from_fred(from_date: str, to_date: str, overwrite: bool = False,
                 s = (s.diff() * 1000).dropna()
 
             for obs_date, val in s.items():
-                rd     = obs_date.date() if hasattr(obs_date, 'date') else obs_date
+                rd     = obs_date.date()
                 rd_str = rd.strftime("%Y-%m-%d")
                 eid    = make_event_id(ind_name, rd)
 
                 if eid in existing and not overwrite:
                     continue
 
-                ctx = get_historical_context(fred, rd)
+                ctx = get_historical_context(rd)
                 row = {col: "" for col in EVENTS_COLUMNS}
                 row.update({
                     "event_id":      eid,
@@ -212,7 +196,6 @@ def import_from_fred(from_date: str, to_date: str, overwrite: bool = False,
                 new_rows.append(row)
 
             logger.info(f"[{ind_name}] {len(s)} 件取得完了")
-            time.sleep(0.3)  # FRED API レート制限対策
 
         except Exception as e:
             logger.error(f"[{ind_name}] エラー: {e}")
@@ -223,10 +206,7 @@ def import_from_fred(from_date: str, to_date: str, overwrite: bool = False,
 
     new_df  = pd.DataFrame(new_rows, columns=EVENTS_COLUMNS)
     key_new = set(new_df["event_id"])
-    if overwrite:
-        existing_filtered = events[~events["event_id"].isin(key_new)]
-    else:
-        existing_filtered = events[~events["event_id"].isin(key_new)]
+    existing_filtered = events[~events["event_id"].isin(key_new)]
     combined = pd.concat([existing_filtered, new_df], ignore_index=True)
     save_events(combined)
     logger.info(f"インポート完了: {len(new_rows)} 行追加 → {EVENTS_PATH}")
@@ -253,16 +233,6 @@ def import_from_csv(source_path: str, indicator: str, overwrite: bool = False):
         logger.error(f"必須列なし: {missing}。列名確認: {list(src_df.columns)}")
         sys.exit(1)
 
-    fred   = get_fred()
-    if fred:
-        dates = src_df["date"].str.strip()
-        try:
-            from_d = min(dates)[:10]
-            to_d   = max(dates)[:10]
-            logger.info("金融環境系列をキャッシュ中...")
-            _load_ctx_cache(fred, from_d, to_d)
-        except Exception:
-            pass
     events = load_events()
     existing = set(events["event_id"].tolist()) if not events.empty else set()
     new_rows = []
@@ -305,7 +275,7 @@ def import_from_csv(source_path: str, indicator: str, overwrite: bool = False):
             except (ValueError, AttributeError):
                 pass
 
-        ctx = get_historical_context(fred, rd) if fred else {}
+        ctx = get_historical_context(rd) if HAS_MACRO_DATA else {}
         rd_str = rd.strftime("%Y-%m-%d")
 
         row = {col: "" for col in EVENTS_COLUMNS}
@@ -346,8 +316,10 @@ def import_from_csv(source_path: str, indicator: str, overwrite: bool = False):
 # ─────────────────────────────────────────────────────────────────
 def backfill_liquidity(from_date: str, to_date: str, overwrite: bool = False) -> None:
     """
-    FRED から過去の流動性データ（M2/HYスプレッド/FRBバランスシート/TGA/RRP）を
-    一括取得して 05_liquidity.csv にバックフィルする。
+    common.macro_data.reader経由で過去の流動性データ（M2/HYスプレッド/
+    FRBバランスシート/TGA/RRP）を一括取得して05_liquidity.csvに
+    バックフィルする（MACRODATA-IMPORT-HISTORY-CONFIG-DRIFT-1対応、
+    2026-08-15、FRED API直接呼び出しから切替）。
 
     Args:
         from_date: 開始日（YYYY-MM-DD）
@@ -357,9 +329,8 @@ def backfill_liquidity(from_date: str, to_date: str, overwrite: bool = False) ->
     import pandas as pd
     from datetime import datetime, timedelta
 
-    fred = get_fred()
-    if fred is None:
-        logger.error("FRED_API_KEY が設定されていません。")
+    if not HAS_MACRO_DATA:
+        logger.error("common.macro_data.reader が利用できません（backfill失敗）。")
         return
 
     start = datetime.strptime(from_date, "%Y-%m-%d").date()
@@ -376,18 +347,16 @@ def backfill_liquidity(from_date: str, to_date: str, overwrite: bool = False) ->
         except Exception:
             pass
 
-    # FREDから一括取得（期間を広めに指定してキャッシュ）
-    logger.info(f"FREDデータ取得中: {from_date} 〜 {to_date}")
+    # common/macro_data/series/から一括取得（期間を広めに指定）
+    logger.info(f"common/macro_data/データ取得中: {from_date} 〜 {to_date}")
     lookback_start = (start - timedelta(days=90)).strftime("%Y-%m-%d")
 
     def fetch_series(series_id):
-        try:
-            s = fred.get_series(series_id, observation_start=lookback_start,
-                                observation_end=to_date)
-            return s.dropna()
-        except Exception as e:
-            logger.warning(f"  [{series_id}] 取得失敗: {e}")
+        records = _md_reader.get_series(series_id, start=lookback_start, end=to_date)
+        if not records:
+            logger.warning(f"  [{series_id}] データなし")
             return None
+        return pd.Series({pd.Timestamp(r["as_of"]): r["value"] for r in records}).sort_index()
 
     s_m2    = fetch_series("M2SL")
     s_hy    = fetch_series("BAMLH0A0HYM2")
