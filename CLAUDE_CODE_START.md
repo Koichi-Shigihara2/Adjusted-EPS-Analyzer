@@ -1,5 +1,97 @@
 # Claude Code 作業開始テンプレート
 
+最終更新: 2026-08-16（**セッション終了時ブラッシュアップ（3回目）・
+`986230663`以降のセッションサマリー**。BACKLOG棚卸し〈案1→案2〉、
+本線1`[[OPERATING-INCOME-EXTRACTION-GAP-1]]`、本線2
+`[[MOAT-SCORE-PARTIAL-NULL-1]]`を実施した。詳細はBACKLOG_DONE.md
+「2026-08-16（完了）」参照。
+
+**BACKLOG棚卸し（案1→案2）**:
+- `[[RISK-FREE-RATE-HARDCODE-1]]`優先度高→低に訂正・現状維持でクローズ
+  `b999b95b5`
+- CHAT_RULES.md「BACKLOG記載の前提は着手時に再検証する」新設
+  `1ad7977f0`
+- 優先度「中」以上78件をスクリーニングし「要深掘り」14件のうち
+  グループA 8件を深掘り調査。優先度引き下げ2件・完了移設1件
+  （`[[SECDATA-COMPANYFACTS-OVERLOOKED-1]]`は登録翌日に実質解消済み
+  だった移設漏れと判明）・根拠強化1件・検証記録4件を実施
+  `fe41b888a`
+- **未着手**: グループB（`[[QUALITY-GATES-EPIC-1]]`・
+  `[[TRUST-SUMMARY-EPIC-1]]`・`[[BACKTEST-SCORE-1]]`のエピック3件）は
+  「記述の誤り」ではなく「着手要否の判断」が必要な性質のため保留
+
+**本線1: `[[OPERATING-INCOME-EXTRACTION-GAP-1]]`**（登録`16a4b3a6e`、
+本線設定`06333eab2`、実装`86d5011a9`/`01e417d75`/`bbc23ff1e`、
+記録`962471031`）:
+- `common/sec_data/parser.py`の`operating_income`抽出が単一タグ
+  `OperatingIncomeLoss`依存でフォールバック不能だった問題を解消。
+  GP法（`gross_profit-R&D-SGA/SM`）・pretax調整法
+  （`pretax-非事業性項目`）で再構成し、**両手法の突き合わせ検証**
+  （乖離の50%以上が非事業性項目で説明できること）を通ったものだけ
+  採用する設計とした（pretaxをそのまま使わない）。COHRは5.7倍の乖離で
+  GP法の値を棄却し保守的なpretax調整法にフォールバック
+- **妥当性ガード**を追加: `reconstructed_pretax < net_income`なら
+  不採用（SOFI等、受取利息が本業収益である金融/フィンテック企業で
+  「受取利息は非事業性」という仮定が崩れるため。検証中に発見）
+- CHECK-35新設（WARN、再構成使用・取得不可を検知）、
+  `operating_income_source` provenance追加（`NAMING_CONVENTIONS.md`
+  規則4準拠）
+- fixed_registry.json 23エントリのsnapshot_hashを機械的に全数照合
+  （259フィールド、不一致0件）の上で更新
+
+**本線2: `[[MOAT-SCORE-PARTIAL-NULL-1]]`**（実装
+`16da15c99`/`e077b99f0`/`f6f3c4f0f`、provenance追加
+`7ab8672db`/`5b115fd3e`/`787c9adbf`）:
+- `calculate_moat_score()`の`(値 or 0.0)`パターンを解消。roicが
+  Noneの原因別に扱いを変える（真の赤字`reported_negative_oi`は
+  `roic_norm=0.0`で算入、`roic_diverged_over10`は`roic_norm=1.0`で
+  算入〈該当0件・未検証〉、それ以外の測定不能は除外・重み再正規化）
+- **最低2指標ルール**: 有効指標2未満なら`moat_score=0.5`
+  （中立フォールバック）。「薄い根拠から確信ありげな出力を出さない」を
+  高低スコア双方に対称適用
+- `moat_score_source`（`measured`/`neutral_fallback`）・`n_present`
+  provenance追加、CHECK-36新設（WARN）。BKNG・CPRTが中立フォールバック
+  対象（BACKLOG_DONE.md・SYSTEM_MAP.mdに恒久注意事項として記録）
+
+**IV変化（実測、いずれもポートフォリオ非保有銘柄）**: KLAC +21.4%・
+XOM -18.7%・LLY -10.9%（本線1由来）、BKNG +32.4%・CPRT +22.6%・
+V +16.2%（本線2由来）。TANUKI SCORE分類が変わったのはBKNG
+（WATCH→BUY）のみ——ただしこれは測定されたモート強度ではなく中立
+フォールバック（プレースホルダ0.5）に基づく判定である点に注意
+（moat_scoreは人為的に調整していない）。
+
+**当初想定になかった波及経路（教訓）**: 本線1では`g_fundamental`→
+`recommended_g`経路がIV変化の主因だった（当初の消費者分析は
+`moat_score`経由のみを想定していた）。本線2ではStep1の消費者確認で
+`index.html`の`#avg-moat`（全銘柄平均表示）を新規発見。以後、消費者
+確認では**直接の引数だけでなく`None`ガードの有無まで確認する**必要が
+あるという教訓を`SYSTEM_MAP.md`に記録済み。
+
+**コミットメッセージの引用符事故（2回発生）**: シングルクォート化後も
+メッセージ中の`''`（連続シングルクォート）がbashのクォート解釈で
+脱落する事故が2026-08-16に2回発生（本線1・本線2の実装コミットで
+各1回）。いずれも`git log -1 --format=%B`確認でpush前に発見し
+`--amend`で修正。CHAT_RULES.mdに追記済み。
+
+**次の本線は未定**（`CHAT_RULES.md`「本線の定義」参照）。**次セッションの
+着手候補**:
+1. `[[FALSY-ZERO-PATTERN-SWEEP-1]]`（優先度中、横断調査。falsy-zero
+   パターンが本セッションだけで5例確認されており、個別対応では
+   追いつかない規模になっている）
+2. `[[CONFIG-LOAD-SILENT-FALLBACK-1]]`残り3件（優先度低、着手条件なし。
+   `maturity_config.json`/`segment_config.json`はWACC/DCF計算コアに
+   直結し全銘柄再生成の検証コストが高いため後回しでよい）
+3. `[[MACRO-STYLE-FCF-ZERO-TRUTHY-EXCLUDE-1]]`（優先度低、現状実害
+   ゼロの潜伏バグ、着手条件なし）
+4. `[[MACRO-TRUTHY-ZERO-BUG-1]]`・`[[RECESSION-SCORE-TRIPLE-CALC-1]]`・
+   `[[FCF-CAGR-YEARS-MISMATCH-1]]`・`[[HOLLOW-RALLY-DEAD-1]]`
+   （案2 Step Cで優先度維持と判定済みの既存課題群、着手条件なし）
+5. **グループB（エピック3件、`[[QUALITY-GATES-EPIC-1]]`・
+   `[[TRUST-SUMMARY-EPIC-1]]`・`[[BACKTEST-SCORE-1]]`）は「記述の誤り」
+   ではなく「未着手の大型設計項目」であり、次の着手先として選ぶ前に
+   まず「着手要否の判断」自体を行う必要がある**（詳細調査ではなく、
+   着手する価値があるかどうかの意思決定が先）
+
 最終更新: 2026-08-16（**セッション終了時ブラッシュアップ・本日
 セッションサマリー**。フェーズ3完了後の残作業として`[[FCFCONFIG-
 MISSING-DETECTION-WEAK-1]]`・`[[EPSANALYZER-ADMIN-ORPHAN-PAGE-1]]`・
@@ -237,6 +329,22 @@ Update workflows実装・本番消費者8ファイル中3/8切替完了〉へ既
 （完了）」参照。実装コード変更なし）
 
 ## 毎回の作業開始時に必ず実行すること
+
+> ⚠️ **一時的な運用注意（2026-08-16追記、Koichiさんが実施確認後に本ブロックごと削除してよい）**
+> `docs/value-monitor/admin.html`（`[[PORTFOLIO-CONFIG-DUP-1]]`、コミット
+> `e97741f54`/`eaf3016cb`）の保存先が`config/portfolio.json`→
+> `docs/portfolio/data/portfolio.json`（v2）へ変更された。同様に
+> `docs/discover/admin.html`（`[[DISCOVER-CONFIG-DUAL-MGMT-1]]`、コミット
+> `20a173a76`/`80bcf5f57`）も保存フロー（同期ワークフロー・検証ロジック）が
+> 変更されている。**ブラウザに旧版admin.htmlがキャッシュされたまま保存操作を
+> 行うと、value-monitor/admin.htmlは旧パス（`config/portfolio.json`）に
+> ファイルが再作成され、表示側（`docs/portfolio/`）に反映されない。**
+> admin.html自体は「保存成功」と表示するため、この不一致には気づけない。
+> **次回admin.html使用前にハードリロード（Ctrl+Shift+R）を必須で実施する
+> こと。** value-monitor/admin.htmlは画面上部に保存先バージョン表記
+> （「保存先: docs/portfolio/data/portfolio.json（v2、2026-08-15〜。
+> config/への保存は廃止）」）があり、新版が読み込まれているかここで確認
+> できる。
 
 ### Step 0: ローカルリポジトリの最新化（最優先）
 GitHub Actions が前回セッション後にデータを自動更新している可能性があるため、

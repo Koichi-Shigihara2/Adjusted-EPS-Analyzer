@@ -4501,6 +4501,12 @@ RMBS）・案d（BSY個別対応）は、いずれもゲート条件込みの再
 
 ---
 
+（[[SECDATA-COMPANYFACTS-OVERLOOKED-1]]は登録翌日の2026-07-24に
+実質解消済みだったと判明、2026-08-16に移設漏れを訂正しBACKLOG_DONE.md
+「2026-08-16（完了）」へ移設。参照）
+
+---
+
 ### [MACRO-TRUTHY-ZERO-BUG-1] MACRO PULSE履歴バックフィルのtruthy判定によるゼロ値欠落
 **優先度:** 高
 **分類:** バグ / MACRO PULSE
@@ -4677,7 +4683,9 @@ BACKLOG_DONE.md「2026-08-16（完了）」参照）
 
 #### 内容
 `pipeline.py::_calc_moat_inputs()`のfcf_margin_3yr_avg計算部分
-（3074行目付近）が`if fcf and rev and rev > 0:`というtruthy判定を
+（2026-08-16時点で3128行目付近。`[[MOAT-SCORE-PARTIAL-NULL-1]]`実装で
+周辺行が増減しているため、着手時に`grep`で現在地を再確認すること）が
+`if fcf and rev and rev > 0:`というtruthy判定を
 使っており、`[[MACRO-TRUTHY-ZERO-BUG-1]]`と同型のfalsy-zeroパターンを
 持つ。FCFが正当な実測値0.0の年は暗黙にNoneと同じ扱いで平均対象から
 除外され、3年平均のはずが実質1〜2年平均になりうる。全105銘柄の直近
@@ -4712,7 +4720,8 @@ Pythonの`0`/`0.0`がfalsyであることに起因し、正当なゼロ値を欠
 - `[[STONKS-SILO-COGS-DEAD-FALLBACK-1]]`（2026-07-30対応済み、RXRX
   2021年で発見）
 - `[[MACRO-TRUTHY-ZERO-BUG-1]]`（未対応、`if ff_hi and ff_lo:`）
-- `[[MOAT-SCORE-PARTIAL-NULL-1]]`（`(値 or 0.0)`、着手待ち）
+- `[[MOAT-SCORE-PARTIAL-NULL-1]]`（`(値 or 0.0)`、2026-08-16対応済み。
+  詳細はBACKLOG_DONE.md「2026-08-16（完了）」参照）
 - `pipeline.py:2940`の`(oi or 0)`（`[[OPERATING-INCOME-EXTRACTION-
   GAP-1]]`調査中に発見。ただしこちらはタグ不在が根本原因で、falsy-zero
   自体は結果に影響していないと確認済み）
