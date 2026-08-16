@@ -108,9 +108,23 @@ Claude Codeからの完了報告を受け取った際、チャット側Claudeは
 
 **（2026-08-15追記）** 上記フェーズ1に続き、フェーズ2（過去データ移管の
 要否判断）・フェーズ3（導出データ層の管理方法検討）も完了した。**新DB
-構築プロジェクト（フェーズ1〜3）は全て完了**。**次の本線は未定**
-（次セッション開始時にBACKLOG.mdの優先順位・PROJECT_STATUS.mdを踏まえて
-判断する）。詳細はPROJECT_STATUS.md冒頭・CLAUDE_CODE_START.md参照。
+構築プロジェクト（フェーズ1〜3）は全て完了**。詳細はPROJECT_STATUS.md
+冒頭・CLAUDE_CODE_START.md参照。
+
+**（2026-08-16追記）** 現在の本線は`[[OPERATING-INCOME-EXTRACTION-
+GAP-1]]`の解消:
+1. `operating_income`抽出（`common/sec_data/parser.py`、単一タグ
+   `OperatingIncomeLoss`依存・フォールバック不能）の根本修正。現在
+   顕在化している6銘柄（LLY・JNJ・XOM・KLAC・ASTS・COHR）に加え、
+   `selling_and_marketing`欠落50銘柄という潜在範囲を持つ
+2. 根本修正後、`[[MOAT-SCORE-PARTIAL-NULL-1]]`の実装を再開する
+   （roic欠損の原因分解・案A''設計・最低2指標ルールは2026-08-16に
+   確定済み、根本修正の完了を待つのみ）
+
+**本線の範囲外**: `[[FALSY-ZERO-PATTERN-SWEEP-1]]`（falsy-zeroパターンの
+横断調査）・`[[MACRO-STYLE-FCF-ZERO-TRUTHY-EXCLUDE-1]]`は、本件と発生
+メカニズムが異なる（タグ不在 vs falsy-zero誤判定）ため本線に含めない。
+詳細はBACKLOG.md `[[OPERATING-INCOME-EXTRACTION-GAP-1]]`参照。
 
 本線が変更された場合は、この節を更新すること（更新履歴として旧本線を
 取り消し線で残す運用でよい）。
