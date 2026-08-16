@@ -1,15 +1,15 @@
 JNJ INTEGRATED INVESTMENT REPORT
-Generated: 2026-08-16T00:19:44+09:00
+Generated: 2026-08-16T15:21:30+09:00
 Price: $260.35
 
 [1. TANUKI SCORE]
 Classification: HOLD
 Funda_Score: 55/100
 Timing_Score (components):
-  Deviation_Rate: -66.3%
+  Deviation_Rate: -66.5%
   MA200_Deviation: +13.3%
   HypeCore_Phase: Phase2 (期待拡大期)
-  Analyst_Consensus: Buy | Target: $280 median ($190-$305) | 22 analysts | vs IV: +219.3%
+  Analyst_Consensus: Buy | Target: $280 median ($190-$305) | 22 analysts | vs IV: +221.3%
 Comment: 割高(-66%超)、FCF黒字、売上安定成長
 Definition:
 
@@ -31,8 +31,8 @@ PASS: Funda<25, excluded from consideration
 Matrix: ①投資効率系
 Quadrant: 左下
 Label: 割高×低効率
-Key_Metric_Y: RICE = 0.050
-Deviation_Rate: -66.3%
+Key_Metric_Y: RICE = 0.093
+Deviation_Rate: -66.5%
 Thresholds:
   RICE_Threshold: 3.0/1.0/0 (>=3.0=high, 1.0-3.0=medium, 0-1.0=low, <0=undefined OCF-negative)
   ROE_Threshold: 15% (above=high profitability)
@@ -57,14 +57,14 @@ Positive deviation = undervalued (intrinsic > current)
 
 [3. TANUKI VALUATION]
 Current_Price: $260.35
-Intrinsic_Value_BASE: $87.68
-Deviation_BASE: -66.3%
+Intrinsic_Value_BASE: $87.14
+Deviation_BASE: -66.5%
 Growth_Rate_Original: 15.0% (TTM実績)
 Growth_Rate_Adjusted: 2.2% (推奨値・中央値ベース)
 Scenarios:
-BEAR: Growth=1.5%, IV=$84.42 （推奨値ベース）
-BASE: Growth=2.2%, IV=$87.68 （推奨値ベース）
-BULL: Growth=2.6%, IV=$89.91 （推奨値ベース）
+BEAR: Growth=1.5%, IV=$83.49 （推奨値ベース）
+BASE: Growth=2.2%, IV=$87.14 （推奨値ベース）
+BULL: Growth=2.6%, IV=$89.65 （推奨値ベース）
 TTM_YoY_Growth: 7.9%
 (DCF Base vs TTM actual: -5.7pt discount)
 Discount_Rate_Primary: 10.00% (DCF discount rate used)
@@ -72,7 +72,7 @@ WACC_CAPM_Reference: 6.01%
 Terminal_Growth_Rate: 3.0%
 Beta: 0.3
 Valuation_Gap_Analysis:
-  DCF_IV:           $88 (保守的FCFベース・現在実力値)
+  DCF_IV:           $87 (保守的FCFベース・現在実力値)
   Market_Price:     $260
   Gap:              -66% (市場が将来成長を先取り)
   Implied_FCF_2030: $44.88B (現在株価を正当化するために必要な5年後FCF)
@@ -80,15 +80,15 @@ Valuation_Gap_Analysis:
   Required_Growth:  21%/yr (現在FCFから必要成長率を逆算)
 FCF_Base: $17,291.50M (4yr平均 + R&D補正)
 DCF_Reliability: HIGH  (FCF実績プラス: 通常判定適用)
-DCF_FCF_PV: $80.78B (6yr discounted FCF sum, pre-alpha, Rm=10%)
-DCF_TV_PV:  $163.46B (terminal value present value, pre-alpha, Rm=10%)
-DCF_v0:     $244.24B (= FCF_PV + TV_PV, Rm=10% enterprise value)
+DCF_FCF_PV: $91.10B (7yr discounted FCF sum, pre-alpha, Rm=10%)
+DCF_TV_PV:  $151.84B (terminal value present value, pre-alpha, Rm=10%)
+DCF_v0:     $242.94B (= FCF_PV + TV_PV, Rm=10% enterprise value)
 Alpha_Premium: 0.7000 (HypeCore expectation premium; Rm basis)
 RPO_PV: $0
 Growth_Option_PV: $0
-Equity_Value: $211.31B (= v0 + RPO_PV + GO_PV + Net_Cash $-32.94B)
+Equity_Value: $210.01B (= v0 + RPO_PV + GO_PV + Net_Cash $-32.94B)
 Shares_Used: 2409.9M (source: yf_implied)
-→ Intrinsic_Value: $87.68 (= Equity_Value ÷ Shares_Used)
+→ Intrinsic_Value: $87.14 (= Equity_Value ÷ Shares_Used)
 Financial_Health:
   Net_Debt: $+32.94B (negative=net cash)
   Total_Debt: $54.99B  Cash: $21.69B  ST_Invest: $0.36B
@@ -183,16 +183,18 @@ Industry benchmark: Damodaran 2025 fundgrEB.xls
 [5. RICE METRICS]
 Available: true
 Exclusion_Reason: N/A
-BEAR: RICE=0.034
-BASE: RICE=0.05
-BULL: RICE=0.06
+BEAR: RICE=0.063
+BASE: RICE=0.093
+BULL: RICE=0.11
 Components (BASE scenario):
 G  = 2.2%  [TANUKI forward growth rate]
 Q  = 0.8949   [OCF / (NetIncome + SBC), 3yr avg]
 CF = 0.2558  [RevGrowth / InvestmentIntensity, 1yr lag, 3yr avg]
 CF_adj = 1.1646  [R&D除外・CapExのみ投資強度]
-RICE_adj = 0.229  [参考：R&D資本化想定]
+RICE_adj = 0.422  [参考：R&D資本化想定]
 WACC = 10.0%
+VC_Factor = 1.84  [RICE-1: clamp(ROIC/WACC,0.3,2.0)]
+ROIC_WACC_Ratio = 1.84  [NOPAT/InvestedCapital / 0.10]
 SBC_Adjusted: true
 Definition:
 
@@ -321,7 +323,7 @@ Note: Uses ForwardEPS from yfinance (analyst consensus).
 Short_Report_Target: no
 Short_Interest: 1.3%
 Institutional_Ownership: N/A (not in data source)
-Analyst_Consensus: Buy | Target: $280 median ($190-$305) | 22 analysts | vs IV: +219.3%
+Analyst_Consensus: Buy | Target: $280 median ($190-$305) | 22 analysts | vs IV: +221.3%
 Insider_Activity: Sell優勢 | 買い0件 / 売り8件 | 直近90日
 Runway_Months: N/A (profitable or not in STONKS)
 Revenue_Growth_YoY: 7.9%

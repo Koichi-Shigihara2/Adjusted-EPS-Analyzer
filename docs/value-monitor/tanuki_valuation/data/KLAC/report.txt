@@ -1,16 +1,16 @@
 KLAC INTEGRATED INVESTMENT REPORT
-Generated: 2026-08-16T00:21:18+09:00
+Generated: 2026-08-16T15:22:58+09:00
 Price: $203.72
 
 [1. TANUKI SCORE]
 Classification: TRIM
 Funda_Score: 80/100
 Timing_Score (components):
-  Deviation_Rate: -68.5%
+  Deviation_Rate: -61.7%
   MA200_Deviation: +22.2%
   HypeCore_Phase: Phase4 (期待剥落期)
-  Analyst_Consensus: Buy | Target: $225 median ($165-$325) | 27 analysts | vs IV: +250.5%
-Comment: 割高(-68%超)、FCF黒字、売上安定成長
+  Analyst_Consensus: Buy | Target: $225 median ($165-$325) | 27 analysts | vs IV: +188.7%
+Comment: 割高(-62%超)、FCF黒字、売上安定成長
 Definition:
 
 Funda_Score: Composite score of financial health,
@@ -30,9 +30,9 @@ PASS: Funda<25, excluded from consideration
 [2. MATRIX POSITION]
 Matrix: ①投資効率系
 Quadrant: 左下
-Label: 割高×低効率
-Key_Metric_Y: RICE = 0.676
-Deviation_Rate: -68.5%
+Label: 割高×中効率
+Key_Metric_Y: RICE = 1.352
+Deviation_Rate: -61.7%
 Thresholds:
   RICE_Threshold: 3.0/1.0/0 (>=3.0=high, 1.0-3.0=medium, 0-1.0=low, <0=undefined OCF-negative)
   ROE_Threshold: 15% (above=high profitability)
@@ -57,14 +57,14 @@ Positive deviation = undervalued (intrinsic > current)
 
 [3. TANUKI VALUATION]
 Current_Price: $203.72
-Intrinsic_Value_BASE: $64.19
-Deviation_BASE: -68.5%
+Intrinsic_Value_BASE: $77.94
+Deviation_BASE: -61.7%
 Growth_Rate_Original: 15.0% (TTM実績)
 Growth_Rate_Adjusted: 12.8% (推奨値・中央値ベース)
 Scenarios:
-BEAR: Growth=9.0%, IV=$53.31 （推奨値ベース）
-BASE: Growth=12.8%, IV=$64.19 （推奨値ベース）
-BULL: Growth=15.4%, IV=$72.48 （推奨値ベース）
+BEAR: Growth=9.0%, IV=$59.87 （推奨値ベース）
+BASE: Growth=12.8%, IV=$77.94 （推奨値ベース）
+BULL: Growth=15.4%, IV=$92.78 （推奨値ベース）
 TTM_YoY_Growth: 13.4%
 (DCF Base vs TTM actual: -0.6pt discount)
 Discount_Rate_Primary: 10.00% (DCF discount rate used)
@@ -72,23 +72,23 @@ WACC_CAPM_Reference: 12.61%
 Terminal_Growth_Rate: 3.0%
 Beta: 1.458
 Valuation_Gap_Analysis:
-  DCF_IV:           $64 (保守的FCFベース・現在実力値)
+  DCF_IV:           $78 (保守的FCFベース・現在実力値)
   Market_Price:     $204
-  Gap:              -68% (市場が将来成長を先取り)
+  Gap:              -62% (市場が将来成長を先取り)
   Implied_FCF_2030: $18.16B (現在株価を正当化するために必要な5年後FCF)
   Current_FCF:      $3.58B
   Required_Growth:  38%/yr (現在FCFから必要成長率を逆算)
 FCF_Base: $3,583.87M (4yr平均 + R&D補正)
 DCF_Reliability: HIGH  (FCF実績プラス: 通常判定適用)
-DCF_FCF_PV: $23.51B (6yr discounted FCF sum, pre-alpha, Rm=10%)
-DCF_TV_PV:  $61.34B (terminal value present value, pre-alpha, Rm=10%)
-DCF_v0:     $84.84B (= FCF_PV + TV_PV, Rm=10% enterprise value)
+DCF_FCF_PV: $36.66B (9yr discounted FCF sum, pre-alpha, Rm=10%)
+DCF_TV_PV:  $66.15B (terminal value present value, pre-alpha, Rm=10%)
+DCF_v0:     $102.81B (= FCF_PV + TV_PV, Rm=10% enterprise value)
 Alpha_Premium: 0.8000 (HypeCore expectation premium; Rm basis)
 RPO_PV: $0
 Growth_Option_PV: $0
-Equity_Value: $83.87B (= v0 + RPO_PV + GO_PV + Net_Cash $-0.97B)
+Equity_Value: $101.84B (= v0 + RPO_PV + GO_PV + Net_Cash $-0.97B)
 Shares_Used: 1306.5M (source: yf_implied)
-→ Intrinsic_Value: $64.19 (= Equity_Value ÷ Shares_Used)
+→ Intrinsic_Value: $77.94 (= Equity_Value ÷ Shares_Used)
 Financial_Health:
   Net_Debt: $+0.97B (negative=net cash)
   Total_Debt: $5.89B  Cash: $1.79B  ST_Invest: $3.13B
@@ -183,16 +183,18 @@ Industry benchmark: Damodaran 2025 fundgrEB.xls
 [5. RICE METRICS]
 Available: true
 Exclusion_Reason: N/A
-BEAR: RICE=0.475
-BASE: RICE=0.676
-BULL: RICE=0.813
+BEAR: RICE=0.95
+BASE: RICE=1.352
+BULL: RICE=1.626
 Components (BASE scenario):
 G  = 12.8%  [TANUKI forward growth rate]
 Q  = 1.0167   [OCF / (NetIncome + SBC), 3yr avg]
 CF = 0.5193  [RevGrowth / InvestmentIntensity, 1yr lag, 3yr avg]
 CF_adj = 2.9260  [R&D除外・CapExのみ投資強度]
-RICE_adj = 3.808  [参考：R&D資本化想定]
+RICE_adj = 7.615  [参考：R&D資本化想定]
 WACC = 10.0%
+VC_Factor = 2.00  [RICE-1: clamp(ROIC/WACC,0.3,2.0)]
+ROIC_WACC_Ratio = 4.66  [NOPAT/InvestedCapital / 0.10]
 SBC_Adjusted: true
 Definition:
 
@@ -321,7 +323,7 @@ Note: Uses ForwardEPS from yfinance (analyst consensus).
 Short_Report_Target: no
 Short_Interest: 2.4%
 Institutional_Ownership: N/A (not in data source)
-Analyst_Consensus: Buy | Target: $225 median ($165-$325) | 27 analysts | vs IV: +250.5%
+Analyst_Consensus: Buy | Target: $225 median ($165-$325) | 27 analysts | vs IV: +188.7%
 Insider_Activity: Sell優勢 | 買い0件 / 売り16件 | 直近90日
 Runway_Months: N/A (profitable or not in STONKS)
 Revenue_Growth_YoY: 13.4%

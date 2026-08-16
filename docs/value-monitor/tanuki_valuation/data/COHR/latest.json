@@ -44,7 +44,7 @@
     }
   },
   "upside_percent": -88.8,
-  "calculation_date": "2026-08-16T00:10:57+09:00",
+  "calculation_date": "2026-08-16T15:13:12+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -293,24 +293,26 @@
     "avg_intensity": 0.1807,
     "avg_rev_growth_lagged": 0.1155,
     "warnings": true,
-    "note": "SBC補正済み（純利益+SBCを分母に使用） / Q: 2年のみ使用（3年要求） / 販売・マーケティング費未取得（FYTTM@2025-03-31, TTM@2024-03-31, TTM@2023-03-31）: 投資強度が過小になる可能性",
+    "note": "SBC補正済み（純利益+SBCを分母に使用） / Q: 2年のみ使用（3年要求） / RICE-1価値創造係数=0.30(ROIC/WACC=0.09) / 販売・マーケティング費未取得（FYTTM@2025-03-31, TTM@2024-03-31, TTM@2023-03-31）: 投資強度が過小になる可能性",
+    "vc_factor": 0.3,
+    "roic_wacc_ratio": 0.088,
     "bear": {
       "growth_rate": 0.107,
-      "rice": 1.064,
-      "rice_per_ratio": 0.0069,
-      "rice_adj": 2.578
+      "rice": 0.319,
+      "rice_per_ratio": 0.0021,
+      "rice_adj": 0.774
     },
     "base": {
       "growth_rate": 0.153,
-      "rice": 1.522,
-      "rice_per_ratio": 0.0099,
-      "rice_adj": 3.687
+      "rice": 0.457,
+      "rice_per_ratio": 0.003,
+      "rice_adj": 1.106
     },
     "bull": {
       "growth_rate": 0.183,
-      "rice": 1.821,
-      "rice_per_ratio": 0.0118,
-      "rice_adj": 4.41
+      "rice": 0.546,
+      "rice_per_ratio": 0.0035,
+      "rice_adj": 1.323
     }
   },
   "fcf_source": "ttm_series",
@@ -423,8 +425,8 @@
   "matrix": {
     "matrix": "①投資効率系",
     "quadrant": "左下",
-    "label": "割高×中効率",
-    "key_metric_y": "RICE = 1.522",
+    "label": "割高×低効率",
+    "key_metric_y": "RICE = 0.457",
     "qx": false,
     "qy": false
   },
@@ -517,7 +519,7 @@
     "damodaran_year": 2025,
     "rev_cagr_3yr": 0.20548879782532903,
     "rev_cagr_5yr": 0.19541572150598796,
-    "g_fundamental": null,
+    "g_fundamental": -0.013388607655806326,
     "recommended_g_median": 0.2004522596656585,
     "recommended_g": 0.2004522596656585,
     "growth_model": "median",

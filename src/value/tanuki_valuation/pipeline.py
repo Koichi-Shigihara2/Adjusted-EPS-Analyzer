@@ -2848,8 +2848,18 @@ class TanukiValuationPipeline:
                 return None
             if _cash_raw is None:
                 return None
+            # [[OPERATING-INCOME-EXTRACTION-GAP-1]]: `or 0`はNone（未報告）
+            # を実測ゼロと区別できなくしていた。parser.py側の再構成
+            # バックフィルにより大半の銘柄はoperating_incomeが取得できる
+            # ようになったため、ここでNoneになるのは再構成も失敗した
+            # 真の欠損のみ。calc_fundamental_growth()自体がnopat<=0を
+            # 内部でNone扱いするため、この分岐を通ることによる下流への
+            # 影響は無い（安全な変更）。
+            _oi = pl.get("operating_income")
+            if _oi is None:
+                return None
             return calc_fundamental_growth(
-                operating_income=pl.get("operating_income") or 0,
+                operating_income=_oi,
                 tax_rate=0.21,
                 total_equity=_equity_se or _equity_te or 0,
                 total_debt=(bs.get("long_term_debt") or self._get_lt_debt_fallback(ticker)) + (bs.get("short_term_debt") or 0),
@@ -2930,14 +2940,24 @@ class TanukiValuationPipeline:
                 ann = json.load(f)
             pl = ann.get("pl", {})
             bs = ann.get("bs", {})
-            oi = pl.get("operating_income") or 0
-            if not oi:
+            # [[OPERATING-INCOME-EXTRACTION-GAP-1]]: `or 0`によるNone→0
+            # のすり替えは、真の欠損（未報告）と真の赤字（NOPAT<=0）を
+            # 区別できなくしていた。`parser.py::_backfill_operating_income()`
+            # がGP-R&D-SGA法・pretax調整法で既にannual_YYYY.json側を
+            # 補完しているため、ここでNoneになるのは両方式とも失敗した
+            # 真の欠損のみ。`_estimate_ttm_operating_income()`は追加の
+            # 安全網として維持する（selling_and_marketing欠落50銘柄では
+            # 依然失敗しうるが、削除は別作業とする）。
+            oi = pl.get("operating_income")
+            if oi is None:
                 # OperatingIncomeLossタグを近年報告していない銘柄向けフォールバック
                 # （XBRL-TAG-KLAC-1: KLACはFY2015 10-K以降、年次OperatingIncomeLossの
                 #  タグ付けを行っておらず、pl.operating_incomeが恒常的にNoneになる。
                 #  直近4四半期のGrossProfit-RD-SMからTTM営業利益を代替算出する）
                 oi = self._estimate_ttm_operating_income(ticker)
-            nopat = (oi or 0) * (1 - 0.21)
+            if oi is None:
+                return None
+            nopat = oi * (1 - 0.21)
             if nopat <= 0:
                 return None
             # FY52WEEK-BS-NULL-SILENT-1 Phase A: stockholders_equity/

@@ -1,5 +1,5 @@
 COHR INTEGRATED INVESTMENT REPORT
-Generated: 2026-08-16T00:10:57+09:00
+Generated: 2026-08-16T15:13:12+09:00
 Price: $325.83
 
 [1. TANUKI SCORE]
@@ -30,8 +30,8 @@ PASS: Funda<25, excluded from consideration
 [2. MATRIX POSITION]
 Matrix: ①投資効率系
 Quadrant: 左下
-Label: 割高×中効率
-Key_Metric_Y: RICE = 1.522
+Label: 割高×低効率
+Key_Metric_Y: RICE = 0.457
 Deviation_Rate: -88.8%
 Thresholds:
   RICE_Threshold: 3.0/1.0/0 (>=3.0=high, 1.0-3.0=medium, 0-1.0=low, <0=undefined OCF-negative)
@@ -186,16 +186,18 @@ Industry benchmark: Damodaran 2025 fundgrEB.xls
 [5. RICE METRICS]
 Available: true
 Exclusion_Reason: N/A
-BEAR: RICE=1.064
-BASE: RICE=1.522
-BULL: RICE=1.821
+BEAR: RICE=0.319
+BASE: RICE=0.457
+BULL: RICE=0.546
 Components (BASE scenario):
 G  = 15.3%  [TANUKI forward growth rate]
 Q  = 1.4864   [OCF / (NetIncome + SBC), 3yr avg]
 CF = 0.6693  [RevGrowth / InvestmentIntensity, 1yr lag, 3yr avg]
 CF_adj = 1.6211  [R&D除外・CapExのみ投資強度]
-RICE_adj = 3.687  [参考：R&D資本化想定]
+RICE_adj = 1.106  [参考：R&D資本化想定]
 WACC = 10.0%
+VC_Factor = 0.30  [RICE-1: clamp(ROIC/WACC,0.3,2.0)]
+ROIC_WACC_Ratio = 0.09  [NOPAT/InvestedCapital / 0.10]
 SBC_Adjusted: true
 Definition:
 

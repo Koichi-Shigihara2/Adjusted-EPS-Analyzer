@@ -589,6 +589,13 @@ class SECParser:
         # 既存の正しい値は上書きしない）
         self._backfill_gross_profit_from_revenue_cogs(extracted)
 
+        # [[OPERATING-INCOME-EXTRACTION-GAP-1]]: OperatingIncomeLossタグが
+        # 取得できない年度のみ、GP-R&D-SGA法・pretax調整法で再構成した値を
+        # 書き戻す（欠損の穴埋めのみ、既存の正しい値は上書きしない）。
+        # 上のgross_profit逆算より後に実行することで、gross_profit自体が
+        # 逆算値の場合もそのまま利用できる。
+        self._backfill_operating_income(extracted, us_gaap)
+
         # ARCH-DATA-1ステージ3: fyタグ裏取り不一致を記録（0件でも毎回書き込む。
         # fy_collision_logと同じ化石ファイル対策）
         self._save_fy_tag_mismatch_log(ticker, _fy_tag_mismatches)
@@ -851,6 +858,217 @@ class SECParser:
                 "accn": None, "filed": "", "is_own_data": False, "fy_tag": year,
                 "derived": True,
             }
+
+    # [[OPERATING-INCOME-EXTRACTION-GAP-1]]: pretax income・非事業性項目の
+    # タグ候補。XBRL_MAPPINGには含めない（operating_income再構成専用の
+    # 補助タグであり、他フィールドのような独立extracted項目として一般公開
+    # しない）。優先順位は「連結ベースのpretax」を優先する程度の単純な
+    # 順序であり、他フィールドのような銘柄横断の実績検証は今回未実施
+    # （必要になった時点で追加検証する）。
+    _OI_PRETAX_TAGS = (
+        "IncomeLossFromContinuingOperationsBeforeIncomeTaxesExtraordinaryItemsNoncontrollingInterest",
+        "IncomeLossFromContinuingOperationsBeforeIncomeTaxesMinorityInterestAndIncomeLossFromEquityMethodInvestments",
+    )
+    _OI_NONOP_AGGREGATE_TAGS = ("NonoperatingIncomeExpense",)
+    # 費用側（正の値=コスト）: pretaxから営業利益へ戻す際は加算（足し戻す）。
+    # 同一概念の別タグ（片方のみ報告）のため候補内は先勝ち方式でよい。
+    _OI_NONOP_EXPENSE_TAGS = ("InterestExpense", "InterestExpenseDebt")
+    # 収益側（正の値=利得）: pretaxから営業利益へ戻す際は減算。
+    # 受取利息と「その他非事業性損益」は別概念で両方同時に開示されうる
+    # （JNJ実測で両方存在・合算しないと非事業性項目の説明力を過小評価する
+    # ことを2026-08-16に確認）ため、カテゴリごとに別スロットで独立に
+    # 検索し合算する（カテゴリ内は先勝ち方式、カテゴリ間は合算）。
+    _OI_NONOP_INTEREST_INCOME_TAGS = ("InvestmentIncomeInterest", "InterestIncomeOther")
+    _OI_NONOP_OTHER_INCOME_TAGS = ("OtherNonoperatingIncomeExpense",)
+
+    def _find_fy_tag_value(self, us_gaap: Dict[str, Any], tag_names: tuple, year: int) -> Optional[float]:
+        """指定タグ候補（優先順）から、10-K/10-K/Aのfp='FY'・fy==yearに一致する
+        最新end日のエントリの値を返す（無ければNone）。
+        [[OPERATING-INCOME-EXTRACTION-GAP-1]]専用の簡易ルックアップ。
+        _extract_values()のような本人データ優先・アンカー日・衝突検知は
+        行わない（再構成フォールバック用の補助情報という位置づけのため）。
+        """
+        for tag in tag_names:
+            node = us_gaap.get(tag)
+            if not node:
+                continue
+            entries = node.get("units", {}).get("USD", [])
+            matches = [
+                e for e in entries
+                if e.get("fp") == "FY" and e.get("form") in ("10-K", "10-K/A")
+                and e.get("fy") == year and e.get("val") is not None
+            ]
+            if matches:
+                matches.sort(key=lambda e: e.get("end", ""))
+                return matches[-1]["val"]
+        return None
+
+    def _lookup_pretax_and_nonop_adjustment(
+        self, us_gaap: Dict[str, Any], year: int
+    ) -> tuple:
+        """pretax income と非事業性項目の調整額を取得する。
+
+        戻り値: (pretax, nonop_adjustment, nonop_items)
+          - pretax: pretaxタグの値。取得不可ならNone
+          - nonop_adjustment: 営業利益 = pretax - nonop_adjustment となる
+            調整額。集計タグ（NonoperatingIncomeExpense）があればそのまま
+            採用、無ければ個別タグ（支払利息は加算・受取利息等の利得は
+            減算）を合算する。該当タグが1件も無ければ0.0（pretaxをその
+            まま使う）
+          - nonop_items: 発見した非事業性タグの{名前: 値}。突き合わせ
+            検証のcoverage計算・provenance記録に使う
+        """
+        pretax = self._find_fy_tag_value(us_gaap, self._OI_PRETAX_TAGS, year)
+        if pretax is None:
+            return None, None, {}
+
+        agg = self._find_fy_tag_value(us_gaap, self._OI_NONOP_AGGREGATE_TAGS, year)
+        if agg is not None:
+            return pretax, agg, {"nonop_net": agg}
+
+        nonop_adjustment = 0.0
+        nonop_items: Dict[str, float] = {}
+        expense_val = self._find_fy_tag_value(us_gaap, self._OI_NONOP_EXPENSE_TAGS, year)
+        if expense_val is not None:
+            nonop_adjustment -= expense_val
+            nonop_items["interest_expense"] = expense_val
+        interest_income_val = self._find_fy_tag_value(us_gaap, self._OI_NONOP_INTEREST_INCOME_TAGS, year)
+        if interest_income_val is not None:
+            nonop_adjustment += interest_income_val
+            nonop_items["interest_income"] = interest_income_val
+        other_income_val = self._find_fy_tag_value(us_gaap, self._OI_NONOP_OTHER_INCOME_TAGS, year)
+        if other_income_val is not None:
+            nonop_adjustment += other_income_val
+            nonop_items["other_nonop_income"] = other_income_val
+
+        return pretax, nonop_adjustment, nonop_items
+
+    def _backfill_operating_income(self, extracted: Dict[str, Any], us_gaap: Dict[str, Any]) -> None:
+        """
+        [[OPERATING-INCOME-EXTRACTION-GAP-1]]: `OperatingIncomeLoss`タグが
+        取得できない年度について、以下の優先順位で再構成する。
+
+        1. GP法: gross_profit - research_and_development -
+           selling_general_and_administrative（gross_profitは
+           _backfill_gross_profit_from_revenue_cogs()で既にRevenue-COGS
+           逆算済みの場合を含む。既存の抽出済みフィールドをそのまま使う
+           ため、Revenue-COGS代替を本関数で重複実装しない）
+        2. pretax調整法: pretax income - 非事業性項目
+
+        両方式が利用可能な場合は突き合わせ検証を行う。pretax_rawと
+        GP法推定値の乖離のうち、発見できた非事業性項目（絶対値合計）が
+        50%以上を説明できればGP法を採用する（source="reconstructed_gp"）。
+        50%未満の場合はGP法を採用せず、pretax調整法にフォールバックする
+        （source="reconstructed_pretax"）。
+        閾値50%の根拠: 実データ検証（チャット記録2026-08-16）で
+        JNJ(coverage比118%)・KLAC(95%)は明確に説明可能、LLY(14%)・
+        COHR(0%)は明確に説明不可能という形で二極化しており、間の
+        20%〜90%のどこに閾値を置いても分類結果は変わらない。中央値
+        50%を採用した。
+
+        GP法が使えない年度（gross_profit/R&D/SGAのいずれかが欠落。
+        XOM・ASTS等、業態上COGS区分自体が存在しない企業を含む）は、
+        pretax調整法が使えればそれを採用する（交差検証は行わない。
+        比較対象が無いため）。pretaxそのものが取得できない年度は
+        Noneのまま（採用しない）。
+
+        採用値はpl_provenanceに"derived": True・"source"
+        （NAMING_CONVENTIONS.md規則4準拠のprovenance値）を付与する。
+        標準タグで既に取得済みの年度は一切変更しない（欠損の穴埋めのみ）。
+        """
+        oi_field = extracted.setdefault("operating_income", {})
+        oi_annual = oi_field.setdefault("annual", {})
+        oi_prov = oi_field.setdefault("_annual_provenance", {})
+
+        gp_annual = extracted.get("gross_profit", {}).get("annual", {})
+        rd_annual = extracted.get("research_and_development", {}).get("annual", {})
+        sga_annual = extracted.get("selling_general_and_administrative", {}).get("annual", {})
+        sm_annual = extracted.get("selling_and_marketing", {}).get("annual", {})
+        rev_annual = extracted.get("revenue", {}).get("annual", {})
+        ni_annual = extracted.get("net_income", {}).get("annual", {})
+
+        for year in rev_annual:
+            if oi_annual.get(year) is not None:
+                continue  # 標準タグで既に取得済み（優先、上書きしない）
+
+            # GP法: 統合SGAを報告する企業はGP-R&D-SGA、マーケティング費を
+            # 別建て報告しSGAを報告しない企業（SOFI等の一部金融/フィンテック）
+            # はGP-R&D-S&Mで代替する（_estimate_ttm_operating_income()の
+            # 四半期版と同じ発想。2026-08-16、SOFIの検証で発見・追加）。
+            gp_estimate = None
+            gp_val, rd_val = gp_annual.get(year), rd_annual.get(year)
+            if gp_val is not None and rd_val is not None:
+                sga_val = sga_annual.get(year)
+                if sga_val is not None:
+                    gp_estimate = gp_val - rd_val - sga_val
+                else:
+                    sm_val = sm_annual.get(year)
+                    if sm_val is not None:
+                        gp_estimate = gp_val - rd_val - sm_val
+
+            pretax, nonop_adjustment, nonop_items = self._lookup_pretax_and_nonop_adjustment(us_gaap, year)
+
+            chosen_val = None
+            chosen_source = None
+            match_detail: Dict[str, Any] = {}
+
+            if gp_estimate is not None and pretax is not None:
+                gap = abs(gp_estimate - pretax)
+                coverage = sum(abs(v) for v in nonop_items.values())
+                ratio = (coverage / gap) if gap > 0 else 1.0
+                match_detail = {
+                    "gp_estimate": gp_estimate, "pretax_raw": pretax,
+                    "nonop_coverage_ratio": round(ratio, 4),
+                }
+                if ratio >= 0.5:
+                    chosen_val = gp_estimate
+                    chosen_source = "reconstructed_gp"
+                elif nonop_adjustment is not None:
+                    chosen_val = pretax - nonop_adjustment
+                    chosen_source = "reconstructed_pretax"
+            elif gp_estimate is None and pretax is not None:
+                if nonop_adjustment is not None:
+                    chosen_val = pretax - nonop_adjustment
+                    chosen_source = "reconstructed_pretax"
+                    match_detail = {"pretax_raw": pretax, "cross_check": "unavailable_no_gp_estimate"}
+            # gp_estimateのみでpretax無しの場合は交差検証不能のため不採用（安全側）
+
+            # [[OPERATING-INCOME-EXTRACTION-GAP-1]] 妥当性ガード
+            # （2026-08-16、SOFI検証で発見・追加）: pretax調整法は
+            # 「受取利息等は非事業性」という仮定に基づくが、銀行/フィンテック
+            # 企業（SOFI等）では受取利息が本業収益そのものであり、この仮定が
+            # 成立しない。営業利益は通常net_incomeを下回らない
+            # （taxes等でさらに減るため）ことを利用し、pretax調整法の結果が
+            # net_incomeを下回る場合は非事業性項目の分類を誤っている強い
+            # シグナルとみなし採用しない。GP法（reconstructed_gp）はこの
+            # 仮定に依存しないため対象外（JNJ等、税率要因でoi<net_incomeに
+            # なる正当なケースを誤って除外しないため）。
+            if chosen_source == "reconstructed_pretax" and chosen_val is not None:
+                ni_val = ni_annual.get(year)
+                if ni_val is not None and chosen_val < ni_val:
+                    match_detail["rejected_reason"] = (
+                        f"reconstructed_pretax({chosen_val:,.0f}) < net_income({ni_val:,.0f})、"
+                        f"非事業性項目の分類ミス（金融/フィンテック企業等で受取利息が"
+                        f"本業収益の可能性）を示唆するため不採用"
+                    )
+                    chosen_val = None
+                    chosen_source = None
+
+            # 注: 妥当性ガードで不採用になった年度（chosen_valがNoneに戻った
+            # 場合）は、既存の_record()ヘルパー（本関数の外、save呼び出し前の
+            # 共通処理）がval=Noneのフィールドをprovenanceごとスキップする
+            # 仕様のため、不採用の理由（match_detail["rejected_reason"]）は
+            # 最終的なannual_YYYY.jsonには残らない（operating_income=None
+            # という結果のみが残る、他の全欠損フィールドと同じ扱い）。
+            # 理由を追跡したい場合は本関数を直接呼び出すか、この関数のロジックを
+            # 参照すること。
+            if chosen_val is not None:
+                oi_annual[year] = chosen_val
+                oi_prov[year] = {
+                    "accn": None, "filed": "", "is_own_data": False, "fy_tag": year,
+                    "derived": True, "source": chosen_source,
+                    "nonop_items": nonop_items, **match_detail,
+                }
 
     def _backfill_total_liabilities_via_identity(self, extracted: Dict[str, Any]) -> None:
         """
