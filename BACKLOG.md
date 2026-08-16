@@ -4664,66 +4664,8 @@ BACKLOG_DONE.mdへ移設。詳細はBACKLOG_DONE.md「2026-08-16（完了）」
 
 ---
 
-### [OPERATING-INCOME-EXTRACTION-GAP-1] operating_income抽出が単一タグ依存かつフォールバック不能で、複数の黒字企業が「赤字」扱いになっている
-**優先度:** 高
-**分類:** バグ / データ抽出 / SEC EDGAR / TANUKI VALUATION
-**登録日:** 2026-08-16
-**発見:** `[[MOAT-SCORE-PARTIAL-NULL-1]]`実装前のStep 0消費者確認（チャット記録）
-
-#### 内容
-`common/sec_data/parser.py`の`operating_income`抽出は単一タグ
-`OperatingIncomeLoss`のみに依存し、フォールバック候補が無い。実データ
-確認の結果、LLY・XOMはこのタグを一度も報告しておらず、JNJ（2015年〜）・
-KLAC（2015年〜、既存コードコメント`XBRL-TAG-KLAC-1`で既知）・
-ASTS（2021年〜）・COHR（FY2025〜）は過去に報告していたが開示を
-打ち切っている。**開示打ち切りは継続的に起きている現象であり、今後も
-新たな銘柄で発生すると想定すべき**（過去4年間で4銘柄が新たに該当した
-実績）。
-
-既存のTTMフォールバック（`pipeline.py::_estimate_ttm_operating_income()`、
-`GrossProfit − R&D − S&M`）も、`selling_and_marketing`（マーケティング費
-を統合SG&Aと別建て報告しない企業では常に空）を要求する設計のため
-構造的に発動不能な銘柄が多い。**現在顕在化しているのは6銘柄
-（LLY・JNJ・XOM・KLAC・ASTS・COHR）だが、`selling_and_marketing`
-フィールドを1件も持たない銘柄は全100銘柄中50銘柄に及び、これらは
-将来`OperatingIncomeLoss`の報告が止まった時点で同じ問題が発生する
-潜在的な影響範囲である**。
-
-現行実装はoperating_income=Noneを`(oi or 0)`でゼロ化し、`nopat<=0`
-として「赤字」と同一視するため、LLY/JNJ/XOM/KLAC/COHR（pretax income
-実測で全て黒字と確認済み。ASTSのみpretax実測で真の赤字と確認）が
-黒字企業であるにもかかわらず`roic_wacc_ratio=None`となり、下流の
-moat_score・RICE-1(vc_factor)・MATRIX象限判定を歪めている。
-
-#### 影響範囲（実測、2026-08-16）
-- moat_score: 6銘柄で`roic_norm`が不当に低評価（`[[MOAT-SCORE-
-  PARTIAL-NULL-1]]`は本項目の解消後に実装を再開する）
-- RICE-1/MATRIX象限: 同6銘柄で`vc_factor`が中立値1.0にフォールバック
-  （LLY/COHRはMATRIX「中効率/高効率」境界近傍で表示が変わりうる）
-- growth sanity: 同6銘柄で`g_fundamental`候補が欠落するが、
-  `nopat<=0→None`の後段ガードにより現時点で実害なし（`pipeline.py:
-  2852`の`operating_income=pl.get("operating_income") or 0`も同一
-  パターンだが、この経路に限り現状は無害。別項目に分けず本項目の
-  対応範囲に含める）
-- 潜在範囲: `selling_and_marketing`欠落50銘柄（TTMフォールバックが
-  将来同様に機能しなくなるリスク）
-
-#### 対応方針
-実データ検証済みの2手段を候補とする（詳細な適用可否・突き合わせ結果は
-チャット記録2026-08-16「Step 3設計調査」参照）:
-1. `GrossProfit − R&D − SGA`（GrossProfitタグが存在する企業向け、
-   R&D/SGAは`tag_definitions.py`の既存優先タグ順を厳密に踏襲すること
-   ——単純な最初のタグ一致では誤った値を拾う実例を確認済み）
-2. pretax incomeから非事業性項目を控除した近似（GrossProfitタグが
-   無い銘柄向け）
-pretax incomeをそのまま営業利益として使う設計は採らない（JNJ実測で
-27%の過大評価、銘柄間の相対比較が目的のRICE/MATRIXで横断的一貫性を
-崩すため）。実装時はparser.py側での恒久修正か、消費側の限定的
-フォールバック追加かを判断すること。
-
-#### 着手条件
-なし（本線として着手可能）。`[[MOAT-SCORE-PARTIAL-NULL-1]]`の実装は
-本項目の解消後に再開する。
+（[[OPERATING-INCOME-EXTRACTION-GAP-1]]は2026-08-16実装完了、
+BACKLOG_DONE.md「2026-08-16（完了）」参照）
 
 ---
 
@@ -4835,12 +4777,15 @@ ROIC≤10%で正当に0へクランプされるため、この56件は欠損の�
 クラスに属する。
 
 #### 着手条件
-**`[[OPERATING-INCOME-EXTRACTION-GAP-1]]`の解消後に実装を再開する
-（2026-08-16更新）**。roic欠損36件中6件（LLY/JNJ/XOM/KLAC/ASTS/COHR）
-はmoat側の欠損処理設計以前に、根本原因（`operating_income`抽出失敗）
-の解消が優先される。roic欠損の原因分解・案A''設計・最低2指標ルール
-自体はチャット記録2026-08-16に確定済みのため、根本修正後は速やかに
-着手可能。
+**着手可能（2026-08-16更新）**。`[[OPERATING-INCOME-EXTRACTION-GAP-1]]`が
+実装完了し、roic欠損36件中6件（LLY/JNJ/XOM/KLAC/ASTS/COHR）は
+`roic_wacc_ratio`が正しく計算されるようになったため、この6件については
+本項目の欠損処理設計（案A''）が不要になった（`operating_income`が
+直接得られるようになり、moat側でNone-vs-0を区別する必要自体が
+発生しない）。**残る約26〜30件（真の赤字企業等）については引き続き
+案A''（原因別扱い・原因分解は2026-08-16確定済み）＋最低2指標ルールの
+実装が必要**。着手時に対象銘柄数を実データで再確認すること
+（`operating_income`修正後にroic欠損の内訳が変化している可能性がある）。
 
 ---
 

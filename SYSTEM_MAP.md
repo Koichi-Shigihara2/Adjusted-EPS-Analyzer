@@ -510,6 +510,59 @@ CHECK-34では、この原則を**複数ファイルへ横展開する際の設�
 
 ---
 
+### operating_income（営業利益）の再構成方式とprovenance（2026-08-16追記）
+
+`common/sec_data/parser.py`は`OperatingIncomeLoss`タグが欠落する年度
+（未報告、または過去に報告していたが開示を打ち切った銘柄。LLY/XOM/
+JNJ/KLAC/ASTS/COHRで確認、[[OPERATING-INCOME-EXTRACTION-GAP-1]]）に
+ついて、`SECParser._backfill_operating_income()`が2段階で再構成する
+（`_backfill_gross_profit_from_revenue_cogs()`と同型の「差分適用・
+欠損の穴埋めのみ」設計、標準タグ取得済みの年度は変更しない）。
+
+**優先順位**:
+1. **GP法**: `gross_profit - research_and_development -
+   (selling_general_and_administrative または selling_and_marketing)`。
+   統合SGA報告企業はSGAを、S&M別建て報告企業（SOFI等）はS&Mを使う
+2. **pretax調整法**: pretax incomeから非事業性項目
+   （`NonoperatingIncomeExpense`集計タグ優先、無ければ`InterestExpense`
+   〈加算〉・`InvestmentIncomeInterest`〈減算〉・
+   `OtherNonoperatingIncomeExpense`〈減算〉を個別合算）を控除
+
+両手法が利用可能な場合、`|GP推定値-pretax|`のギャップに対し非事業性
+項目（絶対値合計）が**50%以上**を説明できればGP法を採用
+（`source="reconstructed_gp"`）、未満ならpretax調整法へフォールバック
+（`source="reconstructed_pretax"`）。GP法が使えない年度
+（XOM・ASTS等、COGS区分が存在しない業態）はpretax調整法を単独採用。
+
+**妥当性ガード**: pretax調整法は「受取利息等は非事業性」という仮定に
+基づくが、銀行/フィンテック企業（SOFI）では受取利息が本業収益その
+ものであり成立しない。`reconstructed_pretax`の結果が`net_income`を
+下回る場合は不採用とする（GP法はこの仮定に依存しないため対象外）。
+
+**provenance**: 採用した年度は`pl_provenance.operating_income`に
+`derived: true`・`source`（`NAMING_CONVENTIONS.md`規則4準拠）・
+`nonop_coverage_ratio`等を記録する。**既存の`_record()`ヘルパーが
+`val is None`の場合provenance自体をスキップする仕様のため、妥当性
+ガードで不採用になった年度の理由（`rejected_reason`）は最終的な
+annual_YYYY.jsonには残らない**（`operating_income: None`という結果
+のみが残る、他の全欠損フィールドと同じ扱い）。
+
+**fixed_registry.jsonとの関係**: `_apply_fixed_registry_freeze()`は
+`fields_snapshot`記載フィールドのみを復元する差分適用方式のため、
+新規フィールド追加（今回のoperating_income）はフィックス年度でも
+素通しされる（既存のgross_profit逆算バックフィルと同じ挙動）。この
+結果、フィックス年度の`snapshot_hash`（CHECK-31）が変わることは
+**設計上想定された挙動**であり、フィックス済みフィールドの値自体が
+変わったわけではない（追加のみであることをdiffで確認した上で、
+`snapshot_hash`を再計算して`fixed_registry.json`側を更新すればよい）。
+
+**検知（CHECK-35）**: `report_consistency_check.py`が個別銘柄の
+再構成使用・取得不可、および全体件数が基準値（12件、2026-08-16実装
+時点の実績6件の約2倍）を超えた場合の急増をWARN（NGではない。再構成の
+使用自体は正常動作のため）で検知する。
+
+---
+
 ## データフロー（上流→下流）
 【SECデータ取得層】
 SEC EDGAR

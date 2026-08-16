@@ -219,6 +219,151 @@ BACKLOG.mdからBACKLOG_DONE.mdへの移設が行われないまま約3週間
 
 ---
 
+### ✅ [OPERATING-INCOME-EXTRACTION-GAP-1] operating_income抽出が単一タグ依存かつフォールバック不能で、複数の黒字企業が「赤字」扱いになっていた — 根本修正完了
+**優先度:** 高
+**分類:** バグ / データ抽出 / SEC EDGAR / TANUKI VALUATION
+**登録日:** 2026-08-16
+**完了日:** 2026-08-16
+**発見:** `[[MOAT-SCORE-PARTIAL-NULL-1]]`実装前のStep 0消費者確認（チャット記録）
+
+#### 内容（登録時点）
+`common/sec_data/parser.py`の`operating_income`抽出が単一タグ
+`OperatingIncomeLoss`のみに依存しフォールバック候補が無いため、LLY・XOM
+（一度も報告なし）・JNJ/KLAC/ASTS/COHR（過去に報告していたが開示を
+打ち切り）の6銘柄で`operating_income=None`となり、`(oi or 0)`による
+ゼロ化を経て真の黒字企業（LLY/JNJ/XOM/KLAC/COHR）が「赤字」と誤判定
+されていた。既存のTTMフォールバック（`_estimate_ttm_operating_income()`）
+も`selling_and_marketing`を要求する設計のため、統合SG&Aのみ報告する
+企業（全100銘柄中50銘柄が該当）で構造的に発動不能だった。
+
+#### 対応方針・実装内容
+**parser.py側の恒久修正**（全消費者が恩恵を受けるため）。
+`SECParser._backfill_operating_income()`を新設し、`OperatingIncomeLoss`
+欠落年度について以下の優先順位で再構成する（既存の
+`_backfill_gross_profit_from_revenue_cogs()`と同じ「差分適用・欠損の
+穴埋めのみ」設計を踏襲、標準タグ取得済みの年度は一切変更しない）:
+
+1. **GP法**: `gross_profit - research_and_development -
+   (selling_general_and_administrative または selling_and_marketing)`
+   （`tag_definitions.py`の既存優先タグ順を厳密に踏襲。統合SGA報告企業は
+   SGAを、S&M別建て報告企業（SOFI等の金融/フィンテック）はS&Mを使う
+   ——単純にSGAのみ要求すると後者が救えないことを検証中に発見・追加）
+2. **pretax調整法**: `IncomeLossFromContinuingOperationsBeforeIncomeTaxes...`
+   から非事業性項目（`NonoperatingIncomeExpense`集計タグを優先、無ければ
+   `InterestExpense`〈加算〉・`InvestmentIncomeInterest`〈減算〉・
+   `OtherNonoperatingIncomeExpense`〈減算、当初は同一スロットで1件しか
+   拾えず、JNJ検証中に複数非事業性項目の合算漏れを発見・修正〉を個別に
+   合算）を控除
+
+**突き合わせ検証（必須、pretaxをそのまま使わない）**: 両手法が利用可能な
+場合、`|GP推定値 - pretax|`のギャップに対し、発見できた非事業性項目
+（絶対値合計）が**50%以上**を説明できればGP法を採用
+（`source="reconstructed_gp"`）。50%未満はGP法を採用せずpretax調整法へ
+フォールバック（`source="reconstructed_pretax"`）。GP法が使えない年度
+（XOM・ASTS等、業態上COGS区分が存在しない）はpretax調整法を単独採用。
+
+**閾値50%の根拠**: 実データでJNJ(coverage比118%)・KLAC(95%)は明確に
+説明可能、LLY(14%)・COHR(0%)は明確に説明不可能と二極化しており、
+20%〜90%のどこに閾値を置いても分類結果は変わらないため中央値を採用。
+
+**妥当性ガード（2026-08-16、SOFI検証で発見・追加）**: pretax調整法は
+「受取利息等は非事業性」という仮定に基づくが、銀行/フィンテック企業
+（SOFI）では受取利息が本業収益そのものであり成立しない。SOFIの
+pretax調整結果（$297M）がnet_income（$481M）を下回るという、営業利益が
+通常net_incomeを下回らないという原則に反する結果から発見。
+`reconstructed_pretax`の結果が`net_income`を下回る場合は不採用とする
+ガードを追加（GP法はこの仮定に依存しないため対象外——JNJ等、税率要因で
+`oi<net_income`になる正当なケースを誤って除外しないため）。この結果、
+SOFIは今回の対象から除外（元々TTMフォールバックが機能していた銘柄であり、
+根本修正の対象外としても実害なし）。
+
+**消費側の関連修正**: `pipeline.py:2940`（`_calc_roic_wacc_ratio()`の
+`(oi or 0)`）・`pipeline.py:2852`（`_calc_g_fundamental()`の同型パターン）
+を`is not None`ベースへ修正。後者は`calc_fundamental_growth()`内部の
+`nopat<=0→None`ガードにより従来から実害ゼロだったが、今回の根本修正で
+`g_fundamental`が実際に計算されるようになったため意味を持つようになった。
+
+#### 検知の追加（CHECK-35）
+`report_consistency_check.py`にCHECK-35を新設。**WARN**（NGとしない
+——再構成の使用自体は正常動作であり、開示打ち切りという事実は"バグ"では
+ないため）。個別銘柄単位（再構成使用・取得不可のいずれも検知）と、
+全体件数が基準値（12件、現状6件の約2倍）を超えた場合の集計WARNの2段構え。
+将来新たな銘柄で`OperatingIncomeLoss`開示が打ち切られた場合の検知に使う。
+
+#### 影響範囲（実測・最終確認）
+**現在年度（2025）の`operating_income`が新たに取得できた6銘柄**:
+LLY($26.30B, reconstructed_pretax)・JNJ($25.60B, reconstructed_gp)・
+XOM($41.87B, reconstructed_pretax)・KLAC($5.01B, reconstructed_gp)・
+ASTS(-$287.7M, reconstructed_pretax、真の赤字と確認)・
+COHR($94.2M, reconstructed_pretax)。全て`roic_wacc_ratio`が計算可能に
+なり、下流のmoat_score・RICE-1(vc_factor)・MATRIX象限・
+growth_sanity(g_fundamental)へ波及した。
+
+**historical年度のみのbackfill（現在のmoat/RICE/growth_sanityには
+影響しない）**: HON(2011-2020)・VRT(2018)・SOFI(2021-2023、2024/2025は
+妥当性ガードで不採用)。
+
+**downstream実測（latest.json再生成、components.*確認）**:
+
+| 銘柄 | moat_score | phase1_years | IV/株 | upside | 備考 |
+|---|---|---|---|---|---|
+| ASTS | 0.1598→0.1598（不変） | 4→4 | $6.95→$6.95（不変） | -90.2%→-90.2% | roic_norm 0.0→0.0（真の赤字で正当に0のまま） |
+| COHR | 0.1618→0.1618（不変） | 4→4 | $36.59→$36.59（不変） | -88.8%→-88.8% | RICE roic_wacc_ratio None→0.088（低ROICで正当にclamp、moat影響なし） |
+| JNJ | 0.4181→0.5304 | 6→7 | $87.68→$87.14（-0.6%） | -66.3%→-66.5% | g_fundamental負値のためrecommended_g不変、IVはmoat/phase1経由の微小変化のみ |
+| KLAC | 0.4425→0.8425 | 6→9 | $64.19→$77.94（**+21.4%**） | -68.5%→-61.7% | g_fundamental負値のためrecommended_g不変 |
+| LLY | 0.3818→0.6970 | 6→8 | $710.85→$633.08（**-10.9%**） | -39.8%→-46.4% | g_fundamental新規計算(+9.46%)がrecommended_gを21.58%→15.55%に押し下げ、moat向上と相殺し純減 |
+| XOM | 0.0569→0.0745 | 3→4 | $70.44→$57.29（**-18.7%**） | -56.0%→-64.2% | g_fundamental新規計算(+0.81%)がrecommended_gを6.78%→0.81%へ大幅に押し下げ |
+
+**重要な発見**: IVの変化方向は一様ではない（KLAC上昇、JNJ/LLY/XOM下降）。
+これはmoat_score/phase1_years経由の効果に加え、`g_fundamental`
+（`_calc_g_fundamental()`、RR×ROICファンダメンタル成長率）が
+`operating_income=None`により従来常にNoneだったのが今回の修正で
+実際に計算されるようになり、`recommended_g`（segment_weighted成長率の
+DCF上書き機構）に新たな候補として加わったことが主因。LLY/XOMは
+ファンダメンタル成長率が従来のrecommended_gより低く、これが
+下方修正の主因（JNJ/KLACはg_fundamentalが負値で候補から除外され
+不変）。IVが低下する結果もあるが、いずれも「実際の財務データに基づく
+より正確な成長率評価」という正当な機序であり、想定外の符号反転・
+異常値は確認されなかった。
+
+**fixed_registry.json**: `_apply_fixed_registry_freeze()`は
+`fields_snapshot`記載フィールドのみを復元する差分適用方式のため、新規
+フィールド追加（今回のoperating_income）は素通しされる設計（既存
+`gross_profit`逆算バックフィルと同型）。この結果、JNJ(7年度)・
+LLY(15年度)・XOM(1年度)の計23エントリでsnapshot_hashが不一致になった
+（元のfixed対象フィールドの値自体は無変更、純粋追加のみをdiffで確認
+済み）。CHECK-31の設計意図（意図的な追加は再登録で解消する）に従い、
+該当23エントリのsnapshot_hashを現在値へ更新（`refreshed_at`/
+`refreshed_reason`を付記）。
+
+#### 検証
+- pytest: 803 passed / 2 known-failed（MSFT/NVDA、`docs/value-monitor/
+  tanuki_valuation/data/`側の既存latest.jsonに起因する既知の事前失敗、
+  本修正とは無関係と確認）。実装過程で新規テスト失敗1件
+  （`test_no_unlisted_root_dir_listdir_scan`、CHECK-35集計関数が
+  `os.listdir(SEC_DATA_DIR)`を直接呼んでいたため）を発見・修正
+  （呼び出し元の`main()`が既に構築済みのtanukiフラグ絞り込み後
+  `all_tickers`を受け取る設計に変更）
+- `audit.py`: exit 0（正常95銘柄・警告5銘柄、いずれも本修正と無関係な
+  既存の警告）
+- `report_consistency_check.py --fail-on-ng`: NG=0（fixed_registry.json
+  更新後）/ WARN=85件（うちCHECK-35由来7件〈6銘柄の再構成通知＋SOFIの
+  取得不可通知〉、他は既存の警告）
+- 全銘柄再生成（`common/sec_data`・TANUKI VALUATION双方）。
+  `common/sec_data`側は9銘柄（ASTS/COHR/HON/JNJ/KLAC/LLY/SOFI/VRT/XOM）
+  のみ差分、他96銘柄は完全無差分を確認。TANUKI VALUATION側は上表の
+  6銘柄が実際に変化することを確認（詳細はチャット記録2026-08-16参照）
+
+#### 関連
+`[[MOAT-SCORE-PARTIAL-NULL-1]]`（対象6銘柄については本修正により
+roic_wacc_ratioが正しく計算されるようになったため案A''の欠損処理設計は
+不要になった。残る32件程度の真の欠損銘柄への実装は引き続き必要）。
+`[[MACRO-STYLE-FCF-ZERO-TRUTHY-EXCLUDE-1]]`・`[[FALSY-ZERO-PATTERN-
+SWEEP-1]]`とは発生メカニズムが異なる（タグ不在 vs falsy-zero誤判定）
+別項目として存置。
+
+---
+
 ## 2026-08-15（完了）
 
 ### ✅ [EPSANALYZER-ADMIN-ORPHAN-PAGE-1] adjusted_eps_analyzer/admin/配下が存在しないconfig/パスをfetchする孤立ページ
