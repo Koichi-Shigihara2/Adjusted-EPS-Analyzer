@@ -4664,6 +4664,136 @@ BACKLOG_DONE.mdへ移設。詳細はBACKLOG_DONE.md「2026-08-16（完了）」
 
 ---
 
+### [OPERATING-INCOME-EXTRACTION-GAP-1] operating_income抽出が単一タグ依存かつフォールバック不能で、複数の黒字企業が「赤字」扱いになっている
+**優先度:** 高
+**分類:** バグ / データ抽出 / SEC EDGAR / TANUKI VALUATION
+**登録日:** 2026-08-16
+**発見:** `[[MOAT-SCORE-PARTIAL-NULL-1]]`実装前のStep 0消費者確認（チャット記録）
+
+#### 内容
+`common/sec_data/parser.py`の`operating_income`抽出は単一タグ
+`OperatingIncomeLoss`のみに依存し、フォールバック候補が無い。実データ
+確認の結果、LLY・XOMはこのタグを一度も報告しておらず、JNJ（2015年〜）・
+KLAC（2015年〜、既存コードコメント`XBRL-TAG-KLAC-1`で既知）・
+ASTS（2021年〜）・COHR（FY2025〜）は過去に報告していたが開示を
+打ち切っている。**開示打ち切りは継続的に起きている現象であり、今後も
+新たな銘柄で発生すると想定すべき**（過去4年間で4銘柄が新たに該当した
+実績）。
+
+既存のTTMフォールバック（`pipeline.py::_estimate_ttm_operating_income()`、
+`GrossProfit − R&D − S&M`）も、`selling_and_marketing`（マーケティング費
+を統合SG&Aと別建て報告しない企業では常に空）を要求する設計のため
+構造的に発動不能な銘柄が多い。**現在顕在化しているのは6銘柄
+（LLY・JNJ・XOM・KLAC・ASTS・COHR）だが、`selling_and_marketing`
+フィールドを1件も持たない銘柄は全100銘柄中50銘柄に及び、これらは
+将来`OperatingIncomeLoss`の報告が止まった時点で同じ問題が発生する
+潜在的な影響範囲である**。
+
+現行実装はoperating_income=Noneを`(oi or 0)`でゼロ化し、`nopat<=0`
+として「赤字」と同一視するため、LLY/JNJ/XOM/KLAC/COHR（pretax income
+実測で全て黒字と確認済み。ASTSのみpretax実測で真の赤字と確認）が
+黒字企業であるにもかかわらず`roic_wacc_ratio=None`となり、下流の
+moat_score・RICE-1(vc_factor)・MATRIX象限判定を歪めている。
+
+#### 影響範囲（実測、2026-08-16）
+- moat_score: 6銘柄で`roic_norm`が不当に低評価（`[[MOAT-SCORE-
+  PARTIAL-NULL-1]]`は本項目の解消後に実装を再開する）
+- RICE-1/MATRIX象限: 同6銘柄で`vc_factor`が中立値1.0にフォールバック
+  （LLY/COHRはMATRIX「中効率/高効率」境界近傍で表示が変わりうる）
+- growth sanity: 同6銘柄で`g_fundamental`候補が欠落するが、
+  `nopat<=0→None`の後段ガードにより現時点で実害なし（`pipeline.py:
+  2852`の`operating_income=pl.get("operating_income") or 0`も同一
+  パターンだが、この経路に限り現状は無害。別項目に分けず本項目の
+  対応範囲に含める）
+- 潜在範囲: `selling_and_marketing`欠落50銘柄（TTMフォールバックが
+  将来同様に機能しなくなるリスク）
+
+#### 対応方針
+実データ検証済みの2手段を候補とする（詳細な適用可否・突き合わせ結果は
+チャット記録2026-08-16「Step 3設計調査」参照）:
+1. `GrossProfit − R&D − SGA`（GrossProfitタグが存在する企業向け、
+   R&D/SGAは`tag_definitions.py`の既存優先タグ順を厳密に踏襲すること
+   ——単純な最初のタグ一致では誤った値を拾う実例を確認済み）
+2. pretax incomeから非事業性項目を控除した近似（GrossProfitタグが
+   無い銘柄向け）
+pretax incomeをそのまま営業利益として使う設計は採らない（JNJ実測で
+27%の過大評価、銘柄間の相対比較が目的のRICE/MATRIXで横断的一貫性を
+崩すため）。実装時はparser.py側での恒久修正か、消費側の限定的
+フォールバック追加かを判断すること。
+
+#### 着手条件
+なし（本線として着手可能）。`[[MOAT-SCORE-PARTIAL-NULL-1]]`の実装は
+本項目の解消後に再開する。
+
+---
+
+### [MACRO-STYLE-FCF-ZERO-TRUTHY-EXCLUDE-1] Moat Score算出用FCFマージン平均で、正当なFCF=0年がtruthy判定により暗黙除外される
+**優先度:** 低（現時点で該当データ0件・実害ゼロ）
+**分類:** バグ / TANUKI VALUATION / データ品質
+**登録日:** 2026-08-16
+**発見:** `[[MOAT-SCORE-PARTIAL-NULL-1]]`調査中の観察事項（チャット記録）
+
+#### 内容
+`pipeline.py::_calc_moat_inputs()`のfcf_margin_3yr_avg計算部分
+（3074行目付近）が`if fcf and rev and rev > 0:`というtruthy判定を
+使っており、`[[MACRO-TRUTHY-ZERO-BUG-1]]`と同型のfalsy-zeroパターンを
+持つ。FCFが正当な実測値0.0の年は暗黙にNoneと同じ扱いで平均対象から
+除外され、3年平均のはずが実質1〜2年平均になりうる。全105銘柄の直近
+3年分annual_*.jsonを実データ走査した結果、現時点でFCF=0.0ちょうどの
+年は0件で、現状は実害ゼロの潜伏バグ。
+
+#### 対応方針
+`if fcf is not None and rev and rev > 0:`へ修正する。
+
+#### 着手条件
+なし（着手条件なしのため、いつでも着手可能。ただし現状実害ゼロのため
+急ぎではない）
+
+#### 関連
+`[[FALSY-ZERO-PATTERN-SWEEP-1]]`（本件を含むfalsy-zeroパターンの横断
+調査項目）。`[[OPERATING-INCOME-EXTRACTION-GAP-1]]`とは異なるメカニズム
+（タグ不在ではなく、実測値0のtruthy誤判定）。
+
+---
+
+### [FALSY-ZERO-PATTERN-SWEEP-1] 数値のfalsy判定（0/0.0）による欠損誤認バグの横断調査
+**優先度:** 中
+**分類:** データ品質 / 横断調査
+**登録日:** 2026-08-16
+**発見:** `[[MOAT-SCORE-PARTIAL-NULL-1]]`調査過程の連鎖的発見（チャット記録）
+
+#### 内容
+Pythonの`0`/`0.0`がfalsyであることに起因し、正当なゼロ値を欠損と
+誤認する（またはその逆の）バグが繰り返し発見されている。本セッションだけで
+5例目であり、個別バグではなくコードベース全体のパターンと判断できる。
+既知の発見:
+- `[[STONKS-SILO-COGS-DEAD-FALLBACK-1]]`（2026-07-30対応済み、RXRX
+  2021年で発見）
+- `[[MACRO-TRUTHY-ZERO-BUG-1]]`（未対応、`if ff_hi and ff_lo:`）
+- `[[MOAT-SCORE-PARTIAL-NULL-1]]`（`(値 or 0.0)`、着手待ち）
+- `pipeline.py:2940`の`(oi or 0)`（`[[OPERATING-INCOME-EXTRACTION-
+  GAP-1]]`調査中に発見。ただしこちらはタグ不在が根本原因で、falsy-zero
+  自体は結果に影響していないと確認済み）
+- `pipeline.py:3074`付近のFCF truthy除外（潜伏、`[[MACRO-STYLE-FCF-
+  ZERO-TRUTHY-EXCLUDE-1]]`）
+
+#### 対応方針
+数値を扱う経路で`or 0`・`or 0.0`・`if <数値変数> and`・
+`if not <数値変数>`等のパターンを`grep -rn`で網羅的に抽出し、各箇所で
+「0が正当な実測値でありうるか」を判定する。正当なゼロがありうる箇所は
+`is not None`ベースへ修正する。修正は影響範囲ごとに分割して実施する
+（一括変更しない）。
+
+#### 着手条件
+なし
+
+#### 関連
+`[[OPERATING-INCOME-EXTRACTION-GAP-1]]`とはメカニズムが異なる
+（タグ不在 vs falsy-zero誤判定）ため別項目として並存させる。本線
+（`[[OPERATING-INCOME-EXTRACTION-GAP-1]]`の解消）の範囲外。
+
+---
+
 ### [MOAT-SCORE-PARTIAL-NULL-1] moat_scoreの部分欠損が実測値ゼロとして混入
 **優先度:** 高
 **分類:** バグ / TANUKI VALUATION
@@ -4705,8 +4835,12 @@ ROIC≤10%で正当に0へクランプされるため、この56件は欠損の�
 クラスに属する。
 
 #### 着手条件
-**次の実装対象とする（2026-08-16指定）**。設計（Noneフラグ追加＋
-部分欠損時の加重平均方式）を決めた上で着手する。
+**`[[OPERATING-INCOME-EXTRACTION-GAP-1]]`の解消後に実装を再開する
+（2026-08-16更新）**。roic欠損36件中6件（LLY/JNJ/XOM/KLAC/ASTS/COHR）
+はmoat側の欠損処理設計以前に、根本原因（`operating_income`抽出失敗）
+の解消が優先される。roic欠損の原因分解・案A''設計・最低2指標ルール
+自体はチャット記録2026-08-16に確定済みのため、根本修正後は速やかに
+着手可能。
 
 ---
 
