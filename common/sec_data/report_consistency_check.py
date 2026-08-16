@@ -386,6 +386,108 @@ def _check_fixed_registry_integrity(ticker: str) -> list[str]:
     return ng
 
 
+def _check_operating_income_reconstruction(ticker: str) -> list[str]:
+    """CHECK-35: operating_income（営業利益）が標準タグ`OperatingIncomeLoss`
+    以外から再構成されている、または再構成にも失敗しNoneのままの銘柄を
+    検知する（[[OPERATING-INCOME-EXTRACTION-GAP-1]]）。
+
+    再構成の使用自体は正常動作（意図した設計）のためNGではなくWARN。
+    開示打ち切りが新たに発生した銘柄・突き合わせ検証に失敗した銘柄を
+    可視化する目的。
+    """
+    warn: list[str] = []
+    ticker_dir = os.path.join(SEC_DATA_DIR, ticker)
+    if not os.path.exists(ticker_dir):
+        return warn
+    years = sorted(
+        int(fn[7:11]) for fn in os.listdir(ticker_dir)
+        if fn.startswith("annual_") and fn.endswith(".json") and fn[7:11].isdigit()
+    )
+    if not years:
+        return warn
+    latest_year = years[-1]
+    path = os.path.join(ticker_dir, f"annual_{latest_year}.json")
+    try:
+        with open(path, encoding="utf-8") as f:
+            ann = json.load(f)
+    except Exception:
+        return warn
+
+    oi_val = ann.get("pl", {}).get("operating_income")
+    oi_prov = ann.get("pl_provenance", {}).get("operating_income")
+
+    if oi_val is None:
+        # 注: 妥当性ガード（net_income比較）で不採用になったケース（SOFI等）も
+        # 含め、operating_income=Noneの理由はここでは区別できない
+        # （parser.py::_backfill_operating_income()のprovenance仕様、
+        # 詳細はそちらのコードコメント参照）。
+        warn.append(
+            f"  [WARN-35 operating_income取得不可] FY{latest_year}: "
+            f"標準タグ`OperatingIncomeLoss`・再構成（GP法/pretax調整法）の"
+            f"いずれでも取得できず、または再構成が妥当性ガードで不採用。"
+            f"moat_score/RICE-1のroic経路が参照不能"
+            f"（既知の設計上の安全側フォールバックだが要注視）"
+        )
+    elif oi_prov and oi_prov.get("derived"):
+        source = oi_prov.get("source", "unknown")
+        ratio = oi_prov.get("nonop_coverage_ratio")
+        ratio_str = f" coverage_ratio={ratio:.2f}" if ratio is not None else ""
+        warn.append(
+            f"  [WARN-35 operating_income再構成] FY{latest_year}: "
+            f"source={source} value={oi_val:,.0f}{ratio_str}（標準タグ非報告、"
+            f"[[OPERATING-INCOME-EXTRACTION-GAP-1]]の再構成ロジックで算出）"
+        )
+    return warn
+
+
+# CHECK-35: ティッカー非依存の単発チェック用の基準件数。2026-08-16実装時点で
+# 再構成・取得不可の対象は6銘柄（LLY/JNJ/XOM/KLAC/ASTS/COHR）。
+# `OperatingIncomeLoss`の開示打ち切りは今後も発生しうる想定のため、ある程度の
+# 増加は許容しつつ、急激な増加（開示慣行の構造変化等）だけを検知する目的で
+# 現状件数の約2倍を基準値とする。
+_OI_RECONSTRUCTION_BASELINE_COUNT = 12
+
+
+def _check_operating_income_reconstruction_scope(tickers: list[str]) -> list[str]:
+    """CHECK-35（集計）: 再構成・取得不可の対象銘柄数が基準値を超えていないか
+    を確認する（[[OPERATING-INCOME-EXTRACTION-GAP-1]]）。個別銘柄の詳細は
+    ticker単位のCHECK-35（`_check_operating_income_reconstruction`）を参照。
+
+    tickers: 呼び出し元（main）が既にtanukiフラグ等で絞り込み済みの
+    ティッカーリストをそのまま受け取る（FLAG-CONSUMER-AUDIT-2と同じ理由で
+    os.listdir(SEC_DATA_DIR)によるルートディレクトリ直接スキャンを避ける）。
+    """
+    affected: list[str] = []
+    for ticker in tickers:
+        ticker_dir = os.path.join(SEC_DATA_DIR, ticker)
+        if not os.path.isdir(ticker_dir):
+            continue
+        years = sorted(
+            int(fn[7:11]) for fn in os.listdir(ticker_dir)
+            if fn.startswith("annual_") and fn.endswith(".json") and fn[7:11].isdigit()
+        )
+        if not years:
+            continue
+        try:
+            with open(os.path.join(ticker_dir, f"annual_{years[-1]}.json"), encoding="utf-8") as f:
+                ann = json.load(f)
+        except Exception:
+            continue
+        oi_val = ann.get("pl", {}).get("operating_income")
+        oi_prov = ann.get("pl_provenance", {}).get("operating_income")
+        if oi_val is None or (oi_prov and oi_prov.get("derived")):
+            affected.append(ticker)
+
+    if len(affected) > _OI_RECONSTRUCTION_BASELINE_COUNT:
+        return [
+            f"  [WARN-35 operating_income再構成対象の急増] "
+            f"{len(affected)}銘柄（基準値{_OI_RECONSTRUCTION_BASELINE_COUNT}を超過）: "
+            f"{', '.join(affected)} — `OperatingIncomeLoss`の開示打ち切りが"
+            f"新たに複数銘柄で発生した可能性"
+        ]
+    return []
+
+
 def annotate_warn(ticker: str, message: str, ledger: set[tuple[str, str]]) -> tuple[str, bool]:
     """
     WARNメッセージに台帳照合結果を反映する。
@@ -677,6 +779,10 @@ def check_ticker(ticker: str, whitelist: set) -> tuple[list, list]:
     # であり、TANUKI VALUATION出力（report.txt）の有無に依存しないため
     # report.txt存在チェックより前に実行する。
     ng.extend(_check_fixed_registry_integrity(ticker))
+
+    # CHECK-35: operating_income再構成・取得不可の検知。CHECK-31と同様、
+    # common/sec_data/側の検証でありreport.txtに依存しない。
+    warn.extend(_check_operating_income_reconstruction(ticker))
 
     text = _read_report(ticker)
     if text is None:
@@ -1342,6 +1448,16 @@ def run_checks(args=None) -> tuple[int, int]:
     if config_loader_ng:
         flagged.append(("[GLOBAL]", config_loader_ng, []))
         total_ng += len(config_loader_ng)
+
+    # CHECK-35: ティッカー非依存の単発チェック（operating_income再構成
+    # 対象銘柄数の急増検知、[[OPERATING-INCOME-EXTRACTION-GAP-1]]）。
+    # CHECK-32/34と同様、--tickerフィルタの有無に関わらず常時実行する
+    # （all_tickers＝tanukiフラグで絞り込み済みの全銘柄を使う。--ticker
+    # フィルタ適用後のtickersではなく、常に全銘柄を対象にする）。
+    oi_scope_warn = _check_operating_income_reconstruction_scope(all_tickers)
+    if oi_scope_warn:
+        flagged.append(("[GLOBAL]", [], oi_scope_warn))
+        total_warn += len(oi_scope_warn)
 
     if not flagged:
         if not quiet:
