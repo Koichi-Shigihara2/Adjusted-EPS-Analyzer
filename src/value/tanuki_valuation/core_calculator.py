@@ -347,11 +347,12 @@ class KoichiValuationCalculator:
         )
         _moat_phase1_years: int = moat_result.phase1_years
         _fmt_norm = lambda v: f"{v:.2f}" if v is not None else "N/A"
+        _moat_source_note = "" if moat_result.source == "measured" else "  ⚠️中立フォールバック(有効指標<2)"
         print(f"   [{ticker}] Moat Score: {moat_result.moat_score:.3f}"
               f"  (GM={_fmt_norm(moat_result.gross_margin_norm)}"
               f"  ROIC={_fmt_norm(moat_result.roic_norm)}"
               f"  FCF={_fmt_norm(moat_result.fcf_margin_norm)})"
-              f"  → Phase1={_moat_phase1_years}yr")
+              f"  → Phase1={_moat_phase1_years}yr{_moat_source_note}")
 
         # ── STEP 5: DCF計算（2段階 or 3段階） ──
         dcf_type = "two_stage"
@@ -886,6 +887,8 @@ class KoichiValuationCalculator:
                 "high_growth_years": _moat_phase1_years,  # ALPHA-REDESIGN-1
                 "terminal_growth_used": terminal_growth,
                 "moat_score": moat_result.moat_score,
+                "moat_score_source": moat_result.source,  # [[MOAT-SCORE-PARTIAL-NULL-1]]: measured/neutral_fallback
+                "moat_score_n_present": moat_result.n_present,
                 "moat_phase1_years": moat_result.phase1_years,
                 "moat_gross_margin_norm": moat_result.gross_margin_norm,
                 "moat_roic_norm": moat_result.roic_norm,

@@ -401,6 +401,9 @@ function buildRows(results) {
     const upside   = price > 0 && ivps > 0 ? (ivps - price) / price : null;
     const growth   = d.scenario_valuations?.base?.growth_rate ?? d.growth_scenarios?.primary?.rate ?? null;
     const moat     = d.components?.moat_score ?? null;
+    // [[MOAT-SCORE-PARTIAL-NULL-1]]（2026-08-16追記）: moat_score=0.5が
+    // 実測結果か最低2指標ルールによる中立フォールバックかを区別する。
+    const moatSource = d.components?.moat_score_source ?? 'measured';
     const wacc     = d.wacc?.value ?? null;
     const rice     = d.rice?.base?.rice ?? null;
     const rice_per = d.rice?.base?.rice_per_ratio ?? null;
@@ -419,7 +422,7 @@ function buildRows(results) {
       _upside: upside, _rice: rice, _rice_per: rice_per,
       _ma200: ma200_dev, _growth: growth, _moat: moat,
       _wacc: wacc, _q: q, _cf: cf, _date: date,
-      price, ivps, ivps_beta, upside, growth, moat, wacc,
+      price, ivps, ivps_beta, upside, growth, moat, moatSource, wacc,
       rice, rice_per, ma200_dev, ma200_raw, q, cf, date,
       fcfM, hasGO, hasSeg,
     };
@@ -481,7 +484,7 @@ function renderTable() {
       <td>${fmtDlr(r.ivps)}</td>
       <td>${r.ivps_beta > 0 ? fmtDlr(r.ivps_beta) : '—'}</td>
       <td class="${upsideClass}">${upsideTxt}</td>
-      <td>${r.moat != null ? r.moat.toFixed(2) : '—'}</td>
+      <td${r.moatSource === 'neutral_fallback' ? ' title="有効指標が2未満のため中立フォールバック値（実測ではない）"' : ''}>${r.moat != null ? r.moat.toFixed(2) : '—'}${r.moatSource === 'neutral_fallback' ? '<span style="color:var(--mut,#888)">※</span>' : ''}</td>
       <td class="col-rice grp-border">${r.rice != null ? r.rice.toFixed(1) : '—'}</td>
       <td>${ricePERTxt}</td>
       <td class="${ma200Class}">${ma200Txt}</td>
@@ -564,9 +567,22 @@ async function loadTickers() {
   document.getElementById('last-update').textContent = dates.at(-1) || '--';
   document.getElementById('last-updated').textContent = toJST(dates.at(-1));
 
-  const moats = valid.map(r => r.data.components?.moat_score).filter(v => v != null);
+  // [[MOAT-SCORE-PARTIAL-NULL-1]]（2026-08-16追記）: moat_score=0.5の
+  // 中立フォールバック（有効指標<2で測定不能なためプレースホルダを
+  // 採用した銘柄）は平均から除外する。実測値ではない0.5を「実測平均」に
+  // 混ぜると、旧`(値 or 0.0)`バグと同じ「由来不明な値が集計を歪める」
+  // 問題を形を変えて再発させるため。
+  const moatRows = valid.filter(r => (r.data.components?.moat_score_source ?? 'measured') === 'measured');
+  const moats = moatRows.map(r => r.data.components?.moat_score).filter(v => v != null);
+  const moatExcluded = valid.length - moatRows.length;
   document.getElementById('avg-moat').textContent =
     moats.length ? (moats.reduce((a,b)=>a+b,0)/moats.length).toFixed(2) : '--';
+  const avgMoatEl = document.getElementById('avg-moat');
+  if (avgMoatEl) {
+    avgMoatEl.title = moatExcluded > 0
+      ? `中立フォールバック(測定不能)の${moatExcluded}銘柄を平均から除外`
+      : '';
+  }
 
   const rices = valid.map(r => r.data.rice?.base?.rice).filter(v => v != null);
   document.getElementById('avg-rice').textContent =

@@ -106,6 +106,13 @@ class MoatScoreResult:
     gross_margin_norm: Optional[float]
     roic_norm: Optional[float]
     fcf_margin_norm: Optional[float]
+    # [[MOAT-SCORE-PARTIAL-NULL-1]]（2026-08-16追記）: moat_score=0.5が
+    # 「実測の結果0.5」か「最低2指標ルールによる中立フォールバック」かを
+    # 区別するprovenance（NAMING_CONVENTIONS.md規則4準拠）。
+    # "measured"（有効指標2件以上で算出）/ "neutral_fallback"
+    # （有効指標1件以下のためmoat_score=0.5をプレースホルダとして採用）。
+    source: str = "measured"
+    n_present: int = 0
 
 
 @dataclass
@@ -683,6 +690,7 @@ def calculate_moat_score(
         moat_score = sum(v * _MOAT_WEIGHTS[k] for k, v in present.items()) / w_sum
 
     phase1_years = 3 + round(moat_score * 7)
+    source = "measured" if len(present) >= 2 else "neutral_fallback"
 
     return MoatScoreResult(
         moat_score=round(moat_score, 4),
@@ -690,6 +698,8 @@ def calculate_moat_score(
         gross_margin_norm=round(gm_norm, 4) if gm_norm is not None else None,
         roic_norm=round(roic_norm, 4) if roic_norm is not None else None,
         fcf_margin_norm=round(fcf_norm, 4) if fcf_norm is not None else None,
+        source=source,
+        n_present=len(present),
     )
 
 

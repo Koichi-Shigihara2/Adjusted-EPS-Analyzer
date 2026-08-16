@@ -1896,7 +1896,7 @@ function render(d) {
               <span class="step-name">α（成長期待プレミアム）${alphaWasCapped ? ' <span style="color:var(--yellow);font-size:10px">CAPPED</span>' : ''}</span>
             </div>
             <div style="display:flex;align-items:center;gap:16px">
-              <span class="step-result" style="color:var(--mut);font-size:11px" data-info="stock_moat_phase1">Phase1: ${d.components?.moat_phase1_years ?? '—'}年（Moat Score由来）</span>
+              <span class="step-result" style="color:var(--mut);font-size:11px" data-info="stock_moat_phase1">Phase1: ${d.components?.moat_phase1_years ?? '—'}年（Moat Score由来${d.components?.moat_score_source === 'neutral_fallback' ? '、<span style="color:var(--yellow)" title="有効指標が2未満のため中立フォールバック値（実測ではない）">※中立フォールバック</span>' : ''}）</span>
               <span class="toggle-arrow">▼</span>
             </div>
           </div>

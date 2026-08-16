@@ -488,6 +488,56 @@ def _check_operating_income_reconstruction_scope(tickers: list[str]) -> list[str
     return []
 
 
+def _check_moat_score_neutral_fallback(ticker: str, latest: dict) -> list[str]:
+    """CHECK-36: moat_score=0.5が実測結果ではなく、最低2指標ルールによる
+    中立フォールバック（有効指標<2のためのプレースホルダ）である銘柄を
+    検知する（[[MOAT-SCORE-PARTIAL-NULL-1]]）。
+
+    中立フォールバックの使用自体は正常動作（測定不能を誠実に示す設計）の
+    ためNGではなくWARN。TANUKI SCORE等の下流分類がこの銘柄でプレースホルダ
+    値に基づいて判定されている可能性を可視化する目的
+    （実例: BKNGのTANUKI SCORE WATCH→BUYはこの中立フォールバックに由来、
+    2026-08-16判明）。
+    """
+    warn: list[str] = []
+    components = latest.get("components", {})
+    source = components.get("moat_score_source")
+    if source == "neutral_fallback":
+        n_present = components.get("moat_score_n_present")
+        warn.append(
+            f"  [WARN-36 moat_score中立フォールバック] moat_score=0.5は実測では"
+            f"なく最低2指標ルールによるプレースホルダ（有効指標n_present="
+            f"{n_present}）。TANUKI SCORE等この値に依存する下流分類は測定不能な"
+            f"モート強度に基づいている点に留意（自動修正なし）"
+        )
+    return warn
+
+
+# CHECK-36: ティッカー非依存の単発チェック用の基準件数。2026-08-16実装時点で
+# 中立フォールバック対象は2銘柄（BKNG/CPRT）。今後の推移を見て閾値は調整する。
+_MOAT_NEUTRAL_FALLBACK_BASELINE_COUNT = 4
+
+
+def _check_moat_score_neutral_fallback_scope(tickers: list[str]) -> list[str]:
+    """CHECK-36（集計）: moat_score中立フォールバック対象銘柄数が基準値を
+    超えていないかを確認する（[[MOAT-SCORE-PARTIAL-NULL-1]]）。個別銘柄の
+    詳細はticker単位のCHECK-36（`_check_moat_score_neutral_fallback`）を参照。
+    """
+    affected: list[str] = []
+    for ticker in tickers:
+        latest = _read_latest(ticker)
+        if latest.get("components", {}).get("moat_score_source") == "neutral_fallback":
+            affected.append(ticker)
+
+    if len(affected) > _MOAT_NEUTRAL_FALLBACK_BASELINE_COUNT:
+        return [
+            f"  [WARN-36 moat_score中立フォールバック対象の急増] "
+            f"{len(affected)}銘柄（基準値{_MOAT_NEUTRAL_FALLBACK_BASELINE_COUNT}を超過）: "
+            f"{', '.join(affected)} — 有効指標<2の銘柄が新たに複数増加した可能性"
+        ]
+    return []
+
+
 def annotate_warn(ticker: str, message: str, ledger: set[tuple[str, str]]) -> tuple[str, bool]:
     """
     WARNメッセージに台帳照合結果を反映する。
@@ -789,6 +839,7 @@ def check_ticker(ticker: str, whitelist: set) -> tuple[list, list]:
         return ng, warn
 
     latest  = _read_latest(ticker)
+    warn.extend(_check_moat_score_neutral_fallback(ticker, latest))
     parsed  = _parse_report(text)
 
     fcf_hist = parsed["fcf_history"]
@@ -1458,6 +1509,13 @@ def run_checks(args=None) -> tuple[int, int]:
     if oi_scope_warn:
         flagged.append(("[GLOBAL]", [], oi_scope_warn))
         total_warn += len(oi_scope_warn)
+
+    # CHECK-36: ティッカー非依存の単発チェック（moat_score中立フォールバック
+    # 対象銘柄数の急増検知、[[MOAT-SCORE-PARTIAL-NULL-1]]）。
+    moat_scope_warn = _check_moat_score_neutral_fallback_scope(all_tickers)
+    if moat_scope_warn:
+        flagged.append(("[GLOBAL]", [], moat_scope_warn))
+        total_warn += len(moat_scope_warn)
 
     if not flagged:
         if not quiet:
