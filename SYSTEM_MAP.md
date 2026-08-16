@@ -594,6 +594,48 @@ annual_YYYY.jsonには残らない**（`operating_income: None`という結果
 
 ---
 
+### moat_score（Moat Score）の欠損処理方式（2026-08-16追記）
+
+`src/value/tanuki_valuation/calculator/adjustments.py::calculate_moat_score()`
+は`gross_margin_3yr_avg`・`roic`・`fcf_margin_3yr_avg`の3指標（重み
+0.40/0.40/0.20）から`moat_score`（0〜1）と`phase1_years`（高成長期間
+3〜10年、メインIVのDCF計算に直結）を算出する（[[MOAT-SCORE-
+PARTIAL-NULL-1]]）。
+
+**roicのNone原因別の扱い**: `_calc_roic_wacc_ratio()`（`pipeline.py`）は
+`(値 | None, 理由コード)`のタプルを返す。理由コードにより
+`calculate_moat_score()`側の扱いが変わる:
+- `"reported_negative_oi"`（`operating_income`は取得できた上で
+  nopat<=0、真の赤字）→ `roic_norm=0.0`で**算入**（弱いモートという
+  実態を正しく反映）
+- `"roic_diverged_over10"`（ROIC>=1000%、測定アーティファクトの疑い）
+  → `roic_norm=1.0`（上限クランプ）で**算入**（2026-08-16時点で該当
+  0件、実データ未検証）
+- それ以外（`missing_cash_data`/`negative_invested_capital`/
+  `no_operating_income`等、測定不能）→ **除外**（残り指標の重みを
+  再正規化）
+
+`gross_margin_3yr_avg`・`fcf_margin_3yr_avg`が欠損（None）の場合も
+同様に除外・再正規化する。
+
+**最低2指標ルール**: 有効指標（算入されるgm/roic/fcf）が2未満の場合、
+`moat_score=0.5`（既存の全欠損時デフォルトと同じ値）にフォールバックし、
+個別の指標norm値もNoneを返す。「薄い根拠から確信ありげな出力を出さない」
+という原則を高スコア側・低スコア側の両方に対称的に適用する設計。
+
+**RICE-1(`vc_factor`)への影響なし**: `_calc_roic_wacc_ratio()`の
+戻り値をタプル化したが、RICE-1消費側（`financials["roic_wacc_ratio"]`
+経由）は値のNone判定のみで動作するため、理由コード追加による既存挙動
+への影響はない。
+
+**消費者**: `core_calculator.py::calculate_pt()`（DCF計算、`phase1_years`
+経由でメインIVに直結）・`stock.html`（`moat_phase1_years`表示）・
+`index.html`（`moat_score`列のソート・`#avg-moat`全銘柄平均表示、
+2026-08-16のStep1消費者確認で新規発見。いずれも表示専用でDCF計算への
+フィードバックはない）。
+
+---
+
 ## データフロー（上流→下流）
 【SECデータ取得層】
 SEC EDGAR

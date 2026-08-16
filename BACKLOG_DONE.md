@@ -410,6 +410,146 @@ SWEEP-1]]`とは発生メカニズムが異なる（タグ不在 vs falsy-zero�
 
 ---
 
+### ✅ [MOAT-SCORE-PARTIAL-NULL-1] moat_scoreの部分欠損が実測値ゼロとして混入していた — 案A''＋最低2指標ルールで解消
+**優先度:** 高
+**分類:** バグ / TANUKI VALUATION
+**登録日:** 2026-07-23
+**完了日:** 2026-08-16
+**発見:** `FIELD_DEFINITIONS.md`フェーズ4（AS-IS-026/028）・`RETROSPECTIVE_2026-07-22.md`c項#4
+
+#### 内容（登録時点）
+`calculate_moat_score()`は`gm_norm`/`roic_norm`/`fcf_norm`の各値を
+`(値 or 0.0)`で計算しており、指標がNone（欠損）でも正当な実測値0.0でも
+区別なく「実測値ゼロ」として平均に混入させていた。1〜2指標だけの欠損
+時にmoat_scoreが不当に低く算出される問題。
+
+#### Step 0: 本線1完了による対象の再測定（実装前必須）
+`[[OPERATING-INCOME-EXTRACTION-GAP-1]]`完了によりoperating_income由来の
+roic欠損6銘柄（LLY/JNJ/XOM/KLAC/ASTS/COHR）中5銘柄（LLY/JNJ/XOM/KLAC/
+COHR）が解消し、対象規模が縮小した:
+
+| 指標 | 本線1修正前 | 本線1修正後（実装前再測定） |
+|---|---|---|
+| roic=None銘柄数 | 36件 | **31件** |
+| roic=None内訳 | `oi_data_unavailable`6件を含む | `reported_negative_oi`27件・`missing_cash_data`3件・`negative_invested_capital`1件（`oi_data_unavailable`は0件に） |
+| 部分欠損（n_present<3）銘柄数 | 43件 | **13件** |
+| 単一指標のみ（n_present=1） | BKNG・CPRT・XOM（3件） | **BKNG・CPRT（2件、XOMは本線1で解消）** |
+| gross_margin欠損 | 11件（変化なし） | 11件 |
+| fcf_margin欠損 | 0件（変化なし） | 0件 |
+
+#### Step 1: 消費者の網羅確認
+`moat_score`/`moat_phase1_years`/`moat_*_norm`の消費者を`grep -rn`で
+網羅的に洗い出した:
+- **`core_calculator.py::calculate_pt()`**（唯一のPython計算消費者）:
+  `_moat_phase1_years`が`high_growth_years`/`phase1_years`として複数の
+  DCF計算箇所（メインIV・センシティビティ・参考IV）に渡される。既知の
+  経路
+- **`stock.html`**（表示のみ）: `moat_phase1_years`のラベル表示、
+  `high_growth_years`のフォールバック値として参照
+- **`index.html`（新規発見）**: `#avg-moat`スタッツバーが全銘柄の
+  `moat_score`の**平均値**を表示。またテーブルの`moat`列がソート
+  キーとして使用可能。いずれも表示専用でDCF計算へのフィードバックは
+  無いが、1銘柄のscoreが変わると全銘柄横断の平均表示が動く
+
+`[[OPERATING-INCOME-EXTRACTION-GAP-1]]`の`g_fundamental`のような、
+計算に直接フィードバックする想定外経路は発見されなかった。
+
+#### 実装内容
+**`_calc_roic_wacc_ratio()`の戻り値をタプル化**（`float | None` →
+`tuple[float | None, str]`）し、Noneの理由コードを返すようにした
+（RICE-1側は値のNone判定のみで動作するため無影響）。理由コード:
+`"ok"`・`"reported_negative_oi"`（真の赤字、`operating_income`は取得
+できた上でnopat<=0）・`"roic_diverged_over10"`・その他測定不能理由
+（`missing_cash_data`/`negative_invested_capital`/
+`no_operating_income`等）。
+
+**`calculate_moat_score()`を再設計**（原因別の扱い）:
+
+| 原因 | 扱い |
+|---|---|
+| `reported_negative_oi`（真の赤字） | roic_norm=0.0で**算入** |
+| `roic_diverged_over10` | roic_norm=1.0（上限クランプ）で**算入**（2026-08-16時点で該当0件、未検証） |
+| `missing_cash_data`・`negative_invested_capital`・その他測定不能 | **除外**（重み再正規化） |
+| `gross_margin`・`fcf_margin`の欠損 | **除外**（重み再正規化） |
+
+**最低2指標ルール**: 有効指標（算入されるgm/roic/fcf）が2未満の場合、
+`moat_score=0.5`（既存の全欠損時デフォルトと同じ値）にフォールバック。
+「薄い根拠から確信ありげな出力を出さない」を高スコア側・低スコア側の
+両方に対称的に適用する設計。
+
+**`MoatScoreResult`のnorm系フィールドをOptional化**（`float`→
+`Optional[float]`）し、除外された指標はNoneを返すようにした（`None`と
+`0.0`の区別を型レベルでも徹底）。呼び出し元の`print`文はNone対応の
+フォーマッタを追加。
+
+#### 検証（実測）
+**moat_scoreが変化する銘柄: 12件**（全てプラス方向、想定外の符号反転
+なし）:
+
+| 銘柄 | score(旧→新) | phase1_years(旧→新) | 原因 |
+|---|---|---|---|
+| BKNG | 0.2→0.5 | 4→7 | negative_invested_capital、単一指標→最低2指標ルール適用 |
+| CPRT | 0.158→0.5 | 4→7 | missing_cash_data、単一指標→最低2指標ルール適用 |
+| V | 0.6→1.0 | 7→10 | gm欠損を除外・再正規化 |
+| CDNS | 0.3718→0.6197 | 6→7 | gm欠損を除外・再正規化 |
+| INTU | 0.2941→0.4902 | 5→6 | gm欠損を除外・再正規化 |
+| HEI | 0.2664→0.4441 | 5→6 | missing_cash_data除外・再正規化 |
+| VZ | 0.1827→0.3046 | 4→5 | gm欠損除外・再正規化 |
+| XOM | 0.0745→0.1241 | 4→4（不変） | gm欠損除外・再正規化（本線1解消後もgmは別途欠損） |
+| CEG/VST/FLYW/GEV | 微増（phase1_years不変） | 不変 | gm欠損またはmissing_cash_data除外・再正規化 |
+
+pytest: 803 passed / 2 known-failed（MSFT/NVDA、既知の事前失敗）。
+新規の破壊的テスト失敗なし。`audit.py`: exit 0（正常95銘柄・警告5銘柄、
+いずれも本修正と無関係な既存の警告）。`report_consistency_check.py
+--fail-on-ng`: NG=0 / WARN=85件（本修正と無関係な既存の警告のみ、
+CHECK-35は`moat_score`を監視対象にしていないため無変化）。
+
+**ダウンストリーム波及（IV/upside_percent/TANUKI SCORE、実測）**:
+
+| 銘柄 | IV/株(旧→新) | upside_percent(旧→新) | TANUKI SCORE |
+|---|---|---|---|
+| BKNG | $255.56→$338.42（+32.4%） | +20.5%→**+59.6%** | **WATCH→BUY**（分類変化） |
+| CDNS | $121.94→$131.93（+8.2%） | -62.5%→-59.4% | 不変 |
+| CPRT | $24.35→$29.85（+22.6%） | -23.0%→-5.6% | 不変 |
+| HEI | $61.07→$65.02（+6.5%） | -83.7%→-82.6% | 不変 |
+| INTU | $389.10→$415.77（+6.9%） | +12.6%→+20.3% | 不変 |
+| V | $238.83→$277.51（+16.2%） | -34.4%→-23.8% | 不変 |
+| VZ | $86.62→$85.16（**-1.7%**） | +78.7%→+75.7% | 不変 |
+| XOM | 変化なし（moat_scoreは微増だがIV/upside不変） | 不変 | 不変 |
+| CEG/VST/FLYW/GEV | 変化なし（phase1_years不変のため） | 不変 | 不変 |
+
+**TANUKI SCORE分類が変わったのはBKNGのみ**（WATCH→BUY）。VZはmoat_score
+が上昇（0.1827→0.3046）したにもかかわらずIVがわずかに低下（-1.7%）
+しているが、これは[[OPERATING-INCOME-EXTRACTION-GAP-1]]でLLY/XOMに
+見られたのと同型のDCF機序（高成長期間の延長が、その期間の成長率次第
+では終端成長への早期移行より現在価値を下げる場合がある）であり、
+想定外の符号反転ではない（moat_score自体は12件全てプラス方向で
+アルゴリズム上保証された方向と一致）。
+
+**ポートフォリオ影響**: `docs/portfolio/data/portfolio.json`の実保有
+銘柄（ADBE/APP/CELH/CRWV/NVDA/PLTR/SOFI/SOUN/TSLA）と、変化した12銘柄
+（BKNG/CDNS/CEG/CPRT/FLYW/GEV/HEI/INTU/V/VST/VZ/XOM）との重複は
+**なし**。
+
+**fixed_registry.jsonへの影響**: 本実装は`src/value/tanuki_valuation/`
+配下（Python計算ロジック）のみの変更であり、`common/sec_data/`
+（annual_YYYY.json等）は一切変更していない（`git status`で確認済み、
+差分0件）。したがってfixed_registry.jsonの`snapshot_hash`への影響も
+なし（[[OPERATING-INCOME-EXTRACTION-GAP-1]]のようなsnapshot_hash
+再計算は不要）。
+
+**単一指標のみで算出される銘柄は解消**: 本線1修正前はBKNG・CPRT・XOMの
+3件だったが、XOMは本線1でoperating_incomeが復元されroic側が「ok」に
+なり2指標（roic・fcf）present、n_present=1のまま残るのはBKNG・CPRTの
+2件のみ（両方とも最低2指標ルールでmoat_score=0.5に収まり、Step 2の
+懸念〈単一指標だけで極端な値に振れる〉は解消済み）。
+
+#### 関連
+`[[OPERATING-INCOME-EXTRACTION-GAP-1]]`（本線1、roic欠損の一部を解消
+し本項目の対象規模を縮小）。
+
+---
+
 ## 2026-08-15（完了）
 
 ### ✅ [EPSANALYZER-ADMIN-ORPHAN-PAGE-1] adjusted_eps_analyzer/admin/配下が存在しないconfig/パスをfetchする孤立ページ
