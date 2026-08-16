@@ -100,9 +100,12 @@ class MoatScoreResult:
     """Moat Score計算結果"""
     moat_score: float
     phase1_years: int
-    gross_margin_norm: float
-    roic_norm: float
-    fcf_margin_norm: float
+    # [[MOAT-SCORE-PARTIAL-NULL-1]]: 指標が欠損（除外）の場合はNone。
+    # 実測値0との区別を可能にするため2026-08-16にOptional化した
+    # （従来はfloat固定で欠損時も便宜上0.5等の数値を入れていた）。
+    gross_margin_norm: Optional[float]
+    roic_norm: Optional[float]
+    fcf_margin_norm: Optional[float]
 
 
 @dataclass
@@ -607,43 +610,86 @@ def calculate_alpha(
     )
 
 
+_MOAT_WEIGHTS = {"gm": 0.40, "roic": 0.40, "fcf": 0.20}
+
+
 def calculate_moat_score(
     gross_margin_3yr_avg: Optional[float],
     roic: Optional[float],
     fcf_margin_3yr_avg: Optional[float],
+    roic_reason: str = "ok",
     rm: float = 0.10,
 ) -> MoatScoreResult:
     """Moat Score計算（粗利率・ROIC超過幅・FCFマージンの加重平均）
 
     各指標を絶対値基準で正規化し、Phase1成長期間（3〜10年）を自動決定する。
-    データが揃わない場合は moat_score=0.5（中央値）をデフォルトとして返す。
+
+    [[MOAT-SCORE-PARTIAL-NULL-1]]（2026-08-16、`(値 or 0.0)`問題の解消）:
+    欠損指標を「実測値ゼロ」として平均に混入させず、Noneとして除外した上で
+    残りの指標のみで加重平均する（重みを再正規化）。ただしroicがNoneの
+    原因によって扱いを変える（`roic_reason`、`_calc_roic_wacc_ratio()`の
+    戻り値2番目の要素）:
+      - "reported_negative_oi"（真の赤字でnopat<=0確認済み）→
+        roic_norm=0.0で**算入**（弱いモートという実態を正しく反映。
+        [[OPERATING-INCOME-EXTRACTION-GAP-1]]により、この理由コードは
+        operating_income自体が取得できた上での赤字のみを指すため、
+        「真に欠損」との混同は起きない）
+      - "roic_diverged_over10"（ROIC>=1000%、測定アーティファクトの疑い）
+        → roic_norm=1.0（上限クランプ）で**算入**。2026-08-16時点で該当
+        銘柄0件のため実データでは未検証（将来該当した場合に備えた設計）
+      - それ以外（missing_cash_data/negative_invested_capital/
+        no_operating_income等、測定不能）→ **除外**（重み再正規化の対象）
+
+    **最低2指標ルール**: 有効指標（gm/roic/fcf のうち実際に算入される
+    もの）が2未満の場合、`moat_score=0.5`（中央値）にフォールバックする
+    （旧実装の「3指標全欠損時のデフォルト」を一般化）。根拠:
+    「薄い根拠から確信ありげな出力を出さない」という原則を、高スコア側
+    （1指標だけで1.0に振れる）・低スコア側（1指標だけで0付近に沈む）の
+    両方に対称的に適用するため。
+
+    各norm値（gross_margin_norm等）は、その指標が実際に算入された場合の
+    み数値を返し、除外された場合はNoneを返す（呼び出し元は`:.2f`等での
+    フォーマット時にNone考慮が必要）。
     """
     def _clamp(x: float, lo: float, hi: float) -> float:
         return max(lo, min(hi, x))
 
-    if gross_margin_3yr_avg is None and roic is None and fcf_margin_3yr_avg is None:
+    gm_norm: Optional[float] = None
+    if gross_margin_3yr_avg is not None:
+        gm_norm = _clamp(gross_margin_3yr_avg / 1.0, 0.0, 1.0)
+
+    fcf_norm: Optional[float] = None
+    if fcf_margin_3yr_avg is not None:
+        fcf_norm = _clamp(fcf_margin_3yr_avg / 0.30, 0.0, 1.0)
+
+    roic_norm: Optional[float] = None
+    if roic is not None:
+        roic_norm = _clamp((roic - rm) / 0.30, 0.0, 1.0)
+    elif roic_reason == "reported_negative_oi":
+        roic_norm = 0.0
+    elif roic_reason == "roic_diverged_over10":
+        roic_norm = 1.0
+    # それ以外の理由（missing_cash_data等）はroic_norm=Noneのまま（除外）
+
+    present = {
+        k: v for k, v in (("gm", gm_norm), ("roic", roic_norm), ("fcf", fcf_norm))
+        if v is not None
+    }
+
+    if len(present) < 2:
         moat_score = 0.5
-        return MoatScoreResult(
-            moat_score=round(moat_score, 4),
-            phase1_years=3 + round(moat_score * 7),
-            gross_margin_norm=0.5,
-            roic_norm=0.5,
-            fcf_margin_norm=0.5,
-        )
+    else:
+        w_sum = sum(_MOAT_WEIGHTS[k] for k in present)
+        moat_score = sum(v * _MOAT_WEIGHTS[k] for k, v in present.items()) / w_sum
 
-    gm_norm   = _clamp((gross_margin_3yr_avg or 0.0) / 1.0,  0.0, 1.0)
-    roic_norm = _clamp(((roic or 0.0) - rm) / 0.30,          0.0, 1.0)
-    fcf_norm  = _clamp((fcf_margin_3yr_avg or 0.0) / 0.30,   0.0, 1.0)
-
-    moat_score  = gm_norm * 0.40 + roic_norm * 0.40 + fcf_norm * 0.20
     phase1_years = 3 + round(moat_score * 7)
 
     return MoatScoreResult(
         moat_score=round(moat_score, 4),
         phase1_years=phase1_years,
-        gross_margin_norm=round(gm_norm,   4),
-        roic_norm=round(roic_norm,         4),
-        fcf_margin_norm=round(fcf_norm,    4),
+        gross_margin_norm=round(gm_norm, 4) if gm_norm is not None else None,
+        roic_norm=round(roic_norm, 4) if roic_norm is not None else None,
+        fcf_margin_norm=round(fcf_norm, 4) if fcf_norm is not None else None,
     )
 
 

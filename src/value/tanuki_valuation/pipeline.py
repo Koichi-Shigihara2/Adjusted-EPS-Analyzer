@@ -239,13 +239,16 @@ class TanukiValuationPipeline:
                 self._inject_ttm_for_general_segment(ticker)
 
                 # RICE-1: ROIC/WACC_Rm を事前計算してDCF前に注入
-                _roic_wacc = self._calc_roic_wacc_ratio(ticker)
+                # [[MOAT-SCORE-PARTIAL-NULL-1]]: 理由コードはmoat_score側の
+                # None原因別処理にのみ使う。RICE-1(vc_factor)は値のNone判定
+                # のみで動くため、理由コード追加による既存挙動への影響はない。
+                _roic_wacc, _roic_reason = self._calc_roic_wacc_ratio(ticker)
                 if _roic_wacc is not None:
                     financials["roic_wacc_ratio"] = _roic_wacc
 
                 # ALPHA-REDESIGN-1: Moat Score計算インプットをDCF前に注入
                 _roic_val = (_roic_wacc * 0.10) if _roic_wacc is not None else None
-                _moat_inputs = self._calc_moat_inputs(ticker, roic=_roic_val)
+                _moat_inputs = self._calc_moat_inputs(ticker, roic=_roic_val, roic_reason=_roic_reason)
                 financials.update(_moat_inputs)
 
                 valuation = self.calculator.calculate_pt(financials)
@@ -2917,24 +2920,46 @@ class TanukiValuationPipeline:
         else:
             _seg_cfg.clear_growth_override(ticker)
 
-    def _calc_roic_wacc_ratio(self, ticker: str, wacc_rm: float = 0.10) -> float | None:
+    def _calc_roic_wacc_ratio(self, ticker: str, wacc_rm: float = 0.10) -> tuple:
         """最新年次データから ROIC/WACC_Rm を計算（RICE-1 価値創造係数）
 
         ROIC = NOPAT / Invested_Capital
         NOPAT = Operating_Income × (1 - 21%)（実効税率固定）
         Invested_Capital = Equity + Net_Debt（総資本 - 現金）
-        戻り値: ROIC/wacc_rm（例: ROIC=15%・WACC=10% → 1.5）
-        計算不可（赤字・負の投資資本）は None を返す。
+        戻り値: (ROIC/wacc_rm または None, 理由コード)
+        （例: ROIC=15%・WACC=10% → (1.5, "ok")）
+
+        [[MOAT-SCORE-PARTIAL-NULL-1]]: 理由コードはcalculate_moat_score()が
+        Noneの原因別に扱い（真の赤字は算入、それ以外は除外）を判定するために
+        使う。RICE-1側（vc_factor）は理由コードを見ず、値がNoneかどうかのみで
+        判定するため、本変更による既存挙動への影響はない。
+
+        理由コード一覧:
+          "ok"                      - 正常算出
+          "reported_negative_oi"    - operating_incomeは取得できたがNOPAT<=0（真の赤字）
+          "no_operating_income"     - operating_income自体が取得不能（標準タグ・
+                                       parser.py再構成〈[[OPERATING-INCOME-
+                                       EXTRACTION-GAP-1]]〉・TTMフォールバック
+                                       いずれも失敗。2026-08-16時点で該当0件だが
+                                       将来発生しうる真の欠損）
+          "missing_equity_data"/"missing_cash_data" - BS項目欠損
+          "negative_invested_capital" - 投下資本が非正（自社株買い等で自己資本が
+                                       大幅マイナスの銘柄。実際に赤字なのではなく
+                                       測定不能なだけ）
+          "roic_non_positive"       - ROICが0以下（invested_capital算出後の異常値）
+          "roic_diverged_over10"    - ROICが1000%以上（測定アーティファクトの
+                                       疑い。2026-08-16時点で該当0件、未検証）
+          "no_sec_dir"/"no_annual_data"/"exception" - データ自体が存在しない
         """
         sec_dir = os.path.join(self.repo_root, "common", "sec_data", "data", ticker)
         if not os.path.exists(sec_dir):
-            return None
+            return None, "no_sec_dir"
         years = sorted([
             int(fn[7:11]) for fn in os.listdir(sec_dir)
             if fn.startswith("annual_") and fn.endswith(".json") and fn[7:11].isdigit()
         ])
         if not years:
-            return None
+            return None, "no_annual_data"
         try:
             with open(os.path.join(sec_dir, f"annual_{years[-1]}.json"), encoding="utf-8") as f:
                 ann = json.load(f)
@@ -2956,10 +2981,13 @@ class TanukiValuationPipeline:
                 #  直近4四半期のGrossProfit-RD-SMからTTM営業利益を代替算出する）
                 oi = self._estimate_ttm_operating_income(ticker)
             if oi is None:
-                return None
+                return None, "no_operating_income"
             nopat = oi * (1 - 0.21)
             if nopat <= 0:
-                return None
+                # ここに到達する時点でoiはNoneではない（真に報告/再構成された
+                # 値）ため、赤字と判定してよい（[[MOAT-SCORE-PARTIAL-NULL-1]]
+                # のroic_reason="reported_negative_oi"に対応）。
+                return None, "reported_negative_oi"
             # FY52WEEK-BS-NULL-SILENT-1 Phase A: stockholders_equity/
             # cash_and_equivalentsはNone率がほぼ0-4%（全105銘柄実測）で、
             # Noneはほぼ確実にデータ異常のシグナル。従来は`or 0`で暗黙に
@@ -2972,22 +3000,24 @@ class TanukiValuationPipeline:
             _equity_te = bs.get("total_equity")
             _cash_raw = bs.get("cash_and_equivalents")
             if _equity_se is None and _equity_te is None:
-                return None
+                return None, "missing_equity_data"
             if _cash_raw is None:
-                return None
+                return None, "missing_cash_data"
             equity = _equity_se or _equity_te or 0
             lt_debt = bs.get("long_term_debt") or self._get_lt_debt_fallback(ticker)
             st_debt = bs.get("short_term_debt") or 0
             cash = _cash_raw
             invested_capital = equity + lt_debt + st_debt - cash
             if invested_capital <= 0:
-                return None
+                return None, "negative_invested_capital"
             roic = nopat / invested_capital
-            if not (0 < roic < 10.0):  # 合理的な範囲外はスキップ
-                return None
-            return roic / wacc_rm
+            if roic <= 0:
+                return None, "roic_non_positive"
+            if roic >= 10.0:
+                return None, "roic_diverged_over10"
+            return roic / wacc_rm, "ok"
         except Exception:
-            return None
+            return None, "exception"
 
     def _estimate_ttm_operating_income(self, ticker: str) -> float | None:
         """OperatingIncomeLossタグが欠落している銘柄向けTTM営業利益フォールバック
@@ -3024,17 +3054,21 @@ class TanukiValuationPipeline:
         except Exception:
             return None
 
-    def _calc_moat_inputs(self, ticker: str, roic: float | None = None) -> dict:
+    def _calc_moat_inputs(self, ticker: str, roic: float | None = None, roic_reason: str = "ok") -> dict:
         """Moat Score計算用インプット（gross_margin_3yr_avg, roic, fcf_margin_3yr_avg）を返す
 
         gross_margin_3yr_avg: Layer3 store の GrossProfit / Revenue 3年平均（フェーズD Step2-1）
         roic:                 呼び出し元から渡された ROIC値（ROIC = roic_wacc_ratio × Rm）
+        roic_reason:          [[MOAT-SCORE-PARTIAL-NULL-1]] roicがNoneの理由コード
+                               （`_calc_roic_wacc_ratio()`参照）。calculate_moat_score()が
+                               「真の赤字は算入・それ以外は除外」を判定するために使う
         fcf_margin_3yr_avg:   annual SEC の free_cash_flow / revenue 3年平均
         """
         result: dict = {}
 
         if roic is not None:
             result["moat_roic"] = roic
+        result["moat_roic_reason"] = roic_reason
 
         # gross_margin_3yr_avg: Layer3 storeから年次GrossProfit/Revenue
         # （フェーズD Step2-1、normalized/からLayer3へ切替）

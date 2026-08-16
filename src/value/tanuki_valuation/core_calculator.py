@@ -337,16 +337,20 @@ class KoichiValuationCalculator:
                 print(f"   [{ticker}] R&D資本化エラー: {_rd_e}")
 
         # ── STEP 4e: Moat Score → Phase1期間自動計算（ALPHA-REDESIGN-1）──
+        # [[MOAT-SCORE-PARTIAL-NULL-1]]: roic_reasonにより「真の赤字は算入・
+        # それ以外（測定不能）は除外」を判定する（2026-08-16実装）。
         moat_result: MoatScoreResult = calculate_moat_score(
             gross_margin_3yr_avg=financials.get("moat_gross_margin_3yr"),
             roic=financials.get("moat_roic"),
             fcf_margin_3yr_avg=financials.get("moat_fcf_margin_3yr"),
+            roic_reason=financials.get("moat_roic_reason", "ok"),
         )
         _moat_phase1_years: int = moat_result.phase1_years
+        _fmt_norm = lambda v: f"{v:.2f}" if v is not None else "N/A"
         print(f"   [{ticker}] Moat Score: {moat_result.moat_score:.3f}"
-              f"  (GM={moat_result.gross_margin_norm:.2f}"
-              f"  ROIC={moat_result.roic_norm:.2f}"
-              f"  FCF={moat_result.fcf_margin_norm:.2f})"
+              f"  (GM={_fmt_norm(moat_result.gross_margin_norm)}"
+              f"  ROIC={_fmt_norm(moat_result.roic_norm)}"
+              f"  FCF={_fmt_norm(moat_result.fcf_margin_norm)})"
               f"  → Phase1={_moat_phase1_years}yr")
 
         # ── STEP 5: DCF計算（2段階 or 3段階） ──
