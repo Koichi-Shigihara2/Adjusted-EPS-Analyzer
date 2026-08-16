@@ -561,6 +561,37 @@ annual_YYYY.jsonには残らない**（`operating_income: None`という結果
 時点の実績6件の約2倍）を超えた場合の急増をWARN（NGではない。再構成の
 使用自体は正常動作のため）で検知する。
 
+**下流への波及経路は2系統ある（2026-08-16追記、実測で判明）**:
+
+1. **`moat_score`経由**: `roic_wacc_ratio`（`_calc_roic_wacc_ratio()`）
+   →`moat_score`→`moat_phase1_years`（高成長期間の年数）→
+   `calculate_two_stage_dcf()`のメインIV計算に直結
+2. **`g_fundamental`経由（`recommended_g`への波及、AS-IS-042/
+   FIELD_DEFINITIONS.md参照）**: `operating_income`→
+   `_calc_g_fundamental()`（RR×ROICファンダメンタル成長率）→
+   `growth_sanity.recommended_g`（3yr CAGR・5yr CAGR・業界ベンチマーク・
+   RR×ROICの中央値）→`segment_configured=False`銘柄ではDCF成長率
+   そのものを上書き
+
+**②の経路は当初の影響分析（moat_scoreのみ）に含まれていなかったが、
+実測ではIV変化の主因になっているケースがある**。`recommended_g`は
+少数（2〜4件）の候補の中央値であるため、**候補が1件増減するだけで
+中央値が大きく動きうる**（候補数が少ないほど1候補あたりの影響が
+大きい、という中央値計算一般の性質）。2026-08-16実測:
+
+| 銘柄 | g_fundamental（新規算出） | recommended_g変化 | IV変化 |
+|---|---|---|---|
+| XOM | +0.81% | 6.78%→0.81% | -18.7% |
+| LLY | +9.46% | 21.58%→15.52% | -10.9% |
+| JNJ | -2.43%（負値のため候補から除外、`recommended_g`不変） | 変化なし | -0.6%（moat_score経由のみ） |
+| KLAC | -0.69%（同上、候補から除外） | 変化なし | +21.4%（moat_score経由のみ） |
+
+`operating_income`のような一見ローカルな入力修正であっても、複数の
+独立した下流消費者（本ケースでは`moat_score`・`g_fundamental`の2系統）
+に同時に波及しうる点は、今後同種の根本原因修正を行う際の一般的な
+教訓として留意すること（Step 0で消費者を網羅的に洗い出す際、直接の
+引数だけでなく`None`ガードの有無まで確認する必要がある）。
+
 ---
 
 ## データフロー（上流→下流）

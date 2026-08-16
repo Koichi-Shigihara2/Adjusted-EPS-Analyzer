@@ -354,10 +354,56 @@ LLY(15年度)・XOM(1年度)の計23エントリでsnapshot_hashが不一致に�
   のみ差分、他96銘柄は完全無差分を確認。TANUKI VALUATION側は上表の
   6銘柄が実際に変化することを確認（詳細はチャット記録2026-08-16参照）
 
+#### 追加検証（2026-08-16、完了依頼フォローアップ）
+
+**MATRIX象限・RICE効率ラベルの変化（実測）**: `matrix.quadrant`
+（左上/右上/左下/右下の大区分）は6銘柄とも**変化なし**（全て左下の
+まま）。ただし`matrix.label`内のRICE効率ラベル（低効率/中効率/高効率）
+は2銘柄で変化した:
+- **COHR**: 中効率→**低効率**（rice_base 1.522→0.457、GP法が突き合わせ
+  検証で不採用となり、より保守的なpretax調整法の値が採用された結果）
+- **KLAC**: 低効率→**中効率**（rice_base 0.676→1.352）
+- JNJ（低効率のまま）・LLY（中効率のまま、rice_base 1.628→2.336で
+  数値は上昇したが同一階層内）・XOM（N/A(OCF赤字)のまま）・ASTS
+  （低FCFのまま）は効率ラベル自体は不変
+
+**g_fundamental→recommended_g経路の記録**: `SYSTEM_MAP.md`
+「operating_income（営業利益）の再構成方式とprovenance」に「下流への
+波及経路は2系統ある」として追記（moat_score経由に加えg_fundamental
+経由を明記、候補数が少ない中央値計算における1候補の影響度も記載）。
+`FIELD_DEFINITIONS.md` AS-IS-042（`growth_sanity.recommended_g`）にも
+operating_income依存を追記し、データ取得元列にも追加。
+
+**upside_percent（乖離率）一覧**（修正前→修正後）:
+
+| 銘柄 | upside_percent | TANUKI SCORE | ポートフォリオ保有 |
+|---|---|---|---|
+| ASTS | -90.2%→-90.2%（不変） | WATCH→WATCH（不変） | 保有なし |
+| COHR | -88.8%→-88.8%（不変） | TRIM→TRIM（不変） | 保有なし |
+| JNJ | -66.3%→-66.5% | HOLD→HOLD（不変） | 保有なし |
+| KLAC | -68.5%→**-61.7%** | TRIM→TRIM（不変） | 保有なし |
+| LLY | -39.8%→**-46.4%** | WATCH→WATCH（不変） | 保有なし |
+| XOM | -56.0%→**-64.2%** | WATCH→WATCH（不変） | 保有なし |
+
+TANUKI SCORE分類の変化は6銘柄とも**なし**。`docs/portfolio/data/
+portfolio.json`の実保有銘柄（ADBE/APP/CELH/CRWV/NVDA/PLTR/SOFI/SOUN/
+TSLA）との重複も**なし**（SOFIは保有銘柄だが、本修正の対象6銘柄には
+含まれず、SOFIの2025年operating_incomeは妥当性ガードで不採用のまま
+＝修正前と完全に同一の挙動を維持しているため無影響）。
+
+**fixed_registry.json確認方法の具体化**: 23エントリ全ての
+`fields_snapshot`記載フィールド（BS/PL/CF/Shares各カテゴリ、合計259
+フィールド）について、修正前コミット（`06333eab2`）時点の値と現在の
+値をフィールド単位でプログラム的に突合し、**259フィールド中0件の
+不一致**を確認した（目視でのdiff確認に加え、機械的な全数照合を実施）。
+`refreshed_at`/`refreshed_reason`は23エントリ全てに付与済みであることも
+確認した。
+
 #### 関連
 `[[MOAT-SCORE-PARTIAL-NULL-1]]`（対象6銘柄については本修正により
 roic_wacc_ratioが正しく計算されるようになったため案A''の欠損処理設計は
-不要になった。残る32件程度の真の欠損銘柄への実装は引き続き必要）。
+不要になった。残る32件程度の真の欠損銘柄への実装は引き続き必要。
+着手条件は2026-08-16に更新済み、詳細はBACKLOG.md参照）。
 `[[MACRO-STYLE-FCF-ZERO-TRUTHY-EXCLUDE-1]]`・`[[FALSY-ZERO-PATTERN-
 SWEEP-1]]`とは発生メカニズムが異なる（タグ不在 vs falsy-zero誤判定）
 別項目として存置。

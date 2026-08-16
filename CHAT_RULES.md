@@ -111,18 +111,31 @@ Claude Codeからの完了報告を受け取った際、チャット側Claudeは
 構築プロジェクト（フェーズ1〜3）は全て完了**。詳細はPROJECT_STATUS.md
 冒頭・CLAUDE_CODE_START.md参照。
 
-**（2026-08-16追記）** 現在の本線は`[[OPERATING-INCOME-EXTRACTION-
-GAP-1]]`の解消:
-1. `operating_income`抽出（`common/sec_data/parser.py`、単一タグ
-   `OperatingIncomeLoss`依存・フォールバック不能）の根本修正。現在
-   顕在化している6銘柄（LLY・JNJ・XOM・KLAC・ASTS・COHR）に加え、
-   `selling_and_marketing`欠落50銘柄という潜在範囲を持つ
-2. 根本修正後、`[[MOAT-SCORE-PARTIAL-NULL-1]]`の実装を再開する
-   （roic欠損の原因分解・案A''設計・最低2指標ルールは2026-08-16に
-   確定済み、根本修正の完了を待つのみ）
+~~**（2026-08-16追記）** 現在の本線は`[[OPERATING-INCOME-EXTRACTION-
+GAP-1]]`の解消:~~
+~~1. `operating_income`抽出（`common/sec_data/parser.py`、単一タグ~~
+~~   `OperatingIncomeLoss`依存・フォールバック不能）の根本修正。現在~~
+~~   顕在化している6銘柄（LLY・JNJ・XOM・KLAC・ASTS・COHR）に加え、~~
+~~   `selling_and_marketing`欠落50銘柄という潜在範囲を持つ~~
+~~2. 根本修正後、`[[MOAT-SCORE-PARTIAL-NULL-1]]`の実装を再開する~~
+~~   （roic欠損の原因分解・案A''設計・最低2指標ルールは2026-08-16に~~
+~~   確定済み、根本修正の完了を待つのみ）~~
+
+**（2026-08-16追記・本線1完了）** `[[OPERATING-INCOME-EXTRACTION-
+GAP-1]]`は同日中に実装完了（コミット`86d5011a9`/`01e417d75`/
+`bbc23ff1e`、詳細はBACKLOG_DONE.md「2026-08-16（完了）」参照）。
+対象6銘柄（LLY・JNJ・XOM・KLAC・ASTS・COHR）のうち5銘柄
+（COHR・JNJ・KLAC・LLY・XOM）で実際にmoat_score/RICE-1/
+recommended_g経由のIV変化を確認済み。
+
+**現在の本線2**: `[[MOAT-SCORE-PARTIAL-NULL-1]]`の実装（本線1完了に
+伴い着手可能。roic欠損の原因分解・案A''設計・最低2指標ルールは
+2026-08-16に確定済み。対象6銘柄は本線1の解消により案A''自体が不要に
+なったため、残る約26〜30件の真の欠損銘柄が対象。着手時に対象銘柄数を
+実データで再確認すること）。
 
 **本線の範囲外**: `[[FALSY-ZERO-PATTERN-SWEEP-1]]`（falsy-zeroパターンの
-横断調査）・`[[MACRO-STYLE-FCF-ZERO-TRUTHY-EXCLUDE-1]]`は、本件と発生
+横断調査）・`[[MACRO-STYLE-FCF-ZERO-TRUTHY-EXCLUDE-1]]`は、本線1と発生
 メカニズムが異なる（タグ不在 vs falsy-zero誤判定）ため本線に含めない。
 詳細はBACKLOG.md `[[OPERATING-INCOME-EXTRACTION-GAP-1]]`参照。
 
