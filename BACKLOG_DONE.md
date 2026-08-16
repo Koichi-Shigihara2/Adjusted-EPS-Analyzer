@@ -169,6 +169,56 @@ CHECK-34へ統合）。
 
 ---
 
+### ✅ [SECDATA-COMPANYFACTS-OVERLOOKED-1] company_facts.json（SEC EDGAR生レスポンス全量）が一連の投資調査で棚卸し対象から見落とされていた — 移設漏れを訂正
+**状態:** 完了（登録翌日の別作業で実質解消済み、BACKLOG.mdへの移設漏れ）
+**優先度:** 高
+**分類:** 調査精度 / アーキテクチャ
+**登録日:** 2026-07-23
+**完了日（実質）:** 2026-07-24（`SEC_EDGAR_LAYER_DESIGN.md`作成時）
+**移設日（記録訂正）:** 2026-08-16
+**発見:** 一次データベース設計・Layer1実態調査
+
+#### 内容（登録時点）
+`common/sec_data/data/{TICKER}/company_facts.json`（SEC EDGAR
+company_facts APIの完全な生レスポンス、フィルタなし、AAPL実測505
+concept、105銘柄合計582.2MB）が、本フェーズの一連の投資調査
+（「9系統」調査・annual/segment/filing_text調査を含む複数セッション）
+のいずれでも棚卸し対象に含まれておらず、存在自体が見落とされていた。
+対応方針は「過去の調査結果（『9系統』という数え方）を10系統に訂正し、
+以降の統合設計はこのファイルの存在を前提に進める」、着手条件は
+「なし（事実訂正の登録のみ）」だった。
+
+#### 移設漏れの発見と再確認（2026-08-16、案2 Step C）
+BACKLOG優先度棚卸しの過程で、登録翌日の2026-07-24作成
+`SEC_EDGAR_LAYER_DESIGN.md`の「2-4. company_facts.json（Layer1の
+実態）」節に、登録時に求めた対応方針が既に実行されていることを
+確認した。該当箇所を実際に読み、以下を確認済み:
+
+> 現状9系統（後に10系統と判明、下記2-4参照）に分岐した読み取り経路
+> （…）を、統合スキーマへ一本化する設計を…確定した。（1章）
+>
+> `common/sec_data/data/{TICKER}/company_facts.json`が…判明した
+> （過去の複数回の投資調査でも見落とされていた、
+> `[[SECDATA-COMPANYFACTS-OVERLOOKED-1]]`参照）。統合設計上、これが
+> 系統数を「9→10」に訂正する根拠であり、かつ後述Layer1として
+> そのまま活用できる。（2-4節）
+>
+> **Layer1（無加工アーカイブ）**: `company_facts.json`（既存、
+> 新規構築不要）。SEC APIレスポンス全量を無加工のまま保持する唯一の
+> 層。（4章）
+
+「9系統→10系統」への訂正・以降の統合設計がこのファイルの存在を
+前提に進むことの両方が、`SEC_EDGAR_LAYER_DESIGN.md`自身の中で
+`[[SECDATA-COMPANYFACTS-OVERLOOKED-1]]`を名指しして実行済みと
+明記されている。すなわち本項目は登録の翌日には実質解消していたが、
+BACKLOG.mdからBACKLOG_DONE.mdへの移設が行われないまま約3週間
+放置されていた。
+
+#### 結論
+コード変更・追加作業は不要。BACKLOG.md記載の移設漏れをここで訂正する。
+
+---
+
 ## 2026-08-15（完了）
 
 ### ✅ [EPSANALYZER-ADMIN-ORPHAN-PAGE-1] adjusted_eps_analyzer/admin/配下が存在しないconfig/パスをfetchする孤立ページ
