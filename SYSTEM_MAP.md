@@ -634,6 +634,29 @@ PARTIAL-NULL-1]]）。
 2026-08-16のStep1消費者確認で新規発見。いずれも表示専用でDCF計算への
 フィードバックはない）。
 
+**provenance（`moat_score_source`、2026-08-16追記）**: `moat_score=0.5`
+は「実測の結果0.5」と「最低2指標ルールによる中立フォールバック
+（プレースホルダ）」のいずれかでありうる。`MoatScoreResult.source`
+（`"measured"`/`"neutral_fallback"`）・`.n_present`（有効指標数）を
+`components.moat_score_source`/`components.moat_score_n_present`として
+出力し区別する（`NAMING_CONVENTIONS.md`規則4、`operating_income_source`
+と同型）。`index.html`の`#avg-moat`は`neutral_fallback`銘柄を平均計算
+から除外する（プレースホルダを実測平均に混ぜないため）。検知は
+CHECK-36（`report_consistency_check.py`、銘柄単位WARN＋対象数急増の
+集計WARN）。
+
+**BKNGの恒久的な注意事項**: BKNGは自己資本マイナス
+（`negative_invested_capital`）でROIC測定不能・粗利率も欠損しており、
+有効指標はFCFマージンのみ（`n_present=1`）のため`moat_score=0.5`
+（`neutral_fallback`）が採用され続けている。2026-08-16時点でTANUKI
+SCOREが`BUY`と判定されているが、**これは測定されたモート強度に基づく
+ものではない**（BACKLOG_DONE.md「2026-08-16（完了）」
+`[[MOAT-SCORE-PARTIAL-NULL-1]]`参照）。自己資本が大幅マイナスの状態
+（大規模自社株買いの継続等）が解消されない限り、この状態は継続する
+見込み。`moat_score`を人為的に調整することはしない
+（測定不能を推測で埋めることは本項目で解消した`(値 or 0.0)`型の問題の
+再発となるため）。
+
 ---
 
 ## データフロー（上流→下流）

@@ -544,6 +544,43 @@ CHECK-35は`moat_score`を監視対象にしていないため無変化）。
 2件のみ（両方とも最低2指標ルールでmoat_score=0.5に収まり、Step 2の
 懸念〈単一指標だけで極端な値に振れる〉は解消済み）。
 
+#### 追記（2026-08-16、中立フォールバックのprovenance化）
+`moat_score=0.5`が「実測結果」なのか「最低2指標ルールによる中立
+フォールバック（プレースホルダ）」なのかを区別できない問題が残って
+いたため、`MoatScoreResult`に`source`（`"measured"`/
+`"neutral_fallback"`）・`n_present`フィールドを追加し、
+`components.moat_score_source`/`components.moat_score_n_present`として
+出力に反映した（`NAMING_CONVENTIONS.md`規則4準拠、
+`operating_income_source`と同型のパターン）。
+
+**BKNGのTANUKI SCORE WATCH→BUY変化の実態**: BKNGは自己資本マイナス
+（`negative_invested_capital`）でROIC測定不能・粗利率
+（`gross_margin_3yr_avg`）も欠損しており、有効指標はFCFマージンの
+1件のみ（`n_present=1`）。最低2指標ルールにより`moat_score=0.5`
+（`source="neutral_fallback"`）が採用されている。**このBUY判定は
+測定されたモート強度に基づくものではなく、中立フォールバックの
+プレースホルダに基づく**。BKNGの`moat_score`を人為的に調整すること
+はせず（測定不能な値を推測で埋めるのは本項目で解消した問題の再発と
+なるため）、`source`フィールドで測定不能であることを可視化する対応を
+採った。BKNGが将来も自己資本マイナス（大規模自社株買いの継続等）で
+あり続ける限り、この状態は恒久的に継続する見込み（`SYSTEM_MAP.md`
+「moat_score」節に恒久的な注意事項として記載）。
+
+**出力・表示への反映**:
+- `index.html`: `#avg-moat`（全銘柄平均）から`neutral_fallback`銘柄を
+  除外するよう修正（プレースホルダ値を実測平均に混ぜると、旧
+  `(値 or 0.0)`バグと同型の「由来不明な値が集計を歪める」問題を形を
+  変えて再発させるため）。`moat`列に`neutral_fallback`銘柄向けの
+  マーカー（※、ホバーで理由表示）を追加
+- `stock.html`: Phase1表示に`neutral_fallback`の場合の注記を追加
+- 表示側の変更は上記2箇所とも比較的小規模だったため、別項目への
+  切り出しは行わず本項目内で実装した
+
+**検知（CHECK-36）**: `report_consistency_check.py`に、CHECK-35と同型
+の設計（銘柄単位WARN＋対象数急増の集計WARN、基準値4件＝実績2件の
+約2倍）でCHECK-36を新設。NGではなくWARN（中立フォールバックの使用
+自体は正常動作のため）。
+
 #### 関連
 `[[OPERATING-INCOME-EXTRACTION-GAP-1]]`（本線1、roic欠損の一部を解消
 し本項目の対象規模を縮小）。
