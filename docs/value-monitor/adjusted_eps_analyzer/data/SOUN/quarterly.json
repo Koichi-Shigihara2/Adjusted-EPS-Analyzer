@@ -1,7 +1,86 @@
 {
   "ticker": "SOUN",
-  "last_updated": "2026-08-10T11:22:25.827139",
+  "last_updated": "2026-08-17T10:50:44.299163",
   "quarters": [
+    {
+      "gaap_eps": -0.09761119639200823,
+      "adjusted_eps": -0.041967596015755254,
+      "gaap_net_income": -42817000.0,
+      "adjusted_net_income": -18409020.94253722,
+      "diluted_shares_used": 438648450.0,
+      "adjustments": [
+        {
+          "item_id": "sbc",
+          "item_name": "株式報酬費用",
+          "amount": 20622000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金費用",
+          "extracted_from": "us-gaap:AllocatedShareBasedCompensationExpense",
+          "category": "株式報酬関連",
+          "net_amount": 19514649.095607236,
+          "tax_rate_applied": 0.05369755137196998
+        },
+        {
+          "item_id": "amortization_intangibles",
+          "item_name": "無形資産償却費",
+          "amount": 5171000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "買収関連無形資産の償却",
+          "extracted_from": "us-gaap:AmortizationOfIntangibleAssets",
+          "category": "買収・統合関連",
+          "net_amount": 4893329.961855544,
+          "tax_rate_applied": 0.05369755137196998
+        }
+      ],
+      "net_adjustment_total": 24407979.05746278,
+      "filing_date": "2026-06-30",
+      "form": "10-Q",
+      "sector": "Technology",
+      "sector_exclusions": [
+        "inventory_writeoff",
+        "gov_subsidy_timing",
+        "fx_gains_losses",
+        "derivative_gains_losses",
+        "tax_one_time"
+      ],
+      "revenue": 61897000.0,
+      "diluted_shares": 438648450.0,
+      "period_end": "2026-06-30",
+      "fiscal_year": 2026,
+      "quarter": 2,
+      "tax_expense": 2182000.0,
+      "pretax_income": -40635000.0,
+      "maturity_monitor": {
+        "alert": "SBC寄与率が40%超（現在 84.5%）",
+        "sbc_contribution": 0.845,
+        "sbc_to_revenue": 0.333,
+        "sbc_per_share": 0.047,
+        "sector_threshold": {
+          "sbc_contribution": 0.4,
+          "sbc_to_revenue": 0.25
+        }
+      },
+      "ai_analysis": {
+        "health": "調整大",
+        "comment": "主な調整項目はSBC（恒常的・非現金だが希薄化を伴う運用コスト）と無形資産償却（買収由来の継続的償却）であり、両者とも一過性ではなく毎期発生する性質が強い。GAAP EPS(-0.0976)がAdjusted EPS(-0.042)の2倍以上の赤字を示すため、市場がGAAPのみで判断する場合に企業の実力（AI技術の進展による潜在成長力）が過小評価される可能性がある。ただしSBCの継続性と将来の株式希薄化を考慮すると、調整後EPSを過度に楽観視する過大評価リスクも存在。投資家は調整後利益に加え、希薄化後株主価値とキャッシュバーンを重点的に検証すべき。",
+        "sources": [
+          {
+            "item": "sbc",
+            "snippet": "株式報酬費用は非現金費用としてadd backされているが、成長企業では毎期発生する恒常的コストであり、従業員インセンティブとして実質的な希薄化効果を伴う",
+            "confidence": 0.2
+          },
+          {
+            "item": "amortization_intangibles",
+            "snippet": "無形資産償却費は買収関連の継続的非現金費用であり、M&A後の資産価値反映として恒常的に発生する性格が強い",
+            "confidence": 0.2
+          }
+        ]
+      }
+    },
     {
       "gaap_eps": -0.0582340118035465,
       "adjusted_eps": -0.0945330168921203,
@@ -85,21 +164,6 @@
           "condition1": "FV変動が純利益の157%占有（超高materiality → 条件1スキップ）",
           "note": "公正価値変動（非現金・非経常）が純利益の30%以上を占めると判定されました。GAAP EPSは経済実態を反映していない可能性があります。Adj EPSは以下の項目を除外して再計算しています: 偶発対価公正価値変動損益"
         }
-      },
-      "maturity_monitor": {
-        "alert": "SBC寄与率が40%超（現在 82.4%）",
-        "sbc_contribution": 0.824,
-        "sbc_to_revenue": 0.42,
-        "sbc_per_share": 0.0432,
-        "sector_threshold": {
-          "sbc_contribution": 0.4,
-          "sbc_to_revenue": 0.25
-        }
-      },
-      "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にリクエストエラーが発生しました: Request failed: HTTPSConnectionPool(host='api.x.ai', port=443): Read timed out. (read timeout=30)",
-        "sources": []
       }
     },
     {
@@ -961,46 +1025,6 @@
       "quarter": 3,
       "tax_expense": 864000.0,
       "pretax_income": -28058000.0
-    },
-    {
-      "gaap_eps": -0.18930376681904218,
-      "adjusted_eps": -0.18898081773446215,
-      "gaap_net_income": -30668000.0,
-      "adjusted_net_income": -30615680.900954455,
-      "diluted_shares_used": 162004172.0,
-      "adjustments": [
-        {
-          "item_id": "sbc",
-          "item_name": "株式報酬費用",
-          "amount": 53000,
-          "unit": "USD",
-          "direction": "add_back",
-          "pre_tax": true,
-          "reason": "非現金費用",
-          "extracted_from": "us-gaap:EmployeeBenefitsAndShareBasedCompensation",
-          "category": "株式報酬関連",
-          "net_amount": 52319.09904554312,
-          "tax_rate_applied": 0.012847187819941213
-        }
-      ],
-      "net_adjustment_total": 52319.09904554312,
-      "filing_date": "2022-06-30",
-      "form": "10-Q",
-      "sector": "Technology",
-      "sector_exclusions": [
-        "inventory_writeoff",
-        "gov_subsidy_timing",
-        "fx_gains_losses",
-        "derivative_gains_losses",
-        "tax_one_time"
-      ],
-      "revenue": 6152000.0,
-      "diluted_shares": 162004172.0,
-      "period_end": "2022-06-30",
-      "fiscal_year": 2022,
-      "quarter": 2,
-      "tax_expense": 389000.0,
-      "pretax_income": -30279000.0
     }
   ]
 }

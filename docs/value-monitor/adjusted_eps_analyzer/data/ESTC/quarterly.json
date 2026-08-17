@@ -1,6 +1,6 @@
 {
   "ticker": "ESTC",
-  "last_updated": "2026-08-10T11:20:21.714649",
+  "last_updated": "2026-08-17T10:48:25.543715",
   "quarters": [
     {
       "gaap_eps": 4.065443739406903,
@@ -86,30 +86,9 @@
         }
       },
       "ai_analysis": {
-        "health": "調整大",
-        "comment": "主にtax_one_time_dta(-380M)の巨額一時的利益によりGAAP EPSが4.06と大幅に inflated されており、市場がGAAPベースで判断する場合に企業の実力(調整後EPS 0.52)が過大評価されやすい。SBC(恒常的コスト)とamortization(継続的償却)は実態を加味すべき項目だが、これらを加算調整した結果、調整後EPSが実力を過小評価するリスクもある。投資家はSBCの継続性と税務の一過性を注視すべきで、全体として過大評価リスクが高い。",
-        "sources": [
-          {
-            "item": "sbc",
-            "snippet": "株式報酬費用は非現金費用だがテック企業では毎期発生する恒常的運用コストである",
-            "confidence": 0.2
-          },
-          {
-            "item": "amortization_intangibles",
-            "snippet": "買収関連無形資産の償却は継続的に発生する恒常的項目",
-            "confidence": 0.2
-          },
-          {
-            "item": "loan_loss_provision_abnormal",
-            "snippet": "マクロ変動による一時的影響として異常変動分をadd_backする一過性項目",
-            "confidence": 0.8
-          },
-          {
-            "item": "tax_one_time_dta",
-            "snippet": "DTA認識による一時的税務利益(税費用=-370M vs 正常10M)を除外する明確に一過性の調整",
-            "confidence": 1.0
-          }
-        ]
+        "health": "Error",
+        "comment": "AI分析中にリクエストエラーが発生しました: Request failed: HTTPSConnectionPool(host='api.x.ai', port=443): Read timed out. (read timeout=30)",
+        "sources": []
       }
     },
     {

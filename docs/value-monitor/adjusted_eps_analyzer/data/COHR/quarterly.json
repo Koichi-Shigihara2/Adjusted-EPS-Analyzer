@@ -1,7 +1,72 @@
 {
   "ticker": "COHR",
-  "last_updated": "2026-08-10T11:19:34.478515",
+  "last_updated": "2026-08-17T10:47:50.087883",
   "quarters": [
+    {
+      "gaap_eps": 1.2310440305649812,
+      "adjusted_eps": 1.7461047913813994,
+      "gaap_net_income": 240530000.0,
+      "adjusted_net_income": 341166176.8736375,
+      "diluted_shares_used": 195387000.0,
+      "adjustments": [
+        {
+          "item_id": "sbc",
+          "item_name": "株式報酬費用",
+          "amount": 50419000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金費用",
+          "extracted_from": "us-gaap:ShareBasedCompensation",
+          "category": "株式報酬関連",
+          "net_amount": 40239306.886013955,
+          "tax_rate_applied": 0.20190192415529948
+        },
+        {
+          "item_id": "amortization_intangibles",
+          "item_name": "無形資産償却費",
+          "amount": 69577000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "買収関連無形資産の償却",
+          "extracted_from": "us-gaap:AmortizationOfIntangibleAssets",
+          "category": "買収・統合関連",
+          "net_amount": 55529269.82304673,
+          "tax_rate_applied": 0.20190192415529948
+        },
+        {
+          "item_id": "restructuring",
+          "item_name": "リストラ費用",
+          "amount": 6099000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "一過性の事業再編費用",
+          "extracted_from": "us-gaap:RestructuringCharges",
+          "category": "リストラ・事業再編関連",
+          "net_amount": 4867600.1645768285,
+          "tax_rate_applied": 0.20190192415529948
+        }
+      ],
+      "net_adjustment_total": 100636176.87363751,
+      "filing_date": "2026-06-30",
+      "form": "10-K",
+      "sector": null,
+      "sector_exclusions": [],
+      "revenue": 2045533000.0,
+      "diluted_shares": 195387000.0,
+      "period_end": "2026-06-30",
+      "fiscal_year": 2026,
+      "quarter": 4,
+      "tax_expense": 60849000.0,
+      "pretax_income": 301379000.0,
+      "ai_analysis": {
+        "health": "Error",
+        "comment": "AI分析中にリクエストエラーが発生しました: Request failed: HTTPSConnectionPool(host='api.x.ai', port=443): Read timed out. (read timeout=30)",
+        "sources": []
+      }
+    },
     {
       "gaap_eps": 0.9747157108882857,
       "adjusted_eps": 1.7482666044683035,
@@ -60,28 +125,7 @@
       "fiscal_year": 2026,
       "quarter": 3,
       "tax_expense": 2674000.0,
-      "pretax_income": 194076000.0,
-      "ai_analysis": {
-        "health": "過大調整",
-        "comment": "調整項目の多くを占めるSBCと無形資産償却は恒常的な非現金コストであり、リストラのみが一過性です。GAAP EPS(0.97)に対しAdjusted EPS(1.75)と大幅に加算されていますが、市場がGAAPベースで判断する場合でも企業の実力は調整後ほど高くない可能性が強く、過小評価というより調整による過大評価リスクが目立ちます。投資家はSBCの継続性・希薄化効果や償却の長期影響に特に注目すべきです。",
-        "sources": [
-          {
-            "item": "sbc",
-            "snippet": "株式報酬費用は非現金費用であるが、企業にとって恒常的な運用コストであり、毎期発生する可能性が高い。",
-            "confidence": 0.2
-          },
-          {
-            "item": "amortization_intangibles",
-            "snippet": "買収関連無形資産の償却は定期的に発生する非現金費用であり、恒常的な調整項目と考えられる。",
-            "confidence": 0.2
-          },
-          {
-            "item": "restructuring",
-            "snippet": "リストラ費用は事業再編に伴う一過性の費用であり、調整の対象として適切。",
-            "confidence": 0.8
-          }
-        ]
-      }
+      "pretax_income": 194076000.0
     },
     {
       "gaap_eps": 0.7611500490254569,
@@ -738,9 +782,9 @@
     },
     {
       "gaap_eps": 0.018301668427824862,
-      "adjusted_eps": -0.1265805496251249,
+      "adjusted_eps": -0.13495503655301805,
       "gaap_net_income": 2546000.0,
-      "adjusted_net_income": -17609000.0,
+      "adjusted_net_income": -18774000.0,
       "diluted_shares_used": 139113000.0,
       "adjustments": [
         {
@@ -772,12 +816,12 @@
         {
           "item_id": "tax_one_time_dta",
           "item_name": "DTA認識（繰延税金資産）除外",
-          "amount": -20155000.0,
-          "net_amount": -20155000.0,
-          "note": "tax_expense=-7,293,000, median_normal_tax=12,862,000"
+          "amount": -21320000.0,
+          "net_amount": -21320000.0,
+          "note": "tax_expense=-7,293,000, median_normal_tax=14,027,000"
         }
       ],
-      "net_adjustment_total": -20155000.0,
+      "net_adjustment_total": -21320000.0,
       "filing_date": "2023-03-31",
       "form": "10-Q",
       "sector": null,

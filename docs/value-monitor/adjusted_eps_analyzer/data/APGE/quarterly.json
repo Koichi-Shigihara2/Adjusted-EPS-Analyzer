@@ -1,7 +1,65 @@
 {
   "ticker": "APGE",
-  "last_updated": "2026-08-10T11:25:29.391952",
+  "last_updated": "2026-08-17T10:54:37.072448",
   "quarters": [
+    {
+      "gaap_eps": -1.137990742104528,
+      "adjusted_eps": -0.9173243034794865,
+      "gaap_net_income": -85854000.0,
+      "adjusted_net_income": -69206152.42025742,
+      "diluted_shares_used": 75443496.0,
+      "adjustments": [
+        {
+          "item_id": "sbc",
+          "item_name": "株式報酬費用",
+          "amount": 16663000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金費用",
+          "extracted_from": "us-gaap:AllocatedShareBasedCompensationExpense",
+          "category": "株式報酬関連",
+          "net_amount": 16647847.579742584,
+          "tax_rate_applied": 0.0009093452714045887
+        }
+      ],
+      "net_adjustment_total": 16647847.579742584,
+      "filing_date": "2026-06-30",
+      "form": "10-Q",
+      "sector": "ヘルスケア / バイオ",
+      "sector_exclusions": [
+        "ma_integration",
+        "iprd_amortization"
+      ],
+      "revenue": 0.0,
+      "diluted_shares": 75443496.0,
+      "period_end": "2026-06-30",
+      "fiscal_year": 2026,
+      "quarter": 2,
+      "tax_expense": 78000.0,
+      "pretax_income": -85776000.0,
+      "maturity_monitor": {
+        "alert": "SBC寄与率が40%超（現在 100.1%）",
+        "sbc_contribution": 1.001,
+        "sbc_to_revenue": 0,
+        "sbc_per_share": 0.2209,
+        "sector_threshold": {
+          "sbc_contribution": 0.4,
+          "sbc_to_revenue": 0.25
+        }
+      },
+      "ai_analysis": {
+        "health": "過大調整",
+        "comment": "調整項目はSBC（株式報酬費用）のみで、これは恒常的に発生する運用コストです。GAAP EPSではSBCが控除され損失が大きく表示されるため、市場がGAAPベースで判断する場合に企業の実力（キャッシュベースの運営状況）が見えにくくなり、過小評価のリスクがあります。ただしSBCは株主希薄化を伴う実質コストであるため、Adjusted EPSによる加算調整は企業実力を過大に見せている可能性があり、投資家は希薄化効果や継続性を注視すべきです。",
+        "sources": [
+          {
+            "item": "sbc",
+            "snippet": "株式報酬費用は非現金費用としてadd_backされているが、バイオ企業などで毎期継続的に発生する恒常的な報酬コストであり、株主希薄化の観点から実質的な費用とみなされる。",
+            "confidence": 0.2
+          }
+        ]
+      }
+    },
     {
       "gaap_eps": -1.0637671959321495,
       "adjusted_eps": -0.8177922029432105,
@@ -37,28 +95,7 @@
       "fiscal_year": 2026,
       "quarter": 1,
       "tax_expense": 79000.0,
-      "pretax_income": -74032000.0,
-      "maturity_monitor": {
-        "alert": "SBC寄与率が40%超（現在 100.1%）",
-        "sbc_contribution": 1.001,
-        "sbc_to_revenue": 0,
-        "sbc_per_share": 0.2462,
-        "sector_threshold": {
-          "sbc_contribution": 0.4,
-          "sbc_to_revenue": 0.25
-        }
-      },
-      "ai_analysis": {
-        "health": "過大調整",
-        "comment": "SBCは恒常的なコストであり一過性ではないため、この調整によりAdjusted EPSがGAAPより改善(-0.82 vs -1.06)しているが、市場がGAAP EPS基準で判断する場合、非現金SBCの影響で企業の実力(キャッシュベースの運営状況)が過小評価される可能性がある。ただしSBCは株式希薄化を伴う実質コストのため、無調整を完全に無視すると過大評価リスクも生じる。投資家は調整後数値だけでなく、継続的なSBC規模・希薄化効果・将来キャッシュフローへの影響を注視すべき。",
-        "sources": [
-          {
-            "item": "sbc",
-            "snippet": "非現金費用として株式報酬費用をadd_backしているが、バイオ企業では毎期発生する恒常的コストである",
-            "confidence": 0.2
-          }
-        ]
-      }
+      "pretax_income": -74032000.0
     },
     {
       "gaap_eps": -1.1432865794200837,
@@ -526,29 +563,6 @@
       "quarter": 3,
       "tax_expense": 0,
       "pretax_income": 0
-    },
-    {
-      "gaap_eps": -1.4528,
-      "adjusted_eps": -1.4528,
-      "gaap_net_income": -1816000.0,
-      "adjusted_net_income": -1816000.0,
-      "diluted_shares_used": 1250000.0,
-      "adjustments": [],
-      "net_adjustment_total": 0.0,
-      "filing_date": "2022-06-30",
-      "form": "10-Q",
-      "sector": "ヘルスケア / バイオ",
-      "sector_exclusions": [
-        "ma_integration",
-        "iprd_amortization"
-      ],
-      "revenue": 0.0,
-      "diluted_shares": 1250000.0,
-      "period_end": "2022-06-30",
-      "fiscal_year": 2022,
-      "quarter": 2,
-      "tax_expense": 0,
-      "pretax_income": -1816000.0
     }
   ]
 }

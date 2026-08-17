@@ -1,7 +1,52 @@
 {
   "ticker": "ASTS",
-  "last_updated": "2026-08-10T11:18:57.384343",
+  "last_updated": "2026-08-17T10:47:01.698887",
   "quarters": [
+    {
+      "gaap_eps": -0.7721116724082139,
+      "adjusted_eps": -0.5609190981481752,
+      "gaap_net_income": -230909000.0,
+      "adjusted_net_income": -167749397.73973438,
+      "diluted_shares_used": 299061662.0,
+      "adjustments": [
+        {
+          "item_id": "sbc",
+          "item_name": "株式報酬費用",
+          "amount": 63467000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金費用",
+          "extracted_from": "us-gaap:AllocatedShareBasedCompensationExpense",
+          "category": "株式報酬関連",
+          "net_amount": 63159602.260265626,
+          "tax_rate_applied": 0.00484342634336542
+        }
+      ],
+      "net_adjustment_total": 63159602.260265626,
+      "filing_date": "2026-06-30",
+      "form": "10-Q",
+      "sector": null,
+      "sector_exclusions": [],
+      "revenue": 31520000.0,
+      "diluted_shares": 299061662.0,
+      "period_end": "2026-06-30",
+      "fiscal_year": 2026,
+      "quarter": 2,
+      "tax_expense": 1113000.0,
+      "pretax_income": -229796000.0,
+      "ai_analysis": {
+        "health": "調整大",
+        "comment": "調整項目は恒常的な株式報酬費用(SBC)であり、非現金ながら株主希薄化を伴う実質コストです。GAAP EPS(-0.77)がAdjusted EPS(-0.56)より大幅に悪化して表示されるため、市場がGAAP重視の場合に企業の非現金ベースの実力が見えにくくなり、過小評価のリスクがあります。ただしSBCが毎期継続的に発生する成長企業特有のコストである点を考慮すると、調整により業績が過大評価されるリスクもあり、投資家は希薄化影響や将来の収益化を慎重に検証すべきです。",
+        "sources": [
+          {
+            "item": "sbc",
+            "snippet": "非現金費用としてadd_backされた株式報酬費用。恒常的に発生する成長企業の人材確保コストであり、一過性ではない。",
+            "confidence": 0.2
+          }
+        ]
+      }
+    },
     {
       "gaap_eps": -0.6570998548461288,
       "adjusted_eps": -0.46785270325126344,
@@ -34,18 +79,7 @@
       "fiscal_year": 2026,
       "quarter": 1,
       "tax_expense": 1169000.0,
-      "pretax_income": -189843000.0,
-      "ai_analysis": {
-        "health": "過大調整",
-        "comment": "調整項目は株式報酬費用(SBC)で恒常的なコストであり一過性ではない。市場がGAAP EPS(-0.657)で判断する場合、非現金SBCを加算したAdjusted EPS(-0.468)より大幅な赤字として認識され、ASTSの技術開発力や成長実力を過小評価するリスクがある。ただしSBCは株式希薄化を伴う実質コストのため、過大調整により実力が見かけ上良く見えるリスクもあり、投資家はキャッシュバーン率、希薄化後株主価値、収益化進捗に特に注目すべき。",
-        "sources": [
-          {
-            "item": "sbc",
-            "snippet": "非現金費用としてadd_backされているが、毎期発生する恒常的な株式報酬費用であり、従業員インセンティブとして事業運営に不可欠なコスト。",
-            "confidence": 0.2
-          }
-        ]
-      }
+      "pretax_income": -189843000.0
     },
     {
       "gaap_eps": -0.28894933605485174,
@@ -928,9 +962,9 @@
     },
     {
       "gaap_eps": 0.011517242114998,
-      "adjusted_eps": 0.01947076621239116,
+      "adjusted_eps": 0.01781104999916956,
       "gaap_net_income": 597052.0,
-      "adjusted_net_income": 1009361.4245985299,
+      "adjusted_net_income": 923322.0,
       "diluted_shares_used": 51839841.0,
       "adjustments": [
         {
@@ -943,8 +977,8 @@
           "reason": "非現金費用",
           "extracted_from": "us-gaap:ShareBasedCompensation",
           "category": "株式報酬関連",
-          "net_amount": 355404.73403650516,
-          "tax_rate_applied": 0.0016720954030753179
+          "net_amount": 281240.0,
+          "tax_rate_applied": 0.21
         },
         {
           "item_id": "amortization_intangibles",
@@ -956,11 +990,11 @@
           "reason": "買収関連無形資産の償却",
           "extracted_from": "us-gaap:AmortizationOfIntangibleAssets",
           "category": "買収・統合関連",
-          "net_amount": 56904.690562024705,
-          "tax_rate_applied": 0.0016720954030753179
+          "net_amount": 45030.0,
+          "tax_rate_applied": 0.21
         }
       ],
-      "net_adjustment_total": 412309.4245985299,
+      "net_adjustment_total": 326270.0,
       "filing_date": "2021-03-31",
       "form": "10-Q",
       "sector": null,
@@ -970,53 +1004,6 @@
       "period_end": "2021-03-31",
       "fiscal_year": 2021,
       "quarter": 1,
-      "tax_expense": 1000.0,
-      "pretax_income": 598052.0
-    },
-    {
-      "gaap_eps": -0.0010619052631739361,
-      "adjusted_eps": 0.00413467703344229,
-      "gaap_net_income": -55049.0,
-      "adjusted_net_income": 214341.0,
-      "diluted_shares_used": 51839841.0,
-      "adjustments": [
-        {
-          "item_id": "sbc",
-          "item_name": "株式報酬費用",
-          "amount": 241000,
-          "unit": "USD",
-          "direction": "add_back",
-          "pre_tax": true,
-          "reason": "非現金費用",
-          "extracted_from": "us-gaap:AllocatedShareBasedCompensationExpense",
-          "category": "株式報酬関連",
-          "net_amount": 190390.0,
-          "tax_rate_applied": 0.21
-        },
-        {
-          "item_id": "amortization_intangibles",
-          "item_name": "無形資産償却費",
-          "amount": 100000,
-          "unit": "USD",
-          "direction": "add_back",
-          "pre_tax": true,
-          "reason": "買収関連無形資産の償却",
-          "extracted_from": "us-gaap:AmortizationOfIntangibleAssets",
-          "category": "買収・統合関連",
-          "net_amount": 79000.0,
-          "tax_rate_applied": 0.21
-        }
-      ],
-      "net_adjustment_total": 269390.0,
-      "filing_date": "2020-09-30",
-      "form": "10-Q",
-      "sector": null,
-      "sector_exclusions": [],
-      "revenue": 2090000.0,
-      "diluted_shares": 51839841.0,
-      "period_end": "2020-09-30",
-      "fiscal_year": 2020,
-      "quarter": 3,
       "tax_expense": 0,
       "pretax_income": 0
     }

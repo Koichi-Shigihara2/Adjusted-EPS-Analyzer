@@ -1,7 +1,65 @@
 {
   "ticker": "ONDS",
-  "last_updated": "2026-08-10T11:21:41.869724",
+  "last_updated": "2026-08-17T10:49:59.846588",
   "quarters": [
+    {
+      "gaap_eps": -0.17552269392148023,
+      "adjusted_eps": -0.1526566952242292,
+      "gaap_net_income": -88392000.0,
+      "adjusted_net_income": -76876843.11805525,
+      "diluted_shares_used": 503593000.0,
+      "adjustments": [
+        {
+          "item_id": "loan_fair_value",
+          "item_name": "ローン公正価値評価損益",
+          "amount": 15300000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "市場金利変動による一時的評価替え",
+          "extracted_from": "us-gaap:FairValueOptionChangesInFairValueGainLoss1",
+          "category": "金融関連",
+          "net_amount": 11515156.88194474,
+          "tax_rate_applied": 0.24737536719315426
+        }
+      ],
+      "net_adjustment_total": 11515156.88194474,
+      "filing_date": "2026-06-30",
+      "form": "10-Q",
+      "sector": "通信・インフラ",
+      "sector_exclusions": [
+        "sbc",
+        "amortization_intangibles"
+      ],
+      "revenue": 83772000.0,
+      "diluted_shares": 503593000.0,
+      "period_end": "2026-06-30",
+      "fiscal_year": 2026,
+      "quarter": 2,
+      "tax_expense": -29053000.0,
+      "pretax_income": -117445000.0,
+      "maturity_monitor": {
+        "alert": null,
+        "sbc_contribution": 0.0,
+        "sbc_to_revenue": 0.0,
+        "sbc_per_share": 0.0,
+        "sector_threshold": {
+          "sbc_contribution": 0.4,
+          "sbc_to_revenue": 0.25
+        }
+      },
+      "ai_analysis": {
+        "health": "調整中",
+        "comment": "調整項目「loan_fair_value」は市場金利変動による一時的なローン公正価値評価損益（add_back）であり、非現金・非コアな金融項目と判断される。GAAP EPS（-0.1755）がこの損失を含んでいるため、市場がGAAPベースで評価している場合に企業の実力（調整後EPS -0.1527）が過小評価されやすく、株価に悪影響を及ぼす可能性がある。投資家としては今後の金利環境下での同項目の再発生リスクを注視すべきであり、過大調整の懸念は小さいが恒常化すれば実力過大評価の逆リスクも生じる。",
+        "sources": [
+          {
+            "item": "loan_fair_value",
+            "snippet": "市場金利変動による一時的評価替え。us-gaap:FairValueOptionChangesInFairValueGainLoss1から抽出された金融関連の非経常的公正価値変動。",
+            "confidence": 0.65
+          }
+        ]
+      }
+    },
     {
       "gaap_eps": 0.7857727644864914,
       "adjusted_eps": 0.11923838979783671,
@@ -56,21 +114,6 @@
           "condition1": "FV変動が純利益の107%占有（超高materiality → 条件1スキップ）",
           "note": "公正価値変動（非現金・非経常）が純利益の30%以上を占めると判定されました。GAAP EPSは経済実態を反映していない可能性があります。Adj EPSは以下の項目を除外して再計算しています: ワラント公正価値変動損益"
         }
-      },
-      "maturity_monitor": {
-        "alert": "SBC/売上高が25%超（現在 39.2%）",
-        "sbc_contribution": 0,
-        "sbc_to_revenue": 0.392,
-        "sbc_per_share": 0.0426,
-        "sector_threshold": {
-          "sbc_contribution": 0.4,
-          "sbc_to_revenue": 0.25
-        }
-      },
-      "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にリクエストエラーが発生しました: Request failed: HTTPSConnectionPool(host='api.x.ai', port=443): Read timed out. (read timeout=30)",
-        "sources": []
       }
     },
     {
@@ -199,11 +242,11 @@
       }
     },
     {
-      "gaap_eps": -0.07135702669521386,
-      "adjusted_eps": -0.07135702669521386,
+      "gaap_eps": -0.07135702574791077,
+      "adjusted_eps": -0.07135702574791077,
       "gaap_net_income": -10750150.0,
       "adjusted_net_income": -10750150.0,
-      "diluted_shares_used": 150652998.0,
+      "diluted_shares_used": 150653000.0,
       "adjustments": [],
       "net_adjustment_total": 0.0,
       "filing_date": "2025-06-30",
@@ -213,13 +256,13 @@
         "sbc",
         "amortization_intangibles"
       ],
-      "revenue": 6273388.0,
-      "diluted_shares": 150652998.0,
+      "revenue": 6273000.0,
+      "diluted_shares": 150653000.0,
       "period_end": "2025-06-30",
       "fiscal_year": 2025,
       "quarter": 2,
       "tax_expense": 0,
-      "pretax_income": 0
+      "pretax_income": -10750150.0
     },
     {
       "gaap_eps": -0.1346254940240941,
@@ -462,29 +505,6 @@
       "period_end": "2022-09-30",
       "fiscal_year": 2022,
       "quarter": 3,
-      "tax_expense": 0,
-      "pretax_income": 0
-    },
-    {
-      "gaap_eps": -0.2701467251546142,
-      "adjusted_eps": -0.2701467251546142,
-      "gaap_net_income": -11391425.0,
-      "adjusted_net_income": -11391425.0,
-      "diluted_shares_used": 42167548.0,
-      "adjustments": [],
-      "net_adjustment_total": 0.0,
-      "filing_date": "2022-06-30",
-      "form": "10-Q",
-      "sector": "通信・インフラ",
-      "sector_exclusions": [
-        "sbc",
-        "amortization_intangibles"
-      ],
-      "revenue": 604219.0,
-      "diluted_shares": 42167548.0,
-      "period_end": "2022-06-30",
-      "fiscal_year": 2022,
-      "quarter": 2,
       "tax_expense": 0,
       "pretax_income": 0
     }
