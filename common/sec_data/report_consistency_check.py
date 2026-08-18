@@ -142,6 +142,7 @@ import re
 import json
 import glob
 import sys
+from typing import Optional
 
 # ─── パス設定 ────────────────────────────────────────────────
 SCRIPT_DIR   = os.path.dirname(os.path.abspath(__file__))
@@ -161,6 +162,7 @@ from common.sec_data import tickers as _tickers_mod  # noqa: E402
 from common.sec_data.fetcher import load_submissions  # noqa: E402
 from common.sec_data.parser import _load_fixed_registry  # noqa: E402
 from common.sec_data.utils import compute_snapshot_hash  # noqa: E402
+from common.yfinance_utils import safe_yf_ticker  # noqa: E402
 
 _SEG_CFG_CACHE: dict = {}
 
@@ -386,6 +388,38 @@ def _check_fixed_registry_integrity(ticker: str) -> list[str]:
     return ng
 
 
+def _get_yf_operating_income(ticker: str) -> Optional[float]:
+    """CHECK-35拡張（[[QUALITY-GATES-EPIC-1]]本線3、ゲート1第一歩、
+    2026-08-19）: yfinance income_stmtから直近年度のOperating Incomeを
+    取得する。
+
+    `common.yfinance_utils.safe_yf_ticker()`経由で呼び出す（リトライ・
+    ログ出力の一元化を踏襲。既存のWARN-10/audit.pyのβ照合が使う
+    `common.market_data.reader.get_attributes()`ローカルキャッシュには
+    operating_income相当のフィールドが存在しないため踏襲できず、単一
+    ティッカーの直接取得に適したこちらの既存パターンを採用した。詳細は
+    BACKLOG.md `[[QUALITY-GATES-EPIC-1]]`参照）。
+
+    本関数はCHECK-35が既にNone/derived判定した銘柄（2026-08-19時点で
+    実測7銘柄前後）に対してのみ呼ばれるため、全105銘柄を毎回呼ぶ設計では
+    ない（レート制限への配慮）。取得失敗・データ不在時はNoneを返し、
+    呼び出し元は照合をスキップする。
+    """
+    try:
+        tk = safe_yf_ticker(ticker)
+        if tk is None:
+            return None
+        fin = tk.income_stmt
+        if fin is None or fin.empty or "Operating Income" not in fin.index:
+            return None
+        row = fin.loc["Operating Income"].dropna()
+        if len(row) == 0:
+            return None
+        return float(row.iloc[0])
+    except Exception:
+        return None
+
+
 def _check_operating_income_reconstruction(ticker: str) -> list[str]:
     """CHECK-35: operating_income（営業利益）が標準タグ`OperatingIncomeLoss`
     以外から再構成されている、または再構成にも失敗しNoneのままの銘柄を
@@ -394,6 +428,18 @@ def _check_operating_income_reconstruction(ticker: str) -> list[str]:
     再構成の使用自体は正常動作（意図した設計）のためNGではなくWARN。
     開示打ち切りが新たに発生した銘柄・突き合わせ検証に失敗した銘柄を
     可視化する目的。
+
+    **yfinance照合（2026-08-19拡張、[[QUALITY-GATES-EPIC-1]]本線3・
+    ゲート1第一歩）**: None/derivedと判定された銘柄についてのみ、
+    yfinance income_stmtのOperating Incomeを追加取得しWARN文言に含める。
+    全105銘柄の実測分布（BACKLOG_DONE.md参照）では、標準タグ採用済みの
+    「正常」銘柄でも会計年度ズレ・yfinance側の簡略化等によりp95で81%・
+    最大342%の乖離が生じることを確認済みのため、**乖離率によるNG格上げは
+    行わない**（Phase 2b-2の2.0倍/0.5倍閾値が19銘柄を誤検知した教訓を
+    踏まえ、迷ったらWARNに留める判断）。あくまで検知精度向上（既存の
+    None/derived判定に定量情報を添える）が目的。yfinance取得失敗時
+    （データ不在・ネットワーク不調とも）は照合をスキップし、既存の
+    WARN-35単体の挙動をそのまま維持する。
     """
     warn: list[str] = []
     ticker_dir = os.path.join(SEC_DATA_DIR, ticker)
@@ -421,21 +467,31 @@ def _check_operating_income_reconstruction(ticker: str) -> list[str]:
         # 含め、operating_income=Noneの理由はここでは区別できない
         # （parser.py::_backfill_operating_income()のprovenance仕様、
         # 詳細はそちらのコードコメント参照）。
+        yf_oi = _get_yf_operating_income(ticker)
+        yf_str = ""
+        if yf_oi is not None and yf_oi != 0:
+            yf_str = f" yfinance実測: {yf_oi:,.0f}（有意値あり、要確認）"
         warn.append(
             f"  [WARN-35 operating_income取得不可] FY{latest_year}: "
             f"標準タグ`OperatingIncomeLoss`・再構成（GP法/pretax調整法）の"
             f"いずれでも取得できず、または再構成が妥当性ガードで不採用。"
             f"moat_score/RICE-1のroic経路が参照不能"
-            f"（既知の設計上の安全側フォールバックだが要注視）"
+            f"（既知の設計上の安全側フォールバックだが要注視）。{yf_str}"
         )
     elif oi_prov and oi_prov.get("derived"):
         source = oi_prov.get("source", "unknown")
         ratio = oi_prov.get("nonop_coverage_ratio")
         ratio_str = f" coverage_ratio={ratio:.2f}" if ratio is not None else ""
+        yf_oi = _get_yf_operating_income(ticker)
+        yf_str = ""
+        if yf_oi is not None and yf_oi != 0:
+            dev = (oi_val - yf_oi) / abs(yf_oi)
+            yf_str = f" yfinance実測: {yf_oi:,.0f}（乖離{dev:+.1%}）"
         warn.append(
             f"  [WARN-35 operating_income再構成] FY{latest_year}: "
             f"source={source} value={oi_val:,.0f}{ratio_str}（標準タグ非報告、"
-            f"[[OPERATING-INCOME-EXTRACTION-GAP-1]]の再構成ロジックで算出）"
+            f"[[OPERATING-INCOME-EXTRACTION-GAP-1]]の再構成ロジックで算出）。"
+            f"{yf_str}"
         )
     return warn
 
