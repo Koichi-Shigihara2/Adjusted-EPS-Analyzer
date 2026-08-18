@@ -561,6 +561,30 @@ annual_YYYY.jsonには残らない**（`operating_income: None`という結果
 時点の実績6件の約2倍）を超えた場合の急増をWARN（NGではない。再構成の
 使用自体は正常動作のため）で検知する。
 
+**yfinance照合の追加（2026-08-19、`[[QUALITY-GATES-EPIC-1]]`本線3・
+ゲート1「複数ソース自動照合」の第一歩）**: None/derivedと判定された
+銘柄についてのみ（全105銘柄ではない）、`common.yfinance_utils.
+safe_yf_ticker()`経由でyfinance income_stmtのOperating Incomeを追加
+取得し、WARN文言に実測値・乖離率を含めるよう拡張した。既存のWARN-10
+（PS比率）・audit.pyのβ照合が使う`common.market_data.reader.
+get_attributes()`ローカルキャッシュにはoperating_income相当の
+フィールドが存在しないため踏襲できず、単一ティッカーの直接取得に
+適したこちらの既存パターンを採用した。
+
+**乖離率によるNG格上げは行わない設計判断**: 全105銘柄の実測（BACKLOG_
+DONE.md「2026-08-19（完了）」参照）で、標準タグ採用済みの「正常」銘柄
+でもyfinance側との乖離が中央値0.2%である一方でp95=81%・最大342%（AVAV）
+まで裾が広いことを確認した。この分布では乖離率ベースの閾値は
+Phase 2b-2（2.0倍/0.5倍で19銘柄誤検知）と同型の誤検知リスクを抱える
+ため、乖離率は情報提供のみに留めWARN据え置きとした（「迷ったらWARNに
+留める」判断）。取得済みの再構成6銘柄（LLY/JNJ/XOM/KLAC/ASTS/COHR）の
+うちASTS・JNJは乖離0.0%で再構成の正しさを裏付けた一方、COHRは-89.6%
+（reconstructed_pretax $94.2M vs yfinance $901.5M）と大きく乖離して
+おり、再構成値自体の妥当性に疑問符が残ることが新たに判明した（対応は
+別途判断、本改修のスコープ外）。SOFI・CWANはyfinance側にOperating
+Incomeの行自体が存在せず照合はスキップされる（金融/フィンテック企業の
+簡略化された損益計算書に由来すると推測）。
+
 **下流への波及経路は2系統ある（2026-08-16追記、実測で判明）**:
 
 1. **`moat_score`経由**: `roic_wacc_ratio`（`_calc_roic_wacc_ratio()`）

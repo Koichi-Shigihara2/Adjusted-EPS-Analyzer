@@ -2200,6 +2200,40 @@ yfinanceはこれら4銘柄（LLY/JNJ/XOM/KLAC）の営業利益を問題なく�
 実装そのものではなく、フィールドごとの閾値の実データ検証（Phase 2b-2で
 NG想定がWARNへ格下げになった経緯を踏まえ、誤検知率の確認が必要）。
 
+**本線3・ゲート1第一歩完了（2026-08-19）**: `operating_income`単体を
+対象にyfinance自動照合を実装した（既存CHECK-35の拡張、新規CHECK番号
+なし）。
+
+- 実装: `common/sec_data/report_consistency_check.py::
+  _check_operating_income_reconstruction()`にNone/derived判定済みの
+  銘柄のみを対象とした`_get_yf_operating_income()`を追加し、WARN文言に
+  yfinance実測値・乖離率を含めるよう拡張。`common.yfinance_utils.
+  safe_yf_ticker()`（既存の安全呼び出しラッパー）経由で取得し、
+  取得失敗時は照合をスキップする
+- 対象範囲の限定によりレート制限リスクを抑制: 全105銘柄ではなく、
+  CHECK-35が既にNone/derivedと判定した銘柄（2026-08-19時点で7銘柄
+  ——LLY/JNJ/XOM/KLAC/ASTS/COHR/SOFI）のみyfinance呼び出しが発生する
+  設計
+- **既存パターンからの逸脱とその理由**: WARN-10（PS比率）・audit.pyの
+  β照合が使う`common.market_data.reader.get_attributes()`ローカル
+  キャッシュにはoperating_income相当のフィールドが存在せず踏襲不能
+  だったため、単一ティッカーの直接取得に適した別の既存パターン
+  （`common.yfinance_utils.safe_yf_ticker()`）を採用した
+- **乖離率によるNG格上げは行わない**: 全105銘柄の乖離率分布を実測した
+  結果、標準タグ採用済みの「正常」銘柄でも中央値0.2%な一方でp95=81%・
+  最大342%（AVAV）まで裾が広く、Phase 2b-2と同型の誤検知リスクがある
+  ため、乖離率は情報提供のみに留めWARNのまま据え置いた
+- **新たな発見**: 再構成6銘柄のうちASTS・JNJはyfinanceとの乖離0.0%で
+  再構成の正しさを裏付けたが、**COHRは-89.6%（reconstructed_pretax
+  $94.2M vs yfinance $901.5M）と大きく乖離**しており、再構成値自体の
+  妥当性に疑問符が残ることが判明した（本改修のスコープ外、対応要否は
+  別途判断）
+- 検証: 6対象銘柄全件でWARN文言に乖離率が正しく出ることを確認。
+  残り99銘柄で意図しないWARN新規発火なし（トリガー条件自体は変更して
+  いないため設計上当然）。pytest 781 passed/2 known-failed（既存の
+  MSFT/NVDA）、`report_consistency_check.py --fail-on-ng` NG=0/
+  WARN=88件、`audit.py` exit 0
+
 #### ゲート0の実装状況（2026-08-18訂正）
 - `exclusion_reason`は`src/value/tanuki_valuation/calculator/
   adjustments.py`（3件）・`pipeline.py`（1件）に存在するが、これは
