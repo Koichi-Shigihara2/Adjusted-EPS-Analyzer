@@ -141,13 +141,35 @@ recommended_g経由のIV変化を確認済み。
 BKNGはTANUKI SCORE分類がWATCH→BUYへ変化。ポートフォリオ実保有銘柄
 への影響はなし。
 
-**次の本線は未定**（次セッション開始時にBACKLOG.mdの優先順位・
-PROJECT_STATUS.mdを踏まえて判断する）。
+~~**次の本線は未定**（次セッション開始時にBACKLOG.mdの優先順位・
+PROJECT_STATUS.mdを踏まえて判断する）。~~
+
+**（2026-08-18追記・本線3設定）** 現在の本線は`[[QUALITY-GATES-EPIC-1]]`
+Phase 2（ゲート1）の適用範囲拡大:
+
+1. 外部ソース（yfinance）照合を、損益計算書の中核項目へ横展開する。
+   既存の`WARN-10`（PS比率）・`audit.py`（β照合）と同型のパターンを
+   使う——新規機構の開発ではない
+2. 第一歩は`operating_income`単体（`[[OPERATING-INCOME-EXTRACTION-
+   GAP-1]]`で実害が出た項目）。成功後、revenue・net_income等への横展開は
+   個別に判断する
+3. 自動補正（値の書き換え）までは本線に含めない。まず検知精度の向上に
+   留める（Phase 2b-2でNG想定が19銘柄の誤検知を経てWARNへ格下げになった
+   経緯を踏まえる）
+
+設定の経緯: BACKLOG.mdの2026-08-18訂正（`[[QUALITY-GATES-EPIC-1]]`の
+「Phase 3までで未着手はPhase 4・5のみ」という記述の誤りを実コード確認で
+訂正）により、ゲート1の外部ソース突合が損益計算書の中核項目には未適用
+だったことが判明したことを受けて設定した。
 
 **本線の範囲外**: `[[FALSY-ZERO-PATTERN-SWEEP-1]]`（falsy-zeroパターンの
 横断調査）・`[[MACRO-STYLE-FCF-ZERO-TRUTHY-EXCLUDE-1]]`は、本線1と発生
 メカニズムが異なる（タグ不在 vs falsy-zero誤判定）ため本線に含めない。
 詳細はBACKLOG.md `[[OPERATING-INCOME-EXTRACTION-GAP-1]]`参照。
+加えて、`[[QUALITY-GATES-EPIC-1]]`のゲート0（登録適格性の機械化）・
+Phase 4（ゲート3、全計算式のゴールデンテスト整備）も本線3には含めない
+（着手順序はPhase 2 > ゲート0 > Phase 4と2026-08-18に判断済み、
+BACKLOG.md `[[QUALITY-GATES-EPIC-1]]`参照）。
 
 本線が変更された場合は、この節を更新すること（更新履歴として旧本線を
 取り消し線で残す運用でよい）。
