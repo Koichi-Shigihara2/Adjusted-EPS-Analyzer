@@ -142,6 +142,7 @@ import re
 import json
 import glob
 import sys
+from datetime import datetime
 from typing import Optional
 
 # ─── パス設定 ────────────────────────────────────────────────
@@ -388,10 +389,32 @@ def _check_fixed_registry_integrity(ticker: str) -> list[str]:
     return ng
 
 
-def _get_yf_operating_income(ticker: str) -> Optional[float]:
+def _get_annual_period_end(ticker: str, ann: dict) -> Optional[str]:
+    """annual_YYYY.jsonの対象年度が表す実際の期末日（YYYY-MM-DD）を求める。
+
+    annual_YYYY.jsonは`period`に年ラベル（例: 2025）しか保持しないため、
+    決算期が12月以外の銘柄（COHR/KLAC等、2026-08-19時点で30銘柄確認済み）
+    では年ラベルだけでyfinance側の対応する列（各列が期末日）を一意に
+    特定できない（CHECK-35期ズレバグ、2026-08-19発見）。
+
+    `bs_provenance`の本人データ（`is_own_data: True`）エントリのaccnを
+    `load_submissions()`が返す`accn_to_reportdate`（submissions.json由来、
+    SEC提出時点の報告期末日）で引く。全105銘柄で解決可能なことを確認済み。
+    取得不可の場合はNoneを返す。
+    """
+    for field_prov in ann.get("bs_provenance", {}).values():
+        if isinstance(field_prov, dict) and field_prov.get("is_own_data") and field_prov.get("accn"):
+            accn_map = load_submissions(ticker)
+            end = accn_map.get(field_prov["accn"])
+            if end:
+                return end
+    return None
+
+
+def _get_yf_operating_income(ticker: str, target_end: Optional[str]) -> Optional[float]:
     """CHECK-35拡張（[[QUALITY-GATES-EPIC-1]]本線3、ゲート1第一歩、
-    2026-08-19）: yfinance income_stmtから直近年度のOperating Incomeを
-    取得する。
+    2026-08-19）: yfinance income_stmtから、SECデータ側の対象年度と
+    **期末日が一致する列**のOperating Incomeを取得する。
 
     `common.yfinance_utils.safe_yf_ticker()`経由で呼び出す（リトライ・
     ログ出力の一元化を踏襲。既存のWARN-10/audit.pyのβ照合が使う
@@ -400,11 +423,35 @@ def _get_yf_operating_income(ticker: str) -> Optional[float]:
     ティッカーの直接取得に適したこちらの既存パターンを採用した。詳細は
     BACKLOG.md `[[QUALITY-GATES-EPIC-1]]`参照）。
 
+    **期ズレバグの修正（2026-08-19）**: 当初`row.iloc[0]`（先頭列）を
+    無条件に「直近確定年度」として使っていたが、決算期が12月以外の
+    銘柄では、現在日時によってyfinance側の先頭列がSECデータの対象年度
+    より1期先（予備的な値）になりうる（実例: COHR/KLACとも6月末決算で、
+    2026-08-19時点でyfinance先頭列はFY2026・SECデータはFY2025を表して
+    おり、KLACは誤って-11.4%の乖離ありと報告していたが正しくは0.0%
+    だった）。位置（先頭列）ではなく期末日という本来照合すべき属性で
+    列を選ぶよう修正した。
+
+    **完全一致ではなく±10日の許容窓で照合する（2026-08-19、同日追加
+    発見）**: 52/53週決算企業（JNJ等）はSEC側の実際の期末日が暦月末と
+    一致しない（例: JNJ FY2025は`2025-12-28`）が、yfinanceは期末日を
+    暦月末（`2025-12-31`）に正規化して格納するため、完全一致では
+    「同じ会計年度なのに一致しない」偽陰性が発生する（JNJで実際に発生・
+    2026-08-19発見）。52/53週のズレは最大でも1週間程度のため、±10日を
+    許容窓とし、窓内で最も近い列を採用する。窓内に候補が無い場合は
+    照合をスキップする（位置ベースの代理判定はしない）。
+
     本関数はCHECK-35が既にNone/derived判定した銘柄（2026-08-19時点で
     実測7銘柄前後）に対してのみ呼ばれるため、全105銘柄を毎回呼ぶ設計では
-    ない（レート制限への配慮）。取得失敗・データ不在時はNoneを返し、
-    呼び出し元は照合をスキップする。
+    ない（レート制限への配慮）。取得失敗・データ不在・期間不一致時は
+    Noneを返し、呼び出し元は照合をスキップする。
     """
+    if target_end is None:
+        return None
+    try:
+        target_date = datetime.strptime(target_end, "%Y-%m-%d").date()
+    except ValueError:
+        return None
     try:
         tk = safe_yf_ticker(ticker)
         if tk is None:
@@ -415,7 +462,19 @@ def _get_yf_operating_income(ticker: str) -> Optional[float]:
         row = fin.loc["Operating Income"].dropna()
         if len(row) == 0:
             return None
-        return float(row.iloc[0])
+        best_col = None
+        best_diff = None
+        for col in row.index:
+            try:
+                col_date = col.to_pydatetime().date()
+            except AttributeError:
+                continue
+            diff = abs((col_date - target_date).days)
+            if diff <= 10 and (best_diff is None or diff < best_diff):
+                best_col, best_diff = col, diff
+        if best_col is None:
+            return None
+        return float(row[best_col])
     except Exception:
         return None
 
@@ -461,13 +520,14 @@ def _check_operating_income_reconstruction(ticker: str) -> list[str]:
 
     oi_val = ann.get("pl", {}).get("operating_income")
     oi_prov = ann.get("pl_provenance", {}).get("operating_income")
+    target_end = _get_annual_period_end(ticker, ann)
 
     if oi_val is None:
         # 注: 妥当性ガード（net_income比較）で不採用になったケース（SOFI等）も
         # 含め、operating_income=Noneの理由はここでは区別できない
         # （parser.py::_backfill_operating_income()のprovenance仕様、
         # 詳細はそちらのコードコメント参照）。
-        yf_oi = _get_yf_operating_income(ticker)
+        yf_oi = _get_yf_operating_income(ticker, target_end)
         yf_str = ""
         if yf_oi is not None and yf_oi != 0:
             yf_str = f" yfinance実測: {yf_oi:,.0f}（有意値あり、要確認）"
@@ -482,7 +542,7 @@ def _check_operating_income_reconstruction(ticker: str) -> list[str]:
         source = oi_prov.get("source", "unknown")
         ratio = oi_prov.get("nonop_coverage_ratio")
         ratio_str = f" coverage_ratio={ratio:.2f}" if ratio is not None else ""
-        yf_oi = _get_yf_operating_income(ticker)
+        yf_oi = _get_yf_operating_income(ticker, target_end)
         yf_str = ""
         if yf_oi is not None and yf_oi != 0:
             dev = (oi_val - yf_oi) / abs(yf_oi)
