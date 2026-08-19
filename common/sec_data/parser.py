@@ -953,24 +953,54 @@ class SECParser:
            _backfill_gross_profit_from_revenue_cogs()で既にRevenue-COGS
            逆算済みの場合を含む。既存の抽出済みフィールドをそのまま使う
            ため、Revenue-COGS代替を本関数で重複実装しない）
-        2. pretax調整法: pretax income - 非事業性項目
+        2. pretax調整法: pretax income - 非事業性項目（GP法が使えない年度
+           のみのフォールバック。詳細は下記「フォールバック向き」参照）
 
-        両方式が利用可能な場合は突き合わせ検証を行う。pretax_rawと
-        GP法推定値の乖離のうち、発見できた非事業性項目（絶対値合計）が
-        50%以上を説明できればGP法を採用する（source="reconstructed_gp"）。
-        50%未満の場合はGP法を採用せず、pretax調整法にフォールバックする
-        （source="reconstructed_pretax"）。
-        閾値50%の根拠: 実データ検証（チャット記録2026-08-16）で
-        JNJ(coverage比118%)・KLAC(95%)は明確に説明可能、LLY(14%)・
-        COHR(0%)は明確に説明不可能という形で二極化しており、間の
-        20%〜90%のどこに閾値を置いても分類結果は変わらない。中央値
-        50%を採用した。
+        **フォールバック向き（2026-08-19、本線3・ゲート1第一歩の実測で
+        反転）**: GP法が算出可能な場合は**常にGP法を採用する**
+        （source="reconstructed_gp"）。pretax調整法はGP法が構造的に
+        算出不可能な年度（gross_profit/R&D/SGAのいずれかが欠落。XOM・
+        ASTS等、業態上COGS区分自体が存在しない企業を含む）専用の
+        フォールバックとする。
 
-        GP法が使えない年度（gross_profit/R&D/SGAのいずれかが欠落。
-        XOM・ASTS等、業態上COGS区分自体が存在しない企業を含む）は、
-        pretax調整法が使えればそれを採用する（交差検証は行わない。
-        比較対象が無いため）。pretaxそのものが取得できない年度は
-        Noneのまま（採用しない）。
+        **反転の根拠（実データ、2026-08-19）**: 当初は「pretax_rawとGP法
+        推定値の乖離のうち、発見できた非事業性項目が50%以上を説明できれば
+        GP法を採用し、50%未満ならGP法を棄却してpretax調整法へフォール
+        バックする」設計だった。しかしyfinance実測（CHECK-35第一歩、
+        期末日を正しく一致させた比較）で以下が判明した:
+        - GP法が算出可能だった4銘柄（LLY/JNJ/KLAC/COHR）**全てで
+          yfinanceと誤差0.0%**（完全一致）
+        - 旧設計でフォールバックが実際に発動した2銘柄（LLY・COHR）は、
+          pretax採用値がyfinanceに対しそれぞれ-11.4%・-82.4%も乖離して
+          いた
+        - COHR自身の過去3年（`OperatingIncomeLoss`標準タグがまだ開示
+          されていたFY2022〜2024）でバックテストしても、GP法が3年連続で
+          旧pretax方式を上回った（GP法誤差: 0.0%/+320.9%/+28.1%、
+          旧pretax法誤差: -32.0%/-857.9%/-253.6%）
+        - 設計上の理由: pretaxは営業利益から最も遠く（非事業性の収益・
+          費用を全て含む）、非事業性費用が大きい企業ほどpretaxは営業
+          利益から乖離する。**そしてそういう企業でこそ2手法は不一致に
+          なりやすい**ため、「不一致時にpretaxへ落ちる」旧設計は、
+          最も間違えやすいケースで最も乖離の大きい値を選ぶ構造になって
+          いた
+        （詳細な調査記録はBACKLOG_DONE.md `[[OPERATING-INCOME-
+        EXTRACTION-GAP-1]]`参照）
+
+        **coverage_ratioの役割変更**: 旧設計では「GP法を採用してよいかの
+        門番」（0.5以上でGP法採用）だったが、反転後は**「pretax調整法が
+        どの程度信頼できたかの事後診断指標」**になる（高ければpretaxも
+        近い値だった、低ければpretaxは大きく外れていた）。GP法の採否
+        判定には使わなくなったが、pretaxの信頼性を後から追跡できるよう
+        provenanceには引き続き記録する。
+
+        **GP法自体も「正解」ではなく「現時点で得られる最良の選択」に
+        過ぎない点に注意**: COHRのFY2023はGP法でも誤差+320.9%だった。
+        またCOHRは`RestructuringCosts`（$160M）・
+        `OtherOperatingIncomeExpenseNet`（$47.6M）というGP法
+        （Revenue-COGS-R&D-SGA）にも含まれない別建ての営業費用項目を
+        持つことが判明しており、GP法が構造的に見落としている非事業性
+        ではない営業費用が存在しうる（追加の営業費用タグの取り込みは
+        本反転のスコープ外、別途登録・検討）。
 
         採用値はpl_provenanceに"derived": True・"source"
         （NAMING_CONVENTIONS.md規則4準拠のprovenance値）を付与する。
@@ -995,8 +1025,54 @@ class SECParser:
             # 別建て報告しSGAを報告しない企業（SOFI等の一部金融/フィンテック）
             # はGP-R&D-S&Mで代替する（_estimate_ttm_operating_income()の
             # 四半期版と同じ発想。2026-08-16、SOFIの検証で発見・追加）。
-            gp_estimate = None
             gp_val, rd_val = gp_annual.get(year), rd_annual.get(year)
+
+            # [[OPERATING-INCOME-EXTRACTION-GAP-1]] GP法入力の整合性ガード
+            # （2026-08-19、案D）: gross_profit = revenue - COGS という
+            # 定義上の関係が成立しない年度は、gross_profitそのものが
+            # 測定値として信頼できない（取得失敗等）とみなしGP法を使わせない
+            # （gp_valをNoneに落とし、後続のgp_estimate計算を自然にスキップ
+            # させる）。
+            #
+            # **net_incomeとの比較（A-2案）は不採用**：「営業利益は通常
+            # net_incomeを下回らない」は普遍的に真ではなく、非事業性損益が
+            # 大きい年は正当に逆転しうる（HON FY2011で実データ確認済み：
+            # revenue/gross_profitの関係は正常〈比率21.8%、他年度と同水準〉
+            # だがnet_income$2,067M > GP法値$775M。これは非事業性の利得が
+            # 大きい年の正当な結果であり、GP法の入力自体は健全）。
+            # net_income比較はGP法の値そのものの正しさではなく別の量との
+            # 相対関係を見る代理判定であり、正当なケースを誤って除外する
+            # リスクがある。代わりに、GP法の**入力**（revenueと
+            # gross_profitの関係）が定義上成立しているかそのものを確認する。
+            #
+            # 条件は全105銘柄・全年度の実測（2026-08-19）に基づく:
+            # revenueが有効な全年度（n=1096）でratio=|gross_profit|/
+            # |revenue|は中央値0.543・p99=0.939に収まり、1.0を超える例は
+            # 実質存在しない（早期段階の極小額銘柄RCAT 2件を除き、両者とも
+            # 標準タグ採用済みでGP法自体は不使用のため実害なし）。
+            # revenue=0または未取得なのにgross_profitが非ゼロという組み合わせは
+            # VRT FY2018（revenue=0、gross_profit=-$28.65億）で実在確認済み
+            # （SPAC合併前の前身法人データの取得不全と推測、詳細は別途
+            # BACKLOG登録）。
+            gp_rejected_reason = None
+            if gp_val is not None:
+                rev_val = rev_annual.get(year)
+                if (rev_val is None or rev_val == 0) and gp_val != 0:
+                    gp_rejected_reason = (
+                        f"revenue={rev_val}かつgross_profit={gp_val:,.0f}"
+                        f"（revenue=0/未取得なのにgross_profitが非ゼロ、"
+                        f"定義上gross_profit=revenue-COGSと矛盾）"
+                    )
+                    gp_val = None
+                elif rev_val and abs(gp_val) > abs(rev_val):
+                    gp_rejected_reason = (
+                        f"|gross_profit|({abs(gp_val):,.0f}) > |revenue|"
+                        f"({abs(rev_val):,.0f})、COGSが負値であることを意味し"
+                        f"gross_profitが測定値として信頼できない"
+                    )
+                    gp_val = None
+
+            gp_estimate = None
             if gp_val is not None and rd_val is not None:
                 sga_val = sga_annual.get(year)
                 if sga_val is not None:
@@ -1011,27 +1087,42 @@ class SECParser:
             chosen_val = None
             chosen_source = None
             match_detail: Dict[str, Any] = {}
+            if gp_rejected_reason is not None:
+                match_detail["gp_rejected_reason"] = gp_rejected_reason
 
-            if gp_estimate is not None and pretax is not None:
-                gap = abs(gp_estimate - pretax)
-                coverage = sum(abs(v) for v in nonop_items.values())
-                ratio = (coverage / gap) if gap > 0 else 1.0
-                match_detail = {
-                    "gp_estimate": gp_estimate, "pretax_raw": pretax,
-                    "nonop_coverage_ratio": round(ratio, 4),
-                }
-                if ratio >= 0.5:
-                    chosen_val = gp_estimate
-                    chosen_source = "reconstructed_gp"
-                elif nonop_adjustment is not None:
-                    chosen_val = pretax - nonop_adjustment
-                    chosen_source = "reconstructed_pretax"
-            elif gp_estimate is None and pretax is not None:
+            # フォールバック向き反転（2026-08-19、実データでGP法が
+            # yfinanceと4/4銘柄で完全一致・pretax法は不一致時に-11.4%〜
+            # -82.4%外れることが判明したため）: GP法が算出可能なら常に
+            # それを採用する。pretax調整法はGP法が構造的に算出不可能な
+            # 場合専用のフォールバック。
+            if gp_estimate is not None:
+                chosen_val = gp_estimate
+                chosen_source = "reconstructed_gp"
+                if pretax is not None:
+                    gap = abs(gp_estimate - pretax)
+                    coverage = sum(abs(v) for v in nonop_items.values())
+                    ratio = (coverage / gap) if gap > 0 else 1.0
+                    match_detail = {
+                        "gp_estimate": gp_estimate, "pretax_raw": pretax,
+                        # nonop_coverage_ratio: GP法採否の門番ではなく、
+                        # 「pretax調整法がどの程度信頼できたか」の事後
+                        # 診断指標（高い=pretaxもGP法に近かった、
+                        # 低い=pretaxは大きく外れていた）。
+                        "nonop_coverage_ratio": round(ratio, 4),
+                    }
+                else:
+                    match_detail = {"gp_estimate": gp_estimate, "cross_check": "unavailable_no_pretax"}
+            elif pretax is not None:
                 if nonop_adjustment is not None:
                     chosen_val = pretax - nonop_adjustment
                     chosen_source = "reconstructed_pretax"
-                    match_detail = {"pretax_raw": pretax, "cross_check": "unavailable_no_gp_estimate"}
-            # gp_estimateのみでpretax無しの場合は交差検証不能のため不採用（安全側）
+                    cross_check = (
+                        "rejected_by_integrity_guard" if gp_rejected_reason is not None
+                        else "unavailable_no_gp_estimate"
+                    )
+                    match_detail = {"pretax_raw": pretax, "cross_check": cross_check}
+                    if gp_rejected_reason is not None:
+                        match_detail["gp_rejected_reason"] = gp_rejected_reason
 
             # [[OPERATING-INCOME-EXTRACTION-GAP-1]] 妥当性ガード
             # （2026-08-16、SOFI検証で発見・追加）: pretax調整法は
