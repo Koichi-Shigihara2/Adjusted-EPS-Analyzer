@@ -158,6 +158,14 @@ def fetch_real_segment_tags(ticker: str, cik: Optional[str]) -> List[Dict[str, s
     Grokにタグ名を記憶から生成させず、実際に提出書類に存在するタグから
     選ばせるための土台）。
 
+    **キーワード一致は暫定的な手法である**（2026-08-19⑦追記）。
+    実際の企業が使うディメンション軸名は多様であり、
+    `_SEGMENT_DIMENSION_KEYWORDS`の4語（segment/productorservice/
+    geographical/geographic）で拾いきれない命名（業界固有の軸名等）が
+    存在する可能性がある。取りこぼしを検知できるよう、絞り込みの前後
+    件数と対象外にした軸の一覧を必ず表示する（本セッションで繰り返し
+    否定してきた沈黙除外と同型にしないため）。
+
     取得できない場合（CIK不明・10-Q取得失敗等）は空リストを返す。
     呼び出し側はこれを「セグメント指標を提案しない」の判断材料とする。
     """
@@ -176,10 +184,15 @@ def fetch_real_segment_tags(ticker: str, cik: Optional[str]) -> List[Dict[str, s
         print(f"  [WARN] 実XBRLタグ取得失敗: {e}")
         return []
 
-    return [
-        m for m in all_members
-        if any(kw in m["dimension"].lower() for kw in _SEGMENT_DIMENSION_KEYWORDS)
-    ]
+    kept    = [m for m in all_members if any(kw in m["dimension"].lower() for kw in _SEGMENT_DIMENSION_KEYWORDS)]
+    dropped = [m for m in all_members if m not in kept]
+
+    print(f"  セグメント軸: {len(kept)}件を抽出（全{len(all_members)}軸中、{len(dropped)}軸を対象外）")
+    if dropped:
+        dropped_dims = sorted({m["dimension"] for m in dropped})
+        print(f"    対象外にした軸: {', '.join(dropped_dims)}")
+
+    return kept
 
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
