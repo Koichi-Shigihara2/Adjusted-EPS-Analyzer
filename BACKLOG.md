@@ -5915,11 +5915,21 @@ GP法（`gross_profit − R&D − SGA/S&M`）は、`RestructuringCharges`・
 
 **（2026-08-19追記）** その後の実測で、Layer3側の問題は「フォールバック
 不在」だけでなく**「実在するデータの取りこぼし」**という別種の欠陥も
-併発していると判明した（JNJのcompany_facts.jsonには`OperatingIncomeLoss`
-のFY 10-Kエントリが実在するのに、Layer3の年次エントリは0件）。この
-取りこぼし自体は`[[LAYER3-ANNUAL-CLASSIFICATION-DROPS-DATA-1]]`として
-別項目に切り出した（本項目が対象とする「フォールバック不在」とは別種の
-欠陥のため）。
+併発している**疑いがあった**（JNJのcompany_facts.jsonには
+`OperatingIncomeLoss`のFY 10-Kエントリが実在するのに、Layer3の年次
+エントリは0件）。この取りこぼし自体は`[[LAYER3-ANNUAL-CLASSIFICATION-
+DROPS-DATA-1]]`として別項目に切り出した。
+
+**（2026-08-19②訂正）** 上記の切り出し先で範囲実測を実施した結果、
+JNJ・KLAC・LLY・XOMの年次`operating_income`0件は**「期間分類の欠陥」
+ではなく「6年保持窓の意図した挙動＋タグ報告打ち切りが古い」**ことが
+判明した（`_classify_period()`自体は正しく分類、保持窓フィルタのみで
+除外）。**「フォールバック不在」自体は事実として残る**（Layer3側には
+`operating_income`のGP法/pretax法相当の再構成が存在しない）が、
+「取りこぼし」という別種の欠陥は年次側では確認されなかった。本項目の
+対応方針にある「Layer3側（フォールバック自体の有無）」は、この
+フォールバック不在そのものを指すものとして引き続き有効。詳細は
+`[[LAYER3-ANNUAL-CLASSIFICATION-DROPS-DATA-1]]`参照。
 
 本項目の対応を検討する際は、**parser.py側（GP法の控除項目追加）と
 Layer3側（フォールバック自体の有無）の両方を対象範囲に含めるか**を
@@ -6014,65 +6024,170 @@ HON/COHRに限定せず全105銘柄の該当年度を使用した。
 
 ---
 
-### [LAYER3-ANNUAL-CLASSIFICATION-DROPS-DATA-1] Layer3の年次期間分類が実在するデータを取りこぼしている（原因未特定）
-**優先度:** 中〜高（実害は現時点でゼロだが、原因未特定かつ他フィールド
-への波及が未確認のため）
-**分類:** バグ / データ品質 / SEC EDGAR / Layer3統合スキーマ
+### [LAYER3-ANNUAL-CLASSIFICATION-DROPS-DATA-1] Layer3の年次期間分類が実在するデータを取りこぼしている（年次側は調査完了・実質解消／四半期側は限定的な残課題あり）
+**優先度:** 低（2026-08-19②の範囲実測により、当初の仮説は大半が誤りと
+判明。年次側は確認された未解決の欠陥が0件、四半期側も確認された欠陥は
+4件でいずれもTAIL非消費フィールド）
+**分類:** 調査完了 / データ品質 / SEC EDGAR / Layer3統合スキーマ
 **登録日:** 2026-08-19
+**更新日:** 2026-08-19②（全105銘柄相当・32フィールドの範囲実測を実施。
+年次側の仮説はほぼ全否定、四半期側も実測。詳細は本文参照）
 **発見:** `[[OI-RECONSTRUCTION-MISSING-OPEX-LINES-1]]`実測調査（Step 3、
 Layer3側の営業利益再構成の実態確認）
 
-#### 内容
+#### 内容（登録時点、2026-08-19①）
 `layer3_builder.py::build_ticker_store()`を全tanuki銘柄（100件）で
-実行した結果、**JNJ・KLAC・LLY・XOMの4銘柄で`operating_income`
-（年次）のエントリが0件**だった。
+実行した結果、JNJ・KLAC・LLY・XOMの4銘柄で`operating_income`（年次）の
+エントリが0件だった。JNJの`company_facts.json`には`OperatingIncomeLoss`
+のFY 10-Kエントリが12件存在することを確認し、「Layer3独自の期間分類が
+実在するデータを拾えていない可能性」という仮説のもとで登録した。
 
-しかし**JNJの`company_facts.json`には`OperatingIncomeLoss`のFY 10-K
-エントリが12件存在する**ことを直接確認済み（2026-08-19）。つまり
-単純な「タグ不在」でも「フォールバック不在」でもなく、**Layer3独自の
-期間分類（`is_annual`判定）が、実在するデータを拾えていない**可能性が
-高い。**原因は未特定**（推測で断定しない）。
+#### 年次側 範囲実測結果（2026-08-19②）——仮説は大半が否定された
+100銘柄×32フィールド＝3,200行を本番の`_classify_period()`・
+`build_ticker_store()`をimportして実測（自前の判定ロジック再実装なし）。
 
-`SEC_EDGAR_LAYER_DESIGN.md`に「Layer3ではフォールバックを持たせない」
-という設計方針の記載は無く、意図的な設計ではなくスコープ漏れの可能性
-がある（ただしこれも断定はしない）。
+| 状態 | 件数 |
+|---|---|
+| (a) 元データなし | 1,820 |
+| (b) 正常 | 13 |
+| (b) 部分取りこぼし | 1,335 |
+| (c) 完全取りこぼし | 32 |
 
-#### 実害が現時点でゼロである理由と、その脆さ
-- Layer3の`operating_income`の主要消費者はTANUKI TAIL
-  （`tail_dcf_bridge.py`の`operating_margin`計算）
-- TAILの対象は`docs/portfolio/tail/data/positions/`配下の**実保有
-  10銘柄のみ**（ADBE/APGE/APP/CELH/CRWV/NVDA/PLTR/SOFI/SOUN/TSLA）
-- JNJ・KLAC・LLY・XOMは**たまたまこの10銘柄に含まれない**
-- コード上も`if rev and oi and rev.get("val"):`で静かにフィールドを
-  出力しないだけでクラッシュしない設計になっている
-- **つまり実害ゼロは設計の堅牢性ではなく、対象銘柄がたまたま重なって
-  いないことによる。TAILの対象銘柄が広がれば即座に表面化する**
+- (c) 32件のうち**30件は`_ANNUAL_YEARS=6`保持窓で完全に説明可能**
+  （タグ報告終了が6年より前）。JNJ・KLAC・LLY・XOMの`operating_income`
+  もこれに該当——**「期間分類のバグ」ではなく「6年保持窓の意図した
+  挙動＋タグ報告打ち切りが古い」の組み合わせ**だった（JNJの最新
+  `OperatingIncomeLoss`エントリ〈`end=2014-12-28`〉を1条件ずつ評価し、
+  `_classify_period()`自体は`is_annual=True`と正しく分類、
+  `_process_entries()`の`end>=cutoff_a`保持窓チェックのみで除外される
+  ことを実際に確認済み）
+- 残り2件（`APP capital_expenditure`・`MSFT depreciation_and_
+  amortization`）は当初「6年窓内に生データがあるのにLayer3が0件＝真の
+  異常」と報告したが、**これも誤りだった**。`config/sec_concept_
+  definitions.json`の`ticker_overrides`にAPP/MSFTそれぞれ`action:
+  "exclude"`の設定が存在し、**意図的な除外設定**だった（旧
+  `quarterly.py::TICKER_RESTRICTIONS`からの移行済み設定）。当初の実測
+  スクリプトが`ticker_overrides`を参照していなかったための誤検知
+- (b)部分取りこぼしのうち保持窓で説明できない14件は**全てBBAI**
+  （11フィールドで一律`raw_within_6yr=11→l3_count=7`）だったため、
+  当初「銘柄固有の構造的異常、原因未特定」と報告したが、**これも誤り**
+  だった。`[[LAYER3-ANNUAL-MISCLASSIFICATION-BBAI-1]]`
+  （2026-08-06完了・BACKLOG_DONE.md参照）が`_reclassify_misannotated_
+  fy_entries()`をBBAI限定（`_ANNUAL_MISCLASSIFICATION_FIX_TICKERS =
+  frozenset({"BBAI"})`）で既に実装済みであり、中間期のYTD比較開示が
+  誤ってis_annual=Trueに混入する既知パターンを正しく除外した**結果**
+  だった。当初の実測スクリプトはこの後処理を呼び出しておらず
+  `_classify_period()`単体の結果と比較したための誤検知
 
-#### 未確認の重要事項（着手時に必ず先に確認すること）
-- 同じ`is_annual`判定は`operating_income`以外のフィールドにも使われて
-  いるはずであり、**他フィールドでも同じ取りこぼしが起きていないかは
-  未確認**
-- 着手時はまず「4銘柄・operating_income」に限定せず、**「全フィールド・
-  全銘柄で、`company_facts.json`に存在するのにLayer3で0件になっている
-  ものがどれだけあるか」**を実測すること。今回の4銘柄はoperating_income
-  という1フィールドのみの調査結果であり、氷山の一角の可能性がある
+**訂正の結論**: 年次側は`ticker_overrides`未考慮・既存修正の後処理
+未再現という**2つの計測方法の誤り**により偽陽性を報告していた。
+これらを補正した結果、**年次側で確認された未解決の取りこぼしは0件**。
+`SEC_EDGAR_LAYER_DESIGN.md`のフォールバック不在に関する記載なしという
+指摘自体は事実として残るが、期間分類ロジックそのものに未知の欠陥は
+確認されなかった。
+
+#### 四半期側 範囲実測結果（2026-08-19②、新規）
+TAILの実消費経路（`get_quarterly_series`/`get_latest_quarterly`）は
+四半期データを読むため、年次側だけでの「実害ゼロ」は消費経路を測らず
+安全宣言することになるとの指摘を受け、四半期側も同一100銘柄×32
+フィールドで実測した（`_QUARTERLY_YEARS=5`、末尾のend日ベースで
+Layer3側の最終エントリ集合と比較）。
+
+| 状態 | 件数 |
+|---|---|
+| (a) 元データなし | 881 |
+| (b) 正常 | 2,189 |
+| (b) 部分取りこぼし | 41 |
+| (c) 完全取りこぼし | 89 |
+
+- (c) 89件のうち83件は5年保持窓で説明可能。残り6件のうち2件
+  （`APP capital_expenditure`・`MSFT depreciation_and_amortization`）
+  は年次側と同じ`ticker_overrides`除外設定で説明できる。
+  **残る4件が現時点で唯一の確認された欠陥**:
+  `ALAB buyback`・`CRWV buyback`・`CWAN buyback`・
+  `FICO finance_lease_payments`（5年窓内に生データがあるのにLayer3が
+  0件、`ticker_overrides`にも該当なし、原因未特定）
+- 「Layer3の実エントリ末尾end日が、5年窓内の生データend日集合と
+  一致しない」という粗い指標（`genuine_gap`）では442件が該当したが、
+  **この数値は信頼性が低いと判断し、確定した欠陥件数としては扱わない**。
+  理由: 同じ粗い指標で年次側は当初32件・14件（BBAI）を「真の異常」と
+  誤検知しており、四半期側でも`_merge_candidate_entries()`の候補間
+  優先度マージ・`_is_plausible_standalone_quarter`等のプルーニングを
+  本実測では再現できていないため、同型の誤検知が442件の大半を占めて
+  いる可能性が高い。442件を欠陥として扱う前に、これらの内部ロジックを
+  踏まえた再測定が必要（本項目のスコープ外、着手時に再実施すること）
+
+#### 実害判定（TAIL消費経路そのものを実測、2026-08-19②）
+TAILが実際に消費する5フィールド（revenue/operating_income/
+stock_based_compensation/net_income/shares_diluted）×保有10銘柄
+（ADBE/APGE/APP/CELH/CRWV/NVDA/PLTR/SOFI/SOUN/TSLA）の50セルを
+四半期データで個別確認した。
+
+- **APGEは`get_tanuki_tickers()`に含まれておらず**（tanuki=false）、
+  当初の100銘柄スキャンから漏れていた。`build_ticker_store('APGE')`を
+  個別実行し確認
+- 欠落2件: `APGE revenue`（0件）・`SOFI operating_income`（0件）。
+  **いずれも(a)元データなし**——APGEはcompany_facts.jsonにrevenue系
+  タグが1件も存在しない（臨床段階バイオ、実際に無収益と推測）。SOFIが
+  `OperatingIncomeLoss`を報告しないことは`[[OPERATING-INCOME-
+  EXTRACTION-GAP-1]]`で既に確認済みの事実と整合。**取りこぼし(c)では
+  ない**
+- `CELH stock_based_compensation`はgap=1の小さな不一致があるが未調査
+  （優先度低、影響軽微）
+- 残り48セルは全て正常一致
+
+**消費側の欠損時挙動（i/ii/iii判定）**: `tail_dcf_bridge.py`・
+`quarterly_review_generator.py`とも
+```python
+if rev and oi and rev.get("val"):
+    result["operating_margin"] = round(oi["val"] / rev["val"], 4)
+if sbc:
+    result["sbc_quarterly"] = sbc["val"]
+if ni and sd and sd.get("val"):
+    result["eps_diluted"] = round(ni["val"] / sd["val"], 4)
+```
+**(ii) 欠損として明示的に除外される**（対応するresultキー自体が
+出力されない、クラッシュなし）。**(iii)の0/既定値への暗黙置換は
+確認されなかった**。ただし`rev.get("val")`・`sd.get("val")`は
+truthy評価されており、収益・希薄化株式数が正当に`0`となる四半期が
+将来発生した場合、そこだけ`operating_margin`/`eps_diluted`が欠損扱い
+される軽微なfalsy-zeroリスクが理論上残る（実データでは現状該当なし、
+優先度低）。
+
+#### parser.py↔Layer3の2経路乖離（2026-08-19②、事実の登録のみ）
+`[[OPERATING-INCOME-EXTRACTION-GAP-1]]`本線1でparser.py側に
+`operating_income`のGP法/pretax法再構成を実装したが、`layer3_builder.py`
+側には同等のフォールバックがない。同一`company_facts.json`から同一概念
+を取る2経路のうち、片方だけ再構成されている非対称な状態。
+
+実数（100銘柄）: **Layer3年次`operating_income`が0件の4銘柄
+（JNJ・KLAC・LLY・XOM）は、4/4ともparser.py側の`annual_YYYY.json`には
+`operating_income`が入っている**（JNJ: $25.596B `reconstructed_gp`・
+KLAC: $5.014B `reconstructed_gp`・LLY: $29.696B `reconstructed_gp`・
+XOM: $41.871B `reconstructed_pretax`）。実装（Layer3側への再構成移植）
+は別途判断、本項目では事実の登録のみ。
 
 #### 対応方針
-実装前にまず原因調査（`is_annual`判定ロジック・`_classify_period()`等
-のどこでJNJのエントリが除外されているかの特定）から着手する。原因が
-判明してから、修正が他フィールド・他銘柄にどう波及するかを見積もる。
+- 四半期側の4件（ALAB/CRWV/CWAN buyback、FICO finance_lease_payments）
+  は原因未特定のまま優先度低で保留可（TAIL非消費フィールドのため実害
+  なし）
+- 442件の粗いgenuine_gap指標は、`_merge_candidate_entries()`内部の
+  候補優先度マージ・プルーニングロジックを実測に組み込んだ上での
+  再測定が必要（未着手）
+- parser.py↔Layer3の2経路乖離への対応要否は別途判断
 
 #### 関連
 - `[[OI-RECONSTRUCTION-MISSING-OPEX-LINES-1]]`（本問題の発見元、
   GP法/pretax法フォールバック不在の課題とは別種）
-- `[[OPERATING-INCOME-EXTRACTION-GAP-1]]`（BACKLOG_DONE.md）
+- `[[OPERATING-INCOME-EXTRACTION-GAP-1]]`（BACKLOG_DONE.md、parser.py側
+  の再構成実装元。Layer3側との2経路乖離の一方の当事者）
+- `[[LAYER3-ANNUAL-MISCLASSIFICATION-BBAI-1]]`（BACKLOG_DONE.md、
+  2026-08-19②の実測でBBAIパターンの真因と判明した既存完了項目）
 - `[[LAYER3-FALLBACK-STALE-TAG-PRIORITY-1]]`（BACKLOG_DONE.md、Layer3の
-  別の既知問題〈古いタグ優先バグ〉。本問題とは異なる原因と考えられるが
-  同じ`layer3_builder.py`の期間分類・候補選定ロジック周辺のため、
-  着手時に関連の有無を確認すること）
+  別の既知問題〈古いタグ優先バグ〉。本問題とは異なる原因）
 
 #### 着手条件
-なし
+なし（優先度低のため急ぎ不要）
 
 ---
 
