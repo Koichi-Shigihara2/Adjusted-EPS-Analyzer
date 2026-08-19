@@ -5865,6 +5865,79 @@ TRUST-SUMMARY-EPIC-1へ統合済み（詳細は同エントリ参照）。
 
 ## 優先度：中（こなれてきたら対応）
 
+### [OI-RECONSTRUCTION-MISSING-OPEX-LINES-1] 営業利益再構成が別建て営業費用（RestructuringCharges等）を見落とし系統的に誤差を生む
+**優先度:** 中（実測で-11.9%〜-38.3%〈HON〉・+320.9%〈COHR FY2023〉という
+定量化済みの既知の誤差が判明しているため「低」ではないが、現時点で
+投資判断〈IV・TANUKI SCORE・MATRIX分類〉への実害は確認されていないため
+「高」でもない）
+**分類:** バグ / データ品質 / SEC EDGAR / 確定・候補タグ設計欠陥
+**登録日:** 2026-08-19
+**発見:** `[[OPERATING-INCOME-EXTRACTION-GAP-1]]`フォールバック向き
+反転（案A・案D）実装時のHON/COHR実データ検証
+
+#### 問題
+GP法（`gross_profit − R&D − SGA/S&M`）は、`RestructuringCharges`・
+`OtherOperatingIncomeExpenseNet`等の**別建てで報告される営業費用**を
+控除しないため、これらを計上する企業で営業利益を系統的に誤る。
+
+#### 実測（2026-08-19）
+- HON: `OperatingIncomeLoss`標準タグが再開されたFY2022-2025（真値既知）
+  でGP法をバックテストした結果、**-11.9%〜-38.3%の系統的な過小評価**
+- HON FY2011の`RestructuringCharges`は$743M（別建て営業費用の実例）
+- COHR FY2023: GP法でも誤差**+320.9%**
+- COHRは`RestructuringCosts`（$160M）・`OtherOperatingIncomeExpenseNet`
+  （$47.6M）を別建て報告
+
+#### Layer3側にも同型の問題がある（重要）
+2026-08-19の消費者確認で、TANUKI TAIL等が使う
+`layer3_builder.py::build_ticker_store()`は`annual_YYYY.json`を読まず
+`company_facts.json`から独自に再抽出しており、`operating_income`の
+候補タグは`OperatingIncomeLoss`単独で**GP法/pretax法のフォールバックを
+持たない**ことが判明した。標準タグが取得できない銘柄では、Layer3側は
+`operating_income`が欠損したままになる。**「GP法の」ではなく「営業利益
+再構成の」課題として登録しているのはこのため**——GP法固有の課題として
+登録すると対象範囲を見誤る。
+
+本項目の対応を検討する際は、**parser.py側（GP法の控除項目追加）と
+Layer3側（フォールバック自体の有無）の両方を対象範囲に含めるか**を
+判断すること。
+
+#### 影響範囲が拡大した経緯（記録として重要）
+2026-08-19のフォールバック向き反転（案A）により、GP法は「算出可能なら
+常に採用」される設計になった。反転前よりGP法の適用範囲が広がっており、
+**この弱点を認識した上で適用範囲を拡大した**という判断の経緯をここに
+明記する。反転自体は実データ（GP法が算出可能な4銘柄全てでyfinanceと
+0.0%完全一致、旧pretax法は-11.4%/-82.4%乖離）に基づく妥当な判断だが、
+GP法が完璧という意味ではない。
+
+#### 対応方針
+- `RestructuringCharges`・`OtherOperatingIncomeExpenseNet`等の別建て
+  営業費用タグをGP法の控除項目に追加する
+- **タグ候補は実データで決めること**。全105銘柄でどの営業費用タグが
+  どの頻度で報告されているかを実測してから候補を確定する
+  （`_OI_NONOP_*_TAGS`が「候補内の銘柄横断実績検証は今回未実施」のまま
+  実装され、COHRの`InterestExpenseOperating`を取りこぼした前例がある。
+  本項目でも同じ轍を踏まないこと）
+- 追加後は、`OperatingIncomeLoss`標準タグが利用可能な銘柄・年度で
+  **バックテスト**し、誤差が縮小することを実測で確認する（HON
+  FY2022-2025・COHR FY2022-2024という真値既知の検証セットが既にある）
+
+#### 関連
+- `[[OPERATING-INCOME-EXTRACTION-GAP-1]]`（BACKLOG_DONE.md、本問題の
+  発見元）
+- `[[QUALITY-GATES-EPIC-1]]`本線3（ゲート1のyfinance照合が本問題の
+  検証手段になる）
+- `[[VRT-REVENUE-2018-MISSING-1]]`（同じ検証で発見された別の入力品質
+  問題）
+
+#### 着手条件
+なし。ただし**タグ候補拡充の別依頼**（`InterestExpenseOperating`等を
+pretax法の非事業性タグ候補に追加する件）と**同時に着手する方が効率的**
+である（どちらも「営業利益再構成のタグ候補が実データ検証を経ずに
+決められていた」という同じ根に由来する）。
+
+---
+
 ### [OPERATING-CASH-FLOW-CONTINUING-DISCONTINUED-GAP-1] 標準OCFタグ不在時にContinuing/Discontinued分割タグを拾えずoperating_cash_flowが構造的に欠落する（25銘柄該当）
 **優先度:** 高（登録時）→中（実害確認調査の結果、緊急性は低いと判明）
 **分類:** バグ / 確定・候補タグ設計欠陥
