@@ -6345,11 +6345,16 @@ KPIの実測値が1件も取得できなかった**（全て「取得失敗」�
 
 ---
 
-### [TAIL-XBRL-SEGMENT-FETCHER-NONDIMENSIONED-GAP-1] xbrl_segment_fetcher.pyが非セグメント指標（会社全体のKPI）を構造的に取得できない
-**優先度:** 中（`[[TAIL-KPI-PROPOSER-CORE-ONLY-GATE-1]]`実装時の実測で
-発見。core・satellite双方に影響する既存の構造的制約）
-**分類:** バグ / TAIL自動化パイプライン / 設計上の制約
+### [TAIL-XBRL-SEGMENT-FETCHER-NONDIMENSIONED-GAP-1] xbrl_segment_fetcher.pyが非セグメント指標（会社全体のKPI）を構造的に取得できない — coreの既存失敗は最長約10週間、AI生成レビューの過半数に沈黙して混入
+**優先度:** 中→**高**（2026-08-19⑤の範囲確定調査により、satelliteだけ
+でなくcore 3銘柄でも過去9四半期のレビューの過半数〈15/27件〉に
+沈黙した形で影響していたことが判明したため引き上げ）
+**分類:** バグ / TAIL自動化パイプライン / 設計上の制約・サイレント
+フォールバック
 **登録日:** 2026-08-19④
+**更新日:** 2026-08-19⑤（Step 1: coreの既存失敗範囲を確定〈いつから・
+どの程度AI評価に混入していたか・なぜ沈黙していたか〉。Step 2: Layer3
+経由での代替取得可否をKPI単位で判定）
 **発見:** `[[TAIL-KPI-PROPOSER-CORE-ONLY-GATE-1]]`のsatellite対応実装後、
 Step 3（KPI値の実際の取得確認）でsatellite 7銘柄のKPI提案値が1件も
 取得できなかったことの原因調査
@@ -6387,8 +6392,125 @@ GamingMember"`は誤りで、実際のXBRLタグは`nvda:
 GraphicsSegmentMember`）。ただしこれは構造的制約とは別の、個別の
 タグ精度の問題。
 
+#### Step 1: coreの既存失敗の範囲確定（2026-08-19⑤）
+
+**1-1 core 3銘柄の取得成功・失敗内訳（実測）**
+
+| ticker | 成功 | 失敗 | 失敗KPI |
+|---|---|---|---|
+| PLTR | 3/6 | 3/6 | 営業利益率・株式報酬費用・希薄化後EPS成長率（いずれも`dimension=''`） |
+| SOFI | 3/7 | 4/7 | Technology Platform売上成長率・正味貸倒率（NCO）・純金利マージン（NIM）・GAAP純利益（`dimension`が空、または非空でも失敗） |
+| TSLA | 6/6 | 0/6 | なし（登録済み6件全てセグメント指標で成功） |
+
+TSLAが0失敗なのは、登録済み6KPIが全て`dimension`が空でない
+（セグメント指標として設計されている）ため。PLTR・SOFIの失敗KPIは
+`dimension=''`（非セグメント・会社全体指標）が中心だが、SOFIは
+`dimension`が設定されているKPI（Technology Platform売上成長率・
+正味貸倒率）も失敗しており、これはStep 3のxbrl_member精度問題（下記
+`[[TAIL-XBRL-MEMBER-VALIDATION-GAP-1]]`参照）が原因。
+
+**1-2 いつから失敗しているか（`docs/portfolio/tail/data/kpi/{ticker}_
+layer2.json`のgit履歴を追跡）**
+
+`TANUKI_TAIL_KPI_Update.yml`が週次でこのファイルを更新・コミットして
+おり、2026-06-06の初回セットアップ時点ではPLTRは3KPI（Commercial売上・
+Government売上・貢献利益率）のみ登録・全件成功（`missing_kpis: []`）
+だった。**2026-06-08の次回更新で、営業利益率・株式報酬費用・希薄化後
+EPS成長率の3KPIが新規追加され、この時点から`missing_kpis`に3件とも
+記録されている。** 以降、2026-06-15・06-22・…・08-17（直近の週次更新）
+まで**全ての履歴で同じ3件が変わらず失敗し続けている**（SOFIも同様の
+パターンを2026-06-08から08-17まで確認）。**「一度も取れたことがない」
+——途中から取れなくなったのではなく、これらのKPIが登録された最初の
+取得試行から一貫して失敗している。** 2026-06-08から本調査日
+（2026-08-19）まで約72日間（10週間強）、週次実行の度に同じ失敗が
+サイレントに繰り返されていた。
+
+**1-3 過去のcoreレビュー（各9件、計27件）へのKPI不足言及の実測**
+
+`summary`・`concerns`テキストを正規表現で走査した結果（「未取得」を
+含む表現で再検索、初回の狭い正規表現では0件ヒットだったが「未取得」
+という言い回しを見落としていたため広げて再実施——本セッション自身が
+このタイミングで一度検証手法の誤りを起こしかけた）:
+
+| ticker | KPI不足言及あり | 全体 |
+|---|---|---|
+| PLTR | 7 | 9 |
+| SOFI | 4 | 9 |
+| TSLA | 4 | 9 |
+| **合計** | **15** | **27** |
+
+**core 3銘柄のレビューのうち15/27件（56%）が、satelliteで発見された
+のと同種の「KPIデータが不足している」旨の言及を伴ったまま生成されて
+いた。** 例（PLTR 2026Q2）: 「NDR・チャーン・SBC・EPSなど核心KPIが
+未取得で健全度評価が不完全」。TSLAの言及例は必ずしも本問題（`xbrl_
+segment_fetcher.py`の非セグメント指標取得失敗）に限らず、`text_kpi_
+extractor.py`側（layer3、手動KPI）の未取得も混在している可能性がある
+（例: TSLA 2026Q1「FSD・Optimusの進捗データは依然未取得」は手動KPIの
+話であり本問題とは別経路）——**15件全てが本問題に単一起因すると断定は
+しない**が、KPI不足という結果自体は実測の通り。
+
+**1-4 失敗が沈黙していた理由**
+
+`xbrl_segment_fetcher.py::fetch_ticker()`は`missing_kpis`が存在しても
+**常に`True`を返す**（`False`を返すのはCIK取得失敗・10-Q取得失敗の
+場合のみ）。`main()`最後の完了サマリーは`{'✓' if ok else '✗'}`という
+表示のため、**KPIが部分的に取得失敗していても`✓ PLTR`と表示される**
+（実測確認: `ok=True`が返るため）。非ゼロ終了コードも存在しない。
+`missing_kpis`自体は`{ticker}_layer2.json`の`missing_kpis`フィールドに
+記録され、`quarterly_review_generator.py`がこれを`layer2_missing_kpis`
+としてレビューJSONへ転記するのみで、`print`はコンソール（CI生ログ）に
+`missing_kpis: [...]`が出るが、これを消費・検知する仕組み（`report_
+consistency_check.py`・`audit.py`等のNG/WARNチェック）はどこにも
+存在しない（`missing_kpis`を`grep`した結果、参照元は`xbrl_segment_
+fetcher.py`〈書き込み〉と`quarterly_review_generator.py`〈転記〉のみ）。
+
+**これは本日の一連の調査で繰り返し発見してきたサイレント・フォール
+バックと同型である。** CI（`TANUKI_TAIL_KPI_Update.yml`）は毎週GREEN
+（成功）で完走し続け、失敗の唯一の可視化経路は「AIがレビュー本文の
+中で自発的に『未取得』と書く」ことだけであり、これを系統的に集計する
+仕組みが存在しなかったため、本調査（Step 1-3の実測）まで15/27件という
+実数は誰にも把握されていなかった。
+
+#### Step 2: Layer3経由での代替取得可否（2026-08-19⑤、実装しない）
+
+現在「取得失敗」となっている全KPI（core 7件＋satellite約33件、合計
+40件）を、Layer3（`config/sec_concept_definitions.json`の32フィールド）
+で代替できるかを判定した。
+
+| 区分 | 件数 | 内容 |
+|---|---|---|
+| (A) Layer3の既存フィールドで直接まかなえる | 6 | SOFI GAAP純利益（`net_income`）・PLTR株式報酬費用（`stock_based_compensation`）・APGE現金及び現金等価物残高（`cash_and_equivalents`）・APGE研究開発費（`research_and_development`）・APGE営業活動によるキャッシュフロー（`operating_cash_flow`）・CELH営業キャッシュフロー（`operating_cash_flow`） |
+| (B) Layer3フィールドの組み合わせ・計算でまかなえる | 15 | PLTR営業利益率（`operating_income/revenue`）・PLTR希薄化後EPS成長率（`eps_diluted`系列のYoY）・NVDA総売上高成長率（`revenue`系列）・NVDA研究開発費対売上比率（`research_and_development/revenue`）・ADBE売上高成長率・ADBE営業利益率・ADBEフリーキャッシュフロー（`operating_cash_flow - capital_expenditure`）・APP総売上成長率・CELH売上高成長率・CELH株主資本成長率（`stockholders_equity`系列）・CELH粗利益率（`gross_profit/revenue`）・SOUN総売上高成長率・CRWV総売上高成長率・CRWV Gross Margin・CRWV Operating Cash Flow成長率 |
+| (C) Layer3にも無く、セグメント分解が必要 | 17 | SOFI Technology Platform売上成長率・SOFI正味貸倒率（NCO）・SOFI純金利マージン（NIM）・NVDAデータセンター売上成長率／粗利益率・NVDAゲーミング売上成長率・ADBEデジタルメディア売上成長率・ADBEサブスクリプション売上比率・APGE一般管理費（Layer3は`selling_general_and_administrative`〈SG&A合算〉と`selling_and_marketing`は別途あるが、両者の差分がG&A単体と一致する保証はなく確度が低いため(C)に分類）・APP広告売上成長率／アプリ売上成長率・CELH北米売上成長率／国際売上成長率・SOUN自動車向け売上成長率／レストランIoT売上成長率・CRWV Commercial売上成長率／Government売上成長率 |
+| (D) そもそもXBRLに無い（非GAAP・テキストのみ） | 2 | APP Adjusted EBITDAマージン（非GAAP調整後指標）・SOUN ARR（年間経常収益、SaaS非GAAP指標） |
+
+**(A)+(B)＝21件（52.5%）がLayer3経由で解決可能。(C)+(D)＝19件
+（47.5%）はセグメント分解またはテキスト抽出が引き続き必要。** つまり
+「Layer3に回せば半分は解決するが、残り半分はセグメント区分自体を
+`xbrl_segment_fetcher.py`側で解決する必要が残る」というのが実数に
+基づく答えであり、Layer3への切り替えだけでは全解決しない。
+
+**Layer3経由に回す場合の技術的な障害（2026-08-19⑤）**: `config/
+tail_kpi_map.json`のスキーマ（`kpi_name`/`change_risk`/`tag_history`/
+`fallback_tags`/`fallback_action`/`revenue_tag`/`dimension`）には
+**取得元（XBRL直接 vs Layer3）を指定する仕組みが存在しない**
+（`layer2_name`フィールドは既存の別KPIエントリとの重複排除用の別
+概念であり、取得元の切り替えとは無関係）。追加が必要なもの: (i)
+`"source": "layer3"`＋直接参照する`"layer3_field"`（(A)の場合）または
+計算式を表す`"layer3_formula"`（(B)の場合、例:
+`"operating_income/revenue"`）の新フィールド、(ii) それを読んで
+`build_ticker_store()`/`get_quarterly_series()`から値を取得し既存の
+`{ticker}_layer2.json`スキーマへ書き込む新規フェッチャー（または
+`xbrl_segment_fetcher.py`の拡張）。振り分けの判断主体は2案:
+`kpi_proposer.py`のプロンプト側でGrokに32フィールドのリストを提示し
+判断させる（実装は単純だが、Step 3で判明したGrokのタグ名精度問題と
+同型のリスク——検証していないAI判断への依存）か、取得側で機械的に
+判定する（Grokの提案結果からKPI名・revenue_tagを既知の32フィールド
+名・エイリアスと機械的に照合し、一致すれば自動でLayer3経路に振り分け
+る。Grokの判断に依存しない分、確実性が高い）。実装はしない。
+
 #### 対応方針
-未定（本項目では事実の記録のみ）。考えられる方向性:
+未定（本項目では事実の記録・判定のみ）。考えられる方向性:
 - (a) `xbrl_segment_fetcher.py`に非ディメンション（会社全体）ファクトの
   取得経路を追加する（`dim_local`が指定されない、または該当コンテキスト
   が0件の場合に、無条件（コンテキスト参照なしの直接値）でのタグ検索に
@@ -6396,13 +6518,99 @@ GraphicsSegmentMember`）。ただしこれは構造的制約とは別の、個�
 - (b) `kpi_proposer.py`のプロンプトを見直し、非セグメント指標は
   `text_kpi_extractor.py`（MD&Aテキスト抽出、こちらは`auto_fetchable:
   false`のKPI用に既に存在する別経路）へ誘導する形にする
-- (c) Grokが生成する`xbrl_member`の精度向上（実際のXBRLファイルとの
-  事前照合等）は別課題として切り分ける
+- (c) Grokが生成する`xbrl_member`の精度向上は別課題として切り分け済み
+  （`[[TAIL-XBRL-MEMBER-VALIDATION-GAP-1]]`として新規登録）
+- (d) 上記Step 2の判定に基づき、(A)(B)＝21件はLayer3経由の新規取得
+  経路（`tail_kpi_map.json`スキーマ拡張＋新規フェッチャー）へ振り替え、
+  (C)(D)＝19件は(a)/(b)で個別対応する
 
 #### 関連
 - `[[TAIL-KPI-PROPOSER-CORE-ONLY-GATE-1]]`（本問題の発見元。KPI提案の
   生成・登録という入口は解消したが、本問題により値取得という出口が
   ブロックされたまま）
+- `[[TAIL-XBRL-MEMBER-VALIDATION-GAP-1]]`（Grokが生成する`xbrl_member`
+  名の精度問題を切り出した新規項目、2026-08-19⑤）
+- `[[LAYER3-ANNUAL-CLASSIFICATION-DROPS-DATA-1]]`（Layer3側のデータ
+  存在確認の実測元。TAILの5フィールド消費経路確認から派生）
+
+#### 着手条件
+ユーザーに(a)/(b)/(d)いずれの方向性を採るか、または優先度を確認して
+から着手すること。
+
+---
+
+### [TAIL-XBRL-MEMBER-VALIDATION-GAP-1] kpi_proposer.pyがGrok生成のxbrl_memberタグ名を実XBRLと照合せずtail_kpi_map.jsonへ登録している
+**優先度:** 中（登録自体は成功するため一見動いているように見えるが、
+値取得の成功率を実質的に決めている根本原因の一つ）
+**分類:** バグ / TAIL自動化パイプライン / 未検証AI出力への依存
+**登録日:** 2026-08-19⑤
+**発見:** `[[TAIL-XBRL-SEGMENT-FETCHER-NONDIMENSIONED-GAP-1]]`調査中に
+NVDA「ゲーミング売上成長率」の`xbrl_member: "nvda:GamingMember"`が
+実際のXBRLタグ`nvda:GraphicsSegmentMember`と一致しないことを発見。
+単発事象か系統的な問題かを確認するための追加調査
+
+#### 内容
+`kpi_proposer.py`はGrokに`xbrl_tag`/`xbrl_dimension`/`xbrl_member`を
+提案させ、`_update_kpi_map()`（258行目以降）はこれを**実際のXBRL
+ファイルと一切照合せず**そのまま`config/tail_kpi_map.json`へ登録する。
+Grokは学習データに基づく「もっともらしい」タグ名を生成するのみで、
+対象銘柄の実際の提出書類を検証していない。
+
+**セグメント指標として提案された全22件の`xbrl_member`を、実際の直近
+10-Q XBRLファイルと照合した結果、一致は7/22件（32%）。**
+
+| ticker | KPI名 | 提案されたxbrl_member | 実XBRLとの一致 |
+|---|---|---|---|
+| NVDA | データセンター売上成長率 | nvda:DataCenterMember | ✓一致 |
+| NVDA | データセンター粗利益率 | nvda:DataCenterMember | ✓一致 |
+| NVDA | ゲーミング売上成長率 | nvda:GamingMember | ✗不一致（正: GraphicsSegmentMember） |
+| ADBE | デジタルメディア売上成長率 | adbe:DigitalMediaSegmentMember | ✗不一致 |
+| ADBE | サブスクリプション売上比率 | adbe:SubscriptionMember | ✗不一致 |
+| APP | 広告売上成長率 | app:AdvertisingMember | ✗不一致 |
+| APP | アプリ売上成長率 | app:AppsMember | ✗不一致 |
+| CELH | 北米売上成長率 | celh:NorthAmericaMember | ✗不一致 |
+| CELH | 国際売上成長率 | celh:InternationalMember | ✗不一致 |
+| CRWV | 総売上高成長率 | crwv:ConsolidatedMember | ✗不一致 |
+| CRWV | Commercial売上成長率 | crwv:CommercialSegmentMember | ✗不一致 |
+| CRWV | Government売上成長率 | crwv:GovernmentSegmentMember | ✗不一致 |
+| SOUN | 自動車向け売上成長率 | soun:AutomotiveSegmentMember | ✗不一致 |
+| SOUN | レストラン・IoT売上成長率 | soun:RestaurantAndIoTSegmentMember | ✗不一致 |
+| SOFI | Technology Platform売上成長率 | sofi:TechnologyPlatformMember | ✗不一致 |
+| SOFI | 正味貸倒率（NCO） | sofi:PersonalLoansMember | ✗不一致 |
+| PLTR | 米民間売上成長率 | pltr:CommercialOperatingSegmentMember | ✓一致 |
+| PLTR | 政府部門売上成長率 | pltr:GovernmentOperatingSegmentMember | ✓一致 |
+| TSLA | エネルギー事業粗利益率 | tsla:EnergyGenerationAndStorageMember | ✓一致 |
+| TSLA | エネルギー受注残高 | tsla:EnergyGenerationAndStorageMember | ✓一致 |
+| TSLA | サービス売上成長率 | tsla:ServicesAndOtherMember | ✓一致 |
+| TSLA | 自動車売上総利益率 | tsla:AutomotiveMember | ✗不一致 |
+
+**注目すべき内訳の偏り**: PLTR・TSLAの登録済みKPI（初期セットアップ時
+に登録された既存KPI、2026-06-06〜の`tail_kpi_map.json`に元から存在）
+は5/8件（62.5%）が一致するのに対し、**今回のセッションでGrokに
+一括生成させたsatellite銘柄の新規提案は2/14件（14%）しか一致しない**
+（NVDAのDataCenterMember 2件のみ）。この差は、初期セットアップ時の
+登録がより慎重に（人手による確認を伴って）行われていた可能性を示唆
+し、逆に言えば**Grokの一括生成だけに頼ると一致率がさらに下がる**
+ことを示す実測結果。
+
+**「Grokが正しいタグ名を知っている」という前提のまま登録される設計
+であり、これ自体が検証していない前提に基づく仕組みになっている。**
+
+#### 対応方針
+未定（本項目では事実の記録のみ、実装しない）。考えられる方向性:
+- (a) `kpi_proposer.py`の`_update_kpi_map()`に、実際の直近10-Q XBRLを
+  ダウンロードして`xbrl_member`の存在を照合するバリデーションを追加し、
+  不一致の場合は登録を保留する（または`fallback_action`同様の警告扱い
+  とする）
+- (b) 登録後、`xbrl_segment_fetcher.py`が最初の取得を試みた時点で
+  `missing_kpis`に入ったKPIは自動的に無効化・再提案を促す
+- (c) `[[TAIL-XBRL-SEGMENT-FETCHER-NONDIMENSIONED-GAP-1]]`のNG/WARN
+  検知（現状皆無）と合わせて対応する
+
+#### 関連
+- `[[TAIL-XBRL-SEGMENT-FETCHER-NONDIMENSIONED-GAP-1]]`（本問題の発見元。
+  非セグメント指標の構造的な取得不可とは別の、タグ精度という別種の
+  原因）
 
 #### 着手条件
 ユーザーに(a)/(b)/(c)いずれの方向性を採るか、または優先度を確認して
