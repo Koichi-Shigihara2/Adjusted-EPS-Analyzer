@@ -2223,16 +2223,28 @@ NG想定がWARNへ格下げになった経緯を踏まえ、誤検知率の確�
   結果、標準タグ採用済みの「正常」銘柄でも中央値0.2%な一方でp95=81%・
   最大342%（AVAV）まで裾が広く、Phase 2b-2と同型の誤検知リスクがある
   ため、乖離率は情報提供のみに留めWARNのまま据え置いた
-- **新たな発見**: 再構成6銘柄のうちASTS・JNJはyfinanceとの乖離0.0%で
-  再構成の正しさを裏付けたが、**COHRは-89.6%（reconstructed_pretax
-  $94.2M vs yfinance $901.5M）と大きく乖離**しており、再構成値自体の
-  妥当性に疑問符が残ることが判明した（本改修のスコープ外、対応要否は
-  別途判断）
+- **新たな発見（当初）**: 再構成6銘柄のうちASTS・JNJはyfinanceとの
+  乖離0.0%で再構成の正しさを裏付けたが、COHRは-89.6%
+  （reconstructed_pretax $94.2M vs yfinance $901.5M）と大きく乖離して
+  おり、再構成値自体の妥当性に疑問符が残ることが判明した
 - 検証: 6対象銘柄全件でWARN文言に乖離率が正しく出ることを確認。
   残り99銘柄で意図しないWARN新規発火なし（トリガー条件自体は変更して
   いないため設計上当然）。pytest 781 passed/2 known-failed（既存の
   MSFT/NVDA）、`report_consistency_check.py --fail-on-ng` NG=0/
   WARN=88件、`audit.py` exit 0
+
+**期ズレバグの発見・フォールバック向き反転（2026-08-19、同日追加）**:
+実装翌日の検証で、上記COHR -89.6%という数値自体が`_get_yf_operating_
+income()`の期ズレバグ（`row.iloc[0]`が決算期12月以外の銘柄でSECデータ
+より1期先の予備的な値を指す）に起因すると判明し、期末日ベースの照合
+（±10日許容窓）に修正した。正しく照合した結果、COHRの真の乖離は
+-82.4%であり、これは「2手法不一致時にpretax法へフォールバックする」
+という旧設計自体が誤りだったことを示していた（GP法が算出可能な4銘柄
+全てでyfinanceと0.0%完全一致、フォールバック発動2銘柄はpretax採用値が
+-11.4%/-82.4%も乖離）。フォールバック向きを反転（案A、GP法優先）し、
+VRT FY2018の異常値対策として入力整合性ガード（案D）を追加実装した。
+詳細・全検証結果は`[[OPERATING-INCOME-EXTRACTION-GAP-1]]`
+（BACKLOG_DONE.md「2026-08-19（完了）」参照）。
 
 #### ゲート0の実装状況（2026-08-18訂正）
 - `exclusion_reason`は`src/value/tanuki_valuation/calculator/
@@ -8229,6 +8241,56 @@ None:`（921行）の条件が成立せずFRED取得がスキップされる。*
 ---
 
 ## 優先度：低（アイデア段階）
+
+### [VRT-REVENUE-2018-MISSING-1] VRT FY2018のrevenue=0取得失敗（gross_profitと定義上矛盾）
+**優先度:** 低（実害はGP法入力整合性ガードで既に遮断済み、着手緊急性なし）
+**分類:** バグ / データ取得 / SEC EDGAR
+**登録日:** 2026-08-19
+**発見:** `[[OPERATING-INCOME-EXTRACTION-GAP-1]]`案D（GP法入力整合性
+ガード）実装時の全105銘柄実測
+
+#### 内容
+VRT（Vertiv Holdings）FY2018の`annual_2018.json`で`revenue=0`
+（取得失敗）であるにもかかわらず`gross_profit=-$2,865,200,000`
+（マイナス28.65億ドル）という、定義上（`gross_profit = revenue - COGS`）
+成立しない組み合わせが存在する。FY2019も同様に`revenue=0`だが、こちらは
+`operating_income`が標準タグ（比較年度再掲、`is_own_data=False`）から
+取得されているため実害はない。
+
+**推測（未検証）**: VRTは2020年2月にVertiv Holdings（旧GS Acquisition
+Holdings、SPAC）とVertiv Group（Platinum Equity傘下）の合併により上場した
+企業。2018年は合併前の前身法人（Vertiv Group、非公開）のデータであり、
+SEC EDGARへの遡及登録時にrevenueタグが適切に紐付けられなかった可能性が
+高いと推測されるが、実際の登録経緯（S-4等）は未確認。
+
+#### 実害
+`_backfill_operating_income()`のGP法計算にこの矛盾したgross_profitが
+そのまま入力されると、`operating_income=-$4,287,300,000`という明らかに
+誤った値を生成することを実際に確認した（2026-08-19、
+`[[QUALITY-GATES-EPIC-1]]`本線3のフォールバック向き反転〈案A〉検証時に
+発見）。現在は案D（GP法入力の整合性ガード）により、この年度はGP法を
+使わずpretax調整法（$6,370,187、元の値と同一）へフォールバックする設計に
+なっており、実害は遮断済み。ただし根本原因（revenue取得失敗）自体は
+未解消のまま残っている。
+
+**全105銘柄・全年度の実測で、他に該当する年度は無かった**（`revenue=0`
+または未取得なのに`gross_profit`が非ゼロという組み合わせは、標準タグ
+採用済みで実害ゼロの数件〈AMD/CELH/JNJ/KO等の`revenue`未取得だが
+`gross_profit`は個別に正常取得されている古い年度、IONQ 2020〈標準タグ〉〉
+を除き、GP法が実際に計算されうる年度としてはVRT FY2018のみ）。
+
+#### 対応方針
+`_extract_values_best_candidate()`等のrevenue抽出ロジックで、VRT FY2018
+に該当するcompany_facts.jsonのタグを実際に調査し、取得可能な候補タグが
+あるかを確認する。実装は本項目のスコープ外（登録のみ）。
+
+**`[[QUALITY-GATES-EPIC-1]]`ゲート1のyfinance照合をrevenueへ横展開すれば、
+この種の破綻は取得時点で検知できる**——本線3の次の一歩の候補として有力
+（CHECK-35のoperating_income照合と同型のパターンをrevenueに適用すれば、
+`revenue=0`という取得失敗を、yfinance実測値との突合で即座に検知できる）。
+
+#### 着手条件
+なし
 
 ### [MARKETDATA-AS-IS-AUDIT-PY-OMITTED-1] INPUT_DATA_AS_IS.md 1-B節の「11ファイル」がcommon/sec_data/audit.pyを見落としていた
 **優先度:** 低（記録のみ、ドキュメント訂正で対応完了）

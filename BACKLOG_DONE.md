@@ -399,6 +399,137 @@ TSLA）との重複も**なし**（SOFIは保有銘柄だが、本修正の対�
 `refreshed_at`/`refreshed_reason`は23エントリ全てに付与済みであることも
 確認した。
 
+#### フォールバック向きの反転（2026-08-19、`[[QUALITY-GATES-EPIC-1]]`本線3・案A→案D）
+
+本線3・ゲート1第一歩でCHECK-35にyfinance照合を追加したところ、実装
+初日にGP法/pretax調整法のフォールバック向きが逆だったことを検出した
+（ゲート1の有効性の実証例）。
+
+**発見の経緯**: 当初は「2手法の乖離のうち非事業性項目が50%以上を
+説明できればGP法、未満ならpretax調整法へフォールバック」という設計
+だったが、yfinance実測（期末日を正しく一致させた比較）で以下が判明:
+- GP法が算出可能だった4銘柄（LLY/JNJ/KLAC/COHR）**全てでyfinanceと
+  誤差0.0%**
+- 旧設計でフォールバックが実際に発動した2銘柄（LLY・COHR）は、
+  pretax採用値がyfinanceに対しそれぞれ-11.4%・-82.4%も乖離
+- COHR自身の過去3年（`OperatingIncomeLoss`標準タグ開示期間、
+  FY2022〜2024）のバックテストでも、GP法が3年連続で旧pretax方式を
+  上回った（GP法誤差: 0.0%/+320.9%/+28.1%、旧pretax法誤差:
+  -32.0%/-857.9%/-253.6%）
+
+**案A（GP法優先への反転）**: GP法が算出可能な場合は常にそれを採用する
+方式に変更。`nonop_coverage_ratio`の役割を「GP法採否の門番」から
+「pretax調整法の事後信頼度指標」へ転換。
+
+**案D（GP法入力の整合性ガード）**: 案A適用直後の全銘柄再生成で、VRT
+FY2018が`revenue=0`（取得失敗）にもかかわらず`gross_profit=-$28.65億`
+という定義上（`gross_profit=revenue-COGS`）成立しない入力から
+`operating_income=-$42.87億`という明らかに誤った値を生成することを
+発見した。**net_income比較による除外（代理判定）は不採用**とし、
+GP法の入力そのもの（`revenue`と`gross_profit`の関係）が内部整合して
+いるかを確認するガードを追加した。
+
+net_income比較を不採用とした根拠はHON FY2011の実データ:
+`revenue`/`gross_profit`比率は21.8%（他年度と同水準、入力は健全）だが
+`net_income($2,067M) > GP法値($775M)`——これは非事業性の利得が大きい
+年の正当な結果であり、net_income比較では誤って除外されうることが
+実データで確認された。
+
+整合性条件（`revenue`が`None`/`0`なのに`gross_profit`が非ゼロ、または
+`|gross_profit|>|revenue|`）は全105銘柄・全年度（revenue有効n=1096）の
+実測に基づく：正常な年度は比率の中央値0.543・p99=0.939に収まり1.0超は
+実質存在しない。
+
+**HONの11年度変化が示すGP法の構造的弱点**: 整合性ガードを通過し
+正当にGP法へ切り替わったHON 11年度について、`OperatingIncomeLoss`
+標準タグが最近再開されたFY2022-2025（真値が既知）でGP法をバックテスト
+した結果、**-11.9%〜-38.3%の系統的な過小評価**を確認した。原因は
+`RestructuringCharges`（HON FY2011で$743M）等、GP法の式に含まれない
+別建ての営業費用項目。COHRのFY2023（GP法でも誤差+320.9%）と同型の
+限界であり、GP法は「入力が整合していれば常に正確」ではない。
+
+**実装スコープ**: `common/sec_data/parser.py::_backfill_operating_
+income()`（フォールバック向き反転＋整合性ガード）、
+`common/sec_data/report_consistency_check.py`（CHECK-35のyfinance
+照合、期ズレバグ2件の修正含む）。タグ候補拡充（`InterestExpense
+Operating`等の候補追加、GP法へのRestructuringCosts等の追加控除）は
+本反転のスコープ外、別途登録・検討（下記関連参照）。
+
+**期ズレバグの修正（副次的発見）**: CHECK-35実装翌日、`row.iloc[0]`
+（先頭列）を無条件に「直近確定年度」として使っていたため、決算期が
+12月以外の銘柄（COHR/KLAC等）でSECデータより1期先の予備的な値と
+誤って比較していたバグを発見・修正した（期末日ベースの照合＋52/53週
+決算企業向け±10日許容窓）。詳細は`CHAT_RULES.md`の教訓参照。
+
+**変化した銘柄・年度（全105銘柄スキャン、7銘柄・34年度）**:
+
+| 銘柄 | 変化年度数 | 現在年度への影響 |
+|---|---|---|
+| LLY | 8（2016,17,18,21,22,23,24,**25**） | operating_income $26.30B→$29.70B。moat_score 0.697→0.7548、roic_norm 0.788→0.933。**phase1_years・vc_factor・RICE・recommended_g・g_fundamental・IV・TANUKI SCORE・MATRIX分類は全て無変化**（vc_factorが元々上限2.0で頭打ちのため） |
+| COHR | 1（**25**） | operating_income $94.18M→$534.95M。vc_factor 0.30→0.502、RICE(base) 0.457→0.764。**moat_score（roic_normが床0.0のまま）・phase1_years・recommended_g・g_fundamental・IV・TANUKI SCORE・MATRIX分類は全て無変化**（RICE 0.764は依然1.0未満で低効率のまま） |
+| JNJ | 5（2016,17,18,19,21） | 現在年度(2025)は元々GP法採用のため無変化 |
+| KLAC | 1（2020） | 現在年度(2025)は元々GP法採用のため無変化 |
+| SOFI | 6（2019,20,21,22,24,25） | 想定外の副作用。GP-S&M代替法でgp_estimateが算出可能なため、net_incomeガード（pretax専用）を経由せずGP法採用（FY2025: None→$1,260,612,000）。STONKS SILO等の消費者調査の結果、影響なしと確認（下記参照） |
+| HON | 11（2008-2017の一部,21） | 過去年度のみ、現在年度(2025)は標準タグ採用のため無変化 |
+| RCAT | 2（2021,22） | 過去年度のみ、金額は数十万〜数百万ドルと僅少。現在年度(2025)は標準タグ採用のため無変化 |
+| XOM・ASTS | 0 | GP法算出不可のため無変化（想定通り） |
+| VRT | 0（値は不変、provenanceのみ変化） | 整合性ガードによりFY2018はpretax法（$6,370,187、旧値と同一）へフォールバック。`gp_rejected_reason`をprovenanceに記録 |
+
+**過去年度（historical backfill）の消費者影響確認**: TANUKI TAIL・
+STONKS SILO・EPS Analyzer・HypeCore・診断/監査スクリプト・フロント
+エンド（`docs/`配下）を`grep -rn`で網羅的に確認した。結論：**いずれも
+影響なし**。
+- TANUKI TAIL（`tail_dcf_bridge.py`・`quarterly_review_generator.py`）・
+  `q4_implied.py`・`ttm_calculator.py`はLayer3
+  （`layer3_builder.py::build_ticker_store()`）経由で`operating_income`
+  を取得するが、Layer3は`annual_YYYY.json`を読まず
+  `company_facts.json`を独自に再抽出する完全に独立したパイプライン
+  （候補タグは`OperatingIncomeLoss`単独、`_backfill_operating_income()`
+  相当のGP法/pretax法フォールバックを持たない）。今回の変更は無関係
+- STONKS SILO（`analyzer.py`）は`operating_income`を最新年度のみ参照
+  （Rule of 40計算）。`fetcher.py::load_annual_data()`は過去5年分を
+  内部で読み込むが、`pipeline.py`の出力シリアライズ（`result["records"]`）
+  は`revenue`/`net_income_fy`のみを含み`operating_income`は含まれない
+  ため、過去年度の変化は出力に現れない。RCAT（`stonks_silo=true`）の
+  変化年度（2021,22）はいずれも現在年度(2025)ではないため無影響
+- EPS Analyzer・HypeCoreは`operating_income`を一切参照しない
+- 診断/監査系（`audit.py`・`registration_validator.py`・
+  `dcf_validity_checker.py`）は`operating_income`を参照しない
+- `kpi_config.py`・`kpi_fetcher.py`・`segment_fetcher.py`の
+  `operating_income`はセグメント別KPI（`segment_operating_income`、
+  XBRLディメンション経由で独立抽出）であり、`pl.operating_income`とは
+  無関係
+- フロントエンド（`docs/`配下のJS/HTML）は`operating_income`を直接
+  参照しない
+
+**変化の性質**: LLY・COHRの現在年度はIV・TANUKI SCORE・MATRIX分類が
+完全無変化——**本修正は投資判断そのものではなく、判断の根拠となる
+数値（operating_income・roic_wacc_ratio・vc_factor・RICE等の診断用
+表示値）の正確性を改善したもの**。HON 11年度・SOFI 6年度等の
+historical変化もどの消費者にも波及していない。「変わったが影響が
+なかった」という事実も、次に同種の修正を行う際の判断材料として記録
+する。
+
+**fixed_registry.json**: `_apply_fixed_registry_freeze()`は差分適用
+方式のため、`operating_income`（fields_snapshot対象外の新規/変更
+フィールド）の変化はフィックス年度でも素通しされる。JNJ（5年度）・
+LLY（8年度）の計13エントリでsnapshot_hashが不一致になったため、
+fields_snapshot記載の全フィールド（171件）を機械照合し不一致0件を
+確認した上でsnapshot_hashを更新（`refreshed_at`/`refreshed_reason`
+付与）。COHR・KLACはfixed_registry.json未登録のため対象外。
+
+**検証**: pytest 781 passed/2 known-failed（既存のMSFT/NVDA）。
+`report_consistency_check.py --fail-on-ng`: 更新前NG=13
+（fixed_registry不整合、原因究明済み）→更新後**NG=0**。`audit.py`
+exit 0（既存警告5件のみ）。CHECK-35再照合でLLY/JNJ/KLAC/COHR/ASTSが
+全て乖離+0.0%（期ズレ修正後の正しい値）。
+
+**新規発見・別項目化**: `[[VRT-REVENUE-2018-MISSING-1]]`（VRT FY2018
+のrevenue取得失敗、優先度低、登録のみ）をBACKLOG.mdへ新規登録。GP法の
+構造的弱点（RestructuringCosts等の別建て営業費用の見落とし、HON/COHR
+で確認）への対応は別途登録を検討（登録案のみ提示、本反転のスコープ外
+のため未登録）。
+
 #### 関連
 `[[MOAT-SCORE-PARTIAL-NULL-1]]`（対象6銘柄については本修正により
 roic_wacc_ratioが正しく計算されるようになったため案A''の欠損処理設計は
@@ -406,7 +537,8 @@ roic_wacc_ratioが正しく計算されるようになったため案A''の欠�
 着手条件は2026-08-16に更新済み、詳細はBACKLOG.md参照）。
 `[[MACRO-STYLE-FCF-ZERO-TRUTHY-EXCLUDE-1]]`・`[[FALSY-ZERO-PATTERN-
 SWEEP-1]]`とは発生メカニズムが異なる（タグ不在 vs falsy-zero誤判定）
-別項目として存置。
+別項目として存置。`[[VRT-REVENUE-2018-MISSING-1]]`（2026-08-19新規
+登録、案D検証時の副次発見）。
 
 ---
 
