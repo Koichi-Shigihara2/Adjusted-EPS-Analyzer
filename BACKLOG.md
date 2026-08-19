@@ -6030,7 +6030,9 @@ HON/COHRに限定せず全105銘柄の該当年度を使用した。
 4件でいずれもTAIL非消費フィールド）
 **分類:** 調査完了 / データ品質 / SEC EDGAR / Layer3統合スキーマ
 **登録日:** 2026-08-19
-**更新日:** 2026-08-19②（全105銘柄相当・32フィールドの範囲実測を実施。
+**更新日:** 2026-08-19③（`CELH stock_based_compensation`のgap=1を
+個別調査。原因未特定のまま記録、TAIL実消費への影響なしを確認）
+（2026-08-19②：全105銘柄相当・32フィールドの範囲実測を実施。
 年次側の仮説はほぼ全否定、四半期側も実測。詳細は本文参照）
 **発見:** `[[OI-RECONSTRUCTION-MISSING-OPEX-LINES-1]]`実測調査（Step 3、
 Layer3側の営業利益再構成の実態確認）
@@ -6132,8 +6134,23 @@ stock_based_compensation/net_income/shares_diluted）×保有10銘柄
   `OperatingIncomeLoss`を報告しないことは`[[OPERATING-INCOME-
   EXTRACTION-GAP-1]]`で既に確認済みの事実と整合。**取りこぼし(c)では
   ない**
-- `CELH stock_based_compensation`はgap=1の小さな不一致があるが未調査
-  （優先度低、影響軽微）
+- `CELH stock_based_compensation`のgap=1は2026-08-19③で追加調査した。
+  欠落しているend日は**`2021-09-30`（1件のみ）**——CELHの生データでは
+  この期がQ3 2021のYTD開示（10-Q、`is_ytd=True`）だが、`_ytd_to_
+  quarterly()`が単一四半期額へ差分するために必要なQ1/Q2 2021の同一
+  YTDチェーン先行エントリが、`_QUARTERLY_YEARS=5`の保持窓カットオフ
+  （実測時点基準で`cutoff_q≈2021-08-20`）の外側にあるため存在しない。
+  結果としてこのYTDエントリは差分元を持たない「孤立エントリ」となり、
+  `_ytd_to_quarterly()`内で`unresolved`リストへ追加される経路を通る
+  （`_normalize_field_entries()`が`all_quarterly.extend(unresolved)`で
+  再結合する箇所まではコード追跡で確認）。**ただし、この`unresolved`
+  エントリが最終的に`build_ticker_store()`の出力へ現れない具体的な
+  分岐点までは特定できなかった**——推測で断定せず「原因未特定」として
+  記録する。実害は`get_latest_quarterly(store, 'stock_based_
+  compensation')`で個別確認済みで、TAILが実際に消費する最新エントリは
+  `end=2026-03-31, val=7,626,000`であり、2021-09-30の欠落はTAILの
+  `sbc_quarterly`出力に**影響しない**（優先度低のまま据え置き、対応
+  不要）
 - 残り48セルは全て正常一致
 
 **消費側の欠損時挙動（i/ii/iii判定）**: `tail_dcf_bridge.py`・
@@ -6188,6 +6205,102 @@ XOM: $41.871B `reconstructed_pretax`）。実装（Layer3側への再構成移�
 
 #### 着手条件
 なし（優先度低のため急ぎ不要）
+
+---
+
+### [TAIL-SATELLITE-POSITION-MONITORING-GAP-1] TAIL保有銘柄APGEが自動レビュー生成パイプラインから完全に漏れている（satellite種別＋tanuki=falseの二重要因）
+**優先度:** 中（データ破損ではなく運用上の欠落だが、保有ポジションへの
+実カバレッジ欠落であり放置理由もない）
+**分類:** 運用ギャップ / TAIL自動化パイプライン / バグ
+**登録日:** 2026-08-19
+**発見:** 検査ユニバースの穴の実測調査（`get_tanuki_tickers()`由来の
+一覧の妥当性確認、事例5の教訓〈本番の入口〜出口を通す〉を適用した
+Step 3投稿調査）
+
+#### 内容
+「`get_tanuki_tickers()`しか検査していない検査は穴か」という調査から
+出発したが、実際に検査対象を1つずつ実コードで確認した結果は以下の
+通り:
+
+- **`report_consistency_check.py`・`audit.py`**: いずれも意図的に
+  TANUKI VALUATIONの出力（`get_tanuki_tickers()`の積集合、または
+  `tickers.json`）だけを検査するスコープであり、それ自体が正しい
+  設計（バナー表示も「TANUKI VALUATION report.txt 整合性チェック」と
+  明記、「全銘柄」は主張していない）。**穴なし**
+- **`registration_validator.py`**: `get_all_tickers()`（フラグ・
+  ステータス無関係の最広範囲）を使用しており、APGEも対象に含まれる。
+  **穴なし**
+
+しかし調査の過程で、上記3スクリプトとは**別の、より実害のある穴**を
+TAIL自身の自動化パイプラインで発見した。TAILの保有10銘柄のうち
+**APGEについて、四半期レビューが一度も自動生成されていない**
+（`docs/portfolio/tail/data/reviews/`にAPGE関連ファイルが1件も存在
+しないこと、`review_queue.json`にAPGEエントリが0件であることを実測
+確認済み）。原因は独立した2つの仕組みの組み合わせ:
+
+**(1) RSS監視の入口でsatellite種別ポジションが除外される**
+`edgar_rss_monitor.py::main()`は`--ticker`未指定時（＝通常のスケジュール
+実行、`.github/workflows/TANUKI_TAIL_RSS_Monitor.yml`の`event.inputs.
+ticker`が空の場合の分岐）、ticker一覧を`get_core_tickers()`から取得する。
+`get_core_tickers()`は`positions_index.json`＋各ポジションの`thesis.
+json`を読み、**`type=="core"`のポジションのみ**を返す。`APGE_thesis.
+json`の`type`は`"satellite"`であるため、APGEは新規10-Q/10-K提出の
+RSS監視対象から一律で除外される。この結果、`review_queue.json`へ
+APGEのエントリが投入されることが構造的にない。
+
+**(2) DCFシナリオ生成がTANUKI VALUATIONのlatest.json依存で恒久的に
+ブロックされる**
+`tail_dcf_bridge.py::generate_scenario_files(ticker)`は関数冒頭で
+`_load_latest_valuation(ticker)`（`docs/value-monitor/tanuki_valuation/
+data/{ticker}/latest.json`を読む）が`None`なら即座に`False`を返して
+スキップする（190-191行目）。APGEは`tanuki=false`のためTANUKI
+VALUATIONのDCF評価自体が実行されず、`latest.json`が恒久的に存在しない
+（`ls docs/value-monitor/tanuki_valuation/data/APGE/`で実測確認、
+ディレクトリ自体が存在しない）。CIワークフローの「Run tail_dcf_bridge
+(scenario files)」ステップのticker一覧構築も
+`os.listdir('docs/value-monitor/tanuki_valuation/data')`ベースであり
+APGEディレクトリが存在しないため二重に除外されるが、**これは
+ticker一覧構築側の不備ではない**——`generate_scenario_files()`自体が
+`latest.json`依存という設計上の制約であり、仮にticker一覧にAPGEを
+含めても結果は変わらない（実際にコードを読んで確認済み、推測ではない）。
+
+**重要な補足（過大評価しないための確認）**: Layer3側のSEC EDGARデータ
+自体はAPGEについて実在する。`build_ticker_store('APGE')`を個別実行し、
+`revenue`は0件（無収益バイオのため生データ自体が存在しないと推測される
+が未確定）である一方、`operating_income`・`stock_based_compensation`・
+`net_income`・`shares_diluted`の4フィールドはいずれも`end=2026-03-31`
+（Q1）の実データを保持していることを確認した。`_load_layer1_
+financials()`の`sbc_quarterly`・`eps_diluted`計算は`revenue`に依存
+しない（`operating_margin`のみ`revenue`必須）ため、本来これらの指標は
+APGEについて計算可能なはずだが、`generate_scenario_files()`の早期
+return（(2)）によりこの計算自体に到達しない。
+
+**`generate_review()`(`quarterly_review_generator.py`)自体はvaluationが
+`None`でもハードブロックしない**（`thesis`さえあれば処理続行、
+`load_tanuki_valuation()`が`None`を返しても`[WARN]`表示のみで継続する
+実装をコードで確認済み）。したがって真のボトルネックは(2)ではなく
+**(1)**——RSS監視の入口でAPGEが一度もキューに乗らないことにある。
+
+#### 対応方針
+未定（本項目では事実の記録のみ、対応要否は別途判断）。考えられる方向性:
+- (a) satellite種別ポジションもRSS監視・レビュー生成対象に含める
+  （`get_core_tickers()`の呼び出し元を拡張、または全ポジション監視に
+  変更）
+- (b) レビュー生成をcore限定とすることが投資方針として意図的なもので
+  あれば、その旨を明文化し「意図的な除外」として現状維持する
+
+core/satelliteの区別自体は投資方針として正当な設計判断であり得るため、
+コード側だけでは(a)/(b)のどちらが正しいか判断できない。
+
+#### 関連
+- `[[LAYER3-ANNUAL-CLASSIFICATION-DROPS-DATA-1]]`（同じ調査の一部として
+  実測したTAIL消費経路50セル確認の中でAPGE revenue=0件を先に発見、
+  本項目はその流れで見つかった別種の問題）
+
+#### 着手条件
+ユーザーに(a)satelliteポジションもレビュー対象に含めるべきか、
+(b)意図的な除外として現状維持でよいか、投資方針の判断を確認してから
+着手すること。
 
 ---
 
