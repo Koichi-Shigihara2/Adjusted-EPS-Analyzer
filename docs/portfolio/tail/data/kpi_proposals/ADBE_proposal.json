@@ -90,21 +90,6 @@
   ],
   "rejected_kpis": [
     {
-      "name": "営業利益",
-      "description": "全社営業利益の四半期額",
-      "source": "EDGAR XBRL",
-      "warning_threshold": "前年比10%以下",
-      "exit_threshold": "前年比5%未満が2四半期連続",
-      "related_exit_condition": "割安感消失による売却判断",
-      "auto_fetchable": true,
-      "extraction_hint": null,
-      "xbrl_tag": "us-gaap:OperatingIncomeLoss",
-      "xbrl_dimension": null,
-      "xbrl_member": null,
-      "layer2_name": null,
-      "rejection_reason": "非セグメント指標（構造的制約、xbrl_segment_fetcher.pyは非ディメンション事実を取得できない、[[TAIL-XBRL-SEGMENT-FETCHER-NONDIMENSIONED-GAP-1]]）"
-    },
-    {
       "name": "研究開発費",
       "description": "全社研究開発費の四半期額",
       "source": "EDGAR XBRL",
@@ -117,22 +102,7 @@
       "xbrl_dimension": null,
       "xbrl_member": null,
       "layer2_name": null,
-      "rejection_reason": "非セグメント指標（構造的制約、xbrl_segment_fetcher.pyは非ディメンション事実を取得できない、[[TAIL-XBRL-SEGMENT-FETCHER-NONDIMENSIONED-GAP-1]]）"
-    },
-    {
-      "name": "営業キャッシュフロー",
-      "description": "営業活動によるキャッシュフローの四半期額",
-      "source": "EDGAR XBRL",
-      "warning_threshold": "前年比10%以下",
-      "exit_threshold": "前年比5%未満が2四半期連続",
-      "related_exit_condition": "割安感消失による売却判断",
-      "auto_fetchable": true,
-      "extraction_hint": null,
-      "xbrl_tag": "us-gaap:NetCashProvidedByUsedInOperatingActivities",
-      "xbrl_dimension": null,
-      "xbrl_member": null,
-      "layer2_name": null,
-      "rejection_reason": "非セグメント指標（構造的制約、xbrl_segment_fetcher.pyは非ディメンション事実を取得できない、[[TAIL-XBRL-SEGMENT-FETCHER-NONDIMENSIONED-GAP-1]]）"
+      "rejection_reason": "非セグメント指標（構造的制約、xbrl_segment_fetcher.pyは非ディメンション事実を取得できない、[[TAIL-XBRL-SEGMENT-FETCHER-NONDIMENSIONED-GAP-1]]）／Layer3にも一致するフィールドなし"
     }
   ]
 }

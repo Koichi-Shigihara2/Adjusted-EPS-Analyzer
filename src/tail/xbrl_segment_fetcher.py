@@ -37,6 +37,12 @@ except ImportError:
 script_dir = os.path.dirname(os.path.abspath(__file__))
 repo_root  = os.path.abspath(os.path.join(script_dir, "..", ".."))
 
+if repo_root not in sys.path:
+    sys.path.insert(0, repo_root)
+from common.sec_data.layer3_builder import (  # noqa: E402
+    build_ticker_store, get_quarterly_series,
+)
+
 # tail_kpi_map.jsonはPythonバックエンド専用の手動設定ファイルのため
 # config/配下に配置（TAILKPI-CONFIG-LOCATION-1、2026-08-15移動）
 KPI_MAP_PATH = os.path.join(repo_root, "config", "tail_kpi_map.json")
@@ -391,6 +397,66 @@ def parse_and_extract(
     return results
 
 
+def fetch_layer3_kpis(ticker: str, kpi_list: List[Dict[str, Any]]) -> Dict[str, List[Dict[str, Any]]]:
+    """`"source": "layer3"`のKPIについて、SEC EDGAR Layer3統合スキーマ
+    （`build_ticker_store()`/`get_quarterly_series()`）から値を取得する。
+
+    出力は既存のXBRL直接取得と同じスキーマ（`{quarter, value, filed}`の
+    リスト）に揃える（消費側〈`quarterly_review_generator.py`等〉を
+    変えなくて済むように、2026-08-19⑧、[[TAIL-XBRL-SEGMENT-FETCHER-
+    NONDIMENSIONED-GAP-1]]対応）。
+
+    `layer3_field`（単一フィールド直接参照）と`layer3_formula`
+    （`"field_a/field_b"`形式の除算のみ対応。それ以外の演算子・複数演算
+    には対応しない）の両方を扱う。
+
+    **分母が0またはNoneの四半期は、その四半期のエントリ自体を作らず
+    スキップする**（falsy-zeroを作らない・0除算例外も出さない。
+    Layer3の`val`は元々`None`でも構造的に`0`になりうるため、`val==0`と
+    `val is None`の両方を明示的に弾く）。
+    """
+    store = build_ticker_store(ticker)
+    if store is None:
+        return {kpi["kpi_name"]: [] for kpi in kpi_list}
+
+    result: Dict[str, List[Dict[str, Any]]] = {}
+    for kpi in kpi_list:
+        name    = kpi["kpi_name"]
+        field   = kpi.get("layer3_field")
+        formula = kpi.get("layer3_formula")
+        entries: List[Dict[str, Any]] = []
+
+        if field:
+            for e in get_quarterly_series(store, field):
+                val = e.get("val")
+                if val is None:
+                    continue
+                entries.append({
+                    "quarter": quarter_label(e["end"]),
+                    "value":   val,
+                    "filed":   e.get("filed", ""),
+                })
+        elif formula and "/" in formula:
+            num_field, den_field = [s.strip() for s in formula.split("/", 1)]
+            num_by_end = {e["end"]: e for e in get_quarterly_series(store, num_field)}
+            den_by_end = {e["end"]: e for e in get_quarterly_series(store, den_field)}
+            for end in sorted(num_by_end):
+                num_e = num_by_end[end]
+                den_e = den_by_end.get(end)
+                num_val = num_e.get("val")
+                den_val = den_e.get("val") if den_e else None
+                if num_val is None or den_val is None or den_val == 0:
+                    continue  # 分母が0/None → その四半期はスキップ（falsy-zeroを作らない）
+                entries.append({
+                    "quarter": quarter_label(end),
+                    "value":   round(num_val / den_val, 6),
+                    "filed":   num_e.get("filed", ""),
+                })
+
+        result[name] = entries
+    return result
+
+
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # 1銘柄処理
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -423,6 +489,32 @@ def fetch_ticker(ticker: str, kpi_map: Dict[str, Any], out_dir: str, n_quarters:
     print(f"  {ticker}")
     print(f"{'─' * 52}")
 
+    # source=="layer3"のKPIとXBRL直接取得のKPIを分ける（2026-08-19⑧、
+    # 既存エントリはsourceキー無し＝XBRL直接取得のまま後方互換）。
+    # Layer3経由はSEC提出物の再取得を必要としないため、CIK/10-Q取得の
+    # 成否とは独立に処理する。
+    layer3_kpis = [k for k in kpi_list if k.get("source") == "layer3"]
+    xbrl_kpis   = [k for k in kpi_list if k.get("source") != "layer3"]
+
+    # KPIごとに四半期データを蓄積（両方の経路分をあらかじめ初期化）
+    kpi_data: Dict[str, List[Dict[str, Any]]] = {
+        kpi["kpi_name"]: [] for kpi in kpi_list
+    }
+
+    if layer3_kpis:
+        print(f"  Layer3経由: {len(layer3_kpis)}件")
+        layer3_results = fetch_layer3_kpis(ticker, layer3_kpis)
+        for name, entries in layer3_results.items():
+            kpi_data[name] = entries
+            if entries:
+                latest = entries[-1]
+                print(f"    {name}: {latest['value']:,} ({latest['quarter']}時点、Layer3経由)")
+            else:
+                print(f"    {name}: 取得失敗（Layer3、該当フィールドにデータなし）")
+
+    if not xbrl_kpis:
+        return _write_layer2_output(ticker, kpi_data, out_dir)
+
     cik = get_cik(ticker)
     if not cik:
         print("  CIK 取得失敗")
@@ -434,11 +526,6 @@ def fetch_ticker(ticker: str, kpi_map: Dict[str, Any], out_dir: str, n_quarters:
         print("  10-Q ファイリング取得失敗")
         return "filing_failed"
     print(f"  10-Q: {[f['period'] for f in filings]}")
-
-    # KPIごとに四半期データを蓄積
-    kpi_data: Dict[str, List[Dict[str, Any]]] = {
-        kpi["kpi_name"]: [] for kpi in kpi_list
-    }
 
     for filing in filings:
         period = filing["period"]   # "2025-03-31"
@@ -457,7 +544,7 @@ def fetch_ticker(ticker: str, kpi_map: Dict[str, Any], out_dir: str, n_quarters:
         if not xml_text:
             continue
 
-        extracted = parse_and_extract(xml_text, kpi_list, period)
+        extracted = parse_and_extract(xml_text, xbrl_kpis, period)
         del xml_text  # メモリ解放
 
         for kpi_name, val in extracted.items():
@@ -473,7 +560,14 @@ def fetch_ticker(ticker: str, kpi_map: Dict[str, Any], out_dir: str, n_quarters:
             else:
                 print(f"    {kpi_name}: 取得失敗")
 
-    # 出力 JSON 構築
+    return _write_layer2_output(ticker, kpi_data, out_dir)
+
+
+def _write_layer2_output(ticker: str, kpi_data: Dict[str, List[Dict[str, Any]]], out_dir: str) -> str:
+    """`{ticker}_layer2.json`を書き出し、状態文字列を返す。XBRL直接
+    取得・Layer3経由取得の両経路が同じ`kpi_data`スキーマへ書き込んで
+    いるため、出力構築ロジックは1箇所に共通化した（2026-08-19⑧）。
+    """
     missing_kpis = [n for n, d in kpi_data.items() if not d]
     total_kpis = len(kpi_data)
     success_count = total_kpis - len(missing_kpis)

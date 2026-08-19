@@ -41,6 +41,9 @@ from src.tail.xbrl_segment_fetcher import (  # noqa: E402
     get_10q_filings, download_xbrl, extract_segment_members, parse_and_extract,
 )
 from common.sec_data.fetcher import load_company_facts  # noqa: E402
+from common.sec_data.layer3_builder import build_ticker_store, get_latest_quarterly  # noqa: E402
+
+SEC_CONCEPT_DEFINITIONS_PATH = os.path.join(repo_root, "config", "sec_concept_definitions.json")
 
 # xbrl_tag（us-gaap概念）の実在確認に使う「直近」の基準（日数）。
 # 730日（約2年）より古い提出にしか出現しない概念は対象外とする
@@ -513,6 +516,100 @@ def validate_kpis_fetchable(
     return passed, rejected
 
 
+def _load_layer3_tag_to_field_index() -> Dict[str, str]:
+    """`config/sec_concept_definitions.json`の`fields[*].candidates`
+    （Layer3が各フィールドの値を拾う際に実際に参照するXBRLタグ一覧、
+    Layer3自身の唯一の正）から、タグのローカル名（`us-gaap:`等の
+    名前空間プレフィックスを除いた部分）→Layer3フィールド名の逆引き
+    辞書を構築する。
+
+    **機械的な照合のためのデータソースとして本ファイルを使う理由**:
+    タグ→フィールドの対応は、Layer3ビルダー自身が実際に使っている
+    設定であり、これ以上正確な対応表は存在しない。新たに独自の
+    エイリアス表を作らず、既存の単一の正を再利用することで、Grokに
+    「これはLayer3から取れる」と判断させる（＝今日tag名で失敗した
+    のと同型のリスク）ことを避ける（2026-08-19⑧、[[TAIL-XBRL-SEGMENT-
+    FETCHER-NONDIMENSIONED-GAP-1]]対応）。
+    """
+    try:
+        with open(SEC_CONCEPT_DEFINITIONS_PATH, encoding="utf-8") as f:
+            defs = json.load(f)
+    except Exception:
+        return {}
+
+    index: Dict[str, str] = {}
+    for field_name, field_def in defs.get("fields", {}).items():
+        for tag in field_def.get("candidates", []):
+            tag_local = tag.split(":")[-1]
+            # 複数フィールドが同じタグ名を候補にしている場合は先勝ち
+            # （sec_concept_definitions.json内での定義順を尊重する）
+            index.setdefault(tag_local, field_name)
+    return index
+
+
+def route_rejected_to_layer3(
+    ticker: str,
+    rejected: List[Dict[str, Any]],
+) -> tuple:
+    """却下されたKPIについて、`xbrl_tag`のローカル名がLayer3の
+    32フィールドの候補タグと機械的に一致するかを照合し、一致すれば
+    Layer3経由（`source: "layer3"`）で登録可能なKPIとして振り分ける。
+
+    **一致するだけでは登録しない**——`build_ticker_store()`を実際に
+    呼び、対象ティッカーにそのLayer3フィールドの実データが存在するか
+    （`get_latest_quarterly()`が非Noneを返すか）も確認する（事例5の
+    原則、名前が一致しても実データがあるとは限らないため）。
+
+    Returns: (layer3_matched, still_rejected) のタプル。
+      layer3_matched: [{**元のkpi, "source": "layer3",
+        "layer3_field": <field>}, ...]
+      still_rejected: Layer3にも一致しなかった、または一致したが
+        実データが無かった却下KPI（元の`{"kpi":..., "reason":...}`
+        形式、reasonを更新）
+    """
+    tag_index = _load_layer3_tag_to_field_index()
+    store = build_ticker_store(ticker)
+
+    layer3_matched: List[Dict[str, Any]] = []
+    still_rejected: List[Dict[str, Any]] = []
+
+    for r in rejected:
+        k = r["kpi"]
+        tag_local = (k.get("xbrl_tag") or "").split(":")[-1]
+        field = tag_index.get(tag_local)
+
+        if not field:
+            still_rejected.append({
+                "kpi": k,
+                "reason": f"{r['reason']}／Layer3にも一致するフィールドなし",
+            })
+            continue
+
+        if store is None:
+            still_rejected.append({
+                "kpi": k,
+                "reason": f"{r['reason']}／Layer3ストア取得不可のため未検証",
+            })
+            continue
+
+        latest = get_latest_quarterly(store, field)
+        if latest is None or latest.get("val") is None:
+            still_rejected.append({
+                "kpi": k,
+                "reason": f"{r['reason']}／Layer3フィールド'{field}'に一致したが実データなし",
+            })
+            continue
+
+        new_kpi = dict(k)
+        new_kpi["source"]       = "layer3"
+        new_kpi["layer3_field"] = field
+        layer3_matched.append(new_kpi)
+        print(f"    [Layer3振替] {k.get('name', '?')} → layer3_field={field}"
+              f"（実データ確認済み: {latest['end']}時点 {latest['val']:,}）")
+
+    return layer3_matched, still_rejected
+
+
 def update_tail_kpi_map(
     ticker: str,
     proposed_kpis: List[Dict[str, Any]],
@@ -543,14 +640,34 @@ def update_tail_kpi_map(
 
     added = 0
     for kpi in proposed_kpis:
+        kpi_name = kpi.get("name", "")
+        if kpi_name in existing_names:
+            continue
+
+        # source=="layer3"のKPIはXBRL直接取得と異なるスキーマで登録する
+        # （2026-08-19⑧、[[TAIL-XBRL-SEGMENT-FETCHER-NONDIMENSIONED-
+        # GAP-1]]対応）。既存エントリはsourceキー無し＝従来通りXBRL直接
+        # 取得のままで後方互換を保つ。
+        if kpi.get("source") == "layer3":
+            layer3_field = kpi.get("layer3_field")
+            if not layer3_field:
+                continue
+            existing.append({
+                "kpi_name":     kpi_name,
+                "change_risk":  "medium",
+                "source":       "layer3",
+                "layer3_field": layer3_field,
+            })
+            existing_names.add(kpi_name)
+            added += 1
+            print(f"    [kpi_map] 追加（Layer3経由・実データ確認済み）: {kpi_name} → layer3_field={layer3_field}")
+            continue
+
         xbrl_tag  = kpi.get("xbrl_tag")
         xbrl_dim  = kpi.get("xbrl_dimension")
         xbrl_mem  = kpi.get("xbrl_member") or ""
-        kpi_name  = kpi.get("name", "")
 
         if not xbrl_tag:
-            continue
-        if kpi_name in existing_names:
             continue
 
         tag_key = (xbrl_tag, xbrl_mem)
@@ -664,16 +781,29 @@ def propose_kpis(ticker: str, dry_run: bool = False) -> Optional[str]:
             f" — 理由: {r['reason']}"
         )
 
-    # 却下記録を提案ファイルに残す（黙って捨てない、Step 2-2対応）。
-    if rejected:
-        output["rejected_kpis"] = [
-            {**r["kpi"], "rejection_reason": r["reason"]} for r in rejected
-        ]
-        with open(out_path, "w", encoding="utf-8") as f:
-            json.dump(output, f, ensure_ascii=False, indent=2)
+    # 却下KPIをLayer3経路へ機械的に振り分ける（2026-08-19⑧、
+    # [[TAIL-XBRL-SEGMENT-FETCHER-NONDIMENSIONED-GAP-1]]対応）。
+    # xbrl_tagのローカル名をsec_concept_definitions.jsonのcandidatesと
+    # 照合するだけで、Grokに「これはLayer3から取れる」と判断させない。
+    layer3_matched, still_rejected = route_rejected_to_layer3(ticker, rejected)
+    if layer3_matched:
+        print(f"  Layer3振替: 却下{len(rejected)}件中{len(layer3_matched)}件が"
+              f"Layer3経由で取得可能と判明")
+    passed_kpis = passed_kpis + layer3_matched
+    rejected = still_rejected
 
-    # tail_kpi_map.jsonへは実取得検証を通過したKPIのみ登録する
-    # （手動KPI＝auto_fetchable=falseは元々tail_kpi_map.json登録対象外）。
+    # 却下記録を提案ファイルに残す（黙って捨てない、Step 2-2対応）。
+    # Layer3経由で解決したKPIはrejected_kpisから除外される
+    # （もう却下されていないため）。
+    output["rejected_kpis"] = [
+        {**r["kpi"], "rejection_reason": r["reason"]} for r in rejected
+    ]
+    with open(out_path, "w", encoding="utf-8") as f:
+        json.dump(output, f, ensure_ascii=False, indent=2)
+
+    # tail_kpi_map.jsonへは実取得検証を通過したKPI（XBRL直接＋Layer3
+    # 経由）のみ登録する（手動KPI＝auto_fetchable=falseは元々
+    # tail_kpi_map.json登録対象外）。
     update_tail_kpi_map(ticker, passed_kpis)
 
     return out_path

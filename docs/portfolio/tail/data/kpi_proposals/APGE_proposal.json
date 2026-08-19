@@ -76,51 +76,6 @@
   ],
   "rejected_kpis": [
     {
-      "name": "研究開発費",
-      "description": "四半期の研究開発費総額（パイプライン投資の継続状況）",
-      "source": "EDGAR XBRL",
-      "warning_threshold": "前年同期比30%減",
-      "exit_threshold": "前年同期比50%減が2四半期連続",
-      "related_exit_condition": "主要治験の失敗・パイプライン価値毀損",
-      "auto_fetchable": true,
-      "extraction_hint": null,
-      "xbrl_tag": "us-gaap:ResearchAndDevelopmentExpense",
-      "xbrl_dimension": null,
-      "xbrl_member": null,
-      "layer2_name": null,
-      "rejection_reason": "非セグメント指標（構造的制約、xbrl_segment_fetcher.pyは非ディメンション事実を取得できない、[[TAIL-XBRL-SEGMENT-FETCHER-NONDIMENSIONED-GAP-1]]）"
-    },
-    {
-      "name": "現金及び現金等価物残高",
-      "description": "四半期末のキャッシュポジション（ runway 監視）",
-      "source": "EDGAR XBRL",
-      "warning_threshold": "1.5年分未満",
-      "exit_threshold": "1年分未満",
-      "related_exit_condition": "主要治験の失敗・パイプライン価値毀損",
-      "auto_fetchable": true,
-      "extraction_hint": null,
-      "xbrl_tag": "us-gaap:CashAndCashEquivalentsAtCarryingValue",
-      "xbrl_dimension": null,
-      "xbrl_member": null,
-      "layer2_name": null,
-      "rejection_reason": "非セグメント指標（構造的制約、xbrl_segment_fetcher.pyは非ディメンション事実を取得できない、[[TAIL-XBRL-SEGMENT-FETCHER-NONDIMENSIONED-GAP-1]]）"
-    },
-    {
-      "name": "営業活動によるキャッシュフロー",
-      "description": "四半期の営業キャッシュアウトフロー（ burn rate ）",
-      "source": "EDGAR XBRL",
-      "warning_threshold": "前年同期比20%増",
-      "exit_threshold": "前年同期比40%増が2四半期連続",
-      "related_exit_condition": "主要治験の失敗・パイプライン価値毀損",
-      "auto_fetchable": true,
-      "extraction_hint": null,
-      "xbrl_tag": "us-gaap:NetCashProvidedByUsedInOperatingActivities",
-      "xbrl_dimension": null,
-      "xbrl_member": null,
-      "layer2_name": null,
-      "rejection_reason": "非セグメント指標（構造的制約、xbrl_segment_fetcher.pyは非ディメンション事実を取得できない、[[TAIL-XBRL-SEGMENT-FETCHER-NONDIMENSIONED-GAP-1]]）"
-    },
-    {
       "name": "営業費用",
       "description": "四半期の営業費用総額",
       "source": "EDGAR XBRL",
@@ -133,7 +88,7 @@
       "xbrl_dimension": null,
       "xbrl_member": null,
       "layer2_name": null,
-      "rejection_reason": "非セグメント指標（構造的制約、xbrl_segment_fetcher.pyは非ディメンション事実を取得できない、[[TAIL-XBRL-SEGMENT-FETCHER-NONDIMENSIONED-GAP-1]]）"
+      "rejection_reason": "非セグメント指標（構造的制約、xbrl_segment_fetcher.pyは非ディメンション事実を取得できない、[[TAIL-XBRL-SEGMENT-FETCHER-NONDIMENSIONED-GAP-1]]）／Layer3にも一致するフィールドなし"
     }
   ]
 }

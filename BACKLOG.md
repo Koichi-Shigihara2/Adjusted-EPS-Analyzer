@@ -6345,16 +6345,20 @@ KPIの実測値が1件も取得できなかった**（全て「取得失敗」�
 
 ---
 
-### [TAIL-XBRL-SEGMENT-FETCHER-NONDIMENSIONED-GAP-1] xbrl_segment_fetcher.pyが非セグメント指標（会社全体のKPI）を構造的に取得できない — coreの既存失敗は最長約10週間、AI生成レビューの過半数に沈黙して混入
-**優先度:** 中→**高**（2026-08-19⑤の範囲確定調査により、satelliteだけ
-でなくcore 3銘柄でも過去9四半期のレビューの過半数〈15/27件〉に
-沈黙した形で影響していたことが判明したため引き上げ）
+### [TAIL-XBRL-SEGMENT-FETCHER-NONDIMENSIONED-GAP-1] xbrl_segment_fetcher.pyが非セグメント指標（会社全体のKPI）を構造的に取得できない — Layer3経由取得の自動振替を実装、satellite実取得38件へ改善（構造的制約自体は未解消）
+**優先度:** 高→**中**（2026-08-19⑨、機械的なLayer3振替を実装した
+結果、実務上の実害〈satelliteのKPI欠落〉はほぼ解消。
+`xbrl_segment_fetcher.py`自体の非ディメンション取得不可という構造的
+制約そのものは未解消のまま残るが、Layer3という代替経路で実質的に
+迂回できているため優先度を引き下げ）
 **分類:** バグ / TAIL自動化パイプライン / 設計上の制約・サイレント
-フォールバック
+フォールバック → 代替経路（Layer3）で実務上は迂回
 **登録日:** 2026-08-19④
 **更新日:** 2026-08-19⑤（Step 1: coreの既存失敗範囲を確定〈いつから・
 どの程度AI評価に混入していたか・なぜ沈黙していたか〉。Step 2: Layer3
-経由での代替取得可否をKPI単位で判定）
+経由での代替取得可否をKPI単位で判定）→ 2026-08-19⑨（却下KPIをLayer3
+経由へ機械的に振り分ける仕組みを実装。satellite全体で却下26件中24件を
+解決、実取得成功KPIは14件→38件に増加。下記「Step 3」参照）
 **発見:** `[[TAIL-KPI-PROPOSER-CORE-ONLY-GATE-1]]`のsatellite対応実装後、
 Step 3（KPI値の実際の取得確認）でsatellite 7銘柄のKPI提案値が1件も
 取得できなかったことの原因調査
@@ -6509,20 +6513,60 @@ tail_kpi_map.json`のスキーマ（`kpi_name`/`change_risk`/`tag_history`/
 名・エイリアスと機械的に照合し、一致すれば自動でLayer3経路に振り分け
 る。Grokの判断に依存しない分、確実性が高い）。実装はしない。
 
-#### 対応方針
-未定（本項目では事実の記録・判定のみ）。考えられる方向性:
-- (a) `xbrl_segment_fetcher.py`に非ディメンション（会社全体）ファクトの
-  取得経路を追加する（`dim_local`が指定されない、または該当コンテキスト
-  が0件の場合に、無条件（コンテキスト参照なしの直接値）でのタグ検索に
-  フォールバックする等）
-- (b) `kpi_proposer.py`のプロンプトを見直し、非セグメント指標は
-  `text_kpi_extractor.py`（MD&Aテキスト抽出、こちらは`auto_fetchable:
-  false`のKPI用に既に存在する別経路）へ誘導する形にする
-- (c) Grokが生成する`xbrl_member`の精度向上は別課題として切り分け済み
-  （`[[TAIL-XBRL-MEMBER-VALIDATION-GAP-1]]`として新規登録）
-- (d) 上記Step 2の判定に基づき、(A)(B)＝21件はLayer3経由の新規取得
-  経路（`tail_kpi_map.json`スキーマ拡張＋新規フェッチャー）へ振り替え、
-  (C)(D)＝19件は(a)/(b)で個別対応する
+#### Step 3: 対応方針(d)の実装（2026-08-19⑨、Layer3経由取得の自動振替）
+
+`tail_kpi_map.json`に`"source": "layer3"`＋`"layer3_field"`（直接参照）
+／`"layer3_formula"`（`"a/b"`形式の除算のみ対応）を追加（既存エントリは
+`source`キー無し＝従来通りXBRL直接取得のまま後方互換）。
+`xbrl_segment_fetcher.py::fetch_layer3_kpis()`が`build_ticker_store()`/
+`get_quarterly_series()`から値を取得し、既存の`{ticker}_layer2.json`
+スキーマへ書き込む（消費側は無変更）。**`layer3_formula`で分母が
+0またはNoneの四半期はその四半期のエントリ自体を作らずスキップする**
+（falsy-zeroを作らない設計、実装済みだが今回の実測では実際に分母が
+0/Noneになるケースは発生していない）。
+
+**振り分けの判断主体は取得側の機械的照合**（`kpi_proposer.py::
+route_rejected_to_layer3()`）とした——`config/sec_concept_definitions.
+json`の`fields[*].candidates`（Layer3ビルダー自身が使う唯一の正の
+タグ一覧）から`xbrl_tag`のローカル名を逆引きするだけで、Grokに
+「これはLayer3から取れる」と判断させていない（今日tag名をGrokに
+生成させて失敗したのと同型のリスクを避けるため）。**名前が一致する
+だけでは登録しない**——`build_ticker_store()`を実際に呼び、対象
+ティッカーにそのLayer3フィールドの実データが存在するか
+（`get_latest_quarterly()`が非Noneを返すか）も確認してから登録する
+（事例5の原則）。
+
+**実測結果（satellite 7銘柄全体）**: 却下26件中**24件がLayer3経由で
+解決**（実データ確認済み）。残る2件は`config/sec_concept_definitions.
+json`の全32フィールドの候補タグを確認しても一致しなかった真の未解決:
+- ADBE「研究開発費」（`xbrl_tag`は`ResearchAndDevelopmentExpense
+  SoftwareExcludingAcquiredInProcessCost`というADBE固有のタグ変異形で、
+  Layer3の`research_and_development`フィールドの候補リストに存在しない）
+- APGE「営業費用」（`OperatingExpenses`というタグ自体に対応する
+  Layer3フィールドが32フィールド中に存在しない）
+
+`xbrl_segment_fetcher.py`を7銘柄で本番実行し、**satelliteの実取得
+成功KPIは14件→38件に増加**（NVDA/ADBE/APP/CELH/SOUN/CRWVは
+`layer2_complete: True`、APGEも初めて`missing_kpis: []`を達成）。
+1件を手動で決算突合（Step 3-4、事例5の原則）: NVDAの`gross_profit`
+（Layer3経由）を実測した結果、`common/sec_data/data/NVDA/company_
+facts.json`の生タグ`GrossProfit`（period 2026-01-26〜2026-04-26）と
+完全一致（$61,157,000,000）。加えてR&D $6.321B・Operating Income
+$53.536Bとも内部整合（Gross Profit − R&D − SG&A ≈ Operating Income）
+を確認し、値が単に取得できただけでなく妥当であることを確認した。
+
+**総合計（core+satellite）: 実取得成功KPIは26件→50件に増加**
+（core 12件〈不変〉＋satellite 38件）。
+
+**残課題**: 今回はLayer3経由の(d)対応のみを実施し、(a)（`xbrl_
+segment_fetcher.py`自体の非ディメンション取得対応）・(b)（`text_kpi_
+extractor.py`への誘導）は未着手。上記のADBE・APGEの2件、および
+Step 2で判定した(C)+(D)＝19件（セグメント分解・非GAAP指標、Layer3にも
+存在しない）は`xbrl_segment_fetcher.py`自体の構造的制約が残る限り
+未解決のまま。ただし今回のkpi_proposer.py側の実測（Grokが提案する
+セグメント指標の大半がLayer3で解決可能な会社全体指標だったという
+実態）により、(C)+(D)として当初分類した19件のうち実際に必要となる
+ものは限定的である可能性が高い。
 
 #### 関連
 - `[[TAIL-KPI-PROPOSER-CORE-ONLY-GATE-1]]`（本問題の発見元。KPI提案の
@@ -6532,10 +6576,15 @@ tail_kpi_map.json`のスキーマ（`kpi_name`/`change_risk`/`tag_history`/
   名の精度問題を切り出した新規項目、2026-08-19⑤）
 - `[[LAYER3-ANNUAL-CLASSIFICATION-DROPS-DATA-1]]`（Layer3側のデータ
   存在確認の実測元。TAILの5フィールド消費経路確認から派生）
+- `config/tail_kpi_fetch_baseline.json`（rejected_countをLayer3振替後の
+  実測値〈satellite残り2件〉へ引き下げ更新済み、2026-08-19⑨）
 
-#### 着手条件
-ユーザーに(a)/(b)/(d)いずれの方向性を採るか、または優先度を確認して
-から着手すること。
+#### 着手条件（残課題、2026-08-19⑨時点）
+(d)は実装済み。残る(a)〈xbrl_segment_fetcher.py自体の非ディメンション
+取得対応〉・(b)〈text_kpi_extractor.pyへの誘導〉は、ADBE・APGEの
+2件および構造的制約が残る非セグメント指標について、着手要否・優先度を
+ユーザーに確認してから着手すること（実務上の実害はLayer3経由でほぼ
+解消済みのため、急ぎ性は低い）。
 
 ---
 

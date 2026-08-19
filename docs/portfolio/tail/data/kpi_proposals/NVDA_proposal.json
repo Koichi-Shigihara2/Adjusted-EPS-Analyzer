@@ -88,51 +88,5 @@
       "layer2_name": null
     }
   ],
-  "rejected_kpis": [
-    {
-      "name": "Research and Development Expense",
-      "description": "研究開発費（AI投資の継続度合い）",
-      "source": "EDGAR XBRL",
-      "warning_threshold": "売上比15%超",
-      "exit_threshold": "売上比12%未満が2四半期連続",
-      "related_exit_condition": "エグジット条件①",
-      "auto_fetchable": true,
-      "extraction_hint": null,
-      "xbrl_tag": "us-gaap:ResearchAndDevelopmentExpense",
-      "xbrl_dimension": null,
-      "xbrl_member": null,
-      "layer2_name": null,
-      "rejection_reason": "非セグメント指標（構造的制約、xbrl_segment_fetcher.pyは非ディメンション事実を取得できない、[[TAIL-XBRL-SEGMENT-FETCHER-NONDIMENSIONED-GAP-1]]）"
-    },
-    {
-      "name": "Gross Profit",
-      "description": "総利益（AI製品の収益性維持）",
-      "source": "EDGAR XBRL",
-      "warning_threshold": "前年比20%以下",
-      "exit_threshold": "前年比10%未満が2四半期連続",
-      "related_exit_condition": "エグジット条件①",
-      "auto_fetchable": true,
-      "extraction_hint": null,
-      "xbrl_tag": "us-gaap:GrossProfit",
-      "xbrl_dimension": null,
-      "xbrl_member": null,
-      "layer2_name": null,
-      "rejection_reason": "非セグメント指標（構造的制約、xbrl_segment_fetcher.pyは非ディメンション事実を取得できない、[[TAIL-XBRL-SEGMENT-FETCHER-NONDIMENSIONED-GAP-1]]）"
-    },
-    {
-      "name": "Operating Income Loss",
-      "description": "営業利益（全体の収益力）",
-      "source": "EDGAR XBRL",
-      "warning_threshold": "前年比15%以下",
-      "exit_threshold": "前年比5%未満が2四半期連続",
-      "related_exit_condition": "エグジット条件①",
-      "auto_fetchable": true,
-      "extraction_hint": null,
-      "xbrl_tag": "us-gaap:OperatingIncomeLoss",
-      "xbrl_dimension": null,
-      "xbrl_member": null,
-      "layer2_name": null,
-      "rejection_reason": "非セグメント指標（構造的制約、xbrl_segment_fetcher.pyは非ディメンション事実を取得できない、[[TAIL-XBRL-SEGMENT-FETCHER-NONDIMENSIONED-GAP-1]]）"
-    }
-  ]
+  "rejected_kpis": []
 }

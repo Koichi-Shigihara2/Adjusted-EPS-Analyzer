@@ -1561,6 +1561,52 @@ TANUKI TAIL（docs/portfolio/tail/）← EDGAR RSS / Grok（KPI提案・四半�
 　　原則（部分の代理判定ではなく本番の入口から出口まで通す）をKPI
 　　登録という別の場面に適用した実例。
 
+　　**却下KPIの可視化（CHECK-39、2026-08-19⑧新設）**: 実取得検証方式
+　　への切り替えは副作用を伴った——却下されたKPIが`kpi_proposals/
+　　{ticker}_proposal.json`の`rejected_kpis`という、CHECK-38の集計
+　　対象外の場所へ移動し、「失敗を検知する仕組みを改善したつもりが、
+　　失敗の置き場所を変えただけで検知範囲から外れていた」という状態に
+　　なっていた（`CHAT_RULES.md`事例7参照。今回は対応の副作用として
+　　自分たちで作ってしまった点も含めて記録）。CHECK-39を新設し、
+　　`rejected_kpis`（＝必要と判断されたが登録すらされなかったKPI）を
+　　CHECK-38の`missing_kpis`（＝登録したが値が取れなかったKPI）とは
+　　別に集計・別のbaselineキー（`rejected_count`）で管理する。
+
+　　**Layer3経由取得の自動振替（2026-08-19⑨、`[[TAIL-XBRL-SEGMENT-
+　　FETCHER-NONDIMENSIONED-GAP-1]]`）**: `xbrl_segment_fetcher.py`は
+　　セグメント区分（`explicitMember`）の無い会社全体の事実を構造的に
+　　取得できない設計上の制約を持つ。この制約自体は解消していないが、
+　　却下されたKPIの大半（実測: satellite全体で却下26件中24件）が
+　　SEC EDGAR Layer3統合スキーマ（`common/sec_data/layer3_builder.py`、
+　　`config/sec_concept_definitions.json`）に既に存在するデータで
+　　あることが判明したため、**取得元を機械的に振り分ける経路**を
+　　追加した。
+
+　　`config/tail_kpi_map.json`のスキーマに`"source": "layer3"`＋
+　　`"layer3_field"`（直接参照）／`"layer3_formula"`（`"a/b"`形式の
+　　除算のみ）を追加（既存エントリは`source`キー無し＝従来通りXBRL
+　　直接取得のまま後方互換）。`xbrl_segment_fetcher.py::
+　　fetch_layer3_kpis()`が`build_ticker_store()`/`get_quarterly_
+　　series()`から値を取得し、既存の`{ticker}_layer2.json`と同じ
+　　スキーマへ書き込む（消費側は無変更）。`layer3_formula`使用時、
+　　**分母が0またはNoneの四半期はその四半期のエントリ自体を作らず
+　　スキップする**（falsy-zeroを作らない設計）。
+
+　　**振り分けの判断主体は取得側の機械的照合**（`kpi_proposer.py::
+　　route_rejected_to_layer3()`）——`config/sec_concept_definitions.
+　　json`の`fields[*].candidates`（Layer3ビルダー自身が使う唯一の正の
+　　タグ一覧、新たな独自エイリアス表は作らない）から`xbrl_tag`の
+　　ローカル名を逆引きするだけで、**Grokに「これはLayer3から取れる」
+　　と判断させていない**（タグ名をGrokに生成させて失敗したのと同型の
+　　リスクを避けるため）。名前が一致するだけでは登録せず、
+　　`build_ticker_store()`を実際に呼んで対象ティッカーにそのLayer3
+　　フィールドの実データが存在するか（`get_latest_quarterly()`が
+　　非Noneを返すか）も確認してから登録する（事例5の原則）。
+
+　　実測結果: satelliteの実取得成功KPIは14件→38件、core+satellite
+　　総合計は26件→50件に増加。1件（NVDAの`gross_profit`）を実際の
+　　決算生タグと手動突合し完全一致を確認済み。
+
 ---
 
 ## common/market_data/（yfinance統合層、2026-08-11追記）

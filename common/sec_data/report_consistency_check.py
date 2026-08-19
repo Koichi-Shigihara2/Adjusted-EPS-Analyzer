@@ -893,6 +893,81 @@ def _check_kpi_fetch_failures() -> tuple[list[str], list[str]]:
     return ng, warn
 
 
+def _check_kpi_rejected_proposals() -> tuple[list[str], list[str]]:
+    """CHECK-39: `kpi_proposer.py`が登録前の実取得検証で却下したKPI
+    （`kpi_proposals/{ticker}_proposal.json`の`rejected_kpis`）を検知
+    する。
+
+    **発見経緯（2026-08-19⑧）**: `[[TAIL-XBRL-MEMBER-VALIDATION-
+    GAP-1]]`で「登録前に本番の取得経路で実際に値が取れるか試し、取れた
+    ものだけ登録する」方式に切り替えた結果、satelliteの実取得成功KPIは
+    0件→14件に改善した。しかし副作用として、**却下された22件（後に
+    APGE分を含め26件と判明）が`rejected_kpis`という、CHECK-38の集計
+    対象外の場所へ移動していた**。CHECK-38は`{ticker}_layer2.json`の
+    `missing_kpis`（＝登録したが取れなかったKPI）だけを見ており、
+    `rejected_kpis`（＝必要と判断されたが登録すらされなかったKPI）は
+    可視化する仕組みが無かった。「失敗を検知する仕組みを改善した
+    つもりが、失敗の置き場所を変えただけで検知範囲から外れていた」
+    という、本セッションで繰り返し否定してきたサイレント・フォール
+    バックと同型の問題を、今回は対応の副作用として自分たちで新たに
+    作ってしまっていた（`CHAT_RULES.md`事例7参照）。
+
+    **`missing_kpis`と`rejected_kpis`は意味が異なるため、CHECK-38とは
+    別のCHECK番号・別のbaselineキー（`rejected_count`）で管理し、
+    件数を混ぜない。**
+    - `missing_kpis`（CHECK-38）＝登録したが値が取れなかった
+    - `rejected_kpis`（CHECK-39、本関数）＝必要と判断されたが実取得
+      検証で登録すらされなかった
+
+    Returns:
+        (ng_list, warn_list)
+    """
+    from src.tail.edgar_rss_monitor import get_monitored_tickers
+    from src.tail.kpi_proposer import KPI_PROPOSALS_DIR
+
+    ng: list[str] = []
+    warn: list[str] = []
+
+    try:
+        with open(_TAIL_KPI_BASELINE_PATH, encoding="utf-8") as f:
+            baseline = json.load(f)
+    except Exception:
+        baseline = {}
+
+    for ticker in get_monitored_tickers():
+        proposal_path = os.path.join(KPI_PROPOSALS_DIR, f"{ticker}_proposal.json")
+        if not os.path.exists(proposal_path):
+            continue
+        try:
+            with open(proposal_path, encoding="utf-8") as f:
+                proposal = json.load(f)
+        except Exception:
+            continue
+
+        rejected = proposal.get("rejected_kpis", [])
+        if not rejected:
+            continue
+
+        names = [r.get("name", "?") for r in rejected]
+        warn.append(
+            f"  [WARN-39 KPI却下] {ticker}: {len(rejected)}件が登録前の"
+            f"実取得検証で却下（{', '.join(names)}）"
+        )
+
+        base_entry = baseline.get(ticker)
+        if base_entry is None:
+            continue
+        base_count = base_entry.get("rejected_count", 0)
+        if len(rejected) > base_count:
+            ng.append(
+                f"  [NG-39 KPI却下の悪化] {ticker}: baseline"
+                f"（{base_entry.get('recorded_at', '不明')}時点）{base_count}件"
+                f" → 現在{len(rejected)}件に悪化"
+            )
+
+    return ng, warn
+
+
 def annotate_warn(ticker: str, message: str, ledger: set[tuple[str, str]]) -> tuple[str, bool]:
     """
     WARNメッセージに台帳照合結果を反映する。
@@ -1894,6 +1969,18 @@ def run_checks(args=None) -> tuple[int, int]:
     if kpi_fetch_ng:
         flagged.append(("[GLOBAL]", kpi_fetch_ng, []))
         total_ng += len(kpi_fetch_ng)
+
+    # CHECK-39: ティッカー非依存の単発チェック（登録前の実取得検証で
+    # 却下されたKPIの検知、[[TAIL-XBRL-MEMBER-VALIDATION-GAP-1]]）。
+    # CHECK-38のmissing_kpis（登録したが取れなかった）とは意味が
+    # 異なるため別集計にする（rejected_kpis＝登録すらされなかった）。
+    kpi_reject_ng, kpi_reject_warn = _check_kpi_rejected_proposals()
+    if kpi_reject_warn:
+        flagged.append(("[GLOBAL]", [], kpi_reject_warn))
+        total_warn += len(kpi_reject_warn)
+    if kpi_reject_ng:
+        flagged.append(("[GLOBAL]", kpi_reject_ng, []))
+        total_ng += len(kpi_reject_ng)
 
     if not flagged:
         if not quiet:
