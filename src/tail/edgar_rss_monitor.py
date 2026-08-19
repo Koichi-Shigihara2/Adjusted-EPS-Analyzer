@@ -180,11 +180,19 @@ def get_core_tickers() -> List[str]:
     return tickers
 
 
-def get_excluded_positions() -> List[tuple]:
-    """positions_index.json + thesis ファイルから type!=core（RSS監視対象外）
-    のポジションを (ticker, type) のリストで返す。get_core_tickers() が
-    黙って除外する銘柄を可視化するための補助関数（判定ロジックは同一の
-    データソース・同一の type 比較を用いるのみで、独自の判定は行わない）。
+def get_monitored_tickers() -> List[str]:
+    """positions_index.json + thesis ファイルから、保有している全ポジション
+    のティッカー一覧を返す。
+
+    **2026-08-19方針決定（`[[TAIL-COVERAGE-POLICY-UNDECIDED-1]]`）**:
+    RSS監視・四半期レビュー自動生成の対象は全保有ポジションとする。
+    core/satelliteの区別はthesis内のポジション重み付けとして残るが、
+    監視対象の決定には使わない（保有している以上、決算は見る）。
+
+    `get_core_tickers()`（type=coreのみ）とは異なり、typeを一切見ずに
+    positions_index.jsonの全件をそのまま返す。判定は既存のデータソース
+    （positions_index.json + thesis.json、ファイルの存在・パース可否の
+    確認のみ）を使い、独自の一覧は作らない。
     """
     try:
         with open(POSITIONS_INDEX, encoding="utf-8") as f:
@@ -193,17 +201,57 @@ def get_excluded_positions() -> List[tuple]:
         print(f"positions_index.json 読み込みエラー: {e}")
         return []
 
-    excluded: List[tuple] = []
+    tickers: List[str] = []
     for fname in idx.get("positions", []):
         path = os.path.join(POSITIONS_DIR, fname)
         try:
             with open(path, encoding="utf-8") as f:
-                thesis = json.load(f)
-            ptype = thesis.get("type")
-            if ptype != "core":
-                excluded.append((fname.replace("_thesis.json", "").upper(), ptype))
+                json.load(f)  # thesisファイルの存在・パース可否のみ確認（typeは見ない）
+            tickers.append(fname.replace("_thesis.json", "").upper())
         except Exception:
             continue
+    return tickers
+
+
+def get_excluded_positions() -> List[tuple]:
+    """positions_index.json の全ポジションのうち、get_monitored_tickers()が
+    返さなかったもの（＝何らかの理由で監視対象から除外されたポジション）
+    を (ticker, type) のリストで返す。
+
+    2026-08-19の方針変更（監視対象を全保有ポジションに拡大）により、
+    現時点ではget_monitored_tickers()がpositions_index.jsonの全件を
+    そのまま返すため、本関数は通常空リストを返す（thesisファイルの
+    パース失敗等、get_monitored_tickers()側で個別にスキップされた
+    ポジションがあれば、そのpositions_index上の記載だけがここに
+    現れる）。
+
+    判定基準を固定の`type!="core"`比較ではなく**get_monitored_tickers()
+    の実際の戻り値との差分**にしたことで、将来get_monitored_tickers()側
+    に何らかの除外条件が追加された場合も、本関数を個別に修正しなくても
+    自動的にその除外を検出できる（沈黙除外の再発防止をget_monitored_
+    tickers()の変更に追随する形で維持する設計）。
+    """
+    try:
+        with open(POSITIONS_INDEX, encoding="utf-8") as f:
+            idx = json.load(f)
+    except Exception as e:
+        print(f"positions_index.json 読み込みエラー: {e}")
+        return []
+
+    monitored = set(get_monitored_tickers())
+    excluded: List[tuple] = []
+    for fname in idx.get("positions", []):
+        ticker = fname.replace("_thesis.json", "").upper()
+        if ticker in monitored:
+            continue
+        path = os.path.join(POSITIONS_DIR, fname)
+        ptype = None
+        try:
+            with open(path, encoding="utf-8") as f:
+                ptype = json.load(f).get("type")
+        except Exception:
+            pass
+        excluded.append((ticker, ptype))
     return excluded
 
 
@@ -374,7 +422,7 @@ def main() -> None:
     )
     parser.add_argument(
         "--ticker", nargs="+",
-        help="対象ティッカー（省略時は positions_index.json の type=core を自動取得）",
+        help="対象ティッカー（省略時は positions_index.json の全保有ポジションを自動取得）",
     )
     args = parser.parse_args()
 
@@ -385,10 +433,11 @@ def main() -> None:
     if args.ticker:
         tickers = [t.upper() for t in args.ticker]
     else:
-        tickers = get_core_tickers()
+        tickers = get_monitored_tickers()
         excluded = get_excluded_positions()
         for ex_ticker, ex_type in excluded:
-            print(f"[SKIP] {ex_ticker}: type={ex_type} のため RSS監視対象外（方針: core限定）")
+            print(f"[SKIP] {ex_ticker}: type={ex_type} のため RSS監視対象外")
+        print(f"監視対象: {len(tickers)}銘柄（全保有ポジション）")
     if not tickers:
         print("対象ティッカーなし → 終了")
         sys.exit(0)

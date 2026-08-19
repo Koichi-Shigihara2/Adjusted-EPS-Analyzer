@@ -1414,25 +1414,47 @@ TANUKI TAIL（docs/portfolio/tail/）← EDGAR RSS / Grok（KPI提案・四半�
 　　（.github/workflows/TANUKI_TAIL_Position_Write.yml → src/tail/workflow_write.py）
 　　経由でリポジトリにコミット（TAIL-SEC-1 2026-06-21、旧:ブラウザから直接GitHub API書き込み）
 
-　　**RSS監視・四半期レビュー自動生成の対象範囲（2026-08-19時点、方針
-　　未決定）**: 現状は`edgar_rss_monitor.py`の`--ticker`未指定時デフォルト
-　　（`get_core_tickers()`）・`quarterly_review_generator.py`とも、core
-　　種別のポジションのみが対象になっている（実測: PLTR/SOFI/TSLAの
-　　3銘柄のみ、satellite種別のADBE/APGE/APP/CELH/CRWV/NVDA/SOUNの7銘柄
-　　＝保有10銘柄中7銘柄は対象外）。**この対象範囲を維持すべきか広げる
-　　べきかは方針未決定**（`[[TAIL-COVERAGE-POLICY-UNDECIDED-1]]`参照。
-　　一度core限定維持〈方針(b)〉が採用されたが、判断の前提が誤っていた
-　　ため差し戻された——`CHAT_RULES.md`事例6参照）。satelliteでも
-　　Layer3のSEC EDGARデータ自体は取得・保持されている（例: APGEの
-　　`operating_income`/`stock_based_compensation`/`net_income`/
-　　`shares_diluted`は実データあり、`revenue`のみ無収益バイオのため
-　　0件）——**データが無いのではなく、レビュー生成の対象外という
-　　だけ**である。除外は`edgar_rss_monitor.py`・`tail_dcf_bridge.py::
+　　**RSS監視・四半期レビュー自動生成の対象範囲（確定、2026-08-19②
+　　決定）**: RSS監視（`edgar_rss_monitor.py`の`--ticker`未指定時
+　　デフォルト、`get_monitored_tickers()`）・四半期レビュー自動生成
+　　（`quarterly_review_generator.py`）とも、**全保有ポジション（10銘柄）
+　　が対象**（`[[TAIL-COVERAGE-POLICY-UNDECIDED-1]]`で方針決定・完了）。
+　　core/satelliteの区別はthesis内のポジション重み付けとして残るが、
+　　**監視対象の決定には使わない**（保有している以上、決算は見る）。
+　　`get_core_tickers()`（core限定）は他用途向けに関数として存置して
+　　いるが、監視対象の決定には使用しない。
+
+　　旧方針（core限定維持、方針(b)）は一度採用されたが、判断の前提
+　　（対象を1銘柄と誤認）が誤っていたため差し戻された経緯がある
+　　（`CHAT_RULES.md`事例6参照）。satelliteでもLayer3のSEC EDGAR
+　　データ自体は取得・保持されている（例: APGEの`operating_income`/
+　　`stock_based_compensation`/`net_income`/`shares_diluted`は実データ
+　　あり、`revenue`のみ無収益バイオのため0件）。
+
+　　`edgar_rss_monitor.py`の差分検知設計（初回実行はベースライン記録の
+　　みでキューに追加しない）により、対象拡大前から蓄積していた
+　　未レビュー決算の在庫（旧satellite 6銘柄分、実測件数は
+　　`[[TAIL-COVERAGE-POLICY-UNDECIDED-1]]`参照）は自動的には解消されず、
+　　次回以降の新規提出から順次監視が始まる。2026-08-19②の実地検証で
+　　ADBE（`latest.json`あり）・APGE（`latest.json`なし、tanuki=false）
+　　それぞれ実際にレビュー生成〜DCFシナリオ生成まで確認済み（ADBEは
+　　シナリオ生成成功、APGEは`latest.json`不在により`[SKIP]`で正常に
+　　スキップ、クラッシュなし）。この検証中に、レビュー生成プロンプトが
+　　satelliteスキーマ（`strategy_name`/`entry_condition`/
+　　`exit_condition`/`holding_period`）を読まずcoreスキーマ
+　　（`thesis`/`entry_story`/`exit_guide`）のみを読んでいたため
+　　satelliteの投資テーゼが常に「未設定」としてGrokに渡っていた実バグ
+　　を発見・修正した（`_thesis_narrative_fields()`、
+　　`quarterly_review_generator.py`）。
+
+　　除外は`edgar_rss_monitor.py`・`tail_dcf_bridge.py::
 　　generate_scenario_files()`双方が`[SKIP]`ログで明示する（沈黙除外の
-　　廃止、2026-08-19実装、方針に依存せず有効）。core限定の運用が正しく
-　　機能しているか（＝core銘柄が同種の理由で監視から脱落していないか）
-　　は`report_consistency_check.py`のCHECK-37が継続的に検出する
-　　（これも方針に依存せず有効）。
+　　廃止、2026-08-19実装）。監視対象の拡大が正しく機能しているか
+　　（＝保有ポジションが何らかの理由で監視から脱落していないか）は
+　　`report_consistency_check.py`のCHECK-37が継続的に検出する
+　　（対象を`get_monitored_tickers()`に合わせて更新済み。ただし方針
+　　変更日〈2026-08-19〉より前に提出された決算は、対象拡大前からの
+　　既知の在庫として一律NG化しない）。
 
 ---
 

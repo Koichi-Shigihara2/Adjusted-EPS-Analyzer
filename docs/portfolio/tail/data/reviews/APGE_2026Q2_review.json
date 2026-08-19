@@ -1,0 +1,143 @@
+{
+  "ticker": "APGE",
+  "quarter": "2026Q2",
+  "generated_at": "2026-08-19T20:05:05.117804+09:00",
+  "data_version": "0001193125-26-341289",
+  "filed_date": "2026-08-10",
+  "is_latest": true,
+  "layer1_complete": true,
+  "layer2_complete": false,
+  "layer2_missing_kpis": [],
+  "stage2_json_valid": true,
+  "grok_call1_success": true,
+  "grok_call2_success": true,
+  "transcript_available": false,
+  "stage1": {
+    "health_score": 25,
+    "health_label": "EXIT",
+    "summary": "KPIデータが一切存在せず、治験マイルストーン以外の評価軸が機能しない。マクロ環境も消費者センチメント低迷でリスクオフ圧力が高い。",
+    "positives": [
+      "該当なし"
+    ],
+    "concerns": [
+      "KPI実績完全欠如によりテーゼ検証不能",
+      "ミシガン消費者センチメント49.5の低水準継続",
+      "流動性EASING認識の見直し必要"
+    ],
+    "recommendation": "EXIT",
+    "recommendation_reason": "エントリー根拠となるKPIがなく、満足株としてsatellite watchに留める意義も薄いため撤退を推奨",
+    "next_kpis": [
+      "主要治験進捗の有無",
+      "パイプライン価値の希薄化兆候"
+    ],
+    "exit_distance": "近い",
+    "exit_distance_reason": "治験失敗・パイプライン価値毀損の判断材料が現時点で存在しないため即時撤退が適切",
+    "optimism_bias_warning": "データゼロ状態での保有継続は根拠なき楽観バイアスの典型例"
+  },
+  "stage2": {
+    "ticker": "APGE",
+    "quarter": "2026Q2",
+    "scenarios": {
+      "bear": {
+        "revenue_growth_y1": 0.05,
+        "revenue_growth_y2": 0.03,
+        "revenue_growth_y3": 0.02,
+        "terminal_growth": 0.02,
+        "operating_margin_terminal": 0.1,
+        "rationale": "KPIデータ完全欠如と消費者センチメント低迷により成長は極めて限定的。SBCは微増、EPSは赤字拡大を想定。",
+        "kpi_forecasts": {
+          "1年後": {
+            "SBC": 18000000,
+            "希薄化後EPS": -1.25
+          },
+          "3年後": {
+            "SBC": 19000000,
+            "希薄化後EPS": -1.1
+          }
+        }
+      },
+      "base": {
+        "revenue_growth_y1": 0.12,
+        "revenue_growth_y2": 0.1,
+        "revenue_growth_y3": 0.08,
+        "terminal_growth": 0.025,
+        "operating_margin_terminal": 0.18,
+        "rationale": "財務指標のみの推計で保守的に設定。SBC緩やか増加、EPS赤字は徐々に縮小するが黒字化は困難。",
+        "kpi_forecasts": {
+          "1年後": {
+            "SBC": 18500000,
+            "希薄化後EPS": -1.05
+          },
+          "3年後": {
+            "SBC": 20000000,
+            "希薄化後EPS": -0.75
+          }
+        }
+      },
+      "bull": {
+        "revenue_growth_y1": 0.2,
+        "revenue_growth_y2": 0.15,
+        "revenue_growth_y3": 0.12,
+        "terminal_growth": 0.03,
+        "operating_margin_terminal": 0.22,
+        "rationale": "経営者発言を10%割り引いた上で上限シナリオを設定。SBC増加は抑制し、EPS改善も限定的に留める。",
+        "kpi_forecasts": {
+          "1年後": {
+            "SBC": 19000000,
+            "希薄化後EPS": -0.9
+          },
+          "3年後": {
+            "SBC": 21000000,
+            "希薄化後EPS": -0.45
+          }
+        }
+      }
+    },
+    "key_assumptions": [
+      "KPIデータ完全欠如のため全社財務指標のみで推計",
+      "SBCは四半期17Mを起点に成長率連動で微増",
+      "希薄化後EPSは現時点の赤字水準を基にシナリオ別改善度を調整"
+    ],
+    "risk_factors": [
+      "KPI実績完全欠如によりテーゼ検証不能",
+      "ミシガン消費者センチメント49.5の低水準が継続する可能性",
+      "流動性EASING認識の見直しによる資金調達環境悪化リスク"
+    ]
+  },
+  "call2": {
+    "five_perspectives": {
+      "business_model": "KPIデータなしのため収益構造変化を検証不能。臨床段階バイオ特有の前臨床・治験費用が主なキャッシュアウト構造である点と、経営陣が提示するパイプライン価値ナラティブとの整合性を現時点で確認する手段が存在しない。",
+      "growth": "YoY・QoQデータ完全欠如により成長持続可能性の評価自体が不可能。治験マイルストーン到達の有無が唯一の成長指標となる構造で、加速・減速の数値的根拠が一切存在しない状態が継続している。",
+      "competitive_advantage": "KPI数値が存在しないため競合優位の維持・侵食を判断する基盤がない。競合他社（例: SanofiやRegeneron）の同領域パイプライン進捗が2025年以降も活発である点（Bloomberg, 2025年6月時点）と比較しても、APGEの相対的位置づけを確認するデータが欠落している。",
+      "management": "資本配分妥当性を評価するKPIが一切ないため、経営陣の実行力を定量的に検証できない。治験失敗時のパイプライン価値毀損リスクを事前に低減する資本政策の有無すら現時点で確認不能。",
+      "market": "マクロスコア27（拡張）下で低金利環境がバイオテック資金調達を後押ししやすい一方、Michigan Consumer Sentiment 49.5の低迷が個人投資家のリスク資産回避を強める可能性とKPI欠如が重なり、テーゼの前提である「カタリスト主導の株価反応」がマクロ変数と乖離するリスクを指摘するデータがない。"
+    },
+    "entry_story_progress": "2025年以降の治験進捗情報は限定的で、ミネルヴィニ条件に該当する急騰材料は確認されていない（Seeking Alpha, 2025年5月）。売上ゼロ・カタリスト依存の構造は依然として変わらず、TANUKI VALUATION・STONKS SILOの不適合状態が継続している。",
+    "market_attention": "アナリストの主な注目点はAPG777の第2相データ readout時期と資金 runway の持続可能性（Fierce Biotech, 2025年4月）。",
+    "historical_analogy": {
+      "company": "AnaptysBio",
+      "similarity": "臨床段階で複数抗体パイプラインを抱え、治験マイルストーン依存の価値評価構造が酷似。",
+      "outcome": "主要候補の第3相失敗後にパイプライン価値が大幅毀損し、資金調達難から事業縮小を余儀なくされた。",
+      "implication": "APGEでも単一カタリスト失敗時の希薄化圧力が同様に発生する可能性を、テーゼが想定していない構造的リスクとして考慮する必要がある。"
+    },
+    "macro_implications": "拡張局面でも消費者センチメント低迷がバイオテック株のボラティリティを増幅させるため、治験マイルストーン以外の外部要因で株価が大きく乖離する可能性をテーゼ前提に組み込む必要がある。",
+    "thesis_questions": [
+      "治験成功確率の社内評価と市場コンセンサスの乖離を、どのように継続的にモニタリングする枠組みを欠いているか。",
+      "単一パイプライン依存が資金調達環境悪化時に即座に希薄化圧力へ転化する構造的脆弱性を、テーゼはどのように織り込んでいるか。",
+      "競合他社が同ターゲットで先制的に承認を取得した場合のAPGEパイプライン価値の再評価メカニズムを、どのように設計する予定か。"
+    ],
+    "next_review_focus": [
+      "次回治験データ readout 後の競合他社同等試験結果との直接比較可能性",
+      "資金調達発表時の希薄化率と runway 延伸効果の定量評価",
+      "Michigan Consumer Sentiment 変動が同業バイオ株群の出来高に与える影響度"
+    ]
+  },
+  "kpi_snapshot": {},
+  "layer3_snapshot": {},
+  "macro_snapshot": {
+    "score": "27",
+    "phase": "拡張",
+    "stealth_signal": "neutral"
+  },
+  "thesis_version": 1
+}
