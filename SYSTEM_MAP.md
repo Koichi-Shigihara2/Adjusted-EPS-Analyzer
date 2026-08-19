@@ -1414,23 +1414,25 @@ TANUKI TAIL（docs/portfolio/tail/）← EDGAR RSS / Grok（KPI提案・四半�
 　　（.github/workflows/TANUKI_TAIL_Position_Write.yml → src/tail/workflow_write.py）
 　　経由でリポジトリにコミット（TAIL-SEC-1 2026-06-21、旧:ブラウザから直接GitHub API書き込み）
 
-　　**RSS監視・四半期レビュー自動生成の対象方針（2026-08-19決定）**:
-　　core種別のポジションのみがRSS監視（`edgar_rss_monitor.py`の
-　　`--ticker`未指定時デフォルト、`get_core_tickers()`）・四半期レビュー
-　　自動生成（`quarterly_review_generator.py`）の対象。satellite種別
-　　（2026-08-19時点でAPGE/CELH/APP/NVDA/ADBE/SOUN/CRWVの7銘柄）は
-　　**投資方針に基づく意図的な除外**であり欠陥ではない
-　　（`[[TAIL-SATELLITE-POSITION-MONITORING-GAP-1]]`、対応方針(b)採用）。
-　　satelliteでもLayer3のSEC EDGARデータ自体は取得・保持されている
-　　（例: APGEの`operating_income`/`stock_based_compensation`/
-　　`net_income`/`shares_diluted`は実データあり、`revenue`のみ無収益
-　　バイオのため0件）——**データが無いのではなく、レビュー生成の対象外
-　　というだけ**である。除外は`edgar_rss_monitor.py`・
-　　`tail_dcf_bridge.py::generate_scenario_files()`双方が`[SKIP]`ログで
-　　明示する（沈黙除外の廃止、2026-08-19実装）。core限定の運用が
-　　正しく機能しているか（＝core銘柄が同種の理由で監視から脱落して
-　　いないか）は`report_consistency_check.py`のCHECK-37が継続的に検出
-　　する。
+　　**RSS監視・四半期レビュー自動生成の対象範囲（2026-08-19時点、方針
+　　未決定）**: 現状は`edgar_rss_monitor.py`の`--ticker`未指定時デフォルト
+　　（`get_core_tickers()`）・`quarterly_review_generator.py`とも、core
+　　種別のポジションのみが対象になっている（実測: PLTR/SOFI/TSLAの
+　　3銘柄のみ、satellite種別のADBE/APGE/APP/CELH/CRWV/NVDA/SOUNの7銘柄
+　　＝保有10銘柄中7銘柄は対象外）。**この対象範囲を維持すべきか広げる
+　　べきかは方針未決定**（`[[TAIL-COVERAGE-POLICY-UNDECIDED-1]]`参照。
+　　一度core限定維持〈方針(b)〉が採用されたが、判断の前提が誤っていた
+　　ため差し戻された——`CHAT_RULES.md`事例6参照）。satelliteでも
+　　Layer3のSEC EDGARデータ自体は取得・保持されている（例: APGEの
+　　`operating_income`/`stock_based_compensation`/`net_income`/
+　　`shares_diluted`は実データあり、`revenue`のみ無収益バイオのため
+　　0件）——**データが無いのではなく、レビュー生成の対象外という
+　　だけ**である。除外は`edgar_rss_monitor.py`・`tail_dcf_bridge.py::
+　　generate_scenario_files()`双方が`[SKIP]`ログで明示する（沈黙除外の
+　　廃止、2026-08-19実装、方針に依存せず有効）。core限定の運用が正しく
+　　機能しているか（＝core銘柄が同種の理由で監視から脱落していないか）
+　　は`report_consistency_check.py`のCHECK-37が継続的に検出する
+　　（これも方針に依存せず有効）。
 
 ---
 
