@@ -1,0 +1,151 @@
+{
+  "ticker": "NVDA",
+  "quarter": "2026Q2",
+  "generated_at": "2026-08-19T20:26:10.485639+09:00",
+  "data_version": "0001045810-26-000052",
+  "filed_date": "2026-05-20",
+  "is_latest": true,
+  "layer1_complete": true,
+  "layer2_complete": false,
+  "layer2_missing_kpis": [],
+  "stage2_json_valid": true,
+  "grok_call1_success": true,
+  "grok_call2_success": true,
+  "transcript_available": false,
+  "stage1": {
+    "health_score": 55,
+    "health_label": "WATCH",
+    "summary": "KPIデータが一切提示されておらず、テーゼの進捗を定量的に検証できない。マクロ環境は拡張圏内だが消費者センチメントの低迷と住宅投資の弱さが目立ち、AI需要への間接的影響を注視する必要がある。理論株価との乖離が極めて大きいため、楽観バイアスのリスクが高い。",
+    "positives": [
+      "AIテーマの構造的成長期待は依然として市場で共有されている",
+      "マクロ流動性はEASING方向で株価を下支えしやすい"
+    ],
+    "concerns": [
+      "KPI実績が完全に欠如しておりテーゼの方向性を確認できない",
+      "Michigan Consumer Sentimentの低迷が継続し最終需要への波及が懸念される",
+      "理論株価が現在の3倍近くを示しており前提の妥当性が疑問視される"
+    ],
+    "recommendation": "WATCH",
+    "recommendation_reason": "定量データ不足とマクロの微妙な悪化兆候から、テーゼの健全性を次回まで保留して確認すべき。",
+    "next_kpis": [
+      "データセンター売上成長率（前年比）",
+      "Gross Margin推移",
+      "AI関連受注残高"
+    ],
+    "exit_distance": "遠い",
+    "exit_distance_reason": "AI産業の成長期待が明確に後退する兆候は現時点で観測されていないため、エグジット条件までの距離は依然として大きい。",
+    "optimism_bias_warning": "理論株価のWACC前提（Rm=10%）が過度に楽観的であり、189%のupsideは現実的な期待値として扱うべきではない。"
+  },
+  "stage2": {
+    "ticker": "NVDA",
+    "quarter": "2026Q2",
+    "scenarios": {
+      "bear": {
+        "revenue_growth_y1": 0.12,
+        "revenue_growth_y2": 0.1,
+        "revenue_growth_y3": 0.08,
+        "terminal_growth": 0.02,
+        "operating_margin_terminal": 0.65,
+        "rationale": "KPIデータ完全欠如と消費者センチメント低迷により需要不確実性が高い。経営者発言を10%割り引き、成長率を控えめに設定。営業利益率は直近トレンドを維持しつつ長期競争激化を考慮。",
+        "kpi_forecasts": {
+          "1年後": {
+            "営業利益率": 0.66,
+            "SBC": 2100000000,
+            "希薄化後EPS": 2.65
+          },
+          "3年後": {
+            "営業利益率": 0.65,
+            "SBC": 2400000000,
+            "希薄化後EPS": 3.1
+          }
+        }
+      },
+      "base": {
+        "revenue_growth_y1": 0.2,
+        "revenue_growth_y2": 0.17,
+        "revenue_growth_y3": 0.14,
+        "terminal_growth": 0.03,
+        "operating_margin_terminal": 0.66,
+        "rationale": "直近の営業利益率改善トレンドを一部反映しつつ、KPI欠如とマクロ懸念を考慮して成長率を抑制。経営者見通しを10%割り引き、持続可能な水準に調整。",
+        "kpi_forecasts": {
+          "1年後": {
+            "営業利益率": 0.66,
+            "SBC": 2200000000,
+            "希薄化後EPS": 2.95
+          },
+          "3年後": {
+            "営業利益率": 0.66,
+            "SBC": 2600000000,
+            "希薄化後EPS": 3.7
+          }
+        }
+      },
+      "bull": {
+        "revenue_growth_y1": 0.28,
+        "revenue_growth_y2": 0.24,
+        "revenue_growth_y3": 0.2,
+        "terminal_growth": 0.03,
+        "operating_margin_terminal": 0.68,
+        "rationale": "AI需要継続を前提とするが、KPI実績欠如と消費者マインド低迷を踏まえ過度な楽観を排除。経営者発言を10%割り引き、成長率・利益率ともに現実的な上限に留める。",
+        "kpi_forecasts": {
+          "1年後": {
+            "営業利益率": 0.67,
+            "SBC": 2300000000,
+            "希薄化後EPS": 3.25
+          },
+          "3年後": {
+            "営業利益率": 0.68,
+            "SBC": 2800000000,
+            "希薄化後EPS": 4.4
+          }
+        }
+      }
+    },
+    "key_assumptions": [
+      "直近営業利益率65.6%の改善トレンドを維持し、端末期まで低下させない",
+      "KPIデータ完全欠如のため全社財務指標ベースで成長率を推定",
+      "経営者発言は10%割り引きで解釈し、過度な楽観を排除"
+    ],
+    "risk_factors": [
+      "Michigan Consumer Sentiment低迷による最終需要への波及",
+      "KPI実績欠如によるテーゼの方向性不確実性",
+      "理論株価が現在株価の3倍近くを示す前提の妥当性リスク"
+    ]
+  },
+  "call2": {
+    "five_perspectives": {
+      "business_model": "KPIデータなしのため収益構造変化や収益認識の質を分析できない。確認が必要。",
+      "growth": "YoY・QoQデータなしのため成長加速・減速の数値的根拠が存在せず持続可能性判断不可。確認が必要。",
+      "competitive_advantage": "KPIデータなしのため競合優位の維持・侵食を数値で対比できない。Web検索でも具体的な受注残高比較情報が不足。確認が必要。",
+      "management": "KPIデータなしのため資本配分実行力の妥当性を評価する材料がない。確認が必要。",
+      "market": "マクロスコア27（拡張）とKPIトレンドの紐付けがデータ欠如で不可能。Michigan Consumer Sentiment低迷との整合性確認が必要。"
+    },
+    "entry_story_progress": "既存銘柄のため進捗は前回以降の決算データで確認する以外なく、最新AI受注動向の更新情報が不足。確認が必要。",
+    "market_attention": "データセンター需要の持続性と中国向け規制影響が焦点。出典: Reuters, 2024年10月時点のNVIDIA中国売上制限報道。",
+    "historical_analogy": {
+      "company": "Applied Materials（1980年代半導体装置ブーム期）",
+      "similarity": "特定技術領域での構造的需要拡大を背景に急成長したが、顧客集中と景気敏感性が類似",
+      "outcome": "需要ピーク後に在庫調整と競合台頭で成長が停滞、複数年にわたり株価低迷が続いた",
+      "implication": "NVDAのAI需要集中がマクロ変動で急変した場合、同様の長期停滞リスクをテーゼ前提が過小評価している可能性"
+    },
+    "macro_implications": "マクロスコア27（拡張）下でもMichigan Consumer Sentiment低迷が最終需要波及を阻害する可能性があり、AI投資の即時収益化を遅らせる構造的要因となる。",
+    "thesis_questions": [
+      "AI需要が政策・規制変更で急減した場合、3年保有前提の構造的成長がどの時点で崩れるか",
+      "競合の自社チップ開発が加速した場合、Gross Margin維持に必要な受注シェアがどの水準で失われるか",
+      "WACC前提の妥当性を支える金利環境が反転した場合、理論株価の前提自体がどの程度崩壊するか"
+    ],
+    "next_review_focus": [
+      "中国向け売上比率の最新動向と規制影響の定量把握",
+      "競合他社（AMD/Intel/Custom ASIC）からの受注奪取実績の有無",
+      "在庫回転日数の変化と需要先の集中度推移"
+    ]
+  },
+  "kpi_snapshot": {},
+  "layer3_snapshot": {},
+  "macro_snapshot": {
+    "score": "27",
+    "phase": "拡張",
+    "stealth_signal": "neutral"
+  },
+  "thesis_version": 1
+}

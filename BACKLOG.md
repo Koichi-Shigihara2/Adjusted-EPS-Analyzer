@@ -6208,6 +6208,83 @@ XOM: $41.871B `reconstructed_pretax`）。実装（Layer3側への再構成移�
 
 ---
 
+### [TAIL-KPI-PROPOSER-CORE-ONLY-GATE-1] kpi_proposer.pyがcore限定のまま — satelliteに広げる場合は同型のスキーマ不整合バグへの対応が先に必要
+**優先度:** 中（データ破損ではないが、satellite全銘柄のレビュー品質に
+構造的な影響を与えている実測結果あり）
+**分類:** 運用ギャップ / TAIL自動化パイプライン / 判定調査（実装は
+ユーザー判断待ち）
+**登録日:** 2026-08-19③
+**発見:** `[[TAIL-COVERAGE-POLICY-UNDECIDED-1]]`（BACKLOG_DONE.md、TAIL
+監視対象の全保有ポジション拡大）の完了後、`kpi_proposer.py`のcore限定
+ゲートを判定調査した結果
+
+#### 内容
+`kpi_proposer.py::propose_kpis()`（298-302行目）は`thesis.get("type")
+!= "core"`でsatelliteを早期returnし、KPI提案生成（Grok呼び出し→
+`kpi_proposals/{ticker}_proposal.json`→`config/tail_kpi_map.json`への
+`auto_fetchable=true`分の自動登録）を行わない。四半期レビュー生成は
+`[[TAIL-COVERAGE-POLICY-UNDECIDED-1]]`で全保有ポジションに拡大したが、
+KPI提案生成はcore限定のままであり、**satelliteはレビューは出るがKPI
+提案が出ない非対称な状態**になっている。
+
+#### 判定1: core限定である技術的な理由があるか
+**ある。`build_kpi_prompt()`（138-154行目）は`thesis.get('thesis',
+'未設定')`・`thesis.get('exit_guide', '未設定')`という、coreスキーマ
+専用のフィールド名を直接読んでいる。** これは
+`[[TAIL-COVERAGE-POLICY-UNDECIDED-1]]`実装時に
+`quarterly_review_generator.py`で発見・修正したのと**全く同じ型の
+スキーマ不整合バグ**である。satelliteのthesisファイルは
+`strategy_name`/`entry_condition`/`exit_condition`/`holding_period`と
+いう別スキーマのため、これらのキーは存在せず、修正なしにゲートだけを
+外すと`thesis`/`exit_guide`が両方とも「未設定」としてGrokに渡り、
+`quarterly_review_generator.py`で実際に発生したのと同じ内容破綻
+（テーゼ未設定という誤った前提でのKPI提案生成）が再発する。**現状の
+core限定ゲートは、このスキーマ不整合バグを偶然マスクしている状態**
+であり、恣意的な制限ではなく現時点で必要な安全装置になっている。
+
+#### 判定2: satelliteに広げた場合、何が必要になるか
+`quarterly_review_generator.py`に実装した`_thesis_narrative_fields()`
+と同様の、type別スキーマ正規化ヘルパーを`kpi_proposer.py`側にも実装し、
+`build_kpi_prompt()`内の`thesis.get('thesis', ...)`・
+`thesis.get('exit_guide', ...)`の2箇所を正規化後の値に差し替える必要が
+ある。修正自体の規模は小さい（`quarterly_review_generator.py`での実装
+実績あり）が、ゲートを外すだけでは不可。
+
+#### 判定3: 広げなかった場合、レビューの品質にどう影響するか
+**実測で確認済みの構造的な影響がある。** `[[TAIL-COVERAGE-POLICY-
+UNDECIDED-1]]`実装時に実際に生成したsatellite 7銘柄
+（ADBE/APGE/NVDA/APP/CELH/SOUN/CRWV全て）のレビューの
+`summary`・`concerns`を確認したところ、**全銘柄で共通して「KPIデータが
+一切提供されておらず（欠如しており）テーゼの方向性を検証できない」旨の
+文言が出現**しており、Grokがこれをhealth_score算定上の重大な不確実性
+要因として毎回明示的に評価へ組み込んでいることを確認した。原因は
+`kpi_proposer.py`がcore限定のため`config/tail_kpi_map.json`に
+satelliteのKPIが1件も登録されておらず、`xbrl_segment_fetcher.py`・
+`text_kpi_extractor.py`（layer2/layer3のKPI取得、いずれもcore/
+satellite区別なくpendingキューのtickerを処理する設計）が取得対象を
+持たないため。加えて`TANUKI_TAIL_KPI_Update.yml`（週次KPI更新）も
+`config/tail_kpi_map.json`のキーをticker一覧としているため、satellite
+は自動的にこの対象からも外れている。**KPI提案が無いレビューは
+「定量的な裏付けを欠いた定性評価のみ」になっており、これは今回の
+監視対象拡大が半分（レビュー生成）しか完了していないことを意味する。**
+
+#### 対応方針
+未定（本項目では判定結果の記録のみ、実装要否はユーザー判断）。
+考えられる方向性:
+- (a) `_thesis_narrative_fields()`と同様の正規化を`kpi_proposer.py`に
+  実装し、satelliteにもKPI提案生成を広げる
+- (b) satelliteは定性評価のみで運用する方針とし、現状維持
+
+#### 関連
+- `[[TAIL-COVERAGE-POLICY-UNDECIDED-1]]`（BACKLOG_DONE.md、同型の
+  スキーマ不整合バグを`quarterly_review_generator.py`側で発見・修正
+  した項目。`_thesis_narrative_fields()`の実装元）
+
+#### 着手条件
+ユーザーに(a)/(b)いずれの方針を採るか確認してから着手すること。
+
+---
+
 ### [OPERATING-CASH-FLOW-CONTINUING-DISCONTINUED-GAP-1] 標準OCFタグ不在時にContinuing/Discontinued分割タグを拾えずoperating_cash_flowが構造的に欠落する（25銘柄該当）
 **優先度:** 高（登録時）→中（実害確認調査の結果、緊急性は低いと判明）
 **分類:** バグ / 確定・候補タグ設計欠陥

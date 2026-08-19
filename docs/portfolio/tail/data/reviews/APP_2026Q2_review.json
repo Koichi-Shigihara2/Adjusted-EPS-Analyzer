@@ -1,0 +1,153 @@
+{
+  "ticker": "APP",
+  "quarter": "2026Q2",
+  "generated_at": "2026-08-19T20:28:03.990637+09:00",
+  "data_version": "0001751008-26-000059",
+  "filed_date": "2026-08-05",
+  "is_latest": true,
+  "layer1_complete": true,
+  "layer2_complete": false,
+  "layer2_missing_kpis": [],
+  "stage2_json_valid": true,
+  "grok_call1_success": true,
+  "grok_call2_success": true,
+  "transcript_available": false,
+  "stage1": {
+    "health_score": 25,
+    "health_label": "WATCH",
+    "summary": "KPIデータが一切提供されておらず、テーゼの方向性との整合性を検証できない。理論株価との乖離が極端に大きく、WACC前提の妥当性に疑問が残る。マクロは拡張局面ながら流動性警戒信号が出ており、全体としてテーゼの健全性は低い。",
+    "positives": [
+      "景気スコアが拡張圏（27）を維持",
+      "HYスプレッドの改善傾向"
+    ],
+    "concerns": [
+      "KPIデータ完全欠如で進捗確認不能",
+      "ステルス流動性シグナルがEASING見直しを要請",
+      "理論株価$2359は現実的な成長前提を超過している可能性が高い"
+    ],
+    "recommendation": "WATCH",
+    "recommendation_reason": "KPI不在と流動性警戒により、テーゼの有効性を次回まで保留すべき。楽観的評価を避けるため一旦様子見。",
+    "next_kpis": [
+      "売上成長率（前年比）",
+      "EBITDAマージン推移",
+      "ユーザー/MAU増加率"
+    ],
+    "exit_distance": "中程度",
+    "exit_distance_reason": "爆発的成長の有無を判断する材料が現時点で存在しないため、エグジット条件との距離は測れない。",
+    "optimism_bias_warning": "理論株価が現在価格の7倍超を示しており、WACCや成長率前提に強い楽観バイアスが疑われる。実態と乖離した評価を避けること。"
+  },
+  "stage2": {
+    "ticker": "APP",
+    "quarter": "2026Q2",
+    "scenarios": {
+      "bear": {
+        "revenue_growth_y1": 0.12,
+        "revenue_growth_y2": 0.09,
+        "revenue_growth_y3": 0.07,
+        "terminal_growth": 0.02,
+        "operating_margin_terminal": 0.75,
+        "rationale": "KPIデータ完全欠如により成長持続性を確認できず、理論株価の過大評価懸念を考慮。4四半期連続の利益率改善を一部織り込むが、長期では競争激化によりやや圧縮。経営者発言は10%割り引いて解釈。",
+        "kpi_forecasts": {
+          "1年後": {
+            "営業利益率": 0.76,
+            "SBC": 92000000,
+            "希薄化後EPS": 3.85
+          },
+          "3年後": {
+            "営業利益率": 0.75,
+            "SBC": 105000000,
+            "希薄化後EPS": 4.25
+          }
+        }
+      },
+      "base": {
+        "revenue_growth_y1": 0.2,
+        "revenue_growth_y2": 0.15,
+        "revenue_growth_y3": 0.12,
+        "terminal_growth": 0.025,
+        "operating_margin_terminal": 0.78,
+        "rationale": "直近の利益率改善トレンドを維持しつつ、KPI欠如による不確実性を反映。成長率は市場平均をやや上回る水準に抑制。経営者発言は10%割り引いて解釈。",
+        "kpi_forecasts": {
+          "1年後": {
+            "営業利益率": 0.78,
+            "SBC": 95000000,
+            "希薄化後EPS": 4.15
+          },
+          "3年後": {
+            "営業利益率": 0.78,
+            "SBC": 115000000,
+            "希薄化後EPS": 5.1
+          }
+        }
+      },
+      "bull": {
+        "revenue_growth_y1": 0.28,
+        "revenue_growth_y2": 0.22,
+        "revenue_growth_y3": 0.18,
+        "terminal_growth": 0.03,
+        "operating_margin_terminal": 0.8,
+        "rationale": "利益率改善が継続した場合を想定するが、KPIデータ欠如と理論株価の過大評価リスクを踏まえ、過度に楽観的な前提は避ける。経営者発言は10%割り引いて解釈。",
+        "kpi_forecasts": {
+          "1年後": {
+            "営業利益率": 0.79,
+            "SBC": 100000000,
+            "希薄化後EPS": 4.55
+          },
+          "3年後": {
+            "営業利益率": 0.8,
+            "SBC": 130000000,
+            "希薄化後EPS": 6.2
+          }
+        }
+      }
+    },
+    "key_assumptions": [
+      "直近4四半期の営業利益率改善トレンドをベースに、長期ターミナル値は78.1%近辺を維持",
+      "KPIデータ完全欠如のため全社財務指標のみで成長率を推定",
+      "SBCは売上成長に比例して緩やかに増加",
+      "希薄化後EPSは売上成長と利益率を反映して算出"
+    ],
+    "risk_factors": [
+      "KPIデータ完全欠如により実態把握が困難",
+      "理論株価が現実的な成長前提を大幅に超過している可能性",
+      "広告市況の急変や競合激化による成長鈍化リスク",
+      "ステルス流動性シグナルの悪化"
+    ]
+  },
+  "call2": {
+    "five_perspectives": {
+      "business_model": "KPIデータが一切提供されていないため、収益構造の変化や収益認識の質を分析する起点が存在しない。確認が必要。",
+      "growth": "YoY・QoQいずれの数値も欠如しており、成長の持続可能性を数値的に評価できない。確認が必要。",
+      "competitive_advantage": "KPI数値が存在しないため、競合優位の維持・侵食を判断する材料がない。Web検索でも2026Q2時点の具体的な比較データは確認不能。",
+      "management": "資本配分や実行力の妥当性を裏付けるKPI変化がなく、経営判断の結果を検証できない。確認が必要。",
+      "market": "マクロ環境スコア27（拡張）とKPIトレンドを紐付ける数値がなく、整合性を分析する基盤がない。確認が必要。"
+    },
+    "entry_story_progress": "既存銘柄としての進捗を判断するKPIがなく、2026Q2は未来時点のため最新情報による確認ができない。確認が必要。",
+    "market_attention": "2026Q2は未来のため具体的な注目点は存在せず、現時点でのAppLovinに関する市場議論もKPI欠如で関連付け不能。確認が必要。",
+    "historical_analogy": {
+      "company": "Rubicon Project",
+      "similarity": "モバイル広告プラットフォームの急拡大モデルが、需要側の景気敏感性と在庫過多で収益化に苦戦した構造",
+      "outcome": "成長鈍化後に他社買収で存続したが、独立した成長軌道は失われた",
+      "implication": "APPのテーゼが想定する3年成長が、広告主支出の変動で同様に中断されるリスクをAPP特有のKPI欠如が隠蔽している可能性"
+    },
+    "macro_implications": "拡張圏ながらMichigan Consumer Sentimentの低迷が広告主の予算抑制につながる場合、APPのユーザー基盤拡大がマクロ変数に敏感に反応する構造的弱点を露呈する恐れがある。",
+    "thesis_questions": [
+      "APPの広告在庫が景気後退局面でどれだけ価格弾力性を持つか、既存の収益認識前提を覆す可能性はないか",
+      "ステルス流動性シグナルのEASING見直しが、APPの資本市場アクセスに構造的な制約を生むのではないか",
+      "Building Permits低下が住宅関連広告需要に波及した場合、APPの成長軌道全体を再定義する必要が生じるのではないか"
+    ],
+    "next_review_focus": [
+      "広告主単価の変動幅とその要因分解",
+      "新規市場参入による在庫競争の影響度",
+      "金利変動がWACC前提に与える具体的な影響試算"
+    ]
+  },
+  "kpi_snapshot": {},
+  "layer3_snapshot": {},
+  "macro_snapshot": {
+    "score": "27",
+    "phase": "拡張",
+    "stealth_signal": "neutral"
+  },
+  "thesis_version": 1
+}

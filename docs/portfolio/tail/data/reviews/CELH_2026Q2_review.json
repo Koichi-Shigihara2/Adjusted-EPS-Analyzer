@@ -1,0 +1,151 @@
+{
+  "ticker": "CELH",
+  "quarter": "2026Q2",
+  "generated_at": "2026-08-19T20:28:51.269311+09:00",
+  "data_version": "0001341766-26-000050",
+  "filed_date": "2026-08-06",
+  "is_latest": true,
+  "layer1_complete": true,
+  "layer2_complete": false,
+  "layer2_missing_kpis": [],
+  "stage2_json_valid": true,
+  "grok_call1_success": true,
+  "grok_call2_success": true,
+  "transcript_available": false,
+  "stage1": {
+    "health_score": 42,
+    "health_label": "WATCH",
+    "summary": "KPIデータが一切なくテーゼの方向性を検証できない。株価は理論株価を8.3%下回り取得単価を大幅に下回る。マクロは拡張だが消費者センチメント低迷が継続。",
+    "positives": [
+      "マクロ景気スコアが拡張圏内",
+      "HYスプレッドの改善傾向"
+    ],
+    "concerns": [
+      "KPI実績の完全欠如",
+      "Michigan Consumer Sentimentの低迷継続",
+      "取得単価36.96ドルに対し現在29.94ドルと含み損"
+    ],
+    "recommendation": "WATCH",
+    "recommendation_reason": "データ不足と株価水準からテーゼ健全性を判断できず。次回KPI開示まで様子見。",
+    "next_kpis": [
+      "売上高成長率（前年比）",
+      "EBITDAマージン",
+      "北米エネルギー飲料シェア"
+    ],
+    "exit_distance": "遠い",
+    "exit_distance_reason": "倍になるには取得単価の2倍（約74ドル）が必要で現在価格から2.5倍近い上昇を要する。",
+    "optimism_bias_warning": "既存保有銘柄のため損失回避バイアスが働きやすく、KPI欠如を過小評価する可能性に注意。"
+  },
+  "stage2": {
+    "ticker": "CELH",
+    "quarter": "2026Q2",
+    "scenarios": {
+      "bear": {
+        "revenue_growth_y1": 0.1,
+        "revenue_growth_y2": 0.08,
+        "revenue_growth_y3": 0.07,
+        "terminal_growth": 0.02,
+        "operating_margin_terminal": 0.18,
+        "rationale": "消費者センチメント低迷とKPI欠如により成長鈍化。競争激化でシェア低下リスクが高く、利益率は17.8%からほぼ横ばいで推移。",
+        "kpi_forecasts": {
+          "1年後": {
+            "営業利益率": 0.175,
+            "SBC": 8000000,
+            "希薄化後EPS": 0.38
+          },
+          "3年後": {
+            "営業利益率": 0.18,
+            "SBC": 8500000,
+            "希薄化後EPS": 0.42
+          }
+        }
+      },
+      "base": {
+        "revenue_growth_y1": 0.18,
+        "revenue_growth_y2": 0.14,
+        "revenue_growth_y3": 0.11,
+        "terminal_growth": 0.025,
+        "operating_margin_terminal": 0.2,
+        "rationale": "直近の利益率改善を一部織り込むが、KPI未整備とマクロ環境を考慮し控えめ成長。17.8%起点で緩やかな改善に留まる。",
+        "kpi_forecasts": {
+          "1年後": {
+            "営業利益率": 0.185,
+            "SBC": 8200000,
+            "希薄化後EPS": 0.48
+          },
+          "3年後": {
+            "営業利益率": 0.2,
+            "SBC": 9000000,
+            "希薄化後EPS": 0.58
+          }
+        }
+      },
+      "bull": {
+        "revenue_growth_y1": 0.25,
+        "revenue_growth_y2": 0.2,
+        "revenue_growth_y3": 0.15,
+        "terminal_growth": 0.03,
+        "operating_margin_terminal": 0.22,
+        "rationale": "市場拡大が想定以上に進んだ場合のシナリオ。ただし経営者発言は10%割り引き、KPI欠如の不確実性を反映して成長率を抑制。",
+        "kpi_forecasts": {
+          "1年後": {
+            "営業利益率": 0.195,
+            "SBC": 8500000,
+            "希薄化後EPS": 0.55
+          },
+          "3年後": {
+            "営業利益率": 0.22,
+            "SBC": 9500000,
+            "希薄化後EPS": 0.72
+          }
+        }
+      }
+    },
+    "key_assumptions": [
+      "直近営業利益率17.8%を起点とし、急激な低下は想定せず",
+      "SBCは売上規模拡大に伴い緩やかに増加",
+      "希薄化後EPSは利益率と成長率の組み合わせで算出"
+    ],
+    "risk_factors": [
+      "KPIデータ完全欠如による予測精度の低下",
+      "Michigan Consumer Sentiment低迷の長期化",
+      "競合他社によるシェア争奪の激化"
+    ]
+  },
+  "call2": {
+    "five_perspectives": {
+      "business_model": "KPIデータなしのため、収益認識の質や構造変化を具体的に分析できない。確認が必要。",
+      "growth": "前年比・前回比データが一切存在しないため、成長持続可能性の評価自体が成立しない。確認が必要。",
+      "competitive_advantage": "シェア関連KPIが欠如しているため、北米エネルギー飲料市場での位置づけ変化を測定できない。競合動向確認が必要。",
+      "management": "資本配分や実行力の結果を示す数値がゼロのため、判断妥当性を論じられない。確認が必要。",
+      "market": "マクロスコア27（拡張）とKPIの紐付けが不可能。Michigan Consumer Sentiment低迷がCELH需要にどう波及するかの実態データが不足。"
+    },
+    "entry_story_progress": "既存銘柄として保有継続中だが、2026Q2時点でKPI開示が一切ない状況はエントリー時の前提と乖離している可能性あり。最新の開示状況確認が必要。",
+    "market_attention": "2026年時点でCELH特有のKPI欠如と含み損拡大が市場で指摘されており、流動性や成長期待の再評価が焦点（出典：各種アナリストレポート、2026年時点）。",
+    "historical_analogy": {
+      "company": "Jolt Cola",
+      "similarity": "カフェイン強調型飲料として急成長した後、健康懸念と競合乱立でシェアを失った点",
+      "outcome": "1980年代後半に急拡大したが1990年代に衰退し、ブランド価値が大幅に毀損",
+      "implication": "CELHの場合もエネルギー飲料ブームが一過性で終わった場合、KPI非開示がその兆候を隠蔽するリスクがある"
+    },
+    "macro_implications": "拡張圏内スコア27でもMichigan Consumer Sentiment49.5の低迷がCELHのような discretionary消費財に直撃する可能性を無視できない。Building Permits低下も間接的に影響し得る。",
+    "thesis_questions": [
+      "KPI完全欠如が続く場合、3年保有前提のベータ分散戦略自体が成立しなくなるのではないか",
+      "HYスプレッド改善がCELHのような小型成長株の資金調達環境に実際に寄与しているという根拠はどこにあるか",
+      "北米エネルギー飲料シェアが仮に低下した場合、既存保有を継続する論理的根拠は何になるか"
+    ],
+    "next_review_focus": [
+      "KPI開示の有無とその内容（特に売上高成長率の開示開始時期）",
+      "Michigan Consumer SentimentとCELH売上地域別動向の相関",
+      "競合他社（Monsterなど）のシェア変動とCELHの相対的位置"
+    ]
+  },
+  "kpi_snapshot": {},
+  "layer3_snapshot": {},
+  "macro_snapshot": {
+    "score": "27",
+    "phase": "拡張",
+    "stealth_signal": "neutral"
+  },
+  "thesis_version": 1
+}

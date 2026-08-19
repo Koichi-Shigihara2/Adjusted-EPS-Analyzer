@@ -1456,6 +1456,56 @@ TANUKI TAIL（docs/portfolio/tail/）← EDGAR RSS / Grok（KPI提案・四半�
 　　変更日〈2026-08-19〉より前に提出された決算は、対象拡大前からの
 　　既知の在庫として一律NG化しない）。
 
+　　**`satellite_monitor.py`との役割分担（2026-08-19③調査・記録）**:
+　　`satellite_monitor.py`は`edgar_rss_monitor.py`/
+　　`quarterly_review_generator.py`とは独立した別システムで、
+　　`positions_index.json`の`type=="satellite"`を**直接**フィルタする
+　　（`get_monitored_tickers()`/`get_core_tickers()`は使わない、独自の
+　　ハードコード選定）。4条件を監視しDiscord通知＋
+　　`journal.json`のwatchlistエントリとして記録する:
+　　①価格変動±20%（エントリー価格比）、②エグジット条件の数値目標
+　　到達（`exit_condition`から正規表現で数値抽出）、③Grok Web検索に
+　　よるテーゼ否定ニュース検知（直近2週間）、④決算接近（`rss_state.
+　　json`の`last_filed`＋90日サイクルから推定した次回決算日の2週間前
+　　に警告）。`.github/workflows/TANUKI_TAIL_Satellite_Monitor.yml`で
+　　平日2回（JST 08:00・17:00）実行——`TANUKI_TAIL_RSS_Monitor.yml`
+　　（平日1回、JST 17:00）より高頻度。
+
+　　**④決算接近と、RSS監視によるレビュー生成の関係**: 重複ではなく
+　　役割が異なる。④は`rss_state.json`の`last_filed`から次回決算日を
+　　**予測**し、決算**前**に「エグジット条件を再確認してください」と
+　　促す予防的アラート。RSS監視〈`edgar_rss_monitor.py`〉→四半期レビュー
+　　〈`quarterly_review_generator.py`〉は実際の決算提出を検知した
+　　**後**に、その内容を踏まえたAI評価（health_score・
+　　recommendation）を生成する事後分析。タイミング（前／後）と内容
+　　（予告のみ／テーゼへの影響評価）の両方が異なり補完関係にある。
+
+　　ただし④は`rss_state.json`にそのポジションのエントリが存在しないと
+　　`_check_earnings_approach()`が即座に`(False, None, None)`を返し
+　　機能しない（345-349行目）。**satelliteは2026-08-19の監視対象拡大
+　　より前、`rss_state.json`に一度もエントリが存在しなかった**ため、
+　　④「決算接近」アラートはsatelliteについて実質的に機能していな
+　　かった（`edgar_rss_monitor.py`がsatelliteに対して一度も実行されて
+　　いなかったための帰結、`[[TAIL-SATELLITE-POSITION-MONITORING-
+　　GAP-1]]`と同根）。2026-08-19③時点でsatellite 7銘柄全てに
+　　`rss_state.json`のエントリが存在するため、今後は④も機能する。
+
+　　**core側の非対称（2026-08-19③発見）**: `satellite_monitor.py`は
+　　`type=="satellite"`のみを対象とし、core（PLTR/SOFI/TSLA）は
+　　`_load_satellite_positions()`のフィルタで**除外される**。
+　　`.github/workflows/`にcore向けの同等システム（価格変動・
+　　エグジット条件数値・テーゼ否定ニュースの監視）は存在しない
+　　（全ワークフロー〈`TANUKI_TAIL_KPI_Update`・`TANUKI_TAIL_Position_
+　　Write`・`TANUKI_TAIL_RSS_Monitor`・`TANUKI_TAIL_SEC_Ctrl`・
+　　`TANUKI_TAIL_Satellite_Monitor`〉を確認、該当なし）。**したがって
+　　core 3銘柄は、価格変動・エグジット条件充足・テーゼ否定ニュースの
+　　継続監視を一切受けていない**——四半期ごとのAI評価（filing検知
+　　トリガー）のみ。これは`[[TAIL-SATELLITE-POSITION-MONITORING-
+　　GAP-1]]`・`[[TAIL-COVERAGE-POLICY-UNDECIDED-1]]`で発見・是正した
+　　「satelliteがレビュー生成から漏れていた」問題と**逆方向の同型の
+　　非対称**（今度はcoreが高頻度アラートから漏れている）。事実の記録
+　　のみ、対応要否は別途判断。
+
 ---
 
 ## common/market_data/（yfinance統合層、2026-08-11追記）

@@ -1,0 +1,151 @@
+{
+  "ticker": "SOUN",
+  "quarter": "2026Q2",
+  "generated_at": "2026-08-19T20:29:28.439974+09:00",
+  "data_version": "0001840856-26-000022",
+  "filed_date": "2026-08-10",
+  "is_latest": true,
+  "layer1_complete": true,
+  "layer2_complete": false,
+  "layer2_missing_kpis": [],
+  "stage2_json_valid": true,
+  "grok_call1_success": true,
+  "grok_call2_success": true,
+  "transcript_available": false,
+  "stage1": {
+    "health_score": 32,
+    "health_label": "WATCH",
+    "summary": "KPIデータが一切提出されておらず評価不能。理論株価を25.7%上回る過大評価状態で、テーゼの方向性を裏付ける証拠が欠如。",
+    "positives": [
+      "マクロ環境は中立的で大幅悪化は見られない",
+      "既存保有のため追加キャッシュアウトは不要"
+    ],
+    "concerns": [
+      "KPIデータ完全欠如で成長軌道の検証不可能",
+      "理論株価を大幅に超過しており下落リスクが高い",
+      "流動性アラートでEASING認識の見直しが推奨されている"
+    ],
+    "recommendation": "WATCH",
+    "recommendation_reason": "データ不足と理論株価乖離が大きいため、即時EXITはせず次回KPI提出まで様子見",
+    "next_kpis": [
+      "ARRまたは売上高成長率（前年比）",
+      "Gross Margin推移",
+      "新規顧客獲得数と churn rate"
+    ],
+    "exit_distance": "中程度",
+    "exit_distance_reason": "成長期待が完全に失われたわけではないが、価格乖離が拡大すれば即時撤退ラインに接近",
+    "optimism_bias_warning": "理論株価を無視した保有継続は典型的な楽観バイアス兆候。根拠なき成長期待に注意"
+  },
+  "stage2": {
+    "ticker": "SOUN",
+    "quarter": "2026Q2",
+    "scenarios": {
+      "bear": {
+        "revenue_growth_y1": 0.08,
+        "revenue_growth_y2": 0.06,
+        "revenue_growth_y3": 0.05,
+        "terminal_growth": 0.02,
+        "operating_margin_terminal": 0.05,
+        "rationale": "KPIデータ完全欠如により成長持続性が不明。直近営業利益率-51.3%からの改善ペースが鈍化し、黒字化に至らない可能性が高い。経営者発言は10%割り引いて解釈。",
+        "kpi_forecasts": {
+          "1年後": {
+            "営業利益率": -0.35,
+            "SBC": 18546000,
+            "希薄化後EPS": -0.045
+          },
+          "3年後": {
+            "営業利益率": 0.0,
+            "SBC": 19000000,
+            "希薄化後EPS": -0.015
+          }
+        }
+      },
+      "base": {
+        "revenue_growth_y1": 0.18,
+        "revenue_growth_y2": 0.14,
+        "revenue_growth_y3": 0.11,
+        "terminal_growth": 0.025,
+        "operating_margin_terminal": 0.12,
+        "rationale": "4四半期の改善傾向を一部反映するが、KPI欠如で検証不能。黒字化は緩やかで、terminal marginは保守的に設定。経営者発言は10%割り引いて解釈。",
+        "kpi_forecasts": {
+          "1年後": {
+            "営業利益率": -0.25,
+            "SBC": 19500000,
+            "希薄化後EPS": -0.035
+          },
+          "3年後": {
+            "営業利益率": 0.05,
+            "SBC": 21000000,
+            "希薄化後EPS": 0.005
+          }
+        }
+      },
+      "bull": {
+        "revenue_growth_y1": 0.28,
+        "revenue_growth_y2": 0.22,
+        "revenue_growth_y3": 0.17,
+        "terminal_growth": 0.03,
+        "operating_margin_terminal": 0.18,
+        "rationale": "改善傾向を最大限反映するが、KPIデータ欠如のため過度な楽観は避ける。terminal marginはAIソフトウェア企業として現実的な水準に抑制。",
+        "kpi_forecasts": {
+          "1年後": {
+            "営業利益率": -0.15,
+            "SBC": 20500000,
+            "希薄化後EPS": -0.025
+          },
+          "3年後": {
+            "営業利益率": 0.1,
+            "SBC": 23000000,
+            "希薄化後EPS": 0.02
+          }
+        }
+      }
+    },
+    "key_assumptions": [
+      "KPIデータ完全欠如のため全社財務指標のみで推計",
+      "営業利益率は-51.3%から悪化させず緩やかに改善する前提",
+      "SBCは事業拡大に伴い緩やかに増加"
+    ],
+    "risk_factors": [
+      "KPIデータ欠如により成長軌道の持続可能性が検証不能",
+      "理論株価を大幅に超過する水準からの下落リスク",
+      "流動性アラートによるEASING認識の見直しが必要"
+    ]
+  },
+  "call2": {
+    "five_perspectives": {
+      "business_model": "KPIデータが一切存在しないため、収益構造の変化や収益認識の質を数値起点で分析できない。経営陣が提示するパートナーシップ拡大ナラティブと実際の収益計上タイミングの整合性を検証する材料が欠如している。",
+      "growth": "YoY・QoQいずれの成長率データも提供されておらず、成長加速または減速の数値的根拠が確認できない。ARRや新規顧客獲得の推移が不明な状態では持続可能性を論じる基盤自体が存在しない。",
+      "competitive_advantage": "KPI数値がないため、競合に対する優位維持・侵食を定量的に示せない。Web検索ではHyundaiやMercedesとの提携が継続報道されているが（出典: Reuters, 2025年3月）、競合GoogleやAmazonの車載音声進捗との比較でSOUNの差別化が実際に維持されているかは未確認。",
+      "management": "KPI欠如の状況下で、資本配分や実行力の妥当性を評価する数値変化が存在しない。理論株価超過という指摘に対し、経営陣がどのような資本政策で対応するかの根拠が提示されていない。",
+      "market": "マクロ景気スコア27（拡張）とKPIトレンドの紐付けが不可能。Michigan Consumer Sentiment低迷が消費者向け音声AI採用に与える影響を数値で確認できないため、整合性判断の材料がない。"
+    },
+    "entry_story_progress": "既存銘柄として保有は継続されているが、KPI完全欠如によりエントリー時点の成長仮説が現在も有効かどうかの検証が進んでいない。Web検索では2025年以降の車載案件拡大報道はあるものの（出典: Bloomberg, 2025年2月）、売上への寄与規模は未開示。",
+    "market_attention": "アナリストの主な注目点は、車載向け採用拡大の具体的な収益貢献規模と、競合他社との差別化が持続するかどうか。出典: CNBC, 2025年4月。",
+    "historical_analogy": {
+      "company": "Magic Leap",
+      "similarity": "技術ナラティブで高評価を集めながら、実際の採用数や収益KPI開示が極めて限定的で、投資家が成長軌道を検証できない状態が続いた点。",
+      "outcome": "多額の資金調達後も製品採用が想定を大幅に下回り、事業縮小・評価額急落を経て事実上の失敗に終わった。",
+      "implication": "SOUNの場合もKPI欠如が続けば、Magic Leap同様に市場が成長期待を剥離する転換点が訪れる可能性がある。"
+    },
+    "macro_implications": "景気スコア27の拡張環境下でも、Michigan Consumer Sentimentの低迷が消費者・企業による新技術採用を抑制するリスクがある。KPIがないため、このマクロ変数がSOUNの売上に実際に影響を与えているかを確認できない。",
+    "thesis_questions": [
+      "KPI開示が今後も限定的な場合、市場はどのような代替指標でSOUNの価値を再評価する可能性があるか。",
+      "車載提携が拡大しても、OEM側が自社開発を優先する動きが強まった場合の影響をどのように測るか。",
+      "流動性アラートがEASING認識の見直しを促している状況で、追加資金調達が必要になった際に既存株主への希薄化リスクをどう評価するか。"
+    ],
+    "next_review_focus": [
+      "次回決算での車載案件ごとの収益貢献額とその開示範囲",
+      "競合他社（Google、Amazon）の車載音声採用状況との比較データ",
+      "キャッシュバーン率と資金調達計画の更新内容"
+    ]
+  },
+  "kpi_snapshot": {},
+  "layer3_snapshot": {},
+  "macro_snapshot": {
+    "score": "27",
+    "phase": "拡張",
+    "stealth_signal": "neutral"
+  },
+  "thesis_version": 1
+}
