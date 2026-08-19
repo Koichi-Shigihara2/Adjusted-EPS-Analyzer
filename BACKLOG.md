@@ -6208,12 +6208,14 @@ XOM: $41.871B `reconstructed_pretax`）。実装（Layer3側への再構成移�
 
 ---
 
-### [TAIL-KPI-PROPOSER-CORE-ONLY-GATE-1] kpi_proposer.pyがcore限定のまま — satelliteに広げる場合は同型のスキーマ不整合バグへの対応が先に必要
-**優先度:** 中（データ破損ではないが、satellite全銘柄のレビュー品質に
-構造的な影響を与えている実測結果あり）
-**分類:** 運用ギャップ / TAIL自動化パイプライン / 判定調査（実装は
-ユーザー判断待ち）
+### [TAIL-KPI-PROPOSER-CORE-ONLY-GATE-1] kpi_proposer.pyのcore限定ゲートは撤廃済み — ただしKPI値の取得自体が別の理由でブロックされていることが判明
+**優先度:** 中（core限定ゲート自体は解消済みだが、値取得のブロックに
+よりKPIデータ欠如という実害は未解消のまま）
+**分類:** 運用ギャップ / TAIL自動化パイプライン / ゲート撤廃は完了・
+値取得の課題は継続
 **登録日:** 2026-08-19③
+**更新日:** 2026-08-19④（core限定ゲート撤廃を実装・検証。ただし
+KPI値取得が別途ブロックされていることを新たに発見、下記参照）
 **発見:** `[[TAIL-COVERAGE-POLICY-UNDECIDED-1]]`（BACKLOG_DONE.md、TAIL
 監視対象の全保有ポジション拡大）の完了後、`kpi_proposer.py`のcore限定
 ゲートを判定調査した結果
@@ -6243,9 +6245,10 @@ core限定ゲートは、このスキーマ不整合バグを偶然マスクし�
 であり、恣意的な制限ではなく現時点で必要な安全装置になっている。
 
 #### 判定2: satelliteに広げた場合、何が必要になるか
-`quarterly_review_generator.py`に実装した`_thesis_narrative_fields()`
-と同様の、type別スキーマ正規化ヘルパーを`kpi_proposer.py`側にも実装し、
-`build_kpi_prompt()`内の`thesis.get('thesis', ...)`・
+`quarterly_review_generator.py`に実装した`thesis_narrative_fields()`
+（2026-08-19④に`src/tail/thesis_utils.py`へ抽出・共通化、下記「実装
+状況」参照）と同様の、type別スキーマ正規化ヘルパーを`kpi_proposer.py`
+側にも実装し、`build_kpi_prompt()`内の`thesis.get('thesis', ...)`・
 `thesis.get('exit_guide', ...)`の2箇所を正規化後の値に差し替える必要が
 ある。修正自体の規模は小さい（`quarterly_review_generator.py`での実装
 実績あり）が、ゲートを外すだけでは不可。
@@ -6268,20 +6271,236 @@ satellite区別なくpendingキューのtickerを処理する設計）が取得�
 「定量的な裏付けを欠いた定性評価のみ」になっており、これは今回の
 監視対象拡大が半分（レビュー生成）しか完了していないことを意味する。**
 
-#### 対応方針
-未定（本項目では判定結果の記録のみ、実装要否はユーザー判断）。
-考えられる方向性:
-- (a) `_thesis_narrative_fields()`と同様の正規化を`kpi_proposer.py`に
-  実装し、satelliteにもKPI提案生成を広げる
-- (b) satelliteは定性評価のみで運用する方針とし、現状維持
+#### 対応方針(a)の実装状況（2026-08-19④、方針判断不要と判断され実装）
+本項目の判定1〜3が「方針判断を要さない技術的対応」と判断されたため、
+(a)が実装された。
+
+- `_thesis_narrative_fields()`は複製せず、`src/tail/thesis_utils.py`
+  （新設）へ抽出・共通化し、`quarterly_review_generator.py`・
+  `kpi_proposer.py`の両方から`thesis_narrative_fields()`としてimport
+  する形にした（`quarterly_review_generator.py`は`common.sec_data.
+  layer3_builder`という重量な依存を持つため、`kpi_proposer.py`が
+  そちらから直接importすると不要な結合が生じる。共通化先を新規の
+  軽量モジュールにすることでこれを回避した）
+- `build_kpi_prompt()`の`thesis.get('thesis', ...)`・
+  `thesis.get('exit_guide', ...)`を`thesis_narrative_fields()`の
+  戻り値に差し替えた
+- `propose_kpis()`のcore限定ゲートを撤廃した
+- NVDA単独で先行検証: 生成されたKPI提案（データセンター売上成長率・
+  データセンター粗利益率等）は投資テーゼ（「AI産業の成長期待」）と
+  明確に噛み合った内容であり、「未設定」を前提とした汎用提案には
+  なっていないことを確認。残り6銘柄（ADBE/APGE/APP/CELH/SOUN/CRWV）
+  も実行し、いずれも銘柄固有の妥当なKPI提案（例: APGEは臨床試験進捗、
+  APPは広告ROAS等）を確認。`config/tail_kpi_map.json`への
+  `auto_fetchable=true`分の自動登録も7銘柄全てで確認済み
+
+#### 新たに発見された未解決の問題（2026-08-19④、値の取得がブロックされている）
+**KPI提案の生成・登録until成功したが、その値を実際に取得することが
+できないことが判明した。** `xbrl_segment_fetcher.py`（layer2、XBRL
+タグベース抽出）をsatellite 7銘柄全てで実行した結果、**提案された
+KPIの実測値が1件も取得できなかった**（全て「取得失敗」）。
+
+原因を追跡した結果、2つの要因を確認:
+
+1. **`xbrl_segment_fetcher.py`の構造的な設計上の制約**:
+   `parse_contexts()`（223-252行目）は指定ディメンション軸の
+   `explicitMember`を持つコンテキストのみを`ctx_map`に格納し、
+   セグメント区分のない会社全体の事実（`xbrl_dimension`が空の
+   ファクト）は**構造的に一切取得できない**（該当するコンテキストが
+   `ctx_map`に存在しないため）。Grokが提案するKPIの多くは
+   `xbrl_dimension: null`（例: 「総売上高成長率」等の会社全体指標）
+   であり、これらは**銘柄に関わらず**この設計上の制約に該当する。
+   これは今回新たに作られた問題ではなく、既存のcore銘柄（PLTR）でも
+   同型の失敗（6件中3件が非セグメント指標で「取得失敗」）が実際に
+   発生していることを実測で確認した——satellite拡大以前から存在した
+   既知の制約が、KPI提案対象がsatelliteに広がったことで顕在化した形
+2. **Grokが生成する`xbrl_member`名の精度**: セグメント指標（
+   `xbrl_dimension`あり）についても失敗が発生した。NVDAの
+   「ゲーミング売上成長率」（`xbrl_member: "nvda:GamingMember"`）を
+   例に実際のXBRLファイルを直接検査したところ、NVDAの実際のセグメント
+   タグは`nvda:GraphicsSegmentMember`であり、Grokが生成した
+   `xbrl_member`名は実際のXBRLタグ付け慣行と一致していなかった
+   （実測確認、推測ではない）
+
+`text_kpi_extractor.py`（layer3、MD&Aテキスト抽出）もNVDAで実行した
+ところ、手動抽出対象2件（AI関連顧客数推移・次世代GPU受注残高）とも
+「未発見」となり値を取得できなかった。
+
+**結論: KPI提案の生成・登録という入口は今回のセッションで解消したが、
+値を実際に取得して四半期レビューへ反映する出口が別途ブロックされて
+おり、`[[TAIL-KPI-PROPOSER-CORE-ONLY-GATE-1]]`が目指した「KPIデータ
+欠如を理由とする減点の解消」自体はまだ達成されていない。** 対応方針
+・優先度は別途判断（本項目のスコープを超える別種の課題のため、
+新規登録を検討）。
 
 #### 関連
 - `[[TAIL-COVERAGE-POLICY-UNDECIDED-1]]`（BACKLOG_DONE.md、同型の
   スキーマ不整合バグを`quarterly_review_generator.py`側で発見・修正
-  した項目。`_thesis_narrative_fields()`の実装元）
+  した項目。`thesis_narrative_fields()`の実装元）
 
 #### 着手条件
-ユーザーに(a)/(b)いずれの方針を採るか確認してから着手すること。
+方針判断を要する部分（本項目のcore限定ゲート撤廃）は実装済み・完了。
+残る「KPIの値が取得できない」問題は、対応方針の検討が必要（別項目化を
+含め判断すること）。
+
+---
+
+### [TAIL-XBRL-SEGMENT-FETCHER-NONDIMENSIONED-GAP-1] xbrl_segment_fetcher.pyが非セグメント指標（会社全体のKPI）を構造的に取得できない
+**優先度:** 中（`[[TAIL-KPI-PROPOSER-CORE-ONLY-GATE-1]]`実装時の実測で
+発見。core・satellite双方に影響する既存の構造的制約）
+**分類:** バグ / TAIL自動化パイプライン / 設計上の制約
+**登録日:** 2026-08-19④
+**発見:** `[[TAIL-KPI-PROPOSER-CORE-ONLY-GATE-1]]`のsatellite対応実装後、
+Step 3（KPI値の実際の取得確認）でsatellite 7銘柄のKPI提案値が1件も
+取得できなかったことの原因調査
+
+#### 内容
+`xbrl_segment_fetcher.py::parse_contexts()`（223-252行目）は指定
+ディメンション軸の`explicitMember`を持つコンテキストのみを`ctx_map`
+へ格納する設計であり、セグメント区分の無い会社全体の事実
+（`xbrl_dimension`が空のファクト）は**構造的に一切取得できない**
+（該当コンテキストが`ctx_map`に存在しないため`_try("")`が常に空集合を
+返す）。
+
+`kpi_proposer.py`（Grok）が提案するKPIの多くは会社全体の成長率・比率
+（例: 「総売上高成長率」「営業利益率」）であり`xbrl_dimension: null`。
+これらは銘柄に関わらずこの制約に該当する。**satellite 7銘柄で提案
+された合計約38件のKPIのうち、実際に値が取得できたものは0件**
+（`xbrl_segment_fetcher.py --ticker NVDA ADBE APGE APP CELH SOUN CRWV`
+を実行し全件「取得失敗」を確認）。
+
+**既存のcore銘柄（PLTR）でも同型の失敗が実際に発生していることを実測
+確認済み**——PLTRの登録済み6KPIのうち、セグメント指標
+（Commercial売上・Government売上・貢献利益率）3件は取得成功、非
+セグメント指標（営業利益率・株式報酬費用・希薄化後EPS成長率）3件は
+「取得失敗」。**これは今回新たに作られた問題ではなく、satellite拡大
+以前から存在していた既存の制約が、KPI提案対象の拡大によって顕在化
+した**（satellite拡大前はcoreのKPI提案しか存在せず、非セグメント指標
+の失敗が「一部のKPIだけ取れない」程度の目立たない状態だったが、
+satelliteのKPI提案はGrokが会社全体指標を多く提案する傾向があり、
+100%失敗という形で問題が可視化された）。
+
+副次的な要因として、セグメント指標であってもGrokが生成する
+`xbrl_member`名が実際のXBRLタグ付け慣行と一致しない場合がある
+（実測確認: NVDA「ゲーミング売上成長率」の`xbrl_member: "nvda:
+GamingMember"`は誤りで、実際のXBRLタグは`nvda:
+GraphicsSegmentMember`）。ただしこれは構造的制約とは別の、個別の
+タグ精度の問題。
+
+#### 対応方針
+未定（本項目では事実の記録のみ）。考えられる方向性:
+- (a) `xbrl_segment_fetcher.py`に非ディメンション（会社全体）ファクトの
+  取得経路を追加する（`dim_local`が指定されない、または該当コンテキスト
+  が0件の場合に、無条件（コンテキスト参照なしの直接値）でのタグ検索に
+  フォールバックする等）
+- (b) `kpi_proposer.py`のプロンプトを見直し、非セグメント指標は
+  `text_kpi_extractor.py`（MD&Aテキスト抽出、こちらは`auto_fetchable:
+  false`のKPI用に既に存在する別経路）へ誘導する形にする
+- (c) Grokが生成する`xbrl_member`の精度向上（実際のXBRLファイルとの
+  事前照合等）は別課題として切り分ける
+
+#### 関連
+- `[[TAIL-KPI-PROPOSER-CORE-ONLY-GATE-1]]`（本問題の発見元。KPI提案の
+  生成・登録という入口は解消したが、本問題により値取得という出口が
+  ブロックされたまま）
+
+#### 着手条件
+ユーザーに(a)/(b)/(c)いずれの方向性を採るか、または優先度を確認して
+から着手すること。
+
+---
+
+### [TAIL-SATELLITE-MONITOR-CORE-APPLICABILITY-1] satellite_monitor.pyの4条件をcore 3銘柄へ適用できるかの技術調査（調査のみ、実装なし）
+**優先度:** 低（現状維持でも実害はない。core側の高頻度監視が無いことは
+事実だが、四半期レビューによる評価は別途機能している）
+**分類:** 運用ギャップ / TAIL自動化パイプライン / 技術調査
+**登録日:** 2026-08-19④
+**発見:** `[[TAIL-SATELLITE-POSITION-MONITORING-GAP-1]]`・
+`[[TAIL-COVERAGE-POLICY-UNDECIDED-1]]`のSYSTEM_MAP.md記録時に発見した
+「core 3銘柄はsatellite_monitor.pyの対象外＝価格変動・エグジット条件・
+テーゼ否定ニュースの継続監視を一切受けていない」という非対称の技術的
+検証
+
+#### 内容
+`satellite_monitor.py`は`positions_index.json`の`type=="satellite"`を
+直接フィルタする独立システムで、4条件（①価格変動±20%、②エグジット
+条件の数値目標到達、③Grokによるテーゼ否定ニュース検知、④決算接近）を
+Discord通知する。core（PLTR/SOFI/TSLA）は対象外であり、同等の監視を
+提供する別システムは存在しない（`.github/workflows/`の全TAIL関連
+ワークフローを確認、該当なし）。4条件それぞれについて、core 3銘柄の
+実際のthesisデータに対して技術的に適用可能かを実測で判定した。
+
+#### 判定結果（4条件それぞれ）
+
+**①価格変動±20%: そのまま適用可**
+core 3銘柄はいずれも`entry_price: null`（`thesis.json`）だが、
+`monitor_ticker()`は`pos.get("entry_price") or avg_costs.get(ticker)`
+という、`portfolio.json`の加重平均取得単価へのフォールバックを既に
+実装している。このフォールバック自体はcore/satelliteのスキーマに
+依存しないため、そのまま機能する（同様のフォールバックは
+`quarterly_review_generator.py`でも既に使われている既存パターン）。
+
+**②エグジット条件の数値目標到達: 適用不可（そのままでは）**
+`_extract_numeric_exit()`（正規表現による「$XXX到達」「X倍」等の短い
+定型文からの数値抽出）を、core 3銘柄の実際の`exit_guide`テキストに
+対して実行した結果、**3銘柄とも`None`（抽出不可）を実測確認**。
+core 3銘柄の`exit_guide`は数千文字規模の構造化された長文エッセイ
+（複数の「壊れる条件」シナリオ・監視指標を段落形式で記述）であり、
+satelliteの短い`exit_condition`（例:「割安感がなくなって利が乗ったら
+売り切る」）とは形式が根本的に異なる。
+
+加えて、`monitor_ticker()`自体（376行目）が`pos.get("exit_condition",
+"（条件未設定）")`という**satellite専用のフィールド名**を直接読んで
+おり、修正なしにcoreへ適用すると`exit_cond`が常に「（条件未設定）」に
+なる——これは本セッションで3回目に発見した同型のスキーマ不整合
+（`quarterly_review_generator.py`・`kpi_proposer.py`ではsatellite側が
+「未設定」になっていたが、今度は逆方向にcore側が「未設定」になる）。
+
+代替案（実装はしない）: (i) Grokによる定性判定（`exit_guide`の長文を
+渡し、現在の決算・株価状況が「壊れる条件」に近づいているかをAIに判断
+させる、正規表現による数値抽出とは別の方式）、(ii) 将来的な数値目標
+フィールドの新設（thesisに`exit_price_target`等を追加）。
+
+**③テーゼ否定ニュース検知: 要改修**
+`_call_grok_news()`自体はstrategy_name・exit_condition文字列を
+プロンプトへ埋め込むだけの汎用的な実装で、機構的にはcoreのテキストを
+渡しても動作する。ただし②と同じ理由（`monitor_ticker()`が
+`exit_condition`という satellite専用フィールドを直接読む）で、
+修正なしでは「（条件未設定）」がプロンプトに渡ってしまう。今回新設した
+`thesis_narrative_fields()`（`src/tail/thesis_utils.py`）を
+`satellite_monitor.py`側でも使うよう改修すれば、`exit_guide`を正しく
+読めるようになり解消可能。`strategy_name`はcoreに存在しないフィールド
+のため空文字のままになるが、プロンプト自体は成立する。
+
+**④決算接近: そのまま適用可**
+`rss_state.json`にcore 3銘柄のエントリが実際に存在することを確認
+（PLTR/SOFI/TSLAとも`last_filed`等が記録済み）。`_check_earnings_
+approach()`を実際に呼び出し、3銘柄とも次回決算予想日を正しく計算
+できることを実測確認（例: PLTR推定2026-11-02・74日後、現時点では
+2週間以内の閾値に達していないため`triggered=False`）。
+
+#### 通知頻度への影響
+現状`satellite_monitor.py`は平日2回（JST 08:00・17:00）×satellite
+7銘柄＝1日あたり最大14回の`monitor_ticker()`呼び出し。core 3銘柄を
+追加した場合、1日あたり最大20回（+43%、週あたり+30回）に増加する。
+Grok Web検索（条件③）・Discord通知の呼び出し回数もこれに比例して
+増加する。
+
+#### 対応方針
+未定（本項目では技術調査の記録のみ、実装しない）。着手する場合は
+最低限②③の改修（`thesis_narrative_fields()`の`satellite_monitor.py`
+への導入、②は代替案の選定）が前提となる。
+
+#### 関連
+- `[[TAIL-SATELLITE-POSITION-MONITORING-GAP-1]]`・
+  `[[TAIL-COVERAGE-POLICY-UNDECIDED-1]]`（BACKLOG_DONE.md、逆方向の
+  同型の非対称〈satelliteがレビュー生成から漏れていた〉を発見・是正
+  した項目）
+- `SYSTEM_MAP.md`「TANUKI TAIL」節（本調査の要点を記録済み）
+
+#### 着手条件
+ユーザーに、core 3銘柄へsatellite_monitor.pyの監視を広げるべきかの
+投資方針判断を確認してから着手すること。
 
 ---
 

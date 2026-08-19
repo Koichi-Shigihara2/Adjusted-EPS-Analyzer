@@ -45,6 +45,7 @@ if repo_root not in sys.path:
 from common.sec_data.layer3_builder import (  # noqa: E402
     build_ticker_store, get_quarterly_series, get_latest_quarterly,
 )
+from src.tail.thesis_utils import thesis_narrative_fields  # noqa: E402
 
 DATA_DIR          = os.path.join(repo_root, "docs", "portfolio", "tail", "data")
 POSITIONS_DIR     = os.path.join(DATA_DIR, "positions")
@@ -871,34 +872,6 @@ def _load_past_predictions(ticker: str, max_entries: int = 2) -> str:
     )
 
 
-def _thesis_narrative_fields(thesis: Dict[str, Any]) -> tuple:
-    """thesisのスキーマ差（core: thesis/entry_story/exit_guide、
-    satellite: strategy_name/entry_condition/exit_condition/
-    holding_period）を吸収し、プロンプトに埋め込む3項目
-    （投資テーゼ本文, エントリーストーリー, エグジットの目安）を
-    type非依存の文字列として返す。
-
-    **2026-08-19発見・修正**: 本関数導入前は`thesis.get('thesis', ...)`
-    等でcoreスキーマの3フィールドを直接読んでいたため、satelliteの
-    thesisファイル（strategy_name等の別フィールド名）に対しては全て
-    デフォルト値「未設定」が返り、実際にはテーゼが設定されているにも
-    かかわらずGrokへのプロンプトが「テーゼ未設定」と表示していた
-    （`[[TAIL-COVERAGE-POLICY-UNDECIDED-1]]`のsatellite監視対象拡大に
-    伴う実地検証で発見。ADBE・APGEで実際にレビューを生成し、両方とも
-    health_score大幅減点・recommendation=EXITという内容破綻を確認して
-    修正した）。
-    """
-    if thesis.get("type") == "satellite":
-        strategy = thesis.get("strategy_name") or "未設定"
-        holding  = thesis.get("holding_period") or "未設定"
-        thesis_text = f"戦略: {strategy}（想定保有期間: {holding}）"
-        entry_story = thesis.get("entry_condition") or "未設定"
-        exit_guide  = thesis.get("exit_condition") or "未設定"
-    else:
-        thesis_text = thesis.get("thesis") or "未設定"
-        entry_story = thesis.get("entry_story") or "未設定"
-        exit_guide  = thesis.get("exit_guide") or "未設定"
-    return thesis_text, entry_story, exit_guide
 
 
 def build_stage1_prompt(
@@ -914,7 +887,7 @@ def build_stage1_prompt(
     past_health_scores: str = "",
     past_predictions: str = "",
 ) -> str:
-    thesis_text, entry_story_text, exit_guide_text = _thesis_narrative_fields(thesis)
+    thesis_text, entry_story_text, exit_guide_text = thesis_narrative_fields(thesis)
 
     val_section = ""
     if valuation:
@@ -1218,7 +1191,7 @@ def build_call2_prompt(
 
     macro_score  = (macro_ctx or {}).get("score", "不明")
     macro_phase  = (macro_ctx or {}).get("phase", "不明")
-    thesis_text, entry_story_full, _exit_guide = _thesis_narrative_fields(thesis)
+    thesis_text, entry_story_full, _exit_guide = thesis_narrative_fields(thesis)
     entry_story  = entry_story_full[:500]
     last_quarter = (past_call2[0]["quarter"] if past_call2 else "前回") if past_call2 else "前回"
 

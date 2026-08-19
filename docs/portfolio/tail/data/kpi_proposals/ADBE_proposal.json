@@ -1,0 +1,91 @@
+{
+  "ticker": "ADBE",
+  "generated_at": "2026-08-19T20:43:14.770990+09:00",
+  "thesis_version": 1,
+  "proposed_kpis": [
+    {
+      "name": "売上高成長率",
+      "description": "全体売上の前年同期比成長率",
+      "source": "EDGAR XBRL",
+      "warning_threshold": "15%以下",
+      "exit_threshold": "10%未満が2四半期連続",
+      "related_exit_condition": "エグジット条件①",
+      "auto_fetchable": true,
+      "extraction_hint": null,
+      "xbrl_tag": "us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax",
+      "xbrl_dimension": null,
+      "xbrl_member": null,
+      "layer2_name": null
+    },
+    {
+      "name": "デジタルメディア売上成長率",
+      "description": "Digital Mediaセグメント売上の前年同期比成長率",
+      "source": "EDGAR XBRL",
+      "warning_threshold": "18%以下",
+      "exit_threshold": "12%未満が2四半期連続",
+      "related_exit_condition": "エグジット条件①",
+      "auto_fetchable": true,
+      "extraction_hint": null,
+      "xbrl_tag": "us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax",
+      "xbrl_dimension": "us-gaap:StatementBusinessSegmentsAxis",
+      "xbrl_member": "adbe:DigitalMediaSegmentMember",
+      "layer2_name": null
+    },
+    {
+      "name": "営業利益率",
+      "description": "営業利益の売上高比率",
+      "source": "EDGAR XBRL",
+      "warning_threshold": "32%以下",
+      "exit_threshold": "28%未満が2四半期連続",
+      "related_exit_condition": "エグジット条件①",
+      "auto_fetchable": true,
+      "extraction_hint": null,
+      "xbrl_tag": "us-gaap:OperatingIncomeLoss",
+      "xbrl_dimension": null,
+      "xbrl_member": null,
+      "layer2_name": null
+    },
+    {
+      "name": "フリーキャッシュフロー",
+      "description": "営業キャッシュフローから設備投資を控除した額",
+      "source": "EDGAR XBRL",
+      "warning_threshold": "前年比5%減以下",
+      "exit_threshold": "前年比15%減が2四半期連続",
+      "related_exit_condition": "エグジット条件①",
+      "auto_fetchable": true,
+      "extraction_hint": null,
+      "xbrl_tag": "us-gaap:NetCashProvidedByUsedInOperatingActivities",
+      "xbrl_dimension": null,
+      "xbrl_member": null,
+      "layer2_name": null
+    },
+    {
+      "name": "NDR（ネット・ダラー・リテンション）",
+      "description": "既存顧客からの売上維持・拡大率",
+      "source": "決算資料（IR開示）",
+      "warning_threshold": "115%以下",
+      "exit_threshold": "105%未満が2四半期連続",
+      "related_exit_condition": "エグジット条件①",
+      "auto_fetchable": false,
+      "extraction_hint": "net dollar retention",
+      "xbrl_tag": null,
+      "xbrl_dimension": null,
+      "xbrl_member": null,
+      "layer2_name": null
+    },
+    {
+      "name": "サブスクリプション売上比率",
+      "description": "サブスクリプション売上の全体売上に対する比率",
+      "source": "EDGAR XBRL",
+      "warning_threshold": "90%以下",
+      "exit_threshold": "85%未満が2四半期連続",
+      "related_exit_condition": "エグジット条件①",
+      "auto_fetchable": true,
+      "extraction_hint": null,
+      "xbrl_tag": "us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax",
+      "xbrl_dimension": "us-gaap:StatementBusinessSegmentsAxis",
+      "xbrl_member": "adbe:SubscriptionMember",
+      "layer2_name": null
+    }
+  ]
+}

@@ -1,0 +1,91 @@
+{
+  "ticker": "APP",
+  "generated_at": "2026-08-19T20:43:45.030587+09:00",
+  "thesis_version": 1,
+  "proposed_kpis": [
+    {
+      "name": "広告売上成長率",
+      "description": "Advertisingセグメント売上の前年同期比成長率",
+      "source": "EDGAR XBRL",
+      "warning_threshold": "35%以下",
+      "exit_threshold": "25%未満が2四半期連続",
+      "related_exit_condition": "エグジット条件①",
+      "auto_fetchable": true,
+      "extraction_hint": null,
+      "xbrl_tag": "us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax",
+      "xbrl_dimension": "us-gaap:StatementBusinessSegmentsAxis",
+      "xbrl_member": "app:AdvertisingMember",
+      "layer2_name": null
+    },
+    {
+      "name": "アプリ売上成長率",
+      "description": "Appsセグメント売上の前年同期比成長率",
+      "source": "EDGAR XBRL",
+      "warning_threshold": "20%以下",
+      "exit_threshold": "10%未満が2四半期連続",
+      "related_exit_condition": "エグジット条件①",
+      "auto_fetchable": true,
+      "extraction_hint": null,
+      "xbrl_tag": "us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax",
+      "xbrl_dimension": "us-gaap:StatementBusinessSegmentsAxis",
+      "xbrl_member": "app:AppsMember",
+      "layer2_name": null
+    },
+    {
+      "name": "総売上成長率",
+      "description": "連結売上の前年同期比成長率",
+      "source": "EDGAR XBRL",
+      "warning_threshold": "30%以下",
+      "exit_threshold": "20%未満が2四半期連続",
+      "related_exit_condition": "エグジット条件①",
+      "auto_fetchable": true,
+      "extraction_hint": null,
+      "xbrl_tag": "us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax",
+      "xbrl_dimension": null,
+      "xbrl_member": null,
+      "layer2_name": null
+    },
+    {
+      "name": "Adjusted EBITDAマージン",
+      "description": "調整後EBITDAの売上に対する比率",
+      "source": "EDGAR XBRL",
+      "warning_threshold": "35%以下",
+      "exit_threshold": "30%未満が2四半期連続",
+      "related_exit_condition": "エグジット条件①",
+      "auto_fetchable": true,
+      "extraction_hint": null,
+      "xbrl_tag": "us-gaap:NetIncomeLoss",
+      "xbrl_dimension": null,
+      "xbrl_member": null,
+      "layer2_name": null
+    },
+    {
+      "name": "新規顧客獲得数",
+      "description": "四半期ごとの新規広告主数",
+      "source": "決算資料（IR開示）",
+      "warning_threshold": "前四半期比横ばい以下",
+      "exit_threshold": "2四半期連続で減少",
+      "related_exit_condition": "エグジット条件①",
+      "auto_fetchable": false,
+      "extraction_hint": "new advertiser additions",
+      "xbrl_tag": null,
+      "xbrl_dimension": null,
+      "xbrl_member": null,
+      "layer2_name": null
+    },
+    {
+      "name": "ROAS（広告投資収益率）",
+      "description": "広告主の広告費に対する平均収益率",
+      "source": "決算資料（IR開示）",
+      "warning_threshold": "前年比低下",
+      "exit_threshold": "2四半期連続で低下継続",
+      "related_exit_condition": "エグジット条件①",
+      "auto_fetchable": false,
+      "extraction_hint": "return on ad spend",
+      "xbrl_tag": null,
+      "xbrl_dimension": null,
+      "xbrl_member": null,
+      "layer2_name": null
+    }
+  ]
+}

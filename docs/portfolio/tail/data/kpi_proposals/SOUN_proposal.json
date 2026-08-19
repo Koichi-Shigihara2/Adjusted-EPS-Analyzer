@@ -1,0 +1,91 @@
+{
+  "ticker": "SOUN",
+  "generated_at": "2026-08-19T20:44:10.561226+09:00",
+  "thesis_version": 1,
+  "proposed_kpis": [
+    {
+      "name": "総売上高成長率",
+      "description": "前年同期比の総売上高成長率",
+      "source": "EDGAR XBRL",
+      "warning_threshold": "50%以下",
+      "exit_threshold": "30%未満が2四半期連続",
+      "related_exit_condition": "成長期待の喪失",
+      "auto_fetchable": true,
+      "extraction_hint": null,
+      "xbrl_tag": "us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax",
+      "xbrl_dimension": null,
+      "xbrl_member": null,
+      "layer2_name": null
+    },
+    {
+      "name": "自動車向け売上成長率",
+      "description": "Automotiveセグメント売上の前年同期比成長率",
+      "source": "EDGAR XBRL",
+      "warning_threshold": "60%以下",
+      "exit_threshold": "40%未満が2四半期連続",
+      "related_exit_condition": "成長期待の喪失",
+      "auto_fetchable": true,
+      "extraction_hint": null,
+      "xbrl_tag": "us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax",
+      "xbrl_dimension": "us-gaap:StatementBusinessSegmentsAxis",
+      "xbrl_member": "soun:AutomotiveSegmentMember",
+      "layer2_name": null
+    },
+    {
+      "name": "レストラン・IoT売上成長率",
+      "description": "Restaurant and IoTセグメント売上の前年同期比成長率",
+      "source": "EDGAR XBRL",
+      "warning_threshold": "50%以下",
+      "exit_threshold": "30%未満が2四半期連続",
+      "related_exit_condition": "成長期待の喪失",
+      "auto_fetchable": true,
+      "extraction_hint": null,
+      "xbrl_tag": "us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax",
+      "xbrl_dimension": "us-gaap:StatementBusinessSegmentsAxis",
+      "xbrl_member": "soun:RestaurantAndIoTSegmentMember",
+      "layer2_name": null
+    },
+    {
+      "name": "ARR（年間経常収益）",
+      "description": "サブスクリプション型収益の年間経常収益",
+      "source": "EDGAR XBRL",
+      "warning_threshold": "前四半期比5%未満",
+      "exit_threshold": "前四半期比0%以下が2四半期連続",
+      "related_exit_condition": "成長期待の喪失",
+      "auto_fetchable": true,
+      "extraction_hint": null,
+      "xbrl_tag": "us-gaap:ContractWithCustomerLiabilityCurrent",
+      "xbrl_dimension": null,
+      "xbrl_member": null,
+      "layer2_name": null
+    },
+    {
+      "name": "NDR（ネット・ダラー・リテンション）",
+      "description": "既存顧客からの売上維持・拡大率",
+      "source": "決算資料（IR開示）",
+      "warning_threshold": "110%以下",
+      "exit_threshold": "100%未満が2四半期連続",
+      "related_exit_condition": "成長期待の喪失",
+      "auto_fetchable": false,
+      "extraction_hint": "net dollar retention",
+      "xbrl_tag": null,
+      "xbrl_dimension": null,
+      "xbrl_member": null,
+      "layer2_name": null
+    },
+    {
+      "name": "新規顧客獲得数",
+      "description": "四半期ごとの新規顧客（企業）獲得数",
+      "source": "決算資料（IR開示）",
+      "warning_threshold": "前年比20%減",
+      "exit_threshold": "前年比30%減が2四半期連続",
+      "related_exit_condition": "成長期待の喪失",
+      "auto_fetchable": false,
+      "extraction_hint": "new customer additions",
+      "xbrl_tag": null,
+      "xbrl_dimension": null,
+      "xbrl_member": null,
+      "layer2_name": null
+    }
+  ]
+}

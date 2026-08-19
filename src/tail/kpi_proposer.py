@@ -19,6 +19,7 @@ TANUKI TAIL — kpi_proposer.py
 """
 
 import os
+import sys
 import csv
 import json
 import re
@@ -32,6 +33,10 @@ from typing import Optional, Dict, Any, List
 # ── パス設定 ──────────────────────────────────────────────────
 script_dir = os.path.dirname(os.path.abspath(__file__))
 repo_root  = os.path.abspath(os.path.join(script_dir, "..", ".."))
+
+if repo_root not in sys.path:
+    sys.path.insert(0, repo_root)
+from src.tail.thesis_utils import thesis_narrative_fields  # noqa: E402
 
 DATA_DIR          = os.path.join(repo_root, "docs", "portfolio", "tail", "data")
 POSITIONS_DIR     = os.path.join(DATA_DIR, "positions")
@@ -139,6 +144,14 @@ def build_kpi_prompt(thesis: Dict[str, Any], cik: Optional[str] = None, existing
     ticker  = thesis.get("ticker", "")
     cik_str = cik or "不明"
 
+    # thesisのスキーマ差（core/satellite）を吸収する。修正前は
+    # thesis.get('thesis', ...)/thesis.get('exit_guide', ...)で
+    # coreスキーマのフィールド名を直接読んでおり、satelliteの
+    # thesisファイルに対しては常に「未設定」が返っていた
+    # （quarterly_review_generator.pyで発見・修正した実バグと同型、
+    # [[TAIL-KPI-PROPOSER-CORE-ONLY-GATE-1]]対応、2026-08-19④）。
+    thesis_text, _entry_story, exit_guide_text = thesis_narrative_fields(thesis)
+
     existing_section = ""
     if existing_kpi_map:
         names = [e.get("kpi_name", "") for e in existing_kpi_map if e.get("kpi_name")]
@@ -148,10 +161,10 @@ def build_kpi_prompt(thesis: Dict[str, Any], cik: Optional[str] = None, existing
     return f"""## 銘柄: {ticker}
 ## CIK: {cik_str}
 ## 投資テーゼ
-{thesis.get('thesis', '未設定')}
+{thesis_text}
 
 ## エグジット条件
-{thesis.get('exit_guide', '未設定')}
+{exit_guide_text}
 {existing_section}
 ## 以下のJSON形式でKPIを5〜8個提案してください:
 {{
@@ -297,9 +310,14 @@ def propose_kpis(ticker: str, dry_run: bool = False) -> Optional[str]:
     thesis = load_thesis(ticker)
     if not thesis:
         return None
-    if thesis.get("type") != "core":
-        print(f"  [SKIP] {ticker} は core 銘柄ではありません（type={thesis.get('type')}）")
-        return None
+    # core限定ゲートは2026-08-19④に撤廃した。撤廃前はbuild_kpi_prompt()が
+    # coreスキーマのフィールド名（thesis/exit_guide）を直接読んでおり、
+    # satelliteに適用するとスキーマ不整合により全て「未設定」を提案の
+    # 根拠として使ってしまう実バグが存在した。このゲートは意図的な方針
+    # ではなく、そのバグを偶然マスクしていただけだったため、
+    # thesis_narrative_fields()によるスキーマ吸収（上記build_kpi_prompt()
+    # 参照）を実装した上で撤廃した（[[TAIL-KPI-PROPOSER-CORE-ONLY-
+    # GATE-1]]対応）。
 
     cik    = load_cik(ticker)
     existing_kpi_map = load_kpi_map().get(ticker, [])
