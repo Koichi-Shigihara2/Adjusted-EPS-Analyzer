@@ -2128,10 +2128,17 @@ hypecore.py）のreader.py経由統合はPhase 3bとして分離登録（[[GATE2
 normalizer.py/quarterly.py/data_fetcher.pyに含まれない）のため、対応要否は
 次回セッションで判断する（[[GATE2-READER-FCFLIST-1]]として新規登録）。
 
-#### 着手条件（2026-08-18訂正）
+#### 着手条件（2026-08-19再訂正）
 なし。Phase 1・Phase 2a・Phase 2b-1・Phase 2b-2・Phase 2b-3・Phase 3前提整理・
 Phase 3aは完了。Phase 3b（[[GATE2-PHASE3B-1]]、4ファイル統合・規約C/D）も
-2026-07-17〜18に①②③-a③-b全項目完了し、BACKLOG_DONE.mdへ全文移動済み
+2026-07-17〜18に①②③-a③-b全項目完了し、BACKLOG_DONE.mdへ全文移動済み。
+**Phase 4（ゲート3）の優先順位は2026-08-19に再訂正**——本線3の
+`operating_income`第一歩完了後の実測（`[[LAYER3-ANNUAL-CLASSIFICATION-
+DROPS-DATA-1]]`・`[[OI-RECONSTRUCTION-MISSING-OPEX-LINES-1]]`の発見）を
+踏まえ、Phase 4棚卸しはLayer3範囲実測の次点に位置づけ直した。優先順位の
+全体像・判断基準（真値一致ではなく思想↔式↔データの整合性で評価する）は
+`CHAT_RULES.md`「本線の定義」の「次の本線候補」参照（重複記載を避けここ
+では詳細を繰り返さない）。
 （2026-07-22訂正）。
 
 **上記の個々のPhase完了記録は事実（コミットは存在する）だが、「これにより
@@ -2271,7 +2278,7 @@ VRT FY2018の異常値対策として入力整合性ガード（案D）を追加
 | CHECK-32 | discover_config/theme_config同期チェック | ゲート4寄りだが元々のスコープ外（config二重管理検知） |
 | CHECK-33 | fcf_conversion_config.json専用実装（→CHECK-34へ統合） | 同上 |
 | CHECK-34 | config読み込み失敗の横断検知（レジストリテーブル方式） | 当初の5ゲートに定義されていない新種 |
-| CHECK-35 | operating_income再構成使用・取得不可の検知（WARN） | ゲート1に最も近いが検知止まり（自動照合・自動補正ではない） |
+| CHECK-35 | operating_income再構成使用・取得不可の検知（WARN） | 2026-08-18時点ではゲート1に最も近いが検知止まり（自動照合・自動補正ではない） |
 | CHECK-36 | moat_score中立フォールバックの検知（WARN） | ゲート4寄り（出口側の検知） |
 
 実態は「`report_consistency_check.py`のWARN機構を土台に、その都度発見した
@@ -2281,6 +2288,14 @@ WARN表示する」段階に留まり、自動補正まで到達しているも�
 まさにその手前の水準である。本EPICを「部分的に実施していた」とは言えない。
 今後、これらをゲート構造に正式に位置づけるか独立した仕組みとして扱うかは
 未決（着手時に判断する）。
+
+**（2026-08-19追記）** CHECK-35はその後、本線3の第一歩として
+`operating_income`のyfinance自動照合（実測値・乖離率のWARN文言への
+追記）を獲得し、上表時点（自動照合ゼロ）から前進した——ただし自動
+「補正」（値の書き換え）までは依然到達していない点は変わらない。
+CHECK-32〜34・CHECK-36は本追記時点でも検知止まりのまま。詳細は
+`[[OPERATING-INCOME-EXTRACTION-GAP-1]]`（BACKLOG_DONE.md
+「2026-08-19（完了）」）参照。
 
 ---
 
@@ -8481,9 +8496,12 @@ SEC EDGARへの遡及登録時にrevenueタグが適切に紐付けられなか�
 あるかを確認する。実装は本項目のスコープ外（登録のみ）。
 
 **`[[QUALITY-GATES-EPIC-1]]`ゲート1のyfinance照合をrevenueへ横展開すれば、
-この種の破綻は取得時点で検知できる**——本線3の次の一歩の候補として有力
-（CHECK-35のoperating_income照合と同型のパターンをrevenueに適用すれば、
+この種の破綻は取得時点で検知できる**（CHECK-35のoperating_income照合と
+同型のパターンをrevenueに適用すれば、
 `revenue=0`という取得失敗を、yfinance実測値との突合で即座に検知できる）。
+ただし2026-08-19時点の優先順位では、revenue横展開は他3件（Layer3範囲
+実測・ゲート3対象棚卸し・`RestructuringCharges`追加）より後回し
+（`CHAT_RULES.md`「本線の定義」参照）。
 
 #### 着手条件
 なし
