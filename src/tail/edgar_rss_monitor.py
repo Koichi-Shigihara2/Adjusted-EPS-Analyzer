@@ -180,6 +180,33 @@ def get_core_tickers() -> List[str]:
     return tickers
 
 
+def get_excluded_positions() -> List[tuple]:
+    """positions_index.json + thesis ファイルから type!=core（RSS監視対象外）
+    のポジションを (ticker, type) のリストで返す。get_core_tickers() が
+    黙って除外する銘柄を可視化するための補助関数（判定ロジックは同一の
+    データソース・同一の type 比較を用いるのみで、独自の判定は行わない）。
+    """
+    try:
+        with open(POSITIONS_INDEX, encoding="utf-8") as f:
+            idx = json.load(f)
+    except Exception as e:
+        print(f"positions_index.json 読み込みエラー: {e}")
+        return []
+
+    excluded: List[tuple] = []
+    for fname in idx.get("positions", []):
+        path = os.path.join(POSITIONS_DIR, fname)
+        try:
+            with open(path, encoding="utf-8") as f:
+                thesis = json.load(f)
+            ptype = thesis.get("type")
+            if ptype != "core":
+                excluded.append((fname.replace("_thesis.json", "").upper(), ptype))
+        except Exception:
+            continue
+    return excluded
+
+
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # 状態・キュー I/O
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -355,7 +382,13 @@ def main() -> None:
     print(f"TANUKI TAIL EDGAR RSS Monitor — {now_jst.strftime('%Y-%m-%d %H:%M:%S %Z')}")
     print("=" * 60)
 
-    tickers = [t.upper() for t in args.ticker] if args.ticker else get_core_tickers()
+    if args.ticker:
+        tickers = [t.upper() for t in args.ticker]
+    else:
+        tickers = get_core_tickers()
+        excluded = get_excluded_positions()
+        for ex_ticker, ex_type in excluded:
+            print(f"[SKIP] {ex_ticker}: type={ex_type} のため RSS監視対象外（方針: core限定）")
     if not tickers:
         print("対象ティッカーなし → 終了")
         sys.exit(0)

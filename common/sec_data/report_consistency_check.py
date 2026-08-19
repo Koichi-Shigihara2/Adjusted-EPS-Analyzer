@@ -160,7 +160,7 @@ WARN_LEDGER  = os.path.join(REPO_ROOT, "config/warn_acknowledged.json")
 sys.path.insert(0, REPO_ROOT)
 from common.screening.dcf_validity_checker import check_c_data_jump  # noqa: E402
 from common.sec_data import tickers as _tickers_mod  # noqa: E402
-from common.sec_data.fetcher import load_submissions  # noqa: E402
+from common.sec_data.fetcher import load_submissions, load_company_facts  # noqa: E402
 from common.sec_data.parser import _load_fixed_registry  # noqa: E402
 from common.sec_data.utils import compute_snapshot_hash  # noqa: E402
 from common.yfinance_utils import safe_yf_ticker  # noqa: E402
@@ -652,6 +652,124 @@ def _check_moat_score_neutral_fallback_scope(tickers: list[str]) -> list[str]:
             f"{', '.join(affected)} — 有効指標<2の銘柄が新たに複数増加した可能性"
         ]
     return []
+
+
+# CHECK-37: 直近提出から本日までの経過日数がこの窓（日）以内であれば
+# 「SEC提出が直近に存在する」とみなす。四半期提出サイクル（約90日）＋
+# 年次提出のばらつきを1周以上カバーする値として400日を採用。
+_CHECK37_RECENT_FILING_WINDOW_DAYS = 400
+
+
+def _get_latest_10q_10k_filed_date(ticker: str) -> Optional[str]:
+    """`company_facts.json`内の全us-gaapエントリのうち、formが
+    10-Q/10-Q-A/10-K/10-K-Aのものに限定して最も新しい`filed`日付
+    （YYYY-MM-DD文字列）を返す。データ不在・取得不可の場合はNone。
+    """
+    company_facts = load_company_facts(ticker)
+    if not company_facts:
+        return None
+    latest_filed: Optional[str] = None
+    try:
+        for concept_data in company_facts.get("facts", {}).get("us-gaap", {}).values():
+            for unit_data in concept_data.get("units", {}).values():
+                for entry in unit_data:
+                    if entry.get("form") not in ("10-Q", "10-Q/A", "10-K", "10-K/A"):
+                        continue
+                    filed = entry.get("filed")
+                    if filed and (latest_filed is None or filed > latest_filed):
+                        latest_filed = filed
+    except Exception:
+        return None
+    return latest_filed
+
+
+def _check_core_position_review_coverage() -> tuple[list[str], list[str]]:
+    """CHECK-37: TAIL保有ポジションのうちcore種別（RSS監視・四半期レビュー
+    自動生成の対象）について、直近にSEC提出（10-Q/10-K）があるにも
+    かかわらずレビューが1件も生成されていないものをNGとして検知する。
+
+    **発見経緯（2026-08-19）**: 本チェックは狙って設計したものではない。
+    `[[LAYER3-ANNUAL-CLASSIFICATION-DROPS-DATA-1]]`の範囲実測（Layer3の
+    期間分類という無関係な調査）の副産物として、TAIL保有銘柄APGEが
+    RSS監視パイプラインから漏れていた事実が偶然発覚した
+    （`[[TAIL-SATELLITE-POSITION-MONITORING-GAP-1]]`）。「保有している
+    のに監視されていない」状態を検出する仕組みがシステムのどこにも
+    無かったため、同種の監視漏れがcore銘柄で発生しても偶然の副産物でしか
+    発見できない状態だった。これを塞ぐために本チェックを新設した。
+
+    **対象銘柄の決定（事例5の教訓を適用）**: `edgar_rss_monitor.
+    get_core_tickers()`をそのまま呼び、core/satelliteの判定を本チェック
+    側で再実装しない。判定ロジックを検査側で部分的に再現すると、本番の
+    除外設定（本件ではthesisの`type`）の変更に検査側が追随できず、
+    事例5と同型の誤検知を生む。satelliteに分類され判定対象から除外
+    された銘柄は、理由とともに戻り値のinfoに含め、呼び出し元が必ず
+    表示する（沈黙除外を避けるための可視化。これが本チェックの再発防止
+    の本体）。
+
+    **「SEC提出が直近に存在する」の判定**: `company_facts.json`内の
+    formが10-Q/10-Q-A/10-K/10-K-Aのエントリのうち最大`filed`日付を求め
+    （`_get_latest_10q_10k_filed_date()`）、本日からの経過日数が
+    `_CHECK37_RECENT_FILING_WINDOW_DAYS`（400日）以内であることとする。
+    データ取得不可・提出が古い場合は判定対象外（NG化しない）。
+
+    **「レビューが1件も生成されていない」の判定**: `REVIEWS_DIR`配下の
+    `{ticker}_*_review.json`実ファイルと、`review_queue.json`
+    （`quarterly_review_generator.load_queue()`経由）の両方を見る。
+    どちらか一方でも存在すれば「生成されている／生成待ち」とみなし
+    NG化しない（片方だけを見ると、キュー投入済みだが未生成の正常な
+    待ち状態を誤検知するため）。
+
+    Returns:
+        (ng_list, info_list) — infoにはsatellite除外の表示を含む。
+    """
+    from src.tail.edgar_rss_monitor import get_core_tickers, get_excluded_positions
+    from src.tail.quarterly_review_generator import REVIEWS_DIR, load_queue
+
+    ng: list[str] = []
+    info: list[str] = []
+
+    for ex_ticker, ex_type in get_excluded_positions():
+        info.append(
+            f"  [INFO-37] {ex_ticker}: type={ex_type} のためcore限定方針の"
+            f"対象外（2026-08-19決定、[[TAIL-SATELLITE-POSITION-"
+            f"MONITORING-GAP-1]]）"
+        )
+
+    try:
+        queue_tickers = {e.get("ticker") for e in load_queue().get("queue", [])}
+    except Exception:
+        queue_tickers = set()
+
+    for ticker in get_core_tickers():
+        latest_filed = _get_latest_10q_10k_filed_date(ticker)
+        if latest_filed is None:
+            continue
+        try:
+            filed_date = datetime.strptime(latest_filed, "%Y-%m-%d").date()
+        except ValueError:
+            continue
+        days_since = (datetime.now().date() - filed_date).days
+        if days_since > _CHECK37_RECENT_FILING_WINDOW_DAYS:
+            continue
+
+        has_review_file = False
+        if os.path.exists(REVIEWS_DIR):
+            has_review_file = any(
+                f.startswith(f"{ticker}_") and f.endswith("_review.json")
+                for f in os.listdir(REVIEWS_DIR)
+            )
+        has_queue_entry = ticker in queue_tickers
+
+        if not has_review_file and not has_queue_entry:
+            ng.append(
+                f"  [NG-37 core銘柄の監視漏れ] {ticker}: 直近"
+                f"{_CHECK37_RECENT_FILING_WINDOW_DAYS}日以内に10-Q/10-K提出あり"
+                f"（最終filed={latest_filed}）だが、レビューが1件も生成されて"
+                f"おらずキューにも投入されていない → RSS監視パイプラインから"
+                f"の脱落の可能性（自動修正なし、要調査）"
+            )
+
+    return ng, info
 
 
 def annotate_warn(ticker: str, message: str, ledger: set[tuple[str, str]]) -> tuple[str, bool]:
@@ -1632,6 +1750,17 @@ def run_checks(args=None) -> tuple[int, int]:
     if moat_scope_warn:
         flagged.append(("[GLOBAL]", [], moat_scope_warn))
         total_warn += len(moat_scope_warn)
+
+    # CHECK-37: ティッカー非依存の単発チェック（TAIL保有core銘柄の監視漏れ
+    # 検知、[[TAIL-SATELLITE-POSITION-MONITORING-GAP-1]]）。tanuki銘柄の
+    # 絞り込みとは無関係にTAILのポジション一覧（get_core_tickers()）を
+    # 対象とするため、all_tickersではなく専用関数を呼ぶ。
+    core_review_ng, core_review_info = _check_core_position_review_coverage()
+    if core_review_info:
+        flagged.append(("[GLOBAL]", [], core_review_info))
+    if core_review_ng:
+        flagged.append(("[GLOBAL]", core_review_ng, []))
+        total_ng += len(core_review_ng)
 
     if not flagged:
         if not quiet:

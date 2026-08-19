@@ -188,6 +188,7 @@ def generate_scenario_files(ticker: str) -> bool:
     valuation = _load_latest_valuation(ticker)
     if not valuation:
         print(f"  [WARN] {ticker}: latest.json 未発見 → スキップ")
+        print(f"  [SKIP] {ticker}: latest.json 不在のためシナリオ生成対象外")
         return False
 
     review = _load_latest_review(ticker)

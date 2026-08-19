@@ -2,6 +2,143 @@
 
 ---
 
+## 2026-08-19（完了）
+
+### ✅ [TAIL-SATELLITE-POSITION-MONITORING-GAP-1] TAIL保有銘柄APGEが自動レビュー生成パイプラインから完全に漏れている（satellite種別＋tanuki=falseの二重要因）— 対応方針(b)採用・除外の明示化とCHECK-37で解消
+**状態:** 完了（方針(b)＝core限定維持を採用。沈黙除外を解消し、監視
+漏れ検出チェック〈CHECK-37〉を追加）
+**優先度:** 中（データ破損ではなく運用上の欠落だが、保有ポジションへの
+実カバレッジ欠落であり放置理由もない）
+**分類:** 運用ギャップ / TAIL自動化パイプライン / バグ
+**登録日:** 2026-08-19
+**完了日:** 2026-08-19
+**発見:** 検査ユニバースの穴の実測調査（`get_tanuki_tickers()`由来の
+一覧の妥当性確認、事例5の教訓〈本番の入口〜出口を通す〉を適用した
+Step 3投稿調査）。**本項目自体、狙って見つけたものではない**——
+`[[LAYER3-ANNUAL-CLASSIFICATION-DROPS-DATA-1]]`の範囲実測（Layer3の
+期間分類という無関係な調査）でTAIL消費経路50セルを確認していた際、
+APGEが100銘柄スキャンに含まれていなかったことに気づいた副産物である。
+CHECK-37はこの発見経緯——「保有しているのに監視されていない」状態を
+検出する仕組みがシステムのどこにも無かった——を塞ぐために新設した。
+
+#### 内容（登録時点）
+「`get_tanuki_tickers()`しか検査していない検査は穴か」という調査から
+出発したが、実際に検査対象を1つずつ実コードで確認した結果は以下の
+通り:
+
+- **`report_consistency_check.py`・`audit.py`**: いずれも意図的に
+  TANUKI VALUATIONの出力（`get_tanuki_tickers()`の積集合、または
+  `tickers.json`）だけを検査するスコープであり、それ自体が正しい
+  設計（バナー表示も「TANUKI VALUATION report.txt 整合性チェック」と
+  明記、「全銘柄」は主張していない）。**穴なし**
+- **`registration_validator.py`**: `get_all_tickers()`（フラグ・
+  ステータス無関係の最広範囲）を使用しており、APGEも対象に含まれる。
+  **穴なし**
+
+しかし調査の過程で、上記3スクリプトとは**別の、より実害のある穴**を
+TAIL自身の自動化パイプラインで発見した。TAILの保有10銘柄のうち
+**APGEについて、四半期レビューが一度も自動生成されていない**
+（`docs/portfolio/tail/data/reviews/`にAPGE関連ファイルが1件も存在
+しないこと、`review_queue.json`にAPGEエントリが0件であることを実測
+確認済み）。原因は独立した2つの仕組みの組み合わせ:
+
+**(1) RSS監視の入口でsatellite種別ポジションが除外される**
+`edgar_rss_monitor.py::main()`は`--ticker`未指定時（＝通常のスケジュール
+実行、`.github/workflows/TANUKI_TAIL_RSS_Monitor.yml`の`event.inputs.
+ticker`が空の場合の分岐）、ticker一覧を`get_core_tickers()`から取得する。
+`get_core_tickers()`は`positions_index.json`＋各ポジションの`thesis.
+json`を読み、**`type=="core"`のポジションのみ**を返す。`APGE_thesis.
+json`の`type`は`"satellite"`であるため、APGEは新規10-Q/10-K提出の
+RSS監視対象から一律で除外される。この結果、`review_queue.json`へ
+APGEのエントリが投入されることが構造的にない。
+
+**(2) DCFシナリオ生成がTANUKI VALUATIONのlatest.json依存で恒久的に
+ブロックされる**
+`tail_dcf_bridge.py::generate_scenario_files(ticker)`は関数冒頭で
+`_load_latest_valuation(ticker)`（`docs/value-monitor/tanuki_valuation/
+data/{ticker}/latest.json`を読む）が`None`なら即座に`False`を返して
+スキップする（190-191行目）。APGEは`tanuki=false`のためTANUKI
+VALUATIONのDCF評価自体が実行されず、`latest.json`が恒久的に存在しない
+（`ls docs/value-monitor/tanuki_valuation/data/APGE/`で実測確認、
+ディレクトリ自体が存在しない）。CIワークフローの「Run tail_dcf_bridge
+(scenario files)」ステップのticker一覧構築も
+`os.listdir('docs/value-monitor/tanuki_valuation/data')`ベースであり
+APGEディレクトリが存在しないため二重に除外されるが、**これは
+ticker一覧構築側の不備ではない**——`generate_scenario_files()`自体が
+`latest.json`依存という設計上の制約であり、仮にticker一覧にAPGEを
+含めても結果は変わらない（実際にコードを読んで確認済み、推測ではない）。
+
+**重要な補足（過大評価しないための確認）**: Layer3側のSEC EDGARデータ
+自体はAPGEについて実在する。`build_ticker_store('APGE')`を個別実行し、
+`revenue`は0件（無収益バイオのため生データ自体が存在しないと推測される
+が未確定）である一方、`operating_income`・`stock_based_compensation`・
+`net_income`・`shares_diluted`の4フィールドはいずれも`end=2026-03-31`
+（Q1）の実データを保持していることを確認した。`_load_layer1_
+financials()`の`sbc_quarterly`・`eps_diluted`計算は`revenue`に依存
+しない（`operating_margin`のみ`revenue`必須）ため、本来これらの指標は
+APGEについて計算可能なはずだが、`generate_scenario_files()`の早期
+return（(2)）によりこの計算自体に到達しない。
+
+**`generate_review()`(`quarterly_review_generator.py`)自体はvaluationが
+`None`でもハードブロックしない**（`thesis`さえあれば処理続行、
+`load_tanuki_valuation()`が`None`を返しても`[WARN]`表示のみで継続する
+実装をコードで確認済み）。したがって真のボトルネックは(2)ではなく
+**(1)**——RSS監視の入口でAPGEが一度もキューに乗らないことにある。
+
+#### 対応方針(b)の決定（2026-08-19、ユーザーの投資方針判断）
+core/satelliteの区別はTAILの投資方針そのもの（core=主力ポジション、
+satellite=補助的ポジション）であり、satellite種別のレビュー自動生成を
+行わないことは**意図的な設計**であって欠陥ではない、と判断された。
+方針(a)（satelliteもRSS監視・レビュー生成対象に含める）は不採用。
+
+**したがって、APGEのレビューが0件である状態は今後も継続する。** これは
+監視漏れではなく仕様である。将来この状態を見た人が再び「監視漏れだ」と
+誤認しないよう、ここに明記する。
+
+#### 実施した対応（2026-08-19）
+方針の当否とは独立に、**除外が沈黙している**（何も出力せずスキップする）
+状態は本セッションで潰してきたサイレント・フォールバックと同型の問題
+として修正した。**判定ロジックは一切変更していない**——除外される銘柄の
+集合が変更前後で1件も変わらないことを実測確認済み（`get_core_tickers()`
+＝`['PLTR', 'SOFI', 'TSLA']`、`get_excluded_positions()`＝satellite7銘柄
+〈APGE/CELH/APP/NVDA/ADBE/SOUN/CRWV〉、両者に重複なし、合計10＝
+`positions_index.json`の全ポジション数と一致、を編集前後で確認）。
+
+1. **除外の明示化**（`edgar_rss_monitor.py`・`tail_dcf_bridge.py`）:
+   - `edgar_rss_monitor.py`: `--ticker`未指定時、`get_core_tickers()`が
+     除外したポジションを新設の`get_excluded_positions()`で取得し、
+     `[SKIP] {ticker}: type={type} のため RSS監視対象外（方針: core
+     限定）`をログ出力する。
+   - `tail_dcf_bridge.py::generate_scenario_files()`: `_load_latest_
+     valuation()`が`None`を返す早期return（190-191行目）に
+     `[SKIP] {ticker}: latest.json 不在のためシナリオ生成対象外`を
+     追加（既存の`[WARN]`行はそのまま残し、`[SKIP]`は理由の型を
+     明示する追加行）。
+2. **監視漏れ検出チェックの新設（CHECK-37、`report_consistency_check.
+   py`）**: core種別ポジションのうち「直近400日以内にSEC提出
+   （10-Q/10-K）があるにもかかわらずレビューが1件も生成されていない」
+   ものをNGとして検知するチェックを追加した。
+   - 対象銘柄は`edgar_rss_monitor.get_core_tickers()`を**そのまま
+     呼ぶ**（判定ロジックの検査側独自再実装を避ける、事例5の教訓を
+     適用）
+   - satelliteとして判定対象から除外された銘柄は、理由付きで
+     `[INFO-37]`として実行のたびに必ず表示する（沈黙除外の再発防止が
+     このチェックの本体）
+   - レビュー有無の判定は`reviews/`の実ファイルと`review_queue.json`の
+     両方を見る（片方だけではキュー投入済み・未生成の正常な待ち状態を
+     誤検知するため）
+   - 実装後、現状の全core銘柄（PLTR/SOFI/TSLA）で実行しNG=0を確認済み
+     （3銘柄ともレビューファイルが実在することも個別に確認済み、
+     `reviews/`ディレクトリ参照先の誤りによる見かけ上のパスではない）
+
+#### 関連
+- `[[LAYER3-ANNUAL-CLASSIFICATION-DROPS-DATA-1]]`（同じ調査の一部として
+  実測したTAIL消費経路50セル確認の中でAPGE revenue=0件を先に発見、
+  本項目はその流れで見つかった別種の問題）
+- `SYSTEM_MAP.md`「TANUKI TAIL」節に監視方針を記録（2026-08-19追記）
+
+---
+
 ## 2026-08-16（完了）
 
 ### ✅ [RISK-FREE-RATE-HARDCODE-1] risk_free_rateの常時ハードコード（0.043固定）— 調査完了・現状維持
