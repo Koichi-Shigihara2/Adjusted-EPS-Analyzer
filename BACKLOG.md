@@ -5898,6 +5898,14 @@ GP法（`gross_profit − R&D − SGA/S&M`）は、`RestructuringCharges`・
 再構成の」課題として登録しているのはこのため**——GP法固有の課題として
 登録すると対象範囲を見誤る。
 
+**（2026-08-19追記）** その後の実測で、Layer3側の問題は「フォールバック
+不在」だけでなく**「実在するデータの取りこぼし」**という別種の欠陥も
+併発していると判明した（JNJのcompany_facts.jsonには`OperatingIncomeLoss`
+のFY 10-Kエントリが実在するのに、Layer3の年次エントリは0件）。この
+取りこぼし自体は`[[LAYER3-ANNUAL-CLASSIFICATION-DROPS-DATA-1]]`として
+別項目に切り出した（本項目が対象とする「フォールバック不在」とは別種の
+欠陥のため）。
+
 本項目の対応を検討する際は、**parser.py側（GP法の控除項目追加）と
 Layer3側（フォールバック自体の有無）の両方を対象範囲に含めるか**を
 判断すること。
@@ -5910,17 +5918,70 @@ Layer3側（フォールバック自体の有無）の両方を対象範囲に�
 0.0%完全一致、旧pretax法は-11.4%/-82.4%乖離）に基づく妥当な判断だが、
 GP法が完璧という意味ではない。
 
-#### 対応方針
-- `RestructuringCharges`・`OtherOperatingIncomeExpenseNet`等の別建て
-  営業費用タグをGP法の控除項目に追加する
-- **タグ候補は実データで決めること**。全105銘柄でどの営業費用タグが
-  どの頻度で報告されているかを実測してから候補を確定する
-  （`_OI_NONOP_*_TAGS`が「候補内の銘柄横断実績検証は今回未実施」のまま
-  実装され、COHRの`InterestExpenseOperating`を取りこぼした前例がある。
-  本項目でも同じ轍を踏まないこと）
+#### 実測結果（2026-08-19、タグ候補の実データ検証）
+
+**検証セット**: `OperatingIncomeLoss`標準タグが利用可能（真値既知）な
+ticker-yearを全105銘柄から収集——GP法検証675件・pretax法検証979件。
+HON/COHRに限定せず全105銘柄の該当年度を使用した。
+
+**方法論上の注意（次に同種のバックテストをする際に必ず踏襲すること）**:
+誤差を「真値に対する%」で測定すると、真値がゼロ近傍の年度（AMZN 2014
+〈損益分岐点、真値$178M〉等）で+12,471%のような桁外れの値が出て指標
+として機能しなくなる。**「revenue（売上高）に対する%」で測定する**
+ことで、この罠を回避した。
+
+**GP法の候補タグ実測**:
+
+| 追加候補 | 中央値誤差（対売上高） | 改善した該当行の割合 |
+|---|---|---|
+| ベースライン（候補なし） | 5.92% | — |
+| +`RestructuringCharges` | 4.73% | 61%（267件中） |
+| +`GoodwillImpairmentLoss` | 8.32% | 32%（335件中） |
+| +`ImpairmentOfLongLivedAssetsHeldForUse` | 8.75% | 39%（119件中） |
+| +`ImpairmentOfIntangibleAssetsExcludingGoodwill` | 2.76% | 34%（83件中） |
+| +`AssetImpairmentCharges` | 5.83% | 50%（162件中） |
+| 5候補全て合算 | 5.02% | 改善220・悪化72・無変化383 |
+
+**結論**: `RestructuringCharges`のみが一貫して改善に寄与する（該当行の
+61%で改善）。他の候補（特に`GoodwillImpairmentLoss`・
+`ImpairmentOfIntangibleAssetsExcludingGoodwill`）は改善する行より
+悪化する行の方が多く、**採用しない**。「候補を増やすほど良くなる」
+わけではないことが実測で示された。
+
+**pretax法の候補拡充は実測の結果、見送りと判断**:
+
+| 追加候補 | 該当件数 | 追加前→追加後（中央値） | 改善割合 |
+|---|---|---|---|
+| `InterestExpenseNonoperating` | 173 | 0.00%→1.24%（悪化） | 20% |
+| `IncomeLossFromEquityMethodInvestments` | 274 | 0.61%→0.58% | 34% |
+| `ForeignCurrencyTransactionGainLossBeforeTax` | 417 | 0.11%→0.49%（悪化） | 24% |
+| `GainsLossesOnExtinguishmentOfDebt` | 278 | 0.24%→0.57%（悪化） | 23% |
+
+- 現行のpretax候補セットは既に高精度（ベースライン中央値誤差
+  **0.12%**〈対売上高〉）
+- 4候補全てで追加すると中央値が悪化した。**原因は未検証の推測だが**、
+  これらの項目の多くは既存の`OtherNonoperatingIncomeExpense`集計タグに
+  既に含まれており、追加控除すると二重計上になっている可能性がある
+  （断定はしない）
+- `InterestExpenseOperating`（本項目のきっかけ）はCOHR・SOFIの2銘柄
+  のみが使用する稀なタグで、汎用候補への追加による全体改善効果は
+  期待できない
+- **結論: pretax法の候補拡充は行わない**
+
+#### 対応方針（実測結果を踏まえ2026-08-19に範囲を絞り込み）
+**残る実装候補は`RestructuringCharges`（および`RestructuringCosts`
+——COHRが使う別名タグ、未検証）のGP法への追加のみ**。当初案にあった
+`OtherOperatingIncomeExpenseNet`等の追加、およびpretax法側の候補拡充は
+実測の結果いずれも見送りと判断したため、着手範囲から外す。
+
+- `RestructuringCharges`・`RestructuringCosts`をGP法の控除項目に追加
+  する（`RestructuringCosts`は未検証のため、追加前にRestructuringCharges
+  と同様のバックテストを実施すること）
 - 追加後は、`OperatingIncomeLoss`標準タグが利用可能な銘柄・年度で
-  **バックテスト**し、誤差が縮小することを実測で確認する（HON
-  FY2022-2025・COHR FY2022-2024という真値既知の検証セットが既にある）
+  **バックテスト**し、誤差が縮小することを実測で確認する（675件の
+  検証セットが既にある）
+- pretax法の候補拡充・その他GP法候補（Goodwill/Intangible減損等）は
+  実測の結果採用しないと決定済みのため、再検証は不要
 
 #### 関連
 - `[[OPERATING-INCOME-EXTRACTION-GAP-1]]`（BACKLOG_DONE.md、本問題の
@@ -5929,12 +5990,74 @@ GP法が完璧という意味ではない。
   検証手段になる）
 - `[[VRT-REVENUE-2018-MISSING-1]]`（同じ検証で発見された別の入力品質
   問題）
+- `[[LAYER3-ANNUAL-CLASSIFICATION-DROPS-DATA-1]]`（Layer3側の別種の
+  欠陥、2026-08-19新規登録）
 
 #### 着手条件
-なし。ただし**タグ候補拡充の別依頼**（`InterestExpenseOperating`等を
-pretax法の非事業性タグ候補に追加する件）と**同時に着手する方が効率的**
-である（どちらも「営業利益再構成のタグ候補が実データ検証を経ずに
-決められていた」という同じ根に由来する）。
+なし。ただし対象は`RestructuringCharges`/`RestructuringCosts`のGP法
+追加のみに絞る（pretax法拡充・他のGP法候補は実測により見送り済み）。
+
+---
+
+### [LAYER3-ANNUAL-CLASSIFICATION-DROPS-DATA-1] Layer3の年次期間分類が実在するデータを取りこぼしている（原因未特定）
+**優先度:** 中〜高（実害は現時点でゼロだが、原因未特定かつ他フィールド
+への波及が未確認のため）
+**分類:** バグ / データ品質 / SEC EDGAR / Layer3統合スキーマ
+**登録日:** 2026-08-19
+**発見:** `[[OI-RECONSTRUCTION-MISSING-OPEX-LINES-1]]`実測調査（Step 3、
+Layer3側の営業利益再構成の実態確認）
+
+#### 内容
+`layer3_builder.py::build_ticker_store()`を全tanuki銘柄（100件）で
+実行した結果、**JNJ・KLAC・LLY・XOMの4銘柄で`operating_income`
+（年次）のエントリが0件**だった。
+
+しかし**JNJの`company_facts.json`には`OperatingIncomeLoss`のFY 10-K
+エントリが12件存在する**ことを直接確認済み（2026-08-19）。つまり
+単純な「タグ不在」でも「フォールバック不在」でもなく、**Layer3独自の
+期間分類（`is_annual`判定）が、実在するデータを拾えていない**可能性が
+高い。**原因は未特定**（推測で断定しない）。
+
+`SEC_EDGAR_LAYER_DESIGN.md`に「Layer3ではフォールバックを持たせない」
+という設計方針の記載は無く、意図的な設計ではなくスコープ漏れの可能性
+がある（ただしこれも断定はしない）。
+
+#### 実害が現時点でゼロである理由と、その脆さ
+- Layer3の`operating_income`の主要消費者はTANUKI TAIL
+  （`tail_dcf_bridge.py`の`operating_margin`計算）
+- TAILの対象は`docs/portfolio/tail/data/positions/`配下の**実保有
+  10銘柄のみ**（ADBE/APGE/APP/CELH/CRWV/NVDA/PLTR/SOFI/SOUN/TSLA）
+- JNJ・KLAC・LLY・XOMは**たまたまこの10銘柄に含まれない**
+- コード上も`if rev and oi and rev.get("val"):`で静かにフィールドを
+  出力しないだけでクラッシュしない設計になっている
+- **つまり実害ゼロは設計の堅牢性ではなく、対象銘柄がたまたま重なって
+  いないことによる。TAILの対象銘柄が広がれば即座に表面化する**
+
+#### 未確認の重要事項（着手時に必ず先に確認すること）
+- 同じ`is_annual`判定は`operating_income`以外のフィールドにも使われて
+  いるはずであり、**他フィールドでも同じ取りこぼしが起きていないかは
+  未確認**
+- 着手時はまず「4銘柄・operating_income」に限定せず、**「全フィールド・
+  全銘柄で、`company_facts.json`に存在するのにLayer3で0件になっている
+  ものがどれだけあるか」**を実測すること。今回の4銘柄はoperating_income
+  という1フィールドのみの調査結果であり、氷山の一角の可能性がある
+
+#### 対応方針
+実装前にまず原因調査（`is_annual`判定ロジック・`_classify_period()`等
+のどこでJNJのエントリが除外されているかの特定）から着手する。原因が
+判明してから、修正が他フィールド・他銘柄にどう波及するかを見積もる。
+
+#### 関連
+- `[[OI-RECONSTRUCTION-MISSING-OPEX-LINES-1]]`（本問題の発見元、
+  GP法/pretax法フォールバック不在の課題とは別種）
+- `[[OPERATING-INCOME-EXTRACTION-GAP-1]]`（BACKLOG_DONE.md）
+- `[[LAYER3-FALLBACK-STALE-TAG-PRIORITY-1]]`（BACKLOG_DONE.md、Layer3の
+  別の既知問題〈古いタグ優先バグ〉。本問題とは異なる原因と考えられるが
+  同じ`layer3_builder.py`の期間分類・候補選定ロジック周辺のため、
+  着手時に関連の有無を確認すること）
+
+#### 着手条件
+なし
 
 ---
 
