@@ -1506,6 +1506,32 @@ TANUKI TAIL（docs/portfolio/tail/）← EDGAR RSS / Grok（KPI提案・四半�
 　　非対称**（今度はcoreが高頻度アラートから漏れている）。事実の記録
 　　のみ、対応要否は別途判断。
 
+　　**KPI取得失敗の検知（CHECK-38、2026-08-19⑥新設）**: TAIL登録KPI
+　　（`config/tail_kpi_map.json`）の値取得が`xbrl_segment_fetcher.py`
+　　で失敗すると`docs/portfolio/tail/data/kpi/{ticker}_layer2.json`の
+　　`missing_kpis`に記録されるが、これを検知する仕組みがCHECK-38
+　　新設まで存在しなかった（`xbrl_segment_fetcher.py::fetch_ticker()`
+　　は部分・全件失敗でも常に成功扱いを返し、CIは毎週GREENで完走して
+　　いた——`[[TAIL-XBRL-SEGMENT-FETCHER-NONDIMENSIONED-GAP-1]]`実測で
+　　発見、core 3銘柄の過去レビュー27件中15件〈56%〉に沈黙してKPI不足が
+　　混入していた）。
+
+　　CHECK-38は`get_monitored_tickers()`を対象に`missing_kpis`が空でない
+　　銘柄をWARNとして件数付きで表示し（`{ticker}: KPI {n}/{total}件が
+　　取得失敗`）、`config/tail_kpi_fetch_baseline.json`に記録した銘柄別
+　　missing_count（2026-08-19時点の実測値）を**超えて悪化した場合の
+　　みNG**とする。
+
+　　**baselineは許容値ではなく是正目標である**（`tail_kpi_fetch_
+　　baseline.json`の`_meta`にも同じ文言を明記）。2026-08-19時点で
+　　39/52件のKPIが既に失敗しており、これを即座にNG化すると全チェック
+　　がブロックされる一方、黙らせることは`[[TAIL-SATELLITE-POSITION-
+　　MONITORING-GAP-1]]`以降このセッションで繰り返し否定してきた
+　　サイレント・フォールバックと同型になるため、「悪化のみを機械的に
+　　検知し、現状の失敗件数自体は都度WARNで可視化し続ける」設計とした。
+　　対応が進んだ場合はbaselineを引き下げて更新すること（引き上げる
+　　場合は新たな悪化を許容したことになるため理由を`_meta`に明記する）。
+
 ---
 
 ## common/market_data/（yfinance統合層、2026-08-11追記）

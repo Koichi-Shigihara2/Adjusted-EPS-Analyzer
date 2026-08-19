@@ -252,6 +252,42 @@ def parse_contexts(xml_text: str, dim_local: str) -> Dict[str, Dict[str, Any]]:
     return result
 
 
+# 全ディメンションのexplicitMemberを抽出する正規表現。parse_contexts()の
+# mem_re（234行目周辺）と同一パターンだが、dim_localを固定せず
+# dimension属性の値そのものをキャプチャする（2026-08-19⑥新設、
+# [[TAIL-XBRL-MEMBER-VALIDATION-GAP-1]]対応）。
+_ALL_EXPLICIT_MEMBER_RE = re.compile(
+    r'<[^>]*?explicitMember[^>]*?dimension=["\']([^"\']+)["\'][^>]*?>\s*(.+?)\s*</[^>]*?explicitMember>',
+    re.DOTALL | re.IGNORECASE,
+)
+
+
+def extract_segment_members(xml_text: str) -> List[Dict[str, str]]:
+    """XBRL Instance Document内の全コンテキストからexplicitMemberを
+    抽出し、(dimension, member) のユニークな組み合わせのリストを返す。
+
+    `parse_contexts()`と同じ`_CTX_RE`によるコンテキストブロック走査＋
+    explicitMember正規表現を再利用し、対象ディメンションを固定しない
+    版として実装した（新規のパース処理を書き起こしていない）。
+
+    Returns: [{"dimension": "us-gaap:StatementBusinessSegmentsAxis",
+               "member": "pltr:CommercialOperatingSegmentMember"}, ...]
+    """
+    seen: set = set()
+    result: List[Dict[str, str]] = []
+    for m in _CTX_RE.finditer(xml_text):
+        ctx_body = m.group(2)
+        for mm in _ALL_EXPLICIT_MEMBER_RE.finditer(ctx_body):
+            dim = mm.group(1).strip()
+            mem = mm.group(2).strip()
+            key = (dim, mem)
+            if key in seen:
+                continue
+            seen.add(key)
+            result.append({"dimension": dim, "member": mem})
+    return result
+
+
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # XBRL ファクト値の抽出
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -359,12 +395,29 @@ def parse_and_extract(
 # 1銘柄処理
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-def fetch_ticker(ticker: str, kpi_map: Dict[str, Any], out_dir: str, n_quarters: int = 8) -> bool:
+def fetch_ticker(ticker: str, kpi_map: Dict[str, Any], out_dir: str, n_quarters: int = 8) -> str:
+    """1銘柄分のKPI取得を実行する。
+
+    Returns: 状態を表す文字列。
+      "no_kpi_defined" — tail_kpi_map.jsonに定義なし
+      "cik_failed"     — CIK取得失敗
+      "filing_failed"  — 10-Qファイリング取得失敗
+      "ok"             — 登録KPI全件取得成功（missing_kpisなし）
+      "partial"        — 一部のKPIのみ取得失敗
+      "all_failed"      — 登録KPI全件が取得失敗（0件成功）
+
+    **2026-08-19⑥修正**: 修正前は`missing_kpis`があっても常に`True`を
+    返し、`main()`の完了サマリーが部分失敗・全件失敗を「✓」（成功）と
+    表示していた。これは`[[TAIL-XBRL-SEGMENT-FETCHER-NONDIMENSIONED-
+    GAP-1]]`で発見したサイレント・フォールバックの一部であり、戻り値を
+    多段階の状態文字列に変更して可視化した（終了コード・呼び出し側の
+    分岐ロジックは変更していない、可視化のみ）。
+    """
     ticker   = ticker.upper()
     kpi_list = kpi_map.get(ticker)
     if not kpi_list:
         print(f"[{ticker}] tail_kpi_map.json に定義なし → スキップ")
-        return False
+        return "no_kpi_defined"
 
     print(f"\n{'─' * 52}")
     print(f"  {ticker}")
@@ -373,13 +426,13 @@ def fetch_ticker(ticker: str, kpi_map: Dict[str, Any], out_dir: str, n_quarters:
     cik = get_cik(ticker)
     if not cik:
         print("  CIK 取得失敗")
-        return False
+        return "cik_failed"
     print(f"  CIK: {cik}")
 
     filings = get_10q_filings(cik, n=n_quarters)
     if not filings:
         print("  10-Q ファイリング取得失敗")
-        return False
+        return "filing_failed"
     print(f"  10-Q: {[f['period'] for f in filings]}")
 
     # KPIごとに四半期データを蓄積
@@ -422,6 +475,8 @@ def fetch_ticker(ticker: str, kpi_map: Dict[str, Any], out_dir: str, n_quarters:
 
     # 出力 JSON 構築
     missing_kpis = [n for n, d in kpi_data.items() if not d]
+    total_kpis = len(kpi_data)
+    success_count = total_kpis - len(missing_kpis)
     layer2_complete = len(missing_kpis) == 0
 
     output = {
@@ -440,11 +495,19 @@ def fetch_ticker(ticker: str, kpi_map: Dict[str, Any], out_dir: str, n_quarters:
     with open(out_path, "w", encoding="utf-8") as f:
         json.dump(output, f, ensure_ascii=False, indent=2)
 
-    status = "✓" if layer2_complete else "△"
-    print(f"\n  {status} 保存: {out_path}")
+    if layer2_complete:
+        result = "ok"
+        status = "✓"
+    elif success_count == 0:
+        result = "all_failed"
+        status = "✗"
+    else:
+        result = "partial"
+        status = "△"
+    print(f"\n  {status} 保存: {out_path}  ({success_count}/{total_kpis}件取得)")
     if missing_kpis:
         print(f"  missing_kpis: {missing_kpis}")
-    return True
+    return result
 
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -468,15 +531,36 @@ def main() -> None:
     with open(KPI_MAP_PATH, encoding="utf-8") as f:
         kpi_map = json.load(f)
 
-    summary: Dict[str, bool] = {}
+    # 状態ごとの表示アイコン（2026-08-19⑥、部分失敗・全件失敗を
+    # 成功「✓」と区別して表示する。終了コードは変更しない）
+    _RESULT_ICON = {
+        "ok":             "✓",
+        "partial":        "△",
+        "all_failed":     "✗",
+        "no_kpi_defined": "・",
+        "cik_failed":     "✗",
+        "filing_failed":  "✗",
+    }
+    _RESULT_LABEL = {
+        "ok":             "全件取得",
+        "partial":        "一部取得失敗",
+        "all_failed":     "全件取得失敗",
+        "no_kpi_defined": "KPI未定義",
+        "cik_failed":     "CIK取得失敗",
+        "filing_failed":  "10-Q取得失敗",
+    }
+
+    summary: Dict[str, str] = {}
     for tkr in args.ticker:
-        ok = fetch_ticker(tkr.upper(), kpi_map, OUTPUT_DIR, n_quarters=args.quarters)
-        summary[tkr.upper()] = ok
+        result = fetch_ticker(tkr.upper(), kpi_map, OUTPUT_DIR, n_quarters=args.quarters)
+        summary[tkr.upper()] = result
 
     print(f"\n{'━' * 52}")
     print("完了:")
-    for tkr, ok in summary.items():
-        print(f"  {'✓' if ok else '✗'} {tkr}")
+    for tkr, result in summary.items():
+        icon  = _RESULT_ICON.get(result, "?")
+        label = _RESULT_LABEL.get(result, result)
+        print(f"  {icon} {tkr}: {label}")
 
 
 if __name__ == "__main__":

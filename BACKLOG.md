@@ -6539,11 +6539,16 @@ tail_kpi_map.json`のスキーマ（`kpi_name`/`change_risk`/`tag_history`/
 
 ---
 
-### [TAIL-XBRL-MEMBER-VALIDATION-GAP-1] kpi_proposer.pyがGrok生成のxbrl_memberタグ名を実XBRLと照合せずtail_kpi_map.jsonへ登録している
-**優先度:** 中（登録自体は成功するため一見動いているように見えるが、
-値取得の成功率を実質的に決めている根本原因の一つ）
+### [TAIL-XBRL-MEMBER-VALIDATION-GAP-1] kpi_proposer.pyがGrok生成のxbrl_memberタグ名を実XBRLと照合せずtail_kpi_map.jsonへ登録している — dimension/member照合は実装完了、ただしxbrl_tag（概念自体）の精度という別の壁が残存
+**優先度:** 中（dimension/member照合は解消したが、値取得という
+最終目的は未達のまま——xbrl_tag自体の精度という新たな壁を発見）
 **分類:** バグ / TAIL自動化パイプライン / 未検証AI出力への依存
 **登録日:** 2026-08-19⑤
+**更新日:** 2026-08-19⑥（対応方針(a)を実装〈実XBRLタグに基づくKPI
+提案への切り替え〉。NVDAで実測検証したところdimension/member一致率は
+100%に改善したが、実際のKPI値取得は0/6のまま改善せず。原因はxbrl_tag
+〈概念〉自体の精度という別の問題と判明、下記参照。**未完了のまま
+残す**）
 **発見:** `[[TAIL-XBRL-SEGMENT-FETCHER-NONDIMENSIONED-GAP-1]]`調査中に
 NVDA「ゲーミング売上成長率」の`xbrl_member: "nvda:GamingMember"`が
 実際のXBRLタグ`nvda:GraphicsSegmentMember`と一致しないことを発見。
@@ -6596,16 +6601,71 @@ Grokは学習データに基づく「もっともらしい」タグ名を生成�
 **「Grokが正しいタグ名を知っている」という前提のまま登録される設計
 であり、これ自体が検証していない前提に基づく仕組みになっている。**
 
-#### 対応方針
-未定（本項目では事実の記録のみ、実装しない）。考えられる方向性:
-- (a) `kpi_proposer.py`の`_update_kpi_map()`に、実際の直近10-Q XBRLを
-  ダウンロードして`xbrl_member`の存在を照合するバリデーションを追加し、
-  不一致の場合は登録を保留する（または`fallback_action`同様の警告扱い
-  とする）
-- (b) 登録後、`xbrl_segment_fetcher.py`が最初の取得を試みた時点で
-  `missing_kpis`に入ったKPIは自動的に無効化・再提案を促す
-- (c) `[[TAIL-XBRL-SEGMENT-FETCHER-NONDIMENSIONED-GAP-1]]`のNG/WARN
-  検知（現状皆無）と合わせて対応する
+#### 対応方針(a)の実装（2026-08-19⑥、方針判断不要と判断され実装）
+`kpi_proposer.py::build_kpi_prompt()`に、直近10-QのXBRLから実際の
+セグメント関連タグ（dimension・memberの組）を抽出して埋め込み、
+「一覧に無い名称を記憶や推測で生成しないこと」という指示を追加した。
+抽出には`xbrl_segment_fetcher.py::parse_contexts()`のロジックを再利用
+した新規関数`extract_segment_members()`を使用（新規のパース処理は
+書き起こしていない）。`update_tail_kpi_map()`にも登録時の照合を追加し、
+実タグ一覧に存在しない`(dimension, member)`は**登録せず、却下した
+ことを`[kpi_map] 却下（実XBRLに存在しないタグ）`として必ず表示する**
+（黙って捨てない）。
+
+#### NVDAでの実測検証結果（2026-08-19⑥）
+**変更前**: セグメント指標3件中2件一致（`nvda:GamingMember`が不一致、
+正しくは`nvda:GraphicsSegmentMember`）。
+
+**変更後**: NVDAの既存5KPI（全て取得失敗だったため、satelliteの
+既存KPIは上書き可という判断のもとクリアして再提案）を再生成した結果、
+**セグメント指標5件全て（データセンター売上高・Compute & Networking
+セグメント売上高・中国売上高・Hyperscale売上高・AI Clouds Industrial
+Enterprise売上高）が実XBRLのdimension/memberと完全一致（5/5＝
+100%）、却下0件**。特筆すべき点として、NVDAの実際のXBRLは
+`DataCenterMember`を`us-gaap:StatementBusinessSegmentsAxis`ではなく
+`srt:ProductOrServiceAxis`という**別のディメンション軸**で報告して
+おり、Grokが以前`xbrl_dimension: "us-gaap:StatementBusinessSegmentsAxis"`
+と誤って組み合わせていたために、たとえ`DataCenterMember`という
+member名自体は文字列として一致していても実際には取得できない
+（ディメンション不一致で`ctx_map`に該当コンテキストが存在しない）
+状態だったことが判明した——**「member名の一致」だけでなく「dimension
+との正しい組み合わせ」が必要**という、当初の検証手法（member名の
+単純一致確認のみ）では見えていなかった追加の精度要件。新方式は
+dimension・memberを常にペアで実データから提示するため、この種の
+不一致も構造的に防止する。
+
+**しかし、値取得（`xbrl_segment_fetcher.py`実行）は0/6のまま改善
+しなかった。** 原因を追跡した結果、**dimension/memberが完全に正しい
+場合でも、`xbrl_tag`（概念そのもの）が実際に使われているタグと異なる
+と値は取得できない**ことが判明した。NVDAの「データセンター売上高」
+（dimension/member一致）は`xbrl_tag: "us-gaap:
+RevenueFromContractWithCustomerExcludingAssessedTax"`で提案されたが、
+実際にそのコンテキストで使われているタグは`us-gaap:Revenues`
+（実XBRLを直接確認して特定、推測ではない）だった。**Step 3の対応は
+dimension・memberの精度は解決したが、xbrl_tag自体の精度という
+別の問題は範囲外だった**——同じ「Grokが記憶から生成し、実データと
+照合していない」という型の問題が、tagにも独立して存在する。
+
+**指示（「改善しなかった場合はそのまま報告し、仮説に合わせて結論を
+作らない」）に従い、残り6銘柄への展開は行っていない。** NVDAの
+`config/tail_kpi_map.json`エントリは実測後に元の5件（変更前と同じ、
+いずれも取得失敗）へ差し戻した——新旧どちらも値が取得できない点で
+差がなく、検証用の一時的な登録を製品データとして残す理由がないため。
+
+**本項目は「完了」としない。** dimension/member照合の実装・実測検証は
+完了したが、ユーザーが最終的に求めていた「KPI値が実際に取れる」ことは
+達成されておらず、xbrl_tag自体の精度問題（下記関連）が新たな未解決
+課題として残っている。
+
+#### 対応方針（xbrl_tag精度問題、未定）
+- (a) `kpi_proposer.py`に、`revenue_tag`（xbrl_tag）についても実際に
+  そのコンテキストで使われている概念タグをXBRLから抽出して提示する
+  仕組みを追加する（`extract_segment_members()`と同様、コンテキストに
+  紐づく実際のタグ名をXMLから機械的に収集する）
+- (b) `xbrl_segment_fetcher.py`側に、指定タグで見つからない場合の
+  フォールバック探索（同一コンテキストで実際に使われている別タグを
+  自動検出する）を追加する
+- (c) 優先度・着手要否はユーザー判断
 
 #### 関連
 - `[[TAIL-XBRL-SEGMENT-FETCHER-NONDIMENSIONED-GAP-1]]`（本問題の発見元。
@@ -6613,8 +6673,8 @@ Grokは学習データに基づく「もっともらしい」タグ名を生成�
   原因）
 
 #### 着手条件
-ユーザーに(a)/(b)/(c)いずれの方向性を採るか、または優先度を確認して
-から着手すること。
+xbrl_tag精度問題への対応方針（上記(a)/(b)）をユーザーに確認してから
+着手すること。
 
 ---
 

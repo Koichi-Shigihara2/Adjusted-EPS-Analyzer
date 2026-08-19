@@ -801,6 +801,98 @@ def _check_core_position_review_coverage() -> tuple[list[str], list[str]]:
     return ng, info
 
 
+# CHECK-38: baselineファイルの配置。fixed_registry.jsonと同じ
+# `common/sec_data/`ではなく`config/`に置く（tail_kpi_map.json等、
+# TAIL関連の手動設定ファイルは`config/`配下に統一する既存方針
+# 〈TAILKPI-CONFIG-LOCATION-1〉に倣う）。
+_TAIL_KPI_BASELINE_PATH = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+    "config", "tail_kpi_fetch_baseline.json",
+)
+
+
+def _check_kpi_fetch_failures() -> tuple[list[str], list[str]]:
+    """CHECK-38: TAIL保有ポジションの登録済みKPIのうち、`xbrl_segment_
+    fetcher.py`が実際に値を取得できなかったもの（`{ticker}_layer2.json`
+    の`missing_kpis`）を検知する。
+
+    **発見経緯（2026-08-19⑤）**: `[[TAIL-KPI-PROPOSER-CORE-ONLY-
+    GATE-1]]`のsatellite対応実装後、KPI提案・登録という入口は解消した
+    ものの、値の取得という出口が構造的に（非セグメント指標の取得不可、
+    `[[TAIL-XBRL-SEGMENT-FETCHER-NONDIMENSIONED-GAP-1]]`）・個別のタグ
+    精度により（`[[TAIL-XBRL-MEMBER-VALIDATION-GAP-1]]`）失敗して
+    いることが判明した。`xbrl_segment_fetcher.py::fetch_ticker()`は
+    `missing_kpis`があっても常に`True`を返し、CI（`TANUKI_TAIL_KPI_
+    Update.yml`）は毎週GREENで完走し続けるため、この失敗は本チェック
+    新設まで系統的に検知されていなかった（core 3銘柄で過去9四半期中
+    最大7四半期、既存レビューに「KPI不足」が沈黙して混入していたことを
+    実測確認済み）。
+
+    **対象銘柄の決定（事例5の教訓）**: `edgar_rss_monitor.
+    get_monitored_tickers()`をそのまま使う（CHECK-37と同じ入口）。
+
+    **NG/WARNの設計**: 2026-08-19時点で39/52件が既に失敗しており、
+    これを即座にNG化すると全チェックがブロックされる一方、黙らせる
+    ことは本セッションで繰り返し否定してきたサイレント・フォール
+    バックと同型になる。そのため:
+    - 失敗が1件でもあればWARNとして出し、**件数を必ず表示する**
+      （`{ticker}: KPI {missing}/{total}件が取得失敗`）
+    - `config/tail_kpi_fetch_baseline.json`に記録済みの銘柄別
+      missing_count（baselineは記録日時点の実測値で、**許容値では
+      なく是正目標**——ファイル内`_meta`に明記）を超えて悪化した場合
+      のみNGとする
+    - baselineに存在しない銘柄（新規追加等）は悪化判定をスキップし
+      WARNのみ（比較対象がないため）
+
+    Returns:
+        (ng_list, warn_list)
+    """
+    from src.tail.edgar_rss_monitor import get_monitored_tickers
+    from src.tail.quarterly_review_generator import KPI_DIR
+
+    ng: list[str] = []
+    warn: list[str] = []
+
+    try:
+        with open(_TAIL_KPI_BASELINE_PATH, encoding="utf-8") as f:
+            baseline = json.load(f)
+    except Exception:
+        baseline = {}
+
+    for ticker in get_monitored_tickers():
+        layer2_path = os.path.join(KPI_DIR, f"{ticker}_layer2.json")
+        if not os.path.exists(layer2_path):
+            continue
+        try:
+            with open(layer2_path, encoding="utf-8") as f:
+                layer2 = json.load(f)
+        except Exception:
+            continue
+
+        missing = layer2.get("missing_kpis", [])
+        total = len(layer2.get("kpis", {}))
+        if not missing:
+            continue
+
+        warn.append(
+            f"  [WARN-38 KPI取得失敗] {ticker}: KPI {len(missing)}/{total}件が"
+            f"取得失敗（{', '.join(missing)}）"
+        )
+
+        base_entry = baseline.get(ticker)
+        if base_entry is None:
+            continue
+        base_count = base_entry.get("missing_count", 0)
+        if len(missing) > base_count:
+            ng.append(
+                f"  [NG-38 KPI取得失敗の悪化] {ticker}: baseline"
+                f"（{base_entry.get('recorded_at', '不明')}時点）{base_count}件"
+                f" → 現在{len(missing)}件に悪化"
+            )
+
+    return ng, warn
+
+
 def annotate_warn(ticker: str, message: str, ledger: set[tuple[str, str]]) -> tuple[str, bool]:
     """
     WARNメッセージに台帳照合結果を反映する。
@@ -1791,6 +1883,17 @@ def run_checks(args=None) -> tuple[int, int]:
     if core_review_ng:
         flagged.append(("[GLOBAL]", core_review_ng, []))
         total_ng += len(core_review_ng)
+
+    # CHECK-38: ティッカー非依存の単発チェック（TAIL登録KPIの取得失敗
+    # 検知、[[TAIL-XBRL-SEGMENT-FETCHER-NONDIMENSIONED-GAP-1]]）。
+    # CHECK-37と同じくget_monitored_tickers()を対象とする。
+    kpi_fetch_ng, kpi_fetch_warn = _check_kpi_fetch_failures()
+    if kpi_fetch_warn:
+        flagged.append(("[GLOBAL]", [], kpi_fetch_warn))
+        total_warn += len(kpi_fetch_warn)
+    if kpi_fetch_ng:
+        flagged.append(("[GLOBAL]", kpi_fetch_ng, []))
+        total_ng += len(kpi_fetch_ng)
 
     if not flagged:
         if not quiet:

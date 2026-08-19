@@ -37,6 +37,16 @@ repo_root  = os.path.abspath(os.path.join(script_dir, "..", ".."))
 if repo_root not in sys.path:
     sys.path.insert(0, repo_root)
 from src.tail.thesis_utils import thesis_narrative_fields  # noqa: E402
+from src.tail.xbrl_segment_fetcher import (  # noqa: E402
+    get_10q_filings, download_xbrl, extract_segment_members,
+)
+
+# 実XBRLタグ抽出で「セグメント区分」とみなすディメンションのローカル名
+# キーワード（大文字小文字区別なし）。extract_segment_members()が返す
+# 全ディメンション（持分・公正価値階層等の無関係な軸を含む75件規模）
+# から、セグメント・製品・地域区分に絞り込むための簡易フィルタ
+# （2026-08-19⑥、[[TAIL-XBRL-MEMBER-VALIDATION-GAP-1]]対応）。
+_SEGMENT_DIMENSION_KEYWORDS = ("segment", "productorservice", "geographical", "geographic")
 
 DATA_DIR          = os.path.join(repo_root, "docs", "portfolio", "tail", "data")
 POSITIONS_DIR     = os.path.join(DATA_DIR, "positions")
@@ -136,11 +146,52 @@ def load_cik(ticker: str) -> Optional[str]:
     return None
 
 
+def fetch_real_segment_tags(ticker: str, cik: Optional[str]) -> List[Dict[str, str]]:
+    """直近10-QのXBRLから、実際に使用されているセグメント関連タグ
+    （dimension, member の組）を取得する。
+
+    `xbrl_segment_fetcher.py::extract_segment_members()`（parse_
+    contexts()の抽出ロジックを再利用した既存関数）をそのまま呼ぶ。
+    取得したdimension/member全件（equity・fair value階層等の無関係な
+    軸を含む）のうち、`_SEGMENT_DIMENSION_KEYWORDS`に一致するものだけ
+    を返す（2026-08-19⑥、[[TAIL-XBRL-MEMBER-VALIDATION-GAP-1]]対応:
+    Grokにタグ名を記憶から生成させず、実際に提出書類に存在するタグから
+    選ばせるための土台）。
+
+    取得できない場合（CIK不明・10-Q取得失敗等）は空リストを返す。
+    呼び出し側はこれを「セグメント指標を提案しない」の判断材料とする。
+    """
+    if not cik:
+        return []
+    try:
+        filings = get_10q_filings(cik, n=1)
+        if not filings:
+            return []
+        f = filings[0]
+        xml_text = download_xbrl(cik, f["accn"], f["xml"])
+        if not xml_text:
+            return []
+        all_members = extract_segment_members(xml_text)
+    except Exception as e:
+        print(f"  [WARN] 実XBRLタグ取得失敗: {e}")
+        return []
+
+    return [
+        m for m in all_members
+        if any(kw in m["dimension"].lower() for kw in _SEGMENT_DIMENSION_KEYWORDS)
+    ]
+
+
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # プロンプト構築
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-def build_kpi_prompt(thesis: Dict[str, Any], cik: Optional[str] = None, existing_kpi_map: Optional[List[Dict[str, Any]]] = None) -> str:
+def build_kpi_prompt(
+    thesis: Dict[str, Any],
+    cik: Optional[str] = None,
+    existing_kpi_map: Optional[List[Dict[str, Any]]] = None,
+    real_segment_tags: Optional[List[Dict[str, str]]] = None,
+) -> str:
     ticker  = thesis.get("ticker", "")
     cik_str = cik or "不明"
 
@@ -158,6 +209,38 @@ def build_kpi_prompt(thesis: Dict[str, Any], cik: Optional[str] = None, existing
         if names:
             existing_section = "\n## 既存の自動取得KPI（tail_kpi_map登録済み）\n" + "\n".join(f"- {n}" for n in names) + "\n"
 
+    # 実XBRLタグ一覧セクション（2026-08-19⑥、[[TAIL-XBRL-MEMBER-
+    # VALIDATION-GAP-1]]対応）。修正前はxbrl_memberを"{ticker}:XxxMember"
+    # 形式で記憶から生成させており、実測で一致率32%（今回一括生成分は
+    # 14%）という低さだった。実際の直近10-QのXBRLから抽出した
+    # dimension/memberの組を提示し、その中からのみ選ばせることで、
+    # 「Grokが正しいタグ名を知っている」という検証していない前提への
+    # 依存をなくす。
+    if real_segment_tags:
+        tag_lines = "\n".join(
+            f"- dimension={t['dimension']}, member={t['member']}"
+            for t in real_segment_tags
+        )
+        segment_tags_section = f"""
+## この企業が実際に使用しているセグメント関連タグ（直近10-Qより抽出）
+{tag_lines}
+
+**セグメント指標（特定事業区分・製品・地域別の指標）を提案する場合は、
+必ず上記一覧の中からdimension・memberの組を選んでください。
+一覧に無い名称を記憶や推測で生成しないこと。** 該当するものが一覧に
+無い場合は、その指標をセグメント指標として提案せず、
+`xbrl_dimension: null, xbrl_member: null`としてください（無理に
+セグメント区分をでっち上げるより、全社ベースの指標として提案する方が
+望ましい）。
+"""
+    else:
+        segment_tags_section = """
+## セグメント関連タグの実データ
+取得できませんでした。**この場合、セグメント指標（xbrl_dimension・
+xbrl_memberを伴う指標）は提案しないでください。** 全社ベースの指標
+（xbrl_dimension: null, xbrl_member: null）のみを提案してください。
+"""
+
     return f"""## 銘柄: {ticker}
 ## CIK: {cik_str}
 ## 投資テーゼ
@@ -165,7 +248,7 @@ def build_kpi_prompt(thesis: Dict[str, Any], cik: Optional[str] = None, existing
 
 ## エグジット条件
 {exit_guide_text}
-{existing_section}
+{existing_section}{segment_tags_section}
 ## 以下のJSON形式でKPIを5〜8個提案してください:
 {{
   "proposed_kpis": [
@@ -202,8 +285,11 @@ def build_kpi_prompt(thesis: Dict[str, Any], cik: Optional[str] = None, existing
 
 ルール:
 - auto_fetchable=true: EDGARのXBRLから取得可能な財務指標（売上・利益・残高等）
-  → xbrl_tag・xbrl_dimension・xbrl_memberを必ず具体的に記入
-  → xbrl_memberは "{ticker.lower()}:XxxMember" 形式で記入
+  → xbrl_tagは標準的なus-gaap概念名で記入（会社全体の指標は
+    xbrl_dimension: null, xbrl_member: nullでよい）
+  → セグメント指標の場合のみ、xbrl_dimension・xbrl_memberを上記
+    「実際に使用しているセグメント関連タグ」一覧から選んで記入する
+    （一覧に無い名称は使わないこと）
   → 上記「既存の自動取得KPI」のいずれかと同じXBRLデータを参照する場合、layer2_nameにその既存KPI名を記入（例: "layer2_name": "Commercial売上"）
 - auto_fetchable=false: NDR・解約率・顧客数・規制状況等の非財務指標
   → extraction_hintに決算資料でよく使われる英語表現を記入
@@ -240,12 +326,30 @@ def post_process_proposals(ticker: str, kpis: List[Dict[str, Any]]) -> List[Dict
     return kpis
 
 
-def update_tail_kpi_map(ticker: str, proposed_kpis: List[Dict[str, Any]]) -> int:
+def update_tail_kpi_map(
+    ticker: str,
+    proposed_kpis: List[Dict[str, Any]],
+    real_segment_tags: Optional[List[Dict[str, str]]] = None,
+) -> int:
+    """提案されたKPIをtail_kpi_map.jsonへ登録する。
+
+    `real_segment_tags`が渡された場合、セグメント指標（xbrl_dimension・
+    xbrl_memberが設定されているKPI）については、その(dimension, member)
+    が実際に企業のXBRLに存在するタグ一覧に含まれるかを照合する。
+    含まれない場合は**登録せず、却下したことを明示的に表示する**
+    （黙って捨てない、2026-08-19⑥、[[TAIL-XBRL-MEMBER-VALIDATION-
+    GAP-1]]対応）。`real_segment_tags`が`None`の場合は照合をスキップ
+    する（呼び出し元が実データを取得できなかった場合の後方互換）。
+    """
     if os.path.exists(KPI_MAP_PATH):
         with open(KPI_MAP_PATH, encoding="utf-8") as f:
             kpi_map: Dict[str, Any] = json.load(f)
     else:
         kpi_map = {}
+
+    valid_dim_members = None
+    if real_segment_tags is not None:
+        valid_dim_members = {(t["dimension"], t["member"]) for t in real_segment_tags}
 
     existing = kpi_map.get(ticker, [])
     existing_names = {e.get("kpi_name", "") for e in existing}
@@ -268,6 +372,16 @@ def update_tail_kpi_map(ticker: str, proposed_kpis: List[Dict[str, Any]]) -> int
             continue
         if kpi_name in existing_names:
             continue
+
+        # セグメント指標のxbrl_member実在照合（却下は必ず表示する）
+        if xbrl_dim and xbrl_mem and valid_dim_members is not None:
+            if (xbrl_dim, xbrl_mem) not in valid_dim_members:
+                print(
+                    f"    [kpi_map] 却下（実XBRLに存在しないタグ）: "
+                    f"{kpi_name} → dimension={xbrl_dim}, member={xbrl_mem}"
+                )
+                continue
+
         tag_key = (xbrl_tag, xbrl_mem)
         if tag_key in existing_tag_members:
             print(f"    [kpi_map] スキップ（tag+member重複）: {kpi_name}")
@@ -320,8 +434,10 @@ def propose_kpis(ticker: str, dry_run: bool = False) -> Optional[str]:
     # GATE-1]]対応）。
 
     cik    = load_cik(ticker)
-    existing_kpi_map = load_kpi_map().get(ticker, [])
-    prompt = build_kpi_prompt(thesis, cik, existing_kpi_map)
+    existing_kpi_map  = load_kpi_map().get(ticker, [])
+    real_segment_tags = fetch_real_segment_tags(ticker, cik)
+    print(f"  実XBRLセグメントタグ: {len(real_segment_tags)}件抽出")
+    prompt = build_kpi_prompt(thesis, cik, existing_kpi_map, real_segment_tags)
 
     if dry_run:
         print("\n=== [DRY-RUN] KPIプロンプト ===")
@@ -358,8 +474,9 @@ def propose_kpis(ticker: str, dry_run: bool = False) -> Optional[str]:
         l2n = f" [layer2_name={k['layer2_name']}]" if k.get("layer2_name") else ""
         print(f"    [{auto}] {k.get('name', '?')} — 警戒: {k.get('warning_threshold', '?')} ({hint}){l2n}")
 
-    # auto_fetchable=true のKPIをtail_kpi_map.jsonに自動追記（tag+member重複はスキップ）
-    update_tail_kpi_map(ticker, kpis)
+    # auto_fetchable=true のKPIをtail_kpi_map.jsonに自動追記
+    # （tag+member重複・実XBRLに存在しないセグメントタグはスキップ）
+    update_tail_kpi_map(ticker, kpis, real_segment_tags)
 
     return out_path
 
