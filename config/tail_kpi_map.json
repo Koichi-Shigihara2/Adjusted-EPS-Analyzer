@@ -302,7 +302,7 @@
   ],
   "NVDA": [
     {
-      "kpi_name": "データセンター売上成長率",
+      "kpi_name": "Data Center売上",
       "change_risk": "medium",
       "tag_history": [
         {
@@ -313,216 +313,95 @@
       ],
       "fallback_tags": [],
       "fallback_action": "alert",
-      "revenue_tag": "us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax",
+      "revenue_tag": "us-gaap:Revenues",
+      "dimension": "srt:ProductOrServiceAxis"
+    },
+    {
+      "kpi_name": "Compute and Networking売上",
+      "change_risk": "medium",
+      "tag_history": [
+        {
+          "tag": "nvda:ComputeAndNetworkingSegmentMember",
+          "valid_from": "2010-01-01",
+          "valid_to": null
+        }
+      ],
+      "fallback_tags": [],
+      "fallback_action": "alert",
+      "revenue_tag": "us-gaap:Revenues",
       "dimension": "us-gaap:StatementBusinessSegmentsAxis"
     },
     {
-      "kpi_name": "総売上高成長率",
+      "kpi_name": "Hyperscale売上",
       "change_risk": "medium",
       "tag_history": [
         {
-          "tag": "",
+          "tag": "nvda:HyperscaleMember",
           "valid_from": "2010-01-01",
           "valid_to": null
         }
       ],
       "fallback_tags": [],
       "fallback_action": "alert",
-      "revenue_tag": "us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax",
-      "dimension": ""
-    },
-    {
-      "kpi_name": "データセンター粗利益率",
-      "change_risk": "medium",
-      "tag_history": [
-        {
-          "tag": "nvda:DataCenterMember",
-          "valid_from": "2010-01-01",
-          "valid_to": null
-        }
-      ],
-      "fallback_tags": [],
-      "fallback_action": "alert",
-      "revenue_tag": "us-gaap:GrossProfit",
-      "dimension": "us-gaap:StatementBusinessSegmentsAxis"
-    },
-    {
-      "kpi_name": "研究開発費対売上比率",
-      "change_risk": "medium",
-      "tag_history": [
-        {
-          "tag": "",
-          "valid_from": "2010-01-01",
-          "valid_to": null
-        }
-      ],
-      "fallback_tags": [],
-      "fallback_action": "alert",
-      "revenue_tag": "us-gaap:ResearchAndDevelopmentExpense",
-      "dimension": ""
-    },
-    {
-      "kpi_name": "ゲーミング売上成長率",
-      "change_risk": "medium",
-      "tag_history": [
-        {
-          "tag": "nvda:GamingMember",
-          "valid_from": "2010-01-01",
-          "valid_to": null
-        }
-      ],
-      "fallback_tags": [],
-      "fallback_action": "alert",
-      "revenue_tag": "us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax",
-      "dimension": "us-gaap:StatementBusinessSegmentsAxis"
+      "revenue_tag": "us-gaap:Revenues",
+      "dimension": "srt:ProductOrServiceAxis"
     }
   ],
   "ADBE": [
     {
-      "kpi_name": "売上高成長率",
+      "kpi_name": "サブスクリプション売上高",
       "change_risk": "medium",
       "tag_history": [
         {
-          "tag": "",
+          "tag": "adbe:SubscriptionRevenueMember",
           "valid_from": "2010-01-01",
           "valid_to": null
         }
       ],
       "fallback_tags": [],
       "fallback_action": "alert",
-      "revenue_tag": "us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax",
-      "dimension": ""
+      "revenue_tag": "us-gaap:Revenues",
+      "dimension": "srt:ProductOrServiceAxis"
     },
     {
-      "kpi_name": "デジタルメディア売上成長率",
+      "kpi_name": "米州売上高",
       "change_risk": "medium",
       "tag_history": [
         {
-          "tag": "adbe:DigitalMediaSegmentMember",
+          "tag": "srt:AmericasMember",
           "valid_from": "2010-01-01",
           "valid_to": null
         }
       ],
       "fallback_tags": [],
       "fallback_action": "alert",
-      "revenue_tag": "us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax",
-      "dimension": "us-gaap:StatementBusinessSegmentsAxis"
+      "revenue_tag": "us-gaap:Revenues",
+      "dimension": "srt:StatementGeographicalAxis"
     },
     {
-      "kpi_name": "営業利益率",
+      "kpi_name": "EME A売上高",
       "change_risk": "medium",
       "tag_history": [
         {
-          "tag": "",
+          "tag": "us-gaap:EMEAMember",
           "valid_from": "2010-01-01",
           "valid_to": null
         }
       ],
       "fallback_tags": [],
       "fallback_action": "alert",
-      "revenue_tag": "us-gaap:OperatingIncomeLoss",
-      "dimension": ""
-    },
-    {
-      "kpi_name": "フリーキャッシュフロー",
-      "change_risk": "medium",
-      "tag_history": [
-        {
-          "tag": "",
-          "valid_from": "2010-01-01",
-          "valid_to": null
-        }
-      ],
-      "fallback_tags": [],
-      "fallback_action": "alert",
-      "revenue_tag": "us-gaap:NetCashProvidedByUsedInOperatingActivities",
-      "dimension": ""
-    },
-    {
-      "kpi_name": "サブスクリプション売上比率",
-      "change_risk": "medium",
-      "tag_history": [
-        {
-          "tag": "adbe:SubscriptionMember",
-          "valid_from": "2010-01-01",
-          "valid_to": null
-        }
-      ],
-      "fallback_tags": [],
-      "fallback_action": "alert",
-      "revenue_tag": "us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax",
-      "dimension": "us-gaap:StatementBusinessSegmentsAxis"
+      "revenue_tag": "us-gaap:Revenues",
+      "dimension": "srt:StatementGeographicalAxis"
     }
   ],
-  "APGE": [
-    {
-      "kpi_name": "現金及び現金等価物残高",
-      "change_risk": "medium",
-      "tag_history": [
-        {
-          "tag": "",
-          "valid_from": "2010-01-01",
-          "valid_to": null
-        }
-      ],
-      "fallback_tags": [],
-      "fallback_action": "alert",
-      "revenue_tag": "us-gaap:CashAndCashEquivalentsAtCarryingValue",
-      "dimension": ""
-    },
-    {
-      "kpi_name": "研究開発費",
-      "change_risk": "medium",
-      "tag_history": [
-        {
-          "tag": "",
-          "valid_from": "2010-01-01",
-          "valid_to": null
-        }
-      ],
-      "fallback_tags": [],
-      "fallback_action": "alert",
-      "revenue_tag": "us-gaap:ResearchAndDevelopmentExpense",
-      "dimension": ""
-    },
-    {
-      "kpi_name": "営業活動によるキャッシュフロー",
-      "change_risk": "medium",
-      "tag_history": [
-        {
-          "tag": "",
-          "valid_from": "2010-01-01",
-          "valid_to": null
-        }
-      ],
-      "fallback_tags": [],
-      "fallback_action": "alert",
-      "revenue_tag": "us-gaap:NetCashProvidedByUsedInOperatingActivities",
-      "dimension": ""
-    },
-    {
-      "kpi_name": "一般管理費",
-      "change_risk": "medium",
-      "tag_history": [
-        {
-          "tag": "",
-          "valid_from": "2010-01-01",
-          "valid_to": null
-        }
-      ],
-      "fallback_tags": [],
-      "fallback_action": "alert",
-      "revenue_tag": "us-gaap:GeneralAndAdministrativeExpense",
-      "dimension": ""
-    }
-  ],
+  "APGE": [],
   "APP": [
     {
-      "kpi_name": "広告売上成長率",
+      "kpi_name": "米国売上高",
       "change_risk": "medium",
       "tag_history": [
         {
-          "tag": "app:AdvertisingMember",
+          "tag": "country:US",
           "valid_from": "2010-01-01",
           "valid_to": null
         }
@@ -530,14 +409,14 @@
       "fallback_tags": [],
       "fallback_action": "alert",
       "revenue_tag": "us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax",
-      "dimension": "us-gaap:StatementBusinessSegmentsAxis"
+      "dimension": "srt:StatementGeographicalAxis"
     },
     {
-      "kpi_name": "アプリ売上成長率",
+      "kpi_name": "米国以外売上高",
       "change_risk": "medium",
       "tag_history": [
         {
-          "tag": "app:AppsMember",
+          "tag": "us-gaap:NonUsMember",
           "valid_from": "2010-01-01",
           "valid_to": null
         }
@@ -545,46 +424,16 @@
       "fallback_tags": [],
       "fallback_action": "alert",
       "revenue_tag": "us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax",
-      "dimension": "us-gaap:StatementBusinessSegmentsAxis"
-    },
-    {
-      "kpi_name": "総売上成長率",
-      "change_risk": "medium",
-      "tag_history": [
-        {
-          "tag": "",
-          "valid_from": "2010-01-01",
-          "valid_to": null
-        }
-      ],
-      "fallback_tags": [],
-      "fallback_action": "alert",
-      "revenue_tag": "us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax",
-      "dimension": ""
-    },
-    {
-      "kpi_name": "Adjusted EBITDAマージン",
-      "change_risk": "medium",
-      "tag_history": [
-        {
-          "tag": "",
-          "valid_from": "2010-01-01",
-          "valid_to": null
-        }
-      ],
-      "fallback_tags": [],
-      "fallback_action": "alert",
-      "revenue_tag": "us-gaap:NetIncomeLoss",
-      "dimension": ""
+      "dimension": "srt:StatementGeographicalAxis"
     }
   ],
   "CELH": [
     {
-      "kpi_name": "売上高成長率",
+      "kpi_name": "北米売上",
       "change_risk": "medium",
       "tag_history": [
         {
-          "tag": "",
+          "tag": "srt:NorthAmericaMember",
           "valid_from": "2010-01-01",
           "valid_to": null
         }
@@ -592,153 +441,63 @@
       "fallback_tags": [],
       "fallback_action": "alert",
       "revenue_tag": "us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax",
-      "dimension": ""
-    },
-    {
-      "kpi_name": "株主資本成長率",
-      "change_risk": "medium",
-      "tag_history": [
-        {
-          "tag": "",
-          "valid_from": "2010-01-01",
-          "valid_to": null
-        }
-      ],
-      "fallback_tags": [],
-      "fallback_action": "alert",
-      "revenue_tag": "us-gaap:StockholdersEquity",
-      "dimension": ""
-    },
-    {
-      "kpi_name": "粗利益率",
-      "change_risk": "medium",
-      "tag_history": [
-        {
-          "tag": "",
-          "valid_from": "2010-01-01",
-          "valid_to": null
-        }
-      ],
-      "fallback_tags": [],
-      "fallback_action": "alert",
-      "revenue_tag": "us-gaap:GrossProfit",
-      "dimension": ""
-    },
-    {
-      "kpi_name": "営業キャッシュフロー",
-      "change_risk": "medium",
-      "tag_history": [
-        {
-          "tag": "",
-          "valid_from": "2010-01-01",
-          "valid_to": null
-        }
-      ],
-      "fallback_tags": [],
-      "fallback_action": "alert",
-      "revenue_tag": "us-gaap:NetCashProvidedByUsedInOperatingActivities",
-      "dimension": ""
-    },
-    {
-      "kpi_name": "北米売上成長率",
-      "change_risk": "medium",
-      "tag_history": [
-        {
-          "tag": "celh:NorthAmericaMember",
-          "valid_from": "2010-01-01",
-          "valid_to": null
-        }
-      ],
-      "fallback_tags": [],
-      "fallback_action": "alert",
-      "revenue_tag": "us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax",
-      "dimension": "us-gaap:StatementBusinessSegmentsAxis"
-    },
-    {
-      "kpi_name": "国際売上成長率",
-      "change_risk": "medium",
-      "tag_history": [
-        {
-          "tag": "celh:InternationalMember",
-          "valid_from": "2010-01-01",
-          "valid_to": null
-        }
-      ],
-      "fallback_tags": [],
-      "fallback_action": "alert",
-      "revenue_tag": "us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax",
-      "dimension": "us-gaap:StatementBusinessSegmentsAxis"
+      "dimension": "srt:StatementGeographicalAxis"
     }
   ],
   "SOUN": [
     {
-      "kpi_name": "総売上高成長率",
+      "kpi_name": "Hosted Services売上成長率",
       "change_risk": "medium",
       "tag_history": [
         {
-          "tag": "",
+          "tag": "soun:HostedServicesMember",
           "valid_from": "2010-01-01",
           "valid_to": null
         }
       ],
       "fallback_tags": [],
       "fallback_action": "alert",
-      "revenue_tag": "us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax",
-      "dimension": ""
+      "revenue_tag": "us-gaap:RevenueFromContractWithCustomerIncludingAssessedTax",
+      "dimension": "srt:ProductOrServiceAxis"
     },
     {
-      "kpi_name": "自動車向け売上成長率",
+      "kpi_name": "Licensing売上成長率",
       "change_risk": "medium",
       "tag_history": [
         {
-          "tag": "soun:AutomotiveSegmentMember",
+          "tag": "soun:LicensingMember",
           "valid_from": "2010-01-01",
           "valid_to": null
         }
       ],
       "fallback_tags": [],
       "fallback_action": "alert",
-      "revenue_tag": "us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax",
-      "dimension": "us-gaap:StatementBusinessSegmentsAxis"
+      "revenue_tag": "us-gaap:RevenueFromContractWithCustomerIncludingAssessedTax",
+      "dimension": "srt:ProductOrServiceAxis"
     },
     {
-      "kpi_name": "レストラン・IoT売上成長率",
+      "kpi_name": "米国売上成長率",
       "change_risk": "medium",
       "tag_history": [
         {
-          "tag": "soun:RestaurantAndIoTSegmentMember",
+          "tag": "country:US",
           "valid_from": "2010-01-01",
           "valid_to": null
         }
       ],
       "fallback_tags": [],
       "fallback_action": "alert",
-      "revenue_tag": "us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax",
-      "dimension": "us-gaap:StatementBusinessSegmentsAxis"
-    },
-    {
-      "kpi_name": "ARR（年間経常収益）",
-      "change_risk": "medium",
-      "tag_history": [
-        {
-          "tag": "",
-          "valid_from": "2010-01-01",
-          "valid_to": null
-        }
-      ],
-      "fallback_tags": [],
-      "fallback_action": "alert",
-      "revenue_tag": "us-gaap:ContractWithCustomerLiabilityCurrent",
-      "dimension": ""
+      "revenue_tag": "us-gaap:RevenueFromContractWithCustomerIncludingAssessedTax",
+      "dimension": "srt:StatementGeographicalAxis"
     }
   ],
   "CRWV": [
     {
-      "kpi_name": "総売上高成長率",
+      "kpi_name": "米国売上高成長率",
       "change_risk": "medium",
       "tag_history": [
         {
-          "tag": "crwv:ConsolidatedMember",
+          "tag": "country:US",
           "valid_from": "2010-01-01",
           "valid_to": null
         }
@@ -746,14 +505,14 @@
       "fallback_tags": [],
       "fallback_action": "alert",
       "revenue_tag": "us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax",
-      "dimension": "us-gaap:StatementBusinessSegmentsAxis"
+      "dimension": "srt:StatementGeographicalAxis"
     },
     {
-      "kpi_name": "Commercial売上成長率",
+      "kpi_name": "米国以外売上高成長率",
       "change_risk": "medium",
       "tag_history": [
         {
-          "tag": "crwv:CommercialSegmentMember",
+          "tag": "us-gaap:NonUsMember",
           "valid_from": "2010-01-01",
           "valid_to": null
         }
@@ -761,52 +520,7 @@
       "fallback_tags": [],
       "fallback_action": "alert",
       "revenue_tag": "us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax",
-      "dimension": "us-gaap:StatementBusinessSegmentsAxis"
-    },
-    {
-      "kpi_name": "Government売上成長率",
-      "change_risk": "medium",
-      "tag_history": [
-        {
-          "tag": "crwv:GovernmentSegmentMember",
-          "valid_from": "2010-01-01",
-          "valid_to": null
-        }
-      ],
-      "fallback_tags": [],
-      "fallback_action": "alert",
-      "revenue_tag": "us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax",
-      "dimension": "us-gaap:StatementBusinessSegmentsAxis"
-    },
-    {
-      "kpi_name": "Gross Margin",
-      "change_risk": "medium",
-      "tag_history": [
-        {
-          "tag": "",
-          "valid_from": "2010-01-01",
-          "valid_to": null
-        }
-      ],
-      "fallback_tags": [],
-      "fallback_action": "alert",
-      "revenue_tag": "us-gaap:GrossProfit",
-      "dimension": ""
-    },
-    {
-      "kpi_name": "Operating Cash Flow成長率",
-      "change_risk": "medium",
-      "tag_history": [
-        {
-          "tag": "",
-          "valid_from": "2010-01-01",
-          "valid_to": null
-        }
-      ],
-      "fallback_tags": [],
-      "fallback_action": "alert",
-      "revenue_tag": "us-gaap:NetCashProvidedByUsedInOperatingActivities",
-      "dimension": ""
+      "dimension": "srt:StatementGeographicalAxis"
     }
   ]
 }

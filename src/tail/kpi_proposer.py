@@ -26,7 +26,7 @@ import re
 import time
 import argparse
 import requests
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from zoneinfo import ZoneInfo
 from typing import Optional, Dict, Any, List
 
@@ -38,8 +38,14 @@ if repo_root not in sys.path:
     sys.path.insert(0, repo_root)
 from src.tail.thesis_utils import thesis_narrative_fields  # noqa: E402
 from src.tail.xbrl_segment_fetcher import (  # noqa: E402
-    get_10q_filings, download_xbrl, extract_segment_members,
+    get_10q_filings, download_xbrl, extract_segment_members, parse_and_extract,
 )
+from common.sec_data.fetcher import load_company_facts  # noqa: E402
+
+# xbrl_tag（us-gaap概念）の実在確認に使う「直近」の基準（日数）。
+# 730日（約2年）より古い提出にしか出現しない概念は対象外とする
+# （2026-08-19⑦、[[TAIL-XBRL-MEMBER-VALIDATION-GAP-1]]対応）。
+_RECENT_CONCEPT_WINDOW_DAYS = 730
 
 # 実XBRLタグ抽出で「セグメント区分」とみなすディメンションのローカル名
 # キーワード（大文字小文字区別なし）。extract_segment_members()が返す
@@ -137,12 +143,23 @@ def load_kpi_map() -> Dict[str, Any]:
 
 
 def load_cik(ticker: str) -> Optional[str]:
+    """config/cik_lookup.csvからCIKを読む。SEC submissions APIは10桁
+    ゼロ埋めのCIKを要求するため、常に`.zfill(10)`で正規化して返す
+    （2026-08-19⑦発見・修正: CRWVの行のみCIKが未パディング
+    〈"1769628"〉で登録されており、これが原因でget_10q_filings()が
+    `data.sec.gov/submissions/CIK1769628.json`という誤ったURLを叩いて
+    404で失敗していた。cik_lookup.csv全105行を確認し、未パディングは
+    CRWV 1件のみと確認済み——他行はxbrl_segment_fetcher.py::get_cik()
+    と同じ10桁ゼロ埋め形式で登録されている。CSV自体は修正せず、
+    読み込み側で正規化することで対応した）。
+    """
     if not os.path.exists(CIK_LOOKUP_PATH):
         return None
     with open(CIK_LOOKUP_PATH, encoding="utf-8") as f:
         for row in csv.DictReader(f):
             if row.get("ticker", "").upper() == ticker.upper():
-                return row.get("cik", "").strip()
+                cik = row.get("cik", "").strip()
+                return cik.zfill(10) if cik else None
     return None
 
 
@@ -195,6 +212,47 @@ def fetch_real_segment_tags(ticker: str, cik: Optional[str]) -> List[Dict[str, s
     return kept
 
 
+def fetch_real_us_gaap_concepts(ticker: str) -> List[str]:
+    """`company_facts.json`（ローカル既存ファイル、新規取得なし）から、
+    この企業が実際に使用しているus-gaap概念名の一覧を返す。
+
+    直近`_RECENT_CONCEPT_WINDOW_DAYS`（730日≒2年）以内に`filed`された
+    エントリを持つ概念のみに絞り込む（626件規模になりうる全概念を
+    そのままプロンプトへ埋め込むのは非現実的なため）。絞り込みの
+    前後件数を必ず表示する（沈黙除外にしないため、2026-08-19⑦、
+    [[TAIL-XBRL-MEMBER-VALIDATION-GAP-1]]対応）。
+
+    company_facts.jsonが存在しない場合は空リストを返す。
+    """
+    company_facts = load_company_facts(ticker)
+    if not company_facts:
+        return []
+
+    all_concepts = company_facts.get("facts", {}).get("us-gaap", {})
+    cutoff = (date.today() - timedelta(days=_RECENT_CONCEPT_WINDOW_DAYS)).isoformat()
+
+    recent: List[str] = []
+    for name, cdata in all_concepts.items():
+        found = False
+        for entries in cdata.get("units", {}).values():
+            for e in entries:
+                if e.get("filed", "") >= cutoff:
+                    found = True
+                    break
+            if found:
+                break
+        if found:
+            recent.append(name)
+
+    recent.sort()
+    print(
+        f"  us-gaap概念: {len(recent)}件を抽出"
+        f"（全{len(all_concepts)}件中、直近{_RECENT_CONCEPT_WINDOW_DAYS}日"
+        f"〈約2年〉以内の提出に出現しない{len(all_concepts) - len(recent)}件を対象外）"
+    )
+    return recent
+
+
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # プロンプト構築
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -204,6 +262,7 @@ def build_kpi_prompt(
     cik: Optional[str] = None,
     existing_kpi_map: Optional[List[Dict[str, Any]]] = None,
     real_segment_tags: Optional[List[Dict[str, str]]] = None,
+    real_us_gaap_concepts: Optional[List[str]] = None,
 ) -> str:
     ticker  = thesis.get("ticker", "")
     cik_str = cik or "不明"
@@ -254,6 +313,30 @@ xbrl_memberを伴う指標）は提案しないでください。** 全社ベー
 （xbrl_dimension: null, xbrl_member: null）のみを提案してください。
 """
 
+    # 実us-gaap概念一覧セクション（2026-08-19⑦、[[TAIL-XBRL-MEMBER-
+    # VALIDATION-GAP-1]]対応）。dimension/memberの精度は改善したが
+    # xbrl_tag（概念そのもの）が実在しないタグとして提案される問題が
+    # 別途判明したため、company_facts.jsonから実際に使用されている
+    # 概念一覧も提示する。**ただしこれだけでは不十分**——タグ・member
+    # 双方が個別に実在しても、その組み合わせのファクトが存在するとは
+    # 限らないため、登録前に本番の取得経路で実際に値が取れるかを
+    # 別途検証する（update_tail_kpi_map()側、事例5の原則）。
+    if real_us_gaap_concepts:
+        concepts_text = ", ".join(real_us_gaap_concepts)
+        concepts_section = f"""
+## この企業が実際に使用しているus-gaap概念一覧（company_facts.jsonより抽出、直近2年）
+{concepts_text}
+
+**`xbrl_tag`は必ず上記一覧の中（`us-gaap:`を付けた形）から選んで
+ください。一覧に無い概念名を記憶や推測で生成しないこと。**
+"""
+    else:
+        concepts_section = """
+## us-gaap概念一覧の実データ
+取得できませんでした。標準的によく使われる概念（Revenues・
+OperatingIncomeLoss・NetIncomeLoss等）から選んでください。
+"""
+
     return f"""## 銘柄: {ticker}
 ## CIK: {cik_str}
 ## 投資テーゼ
@@ -261,7 +344,7 @@ xbrl_memberを伴う指標）は提案しないでください。** 全社ベー
 
 ## エグジット条件
 {exit_guide_text}
-{existing_section}{segment_tags_section}
+{existing_section}{segment_tags_section}{concepts_section}
 ## 以下のJSON形式でKPIを5〜8個提案してください:
 {{
   "proposed_kpis": [
@@ -339,30 +422,116 @@ def post_process_proposals(ticker: str, kpis: List[Dict[str, Any]]) -> List[Dict
     return kpis
 
 
+def validate_kpis_fetchable(
+    cik: Optional[str],
+    kpis: List[Dict[str, Any]],
+    real_segment_tags: Optional[List[Dict[str, str]]] = None,
+) -> tuple:
+    """auto_fetchable=trueの提案KPIについて、**本番の取得経路
+    （`xbrl_segment_fetcher.py::parse_and_extract()`をそのまま呼ぶ、
+    検証用の簡易版は書き起こさない）で直近1四半期分のXBRLに対して
+    実際に値が取れるかを検証する**（2026-08-19⑦、事例5の原則を
+    KPI登録に適用、[[TAIL-XBRL-MEMBER-VALIDATION-GAP-1]]対応）。
+
+    実タグ一覧の提示だけでは、dimension/memberの一致率が100%に
+    改善しても実際の値取得は0件のまま——という実測結果を受けた
+    設計変更。タグ・memberが個別に実在してもその組み合わせのファクトが
+    存在するとは限らないため、個別の存在照合ではなく本番の抽出関数
+    そのものを1四半期分だけ実行して判定する。
+
+    Returns: (passed_kpis, rejected) のタプル。
+      passed_kpis: 値が取得できたKPI（元のdict）のリスト
+      rejected: [{"kpi": <元のdict>, "reason": <却下理由>}] のリスト
+        reasonは以下のいずれか:
+        - "検証不能（10-Q取得失敗）" / "検証不能（XBRL取得失敗）"
+        - "非セグメント指標（構造的制約、xbrl_segment_fetcher.pyは
+          非ディメンション事実を取得できない、
+          [[TAIL-XBRL-SEGMENT-FETCHER-NONDIMENSIONED-GAP-1]]）"
+        - "member不在（実XBRLに存在しないdimension/member）"
+        - "tag不在（実XBRLに存在しない概念）"
+        - "組み合わせ不在（tag・memberは個別に実在するが該当ファクト
+          なし）"
+    """
+    auto_kpis = [k for k in kpis if k.get("auto_fetchable") and k.get("xbrl_tag")]
+    if not auto_kpis:
+        return [], []
+    if not cik:
+        return [], [{"kpi": k, "reason": "検証不能（CIK不明）"} for k in auto_kpis]
+
+    filings = get_10q_filings(cik, n=1)
+    if not filings:
+        return [], [{"kpi": k, "reason": "検証不能（10-Q取得失敗）"} for k in auto_kpis]
+    f = filings[0]
+    period = f["period"]
+    xml_text = download_xbrl(cik, f["accn"], f["xml"])
+    if not xml_text:
+        return [], [{"kpi": k, "reason": "検証不能（XBRL取得失敗）"} for k in auto_kpis]
+
+    valid_dim_members = {(t["dimension"], t["member"]) for t in (real_segment_tags or [])}
+
+    kpi_list_for_extract = [
+        {
+            "kpi_name":     k["name"],
+            "dimension":    k.get("xbrl_dimension") or "",
+            "revenue_tag":  k.get("xbrl_tag"),
+            "fallback_tags": [],
+            "tag_history":  [{"tag": k.get("xbrl_member") or "", "valid_from": "2010-01-01", "valid_to": None}],
+        }
+        for k in auto_kpis
+    ]
+    results = parse_and_extract(xml_text, kpi_list_for_extract, period)
+
+    passed: List[Dict[str, Any]] = []
+    rejected: List[Dict[str, Any]] = []
+    for k in auto_kpis:
+        if results.get(k["name"]) is not None:
+            passed.append(k)
+            continue
+
+        xbrl_dim = k.get("xbrl_dimension")
+        xbrl_mem = k.get("xbrl_member")
+        if not xbrl_dim or not xbrl_mem:
+            reason = (
+                "非セグメント指標（構造的制約、xbrl_segment_fetcher.pyは"
+                "非ディメンション事実を取得できない、"
+                "[[TAIL-XBRL-SEGMENT-FETCHER-NONDIMENSIONED-GAP-1]]）"
+            )
+        elif (xbrl_dim, xbrl_mem) not in valid_dim_members:
+            reason = "member不在（実XBRLに存在しないdimension/member）"
+        else:
+            tag_local = (k.get("xbrl_tag") or "").split(":")[-1]
+            tag_exists = bool(tag_local) and re.search(
+                r'<[\w-]*:?' + re.escape(tag_local) + r'\b', xml_text
+            )
+            reason = (
+                "組み合わせ不在（tag・memberは個別に実在するが該当ファクトなし）"
+                if tag_exists else
+                "tag不在（実XBRLに存在しない概念）"
+            )
+        rejected.append({"kpi": k, "reason": reason})
+
+    return passed, rejected
+
+
 def update_tail_kpi_map(
     ticker: str,
     proposed_kpis: List[Dict[str, Any]],
-    real_segment_tags: Optional[List[Dict[str, str]]] = None,
 ) -> int:
-    """提案されたKPIをtail_kpi_map.jsonへ登録する。
+    """検証済み（`validate_kpis_fetchable()`を通過済み）のKPIを
+    tail_kpi_map.jsonへ登録する。呼び出し元が実取得検証を済ませて
+    いる前提のため、本関数側での追加照合は行わない（2026-08-19⑦、
+    dimension/member単体照合〈2026-08-19⑥実装〉から実取得検証方式へ
+    切り替え）。
 
-    `real_segment_tags`が渡された場合、セグメント指標（xbrl_dimension・
-    xbrl_memberが設定されているKPI）については、その(dimension, member)
-    が実際に企業のXBRLに存在するタグ一覧に含まれるかを照合する。
-    含まれない場合は**登録せず、却下したことを明示的に表示する**
-    （黙って捨てない、2026-08-19⑥、[[TAIL-XBRL-MEMBER-VALIDATION-
-    GAP-1]]対応）。`real_segment_tags`が`None`の場合は照合をスキップ
-    する（呼び出し元が実データを取得できなかった場合の後方互換）。
+    **全KPIが却下され`proposed_kpis`が空の場合も、`kpi_map[ticker] = []`
+    を明示的に書き込む**（キー自体を作らないと「未処理」なのか「0件」
+    なのか区別できないため、2026-08-19⑦、Step 2-3対応）。
     """
     if os.path.exists(KPI_MAP_PATH):
         with open(KPI_MAP_PATH, encoding="utf-8") as f:
             kpi_map: Dict[str, Any] = json.load(f)
     else:
         kpi_map = {}
-
-    valid_dim_members = None
-    if real_segment_tags is not None:
-        valid_dim_members = {(t["dimension"], t["member"]) for t in real_segment_tags}
 
     existing = kpi_map.get(ticker, [])
     existing_names = {e.get("kpi_name", "") for e in existing}
@@ -374,8 +543,6 @@ def update_tail_kpi_map(
 
     added = 0
     for kpi in proposed_kpis:
-        if not kpi.get("auto_fetchable"):
-            continue
         xbrl_tag  = kpi.get("xbrl_tag")
         xbrl_dim  = kpi.get("xbrl_dimension")
         xbrl_mem  = kpi.get("xbrl_member") or ""
@@ -385,15 +552,6 @@ def update_tail_kpi_map(
             continue
         if kpi_name in existing_names:
             continue
-
-        # セグメント指標のxbrl_member実在照合（却下は必ず表示する）
-        if xbrl_dim and xbrl_mem and valid_dim_members is not None:
-            if (xbrl_dim, xbrl_mem) not in valid_dim_members:
-                print(
-                    f"    [kpi_map] 却下（実XBRLに存在しないタグ）: "
-                    f"{kpi_name} → dimension={xbrl_dim}, member={xbrl_mem}"
-                )
-                continue
 
         tag_key = (xbrl_tag, xbrl_mem)
         if tag_key in existing_tag_members:
@@ -413,13 +571,15 @@ def update_tail_kpi_map(
         existing_names.add(kpi_name)
         existing_tag_members.add(tag_key)
         added += 1
-        print(f"    [kpi_map] 追加: {kpi_name} → {xbrl_tag}")
+        print(f"    [kpi_map] 追加（実取得検証済み）: {kpi_name} → {xbrl_tag}")
 
+    kpi_map[ticker] = existing
+    with open(KPI_MAP_PATH, "w", encoding="utf-8") as f:
+        json.dump(kpi_map, f, ensure_ascii=False, indent=2)
     if added > 0:
-        kpi_map[ticker] = existing
-        with open(KPI_MAP_PATH, "w", encoding="utf-8") as f:
-            json.dump(kpi_map, f, ensure_ascii=False, indent=2)
         print(f"  ✓ tail_kpi_map.json を更新 (+{added}件)")
+    else:
+        print(f"  ✓ tail_kpi_map.json を更新（{ticker}: 0件、空リストとして明示）")
 
     return added
 
@@ -450,7 +610,8 @@ def propose_kpis(ticker: str, dry_run: bool = False) -> Optional[str]:
     existing_kpi_map  = load_kpi_map().get(ticker, [])
     real_segment_tags = fetch_real_segment_tags(ticker, cik)
     print(f"  実XBRLセグメントタグ: {len(real_segment_tags)}件抽出")
-    prompt = build_kpi_prompt(thesis, cik, existing_kpi_map, real_segment_tags)
+    real_concepts = fetch_real_us_gaap_concepts(ticker)
+    prompt = build_kpi_prompt(thesis, cik, existing_kpi_map, real_segment_tags, real_concepts)
 
     if dry_run:
         print("\n=== [DRY-RUN] KPIプロンプト ===")
@@ -487,9 +648,33 @@ def propose_kpis(ticker: str, dry_run: bool = False) -> Optional[str]:
         l2n = f" [layer2_name={k['layer2_name']}]" if k.get("layer2_name") else ""
         print(f"    [{auto}] {k.get('name', '?')} — 警戒: {k.get('warning_threshold', '?')} ({hint}){l2n}")
 
-    # auto_fetchable=true のKPIをtail_kpi_map.jsonに自動追記
-    # （tag+member重複・実XBRLに存在しないセグメントタグはスキップ）
-    update_tail_kpi_map(ticker, kpis, real_segment_tags)
+    # 登録前の実取得検証（2026-08-19⑦、事例5の原則をKPI登録に適用）。
+    # 実タグ一覧の提示だけではdimension/member一致率100%でも実取得は
+    # 0件のままだったため、本番のparse_and_extract()を直近1四半期分の
+    # XBRLに対して実際に呼び、値が取れたKPIだけを登録する方式に変更。
+    passed_kpis, rejected = validate_kpis_fetchable(cik, kpis, real_segment_tags)
+    print(f"  実取得検証: 提案{len(kpis)}件中、自動取得対象"
+          f"{len(passed_kpis) + len(rejected)}件を検証 → "
+          f"通過{len(passed_kpis)}件 / 却下{len(rejected)}件")
+    for r in rejected:
+        k = r["kpi"]
+        print(
+            f"    [却下] {k.get('name', '?')} → tag={k.get('xbrl_tag')}, "
+            f"dimension={k.get('xbrl_dimension')}, member={k.get('xbrl_member')}"
+            f" — 理由: {r['reason']}"
+        )
+
+    # 却下記録を提案ファイルに残す（黙って捨てない、Step 2-2対応）。
+    if rejected:
+        output["rejected_kpis"] = [
+            {**r["kpi"], "rejection_reason": r["reason"]} for r in rejected
+        ]
+        with open(out_path, "w", encoding="utf-8") as f:
+            json.dump(output, f, ensure_ascii=False, indent=2)
+
+    # tail_kpi_map.jsonへは実取得検証を通過したKPIのみ登録する
+    # （手動KPI＝auto_fetchable=falseは元々tail_kpi_map.json登録対象外）。
+    update_tail_kpi_map(ticker, passed_kpis)
 
     return out_path
 

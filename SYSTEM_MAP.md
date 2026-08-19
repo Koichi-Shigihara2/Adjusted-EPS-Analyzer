@@ -1531,6 +1531,35 @@ TANUKI TAIL（docs/portfolio/tail/）← EDGAR RSS / Grok（KPI提案・四半�
 　　検知し、現状の失敗件数自体は都度WARNで可視化し続ける」設計とした。
 　　対応が進んだ場合はbaselineを引き下げて更新すること（引き上げる
 　　場合は新たな悪化を許容したことになるため理由を`_meta`に明記する）。
+　　**2026-08-19⑦、satellite分でこの運用を実際に一度行った**——下記
+　　「KPI登録は実取得検証を通過したものだけ」の対応によりsatelliteの
+　　取得失敗が0件になったため、baselineを39件→7件（satellite分は
+　　全て0に、core分はKPI未変更のため据え置き）へ引き下げた
+　　（`config/tail_kpi_fetch_baseline.json`の`_meta.update_reason`に
+　　理由を記録）。
+
+　　**KPI登録は「実取得検証を通過したものだけ」を原則とする
+　　（2026-08-19⑦、`[[TAIL-XBRL-MEMBER-VALIDATION-GAP-1]]`）**:
+　　`kpi_proposer.py`がGrokに提案させたKPI（`xbrl_tag`/
+　　`xbrl_dimension`/`xbrl_member`）を、実際にXBRLへ存在するかの
+　　個別照合（タグ一覧・member一覧の提示、2026-08-19⑥実装）だけでは
+　　不十分だった——タグ・memberが個別に実在してもその組み合わせの
+　　ファクトが存在するとは限らず、実測ではdimension/member一致率が
+　　100%に改善しても実際のKPI値取得は0件のままだった。そのため
+　　**`config/tail_kpi_map.json`へ登録する前に、本番の取得経路
+　　（`xbrl_segment_fetcher.py::parse_and_extract()`をそのまま呼ぶ）
+　　で直近1四半期分のXBRLに対して実際に値が取れるか検証し、取れた
+　　KPIだけを登録する**方式（`validate_kpis_fetchable()`）に切り替
+　　えた。値が取れなかったKPIは登録せず、却下理由（tag不在／member
+　　不在／組み合わせ不在／非セグメント指標の構造的制約／検証不能）を
+　　必ず表示し、`kpi_proposals/{ticker}_proposal.json`の
+　　`rejected_kpis`にも記録する（黙って捨てない）。全KPIが却下された
+　　銘柄は`tail_kpi_map.json`に`[]`を明示的に書き込み「未処理」と
+　　「0件」を区別する。実測では satellite 7銘柄で提案41件中14件が
+　　検証を通過・登録され、本番`xbrl_segment_fetcher.py`実行で14件
+　　全てが実際に値取得成功（登録前はsatellite 0件だった）。事例5の
+　　原則（部分の代理判定ではなく本番の入口から出口まで通す）をKPI
+　　登録という別の場面に適用した実例。
 
 ---
 

@@ -1,20 +1,23 @@
 {
   "_meta": {
     "purpose": "CHECK-38（report_consistency_check.py）が使うKPI取得失敗件数のbaseline。銘柄ごとのmissing_kpis件数がこの値を超えたらNGとする。",
-    "この数値は許容値ではなく是正目標である": "39件（52件中）という失敗件数は正常な状態ではない。[[TAIL-XBRL-SEGMENT-FETCHER-NONDIMENSIONED-GAP-1]]・[[TAIL-XBRL-MEMBER-VALIDATION-GAP-1]]の対応が進めば下がっていくべき数値であり、この値のまま固定して忘れてよいものではない。対応が進んだ場合はbaselineを引き下げて更新すること（引き上げは新たな悪化を許容したことになるため、引き上げる場合は理由をnoteに明記すること）。",
+    "この数値は許容値ではなく是正目標である": "この値のまま固定して忘れてよいものではない。対応が進めばbaselineを引き下げて更新すること（引き上げは新たな悪化を許容したことになるため、引き上げる場合は理由をここに明記すること）。",
     "recorded_at": "2026-08-19",
-    "recorded_by": "[[TAIL-XBRL-SEGMENT-FETCHER-NONDIMENSIONED-GAP-1]]実測（Step 1範囲確定調査、docs/portfolio/tail/data/kpi/{ticker}_layer2.jsonのmissing_kpis実測値）",
+    "updated_at": "2026-08-19⑦",
+    "update_reason": "satellite7銘柄について、登録前に本番のparse_and_extract()で実際に値が取れるか検証し、取れたKPIだけを登録する方式（[[TAIL-XBRL-MEMBER-VALIDATION-GAP-1]]対応）に切り替えた結果、satelliteの取得失敗が33件→0件に解消（提案されたが値が取れなかったKPIは登録自体をしないため、missing_kpisに現れなくなった）。総登録KPI件数も52件→33件に減少（実際に取得可能な件数だけを登録する設計へ変更したため）。この引き下げはbaselineが「是正目標」であることを実際に運用した初回の更新。core 3銘柄（PLTR/SOFI/TSLA）は既存KPIを上書きしていないため据え置き。",
     "total_missing_at_recording": 39,
-    "total_registered_at_recording": 52
+    "total_registered_at_recording": 52,
+    "total_missing_after_update": 7,
+    "total_registered_after_update": 33
   },
-  "ADBE": {"missing_count": 5, "recorded_at": "2026-08-19"},
-  "APGE": {"missing_count": 4, "recorded_at": "2026-08-19"},
-  "APP":  {"missing_count": 3, "recorded_at": "2026-08-19"},
-  "CELH": {"missing_count": 6, "recorded_at": "2026-08-19"},
-  "CRWV": {"missing_count": 5, "recorded_at": "2026-08-19"},
-  "NVDA": {"missing_count": 5, "recorded_at": "2026-08-19"},
-  "PLTR": {"missing_count": 3, "recorded_at": "2026-08-19"},
-  "SOFI": {"missing_count": 4, "recorded_at": "2026-08-19"},
-  "SOUN": {"missing_count": 4, "recorded_at": "2026-08-19"},
-  "TSLA": {"missing_count": 0, "recorded_at": "2026-08-19"}
+  "ADBE": {"missing_count": 0, "recorded_at": "2026-08-19⑦", "note": "3件登録・3件とも実取得検証を通過（実測: 値取得3/3成功）"},
+  "APGE": {"missing_count": 0, "recorded_at": "2026-08-19⑦", "note": "0件登録（4提案とも実取得検証で却下、構造的制約のため）"},
+  "APP":  {"missing_count": 0, "recorded_at": "2026-08-19⑦", "note": "2件登録・2件とも実取得検証を通過（実測: 値取得2/2成功）"},
+  "CELH": {"missing_count": 0, "recorded_at": "2026-08-19⑦", "note": "1件登録・1件とも実取得検証を通過（実測: 値取得1/1成功）"},
+  "CRWV": {"missing_count": 0, "recorded_at": "2026-08-19⑦", "note": "2件登録・2件とも実取得検証を通過（実測: 値取得2/2成功）"},
+  "NVDA": {"missing_count": 0, "recorded_at": "2026-08-19⑦", "note": "3件登録・3件とも実取得検証を通過（実測: 値取得3/3成功）"},
+  "PLTR": {"missing_count": 3, "recorded_at": "2026-08-19", "note": "core、既存KPIを上書きせず据え置き"},
+  "SOFI": {"missing_count": 4, "recorded_at": "2026-08-19", "note": "core、既存KPIを上書きせず据え置き"},
+  "SOUN": {"missing_count": 0, "recorded_at": "2026-08-19⑦", "note": "3件登録・3件とも実取得検証を通過（実測: 値取得3/3成功）"},
+  "TSLA": {"missing_count": 0, "recorded_at": "2026-08-19", "note": "core、既存KPIを上書きせず据え置き"}
 }

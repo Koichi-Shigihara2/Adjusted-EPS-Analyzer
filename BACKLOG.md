@@ -6539,16 +6539,24 @@ tail_kpi_map.json`のスキーマ（`kpi_name`/`change_risk`/`tag_history`/
 
 ---
 
-### [TAIL-XBRL-MEMBER-VALIDATION-GAP-1] kpi_proposer.pyがGrok生成のxbrl_memberタグ名を実XBRLと照合せずtail_kpi_map.jsonへ登録している — dimension/member照合は実装完了、ただしxbrl_tag（概念自体）の精度という別の壁が残存
-**優先度:** 中（dimension/member照合は解消したが、値取得という
-最終目的は未達のまま——xbrl_tag自体の精度という新たな壁を発見）
-**分類:** バグ / TAIL自動化パイプライン / 未検証AI出力への依存
+### ✅ [TAIL-XBRL-MEMBER-VALIDATION-GAP-1] kpi_proposer.pyがGrok生成のタグ名を検証せず登録していた問題 — 登録前の実取得検証方式への切り替えで解消（satellite 0件→14件）
+**状態:** 完了（2026-08-19⑦。「タグ一覧を提示して選ばせる」方式では
+値取得0件のままだったが、「登録前に本番の取得経路で実際に値が取れる
+か試し、取れたものだけ登録する」方式〈事例5の原則をKPI登録に適用〉に
+切り替えた結果、satelliteで実際に値が取れるKPIが0件→14件に増加した
+ことを`xbrl_segment_fetcher.py`本番実行で実測確認）
+**優先度:** 中→解消（satelliteの取得失敗は0件、coreは既存KPI未変更の
+ため従来通り一部残存——`[[TAIL-XBRL-SEGMENT-FETCHER-NONDIMENSIONED-
+GAP-1]]`として別途管理）
+**分類:** バグ / TAIL自動化パイプライン / 未検証AI出力への依存 → 解消
 **登録日:** 2026-08-19⑤
 **更新日:** 2026-08-19⑥（対応方針(a)を実装〈実XBRLタグに基づくKPI
 提案への切り替え〉。NVDAで実測検証したところdimension/member一致率は
 100%に改善したが、実際のKPI値取得は0/6のまま改善せず。原因はxbrl_tag
-〈概念〉自体の精度という別の問題と判明、下記参照。**未完了のまま
-残す**）
+〈概念〉自体の精度という別の問題と判明。**一致率の改善を成果として
+記録せず、値が取れていないという事実の方を記録し未完了のまま残した**）
+→ 2026-08-19⑦（登録前の実取得検証方式に切り替え、satelliteで14件の
+実取得成功を確認。完了として処理）
 **発見:** `[[TAIL-XBRL-SEGMENT-FETCHER-NONDIMENSIONED-GAP-1]]`調査中に
 NVDA「ゲーミング売上成長率」の`xbrl_member: "nvda:GamingMember"`が
 実際のXBRLタグ`nvda:GraphicsSegmentMember`と一致しないことを発見。
@@ -6652,29 +6660,72 @@ dimension・memberの精度は解決したが、xbrl_tag自体の精度という
 いずれも取得失敗）へ差し戻した——新旧どちらも値が取得できない点で
 差がなく、検証用の一時的な登録を製品データとして残す理由がないため。
 
-**本項目は「完了」としない。** dimension/member照合の実装・実測検証は
-完了したが、ユーザーが最終的に求めていた「KPI値が実際に取れる」ことは
-達成されておらず、xbrl_tag自体の精度問題（下記関連）が新たな未解決
-課題として残っている。
+当時は「本項目は完了としない」と明記し、一致率の改善（100%）を成果
+として書かず、値が取得できていないという事実の方を記録した
+（2026-08-19⑥時点の判断、下記で覆った）。
 
-#### 対応方針（xbrl_tag精度問題、未定）
-- (a) `kpi_proposer.py`に、`revenue_tag`（xbrl_tag）についても実際に
-  そのコンテキストで使われている概念タグをXBRLから抽出して提示する
-  仕組みを追加する（`extract_segment_members()`と同様、コンテキストに
-  紐づく実際のタグ名をXMLから機械的に収集する）
-- (b) `xbrl_segment_fetcher.py`側に、指定タグで見つからない場合の
-  フォールバック探索（同一コンテキストで実際に使われている別タグを
-  自動検出する）を追加する
-- (c) 優先度・着手要否はユーザー判断
+#### 方式転換: 登録前の実取得検証（2026-08-19⑦、対応方針を実装）
+タグ・member一覧の提示だけでは、個々のタグ・memberが実在してもその
+**組み合わせのファクトが存在するとは限らない**ため、個別の存在照合
+では不十分と判断し、方式そのものを変更した。**登録前に本番の取得経路
+（`xbrl_segment_fetcher.py::parse_and_extract()`をそのまま呼ぶ、検証
+専用の簡易版は書き起こさない）で実際に値が取れるか試し、取れたものだけ
+登録する**——事例5の原則（部分の代理判定ではなく本番の入口から出口
+まで通す）をKPI登録そのものに適用した。新設`validate_kpis_fetchable()`
+が直近1四半期分のXBRLに対して本番の抽出関数を実行し、値が取れなかった
+KPIは**登録せず、却下理由（tag不在／member不在／組み合わせ不在／
+非セグメント指標の構造的制約／検証不能）を必ず表示**する。却下記録は
+`kpi_proposals/{ticker}_proposal.json`の`rejected_kpis`にも残す
+（黙って捨てない）。全KPIが却下された銘柄は`tail_kpi_map.json`に
+`[]`を明示的に書き込み、「未処理」と「0件」を区別できるようにした。
+
+合わせて、`xbrl_tag`自体の精度問題にも対応した——`company_facts.json`
+（新規取得なし、ローカル既存ファイル）から直近2年以内に出現した
+us-gaap概念一覧（NVDA: 626件中279件に絞り込み、絞り込み基準は表示
+済み）を`build_kpi_prompt()`に埋め込み、「一覧の中からのみ`xbrl_tag`
+を選ぶこと」と指示した。
+
+#### 実測結果（2026-08-19⑦、satellite 7銘柄すべてで実施）
+NVDA単独で先行検証した後、satellite残り6銘柄（ADBE/APGE/APP/CELH/
+SOUN/CRWV）も実行。core 3銘柄（PLTR/SOFI/TSLA）の既存KPIは上書きせず
+現状維持。
+
+| ticker | 提案数 | 検証通過 | 却下 | 実取得成功（本番xbrl_segment_fetcher.py実行で確認） |
+|---|---|---|---|---|
+| NVDA | 6 | 3 | 3 | 3/3（100%） |
+| ADBE | 6 | 3 | 3 | 3/3（100%） |
+| APGE | 5 | 0 | 4※ | 0/0（登録0件） |
+| APP  | 6 | 2 | 4 | 2/2（100%） |
+| CELH | 6 | 1 | 5 | 1/1（100%） |
+| SOUN | 6 | 3 | 3 | 3/3（100%） |
+| CRWV | 6 | 2 | 4 | 2/2（100%） |
+
+※APGEは提案5件のうち1件が元々`auto_fetchable=false`（手動KPI）で
+検証対象外、残り4件全て却下。
+
+却下理由の内訳（satellite全体、22件): 非セグメント指標（構造的制約、
+`[[TAIL-XBRL-SEGMENT-FETCHER-NONDIMENSIONED-GAP-1]]`該当）が大半、
+CELHの「機能性エナジードリンク売上」・APPの「継続営業利益」の2件は
+「組み合わせ不在（tag・memberは個別に実在するが該当ファクトなし）」。
+
+**satellite合計: 登録14件、実取得成功14件（登録された分は100%成功）。**
+`xbrl_segment_fetcher.py`を7銘柄で本番実行し、NVDA/ADBE/APP/CELH/
+SOUN/CRWVは全て`layer2_complete: True`・`missing_kpis: []`を確認。
+**変更前（本項目の登録時点）はcore 12件・satellite 0件だったのに対し、
+変更後はcore 12件（不変）・satellite 14件、合計26件が実際に値を
+取得できるKPIとなった。**
+
+検証中に、`config/cik_lookup.csv`のCRWV行のみCIKが10桁ゼロ埋めされて
+いない（`"1769628"`）ため`get_10q_filings()`が404で失敗する問題も
+発見・修正した（`load_cik()`側で`.zfill(10)`により正規化。CSV全105行
+を確認し未パディングはCRWV 1件のみと確認済み、CSV自体は変更していない）。
 
 #### 関連
 - `[[TAIL-XBRL-SEGMENT-FETCHER-NONDIMENSIONED-GAP-1]]`（本問題の発見元。
-  非セグメント指標の構造的な取得不可とは別の、タグ精度という別種の
-  原因）
-
-#### 着手条件
-xbrl_tag精度問題への対応方針（上記(a)/(b)）をユーザーに確認してから
-着手すること。
+  非セグメント指標の構造的な取得不可は本項目の対応後も残存、却下理由
+  として引き続き検知される）
+- `config/tail_kpi_fetch_baseline.json`（satellite分をbaseline引き下げ
+  で更新済み、2026-08-19⑦）
 
 ---
 
