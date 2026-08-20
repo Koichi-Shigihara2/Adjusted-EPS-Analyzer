@@ -1,5 +1,55 @@
 # Claude Code 作業開始テンプレート
 
+最終更新: 2026-08-20（**`[[TAIL-XBRL-SEGMENT-FETCHER-NONDIMENSIONED-
+GAP-1]]`Step 4: coreへのLayer3適用＋全10銘柄レビュー再生成**、
+コミット`2378f5e86`。前日実装したsatellite向けLayer3機械的照合
+（`route_rejected_to_layer3()`）と同型の照合をcore 3銘柄
+（PLTR/SOFI/TSLA）の既存`missing_kpis`7件にも適用した。
+
+**実装**: `kpi_proposer.py::propose_kpis()`は再実行せず（Grokに
+既存core設定を作り直させると精度を壊すリスクがあるため）、
+`tail_kpi_map.json`の既存登録エントリの`revenue_tag`を`sec_concept_
+definitions.json`のcandidatesと直接照合し3件を`source: "layer3"`へ
+書き換え: PLTR株式報酬費用（`layer3_field`）・SOFI GAAP純利益
+（`layer3_field`）・PLTR営業利益率（`layer3_formula: "operating_
+income/revenue"`、除算のみ対応のformulaで表現可能と判定）。
+`xbrl_segment_fetcher.py`本番実行でmissing_kpis実測: PLTR 3→1、
+SOFI 4→3、TSLA 0→0（core計7→4）。PLTR株式報酬費用$201,592,000を
+生タグと突合し完全一致を確認。
+
+**意図的に未対応とした4件のうち2件が新規BACKLOG登録につながった**:
+PLTR希薄化後EPS成長率はYoY系列比較が必要だが現行`layer3_formula`は
+除算のみ対応で表現不能→`[[TAIL-LAYER3-FORMULA-YOY-UNSUPPORTED-1]]`
+新規登録。SOFI Technology Platform売上成長率は`revenue_tag`が文字列上
+Layer3の会社全体`revenue`フィールドと一致するが、`dimension`がセグ
+メント指標であるため意図的に除外——この過程で`route_rejected_to_
+layer3()`が`dimension`を確認せずタグ名だけで照合するため、satellite側
+に同型の誤同定（APP「継続営業利益」・CELH「機能性エナジードリンク
+売上」がいずれも会社全体データにすり替わっている）が既に2件実在する
+ことを発見し`[[TAIL-LAYER3-ROUTING-DIMENSION-BLIND-1]]`として新規
+登録した（本タスクでは回避したが、satellite側の既存2件は未修正のまま
+残っている）。
+
+**全10銘柄（ADBE/APGE/APP/CELH/CRWV/NVDA/PLTR/SOFI/SOUN/TSLA）の
+2026Q2レビューを再生成**。NVDAで先行確認し「KPIデータが一切ない」旨の
+文言が完全に消えたことを確認した上で残り9銘柄を実施。**recommendation
+が変わったのはAPGEのみ（EXIT→WATCH）**——旧レビューはKPIデータの
+完全欠如そのものをEXIT判定の直接根拠にしていた
+（`optimism_bias_warning: "データゼロ状態での保有継続は根拠なき楽観
+バイアスの典型例"`）が、新レビューは現金残高QoQ+243%・営業CF QoQ改善
+11.4%等の実データに基づきWATCHへ変化した。他9銘柄はrecommendation
+不変だが、satellite側は旧`summary`が全て「KPIデータが一切ない/提示
+されていない」で始まっていたのに対し、新`summary`は実データに基づく
+具体的な懸念・肯定材料の記述に全面的に置き換わった。TSLAは今回KPI
+変更がなくscoreも42点で完全に不変——対照確認として機能している。
+詳細な変化一覧はBACKLOG.md`[[TAIL-XBRL-SEGMENT-FETCHER-NONDIMENSIONED-
+GAP-1]]`「全10銘柄レビュー再生成」参照。
+
+検証: pytest 781 passed/2 known-failed（`[[TEST-STALE-IV-1]]`既知
+例外、回帰なし）、`audit.py` NG=0（既存🟡警告5銘柄は今回変更対象外）、
+`report_consistency_check.py --fail-on-ng` NG=0（WARN-38がPLTR/SOFIの
+新しいmissing_kpis件数に正しく追従していることを確認）。
+
 最終更新: 2026-08-19（**セッション終了時ブラッシュアップ・
 `986230663`以降のセッションサマリー**。BACKLOG棚卸し・
 `[[QUALITY-GATES-EPIC-1]]`本線化判断・本線3（ゲート1適用範囲拡大）の
