@@ -562,7 +562,7 @@ def route_rejected_to_layer3(
 
     **`xbrl_dimension`が設定されたKPI（セグメント/製品/地域別等の
     区分指標として提案されたもの）はLayer3へ振り替えない**
-    （2026-08-21、[[TAIL-LAYER3-ROUTING-DIMENSION-BLIND-1]]対応）。
+    （2026-08-20、[[TAIL-LAYER3-ROUTING-DIMENSION-BLIND-1]]対応）。
     Layer3の32フィールドはいずれも会社全体（非ディメンション）の
     集計値であり、`xbrl_tag`のローカル名だけで照合すると、区分別の
     指標として提案されたKPIに会社全体の値が誤って紐付いてしまう

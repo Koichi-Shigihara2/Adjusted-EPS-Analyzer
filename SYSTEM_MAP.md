@@ -510,7 +510,7 @@ CHECK-34では、この原則を**複数ファイルへ横展開する際の設�
 
 ---
 
-### DCF検証結果（validator.py）のCHECK-40接続（2026-08-23追記）
+### DCF検証結果（validator.py）のCHECK-40接続（2026-08-20⑤追記）
 
 TANUKI VALUATIONの`src/value/tanuki_valuation/validator.py::
 run_basic_checks()`は、`pipeline.py`実行時に全銘柄で4つの決定論的
@@ -535,7 +535,7 @@ CHECK-40（`_check_dcf_validation_failures()`）は、この沈黙を解消
 
 `config/dcf_validation_baseline.json`にCHECK-38と同じ設計
 （baseline＝許容値ではなく是正目標、超過時のみNG）でbaselineを
-記録。2026-08-23実測ではPASS67/WARN32/FAIL1（100銘柄）。**WARN32件は
+記録。2026-08-20⑤実測ではPASS67/WARN32/FAIL1（100銘柄）。**WARN32件は
 全件が`formula_verification`に集中しており、`validator.py`の
 `alpha_cap`固定値バグ（`[[VALIDATOR-ALPHA-CAP-STALE-1]]`）による
 偽陽性と判明**（本番`core_calculator.py`はセクター別alpha_capを
@@ -549,7 +549,7 @@ FCF恒久マイナス銘柄の負の理論株価を正しく検知したもの�
 いる値がどこかに埋もれていないかを確認する価値があるパターンとして
 記録する。
 
-**解決ロジックの一本化パターン（2026-08-20追記、`[[VALIDATOR-ALPHA-
+**解決ロジックの一本化パターン（2026-08-20⑥追記、`[[VALIDATOR-ALPHA-
 CAP-STALE-1]]`・`[[TEST-STALE-IV-1]]`修正）**: 上記WARN32件の原因は
 `validator.py::_extract_params()`が`alpha_cap`を常に`1.0`固定で
 読んでいたことだった（本番`core_calculator.py`はセクター別alpha_cap
@@ -1682,7 +1682,7 @@ TANUKI TAIL（docs/portfolio/tail/）← EDGAR RSS / Grok（KPI提案・四半�
 　　総合計は26件→50件に増加。1件（NVDAの`gross_profit`）を実際の
 　　決算生タグと手動突合し完全一致を確認済み。
 
-　　**dimensionガード（2026-08-21、`[[TAIL-LAYER3-ROUTING-DIMENSION-
+　　**dimensionガード（2026-08-20②、`[[TAIL-LAYER3-ROUTING-DIMENSION-
 　　BLIND-1]]`）**: `route_rejected_to_layer3()`の機械的照合は当初
 　　`xbrl_tag`のローカル名だけで判定しており、元の提案が持つ
 　　`xbrl_dimension`（セグメント/製品/地域別等の区分指標として

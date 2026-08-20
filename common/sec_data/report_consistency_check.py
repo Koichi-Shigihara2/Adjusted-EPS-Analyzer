@@ -977,7 +977,7 @@ def _check_dcf_validation_failures(tickers: list[str]) -> tuple[list[str], list[
     本番パイプライン実行時に既に算出している`{ticker}/latest.json`の
     `validation.overall`（PASS/WARN/FAIL）を検知する。
 
-    **発見経緯（2026-08-23、`[[QUALITY-GATES-EPIC-1]]`ゲート3棚卸しの
+    **発見経緯（2026-08-20、`[[QUALITY-GATES-EPIC-1]]`ゲート3棚卸しの
     追加調査）**: `validator.py::run_basic_checks()`は`pt_shares_
     consistency`（P_t/shares再計算突合）・`dcf_components`（DCF構成
     要素の合計突合）・`formula_verification`（α公式の教科書的再計算
