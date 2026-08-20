@@ -6705,14 +6705,14 @@ NCO・NIM）、および構造的制約が残る非セグメント指標につ�
 
 ---
 
-### [TAIL-LAYER3-ROUTING-DIMENSION-BLIND-1] route_rejected_to_layer3()がdimensionを確認せずタグ名だけで照合するため、セグメント/製品別指標に会社全体データを誤って紐付けるリスクがある
-**優先度:** 中（既存satellite実データに2件の実例あり。値そのものは
-Layer3から正しく取得できているため即座に誤情報とは言えないが、
-KPI名が示す意味〈特定セグメント/製品の指標〉と実際の値〈会社全体の
-集計値〉が食い違っており、レビュー生成AIやユーザーがKPI名を信じて
-読むと誤解する構造的リスクがある）
+### ✅ [TAIL-LAYER3-ROUTING-DIMENSION-BLIND-1] route_rejected_to_layer3()がdimensionを確認せずタグ名だけで照合する問題 — dimensionガード追加・既存2件の誤同定を是正して解消
+**状態:** 完了（2026-08-21。`route_rejected_to_layer3()`に`xbrl_
+dimension`非空ガードを追加し再発防止。既存誤同定2件〈APP・CELH〉を
+是正し、実害があった両銘柄のレビューを再生成。下記「対応（2026-08-21）」
+参照）
+**優先度:** 中→解消
 **分類:** データ品質 / TAIL自動化パイプライン / ラベルと実データの
-不整合
+不整合 → 解消
 **登録日:** 2026-08-20
 **発見:** `[[TAIL-XBRL-SEGMENT-FETCHER-NONDIMENSIONED-GAP-1]]`Step 4
 （core 3銘柄へのLayer3適用）実装中。SOFI「Technology Platform売上
@@ -6755,15 +6755,93 @@ Layer3適用では、登録エントリの`dimension`フィールドが空でな
 未変更、XBRL直接取得の失敗状態を維持）。詳細は
 `[[TAIL-XBRL-SEGMENT-FETCHER-NONDIMENSIONED-GAP-1]]`Step 4参照。
 
-#### 着手条件
-対応方針は2つ考えられるが、いずれも未実装・着手要否はユーザー判断待ち:
-(a) `route_rejected_to_layer3()`に`xbrl_dimension`非空ガードを追加し、
-セグメント/製品別指標のLayer3振替自体を機械的に禁止する（今回のcore
-対応と同型）。振替候補が減るため`rejected_count`が悪化する
-(b) 該当2件（APP「継続営業利益」・CELH「機能性エナジードリンク売上」）
-のKPI名を実態（会社全体指標）に合わせて改名する（値は変えず表示の
-誤解を解消）。実害の有無（レビュー内でこの2つのKPIが実際にどう
-言及されているか）を確認してから判断すること
+#### Step 1: 実害の確認（2026-08-21）
+修正前に、誤ったラベルが実際に投資判断の文章へ影響しているかを
+再生成済みレビュー（`docs/portfolio/tail/data/reviews/APP_2026Q2_
+review.json`・`CELH_2026Q2_review.json`、2026-08-20生成分）から
+確認した。**両銘柄とも実害あり**。
+
+**APP**（`継続営業利益`＝実際は会社全体`net_income`）:
+- `stage1.positives[0]`: 「継続営業利益YoY+109%と利益成長が加速」
+- `call2.five_perspectives.growth`: 「継続営業利益が2026Q1でYoY
+  +109.2%を示す一方、米国売上高のQoQ伸びが+9.1%に留まり…成長加速の
+  持続可能性に地域偏重の限界が現れ始めている」
+- `call2.thesis_questions[1]`: 「継続営業利益のYoY+109.2%が一時的な
+  広告市況によるものである可能性を排除した上で…」
+
+会社全体の純利益成長を「継続事業（Continuing Operations）区分」の
+成長として3箇所で言及しており、stage1の`positives`（health_score算出
+根拠の一部）に直接使われていた。
+
+**CELH**（`機能性エナジードリンク売上`＝実際は既存`売上収益`と同一の
+会社全体`revenue`）:
+- `call2.five_perspectives.business_model`: 「2026Q2北米売上790.7M
+  （QoQ+5.8%）と機能性エナジードリンク売上が売上収益のほぼ全量を
+  占める構造が継続する中…」
+
+「機能性エナジードリンク売上」と「売上収益」を別々の指標として
+比較する記述になっていたが、両者は同一フィールド（`revenue`）を
+参照する同じ値であり、実質的に自分自身と比較する無意味な記述に
+なっていた。
+
+#### Step 2: 2件の扱い（2026-08-21）
+2-1で重複確認した結果、判定が2銘柄で分かれた:
+- **APP**: `net_income`を参照する他のKPIは登録されておらず重複なし
+  → `kpi_name`を実態に合わせて`純利益（会社全体）`へ**改名**
+  （`layer3_field: net_income`は変更せず値は維持）
+- **CELH**: 既存の「売上収益」が既に同一の`revenue`フィールドを
+  参照しており完全重複 → 該当エントリを**削除**
+
+2-3: 元の提案（APP「継続営業利益＝Continuing Operations区分の利益」・
+CELH「機能性エナジードリンク＝Functional Energy Drinks製品区分の
+売上」）が持っていた分析上のニーズは今回の是正では満たされないため、
+両ティッカーの`kpi_proposals/{ticker}_proposal.json`の`rejected_kpis`
+へ元の提案内容を差し戻して記録した（「会社全体データで代用済み」と
+誤解されないようにするため）。
+
+#### Step 3: ガード追加・再スキャン（2026-08-21）
+`route_rejected_to_layer3()`に、元提案の`xbrl_dimension`が非空の
+KPIをLayer3振替の対象外とするガードを追加した（対象外にした場合は
+`[Layer3振替対象外] {KPI名}: セグメント指標のため（dimension=...）`
+を必ず出力し沈黙除外にしない）。
+
+**Step 3-3実測**: ガード追加後、現在`tail_kpi_map.json`に`source:
+"layer3"`で登録されている全KPI（core+satellite、27件）を対象に、
+元の`kpi_proposals`（satelliteのみ存在、coreは元々propose_kpis()を
+経由していないため対象外）の`xbrl_dimension`と突き合わせる横断
+確認を実施した結果、**dimensionが設定されていたのはAPP「継続営業
+利益」・CELH「機能性エナジードリンク売上」の2件のみ**で、他に同型の
+誤同定は見つからなかった。
+
+#### Step 4: 影響の是正（2026-08-21）
+`xbrl_segment_fetcher.py --ticker APP CELH`を本番実行し、KPI改名・
+削除後もmissing_kpisに変化がないことを確認: APP 6/6件取得（変化
+なし）、CELH 5/5件取得（登録数は6→5に減少したが全件成功で
+missing_kpisは引き続き0件）。
+
+Step 1で実害ありと判定したため、APP・CELHの2026Q2レビューを再生成:
+
+| ticker | 再生成前 | 再生成後 | recommendation変化 |
+|---|---|---|---|
+| APP | 72点 WATCH | 62点 WATCH | なし |
+| CELH | 62点 WATCH | 62点 WATCH | なし（点数も不変） |
+
+recommendationはいずれも変化なし。APPは10点低下——旧レビューの
+`positives`2件中1件が「継続営業利益YoY+109%」という誤ラベルの
+指標だったため、是正後は「純利益の大幅なYoY増加（+71.4%、
++109.2%）」という正確な記述に変わり、二重に強調されていた成長
+テーマが実態相応の評価に補正された。CELHは点数・recommendationとも
+不変——無意味な自己比較の記述が消え、北米売上・株主資本等の実質的な
+KPIのみで評価されるようになった（結果として評価の水準自体は
+変わらなかった）。新レビューで両KPI名（旧名）の言及は0件に消滅した
+ことを確認済み。
+
+#### Step 5: baseline訂正
+`config/tail_kpi_fetch_baseline.json`のAPP・CELH `rejected_count`を
+0→1へ**引き上げ**。`_meta.update_reason_2026_08_21`に、これは新たな
+悪化ではなく誤ったLayer3振替によって見かけ上「解決済み」と
+カウントされていたものを正しい「未解決」状態へ訂正した結果である旨を
+明記した。
 
 ---
 

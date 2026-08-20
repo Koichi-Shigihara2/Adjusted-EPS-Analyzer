@@ -560,12 +560,26 @@ def route_rejected_to_layer3(
     （`get_latest_quarterly()`が非Noneを返すか）も確認する（事例5の
     原則、名前が一致しても実データがあるとは限らないため）。
 
+    **`xbrl_dimension`が設定されたKPI（セグメント/製品/地域別等の
+    区分指標として提案されたもの）はLayer3へ振り替えない**
+    （2026-08-21、[[TAIL-LAYER3-ROUTING-DIMENSION-BLIND-1]]対応）。
+    Layer3の32フィールドはいずれも会社全体（非ディメンション）の
+    集計値であり、`xbrl_tag`のローカル名だけで照合すると、区分別の
+    指標として提案されたKPIに会社全体の値が誤って紐付いてしまう
+    （実例: APP「継続営業利益」〈元`dimension=us-gaap:
+    StatementOperatingActivitiesSegmentAxis`〉→ 会社全体の
+    `net_income`、CELH「機能性エナジードリンク売上」〈元
+    `dimension=srt:ProductOrServiceAxis`〉→ 会社全体の`revenue`。
+    いずれも取得された値自体は正しいが、KPI名が示す意味と実際の値が
+    食い違ったまま2026-08-19⑨〜2026-08-20の実装でtail_kpi_map.jsonへ
+    登録されていた）。
+
     Returns: (layer3_matched, still_rejected) のタプル。
       layer3_matched: [{**元のkpi, "source": "layer3",
         "layer3_field": <field>}, ...]
-      still_rejected: Layer3にも一致しなかった、または一致したが
-        実データが無かった却下KPI（元の`{"kpi":..., "reason":...}`
-        形式、reasonを更新）
+      still_rejected: Layer3にも一致しなかった、一致したが実データが
+        無かった、またはdimension付きのため対象外とした却下KPI（元の
+        `{"kpi":..., "reason":...}`形式、reasonを更新）
     """
     tag_index = _load_layer3_tag_to_field_index()
     store = build_ticker_store(ticker)
@@ -575,6 +589,17 @@ def route_rejected_to_layer3(
 
     for r in rejected:
         k = r["kpi"]
+
+        if k.get("xbrl_dimension"):
+            print(f"    [Layer3振替対象外] {k.get('name', '?')}: "
+                  f"セグメント指標のため（dimension={k.get('xbrl_dimension')}）")
+            still_rejected.append({
+                "kpi": k,
+                "reason": f"{r['reason']}／セグメント指標のためLayer3"
+                          f"（会社全体集計）へ振替不可",
+            })
+            continue
+
         tag_local = (k.get("xbrl_tag") or "").split(":")[-1]
         field = tag_index.get(tag_local)
 

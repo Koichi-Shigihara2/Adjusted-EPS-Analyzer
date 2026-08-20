@@ -1607,6 +1607,28 @@ TANUKI TAIL（docs/portfolio/tail/）← EDGAR RSS / Grok（KPI提案・四半�
 　　総合計は26件→50件に増加。1件（NVDAの`gross_profit`）を実際の
 　　決算生タグと手動突合し完全一致を確認済み。
 
+　　**dimensionガード（2026-08-21、`[[TAIL-LAYER3-ROUTING-DIMENSION-
+　　BLIND-1]]`）**: `route_rejected_to_layer3()`の機械的照合は当初
+　　`xbrl_tag`のローカル名だけで判定しており、元の提案が持つ
+　　`xbrl_dimension`（セグメント/製品/地域別等の区分指標として
+　　提案されたか）を確認していなかった。Layer3の32フィールドは
+　　いずれも会社全体（非ディメンション）の集計値のため、
+　　`xbrl_dimension`が設定された却下KPIをそのまま振り替えると、
+　　**KPI名は区分別指標を名乗ったまま実データは会社全体の値に
+　　すり替わる**。実例2件（APP「継続営業利益」→会社全体`net_income`、
+　　CELH「機能性エナジードリンク売上」→会社全体`revenue`、いずれも
+　　値の取得自体は成功していたため気づかれずtail_kpi_map.jsonへ
+　　登録されていた）を発見し、`xbrl_dimension`が非空のKPIはLayer3
+　　振替の対象外とするガードを追加（対象外にした場合は
+　　`[Layer3振替対象外]`のログを必ず出力し沈黙除外にしない）。
+　　既存2件は是正: APPは重複が無かったためKPI名を実態（`純利益
+　　（会社全体）`）に合わせて改名、CELHは既存の「売上収益」
+　　（同一`revenue`フィールド参照）と完全重複していたため削除した。
+　　いずれも元々のセグメント/製品別データを求める分析上のニーズは
+　　解決していないため、`rejected_kpis`へ記録を戻している
+　　（`config/tail_kpi_fetch_baseline.json`のAPP/CELH `rejected_count`
+　　を0→1へ更新）。
+
 ---
 
 ## common/market_data/（yfinance統合層、2026-08-11追記）
