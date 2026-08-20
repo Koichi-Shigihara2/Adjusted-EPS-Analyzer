@@ -6843,6 +6843,81 @@ KPIのみで評価されるようになった（結果として評価の水準�
 カウントされていたものを正しい「未解決」状態へ訂正した結果である旨を
 明記した。
 
+#### 追加調査（2026-08-22）: dimensionガードの穴の確認
+
+dimensionガードは`xbrl_dimension`が非空で**提案された**KPIにしか
+効かない。`xbrl_dimension: null`で提案されつつKPI名にセグメント/
+地域/製品カテゴリ名が含まれるケースはガードをすり抜ける可能性が
+あるため、名称ベースの機械的照合で現状の穴を確認した（**調査のみ、
+修正は行っていない**）。
+
+**照合対象**: `tail_kpi_map.json`の`source: "layer3"`全KPI、26件
+（前回是正でCELHの重複1件が削除されたため27件→26件）。
+
+**照合語（35語）**: 地域名（北米・南米・国際・米国・海外・欧州・
+EMEA・アジア・中国・日本・グローバル・地域・アメリカ）／セグメント・
+部門・事業・区分（セグメント・部門・事業部・事業・区分）／銘柄固有の
+製品・サービス・セグメント名（同一銘柄のXBRL直接取得エントリから
+収集: Commercial・Government・Consumer・Automotive・Energy・
+Lending・Technology Platform・Financial Services・Hosted
+Services・Licensing・Data Center・Gaming・Compute and
+Networking・Hyperscale・サブスクリプション・機能性エナジードリンク・
+エナジードリンク）。
+
+**結果**: 名称に区分語を含むKPIは**0件**（26件中0件）。単一シグナル
+で「0件だから安全」と結論づけないため、以下2つの独立シグナルでも
+交差確認した:
+- 元の`kpi_proposals/{ticker}_proposal.json`（`proposed_kpis`/
+  `rejected_kpis`）の`xbrl_dimension`: 25件が`null`、残り1件
+  （APP「純利益（会社全体）」、旧名「継続営業利益」）は本項目の
+  是正対象そのもの（既知・対応済み）で唯一`xbrl_dimension`が
+  非nullだった
+- 元の提案`description`: 25件全てに「全社」「全体」等、明示的に
+  会社全体を指す語が含まれていた（例: ADBE「全社営業利益の四半期額」・
+  CRWV「全社売上の前年同期比成長率」・SOUN「全社売上の前年同期比
+  成長率」）。coreの3件（PLTR/SOFI、`kpi_proposals`ファイルなし）は
+  前回是正時に手動で`dimension`欄が空であることを個別確認済み
+
+3つの独立シグナル（名称・元dimension・元description）が一致して
+「食い違いなし」を示しており、**現時点で新たな誤同定は0件**。
+「判断がつかない」に分類したKPIも無し（全26件が「食い違っていない」
+と判定できるだけの根拠が揃った）。Step 2（レビュー本文への影響確認）
+は対象KPIが無いため実施なし。
+
+**ガードの限界（Step 3）**:
+- **機能する条件**: Grokの元提案で`xbrl_dimension`が非空だった場合
+  （`propose_kpis()`経由の登録のみ）
+- **機能しない条件**: ①`xbrl_dimension: null`で提案されつつKPI名や
+  descriptionにセグメント/地域/製品を示唆する語が含まれる場合
+  （ガードは`xbrl_dimension`しか見ないため素通りする）②
+  `propose_kpis()`を経由しない登録（core 3銘柄のPLTR/SOFIへの
+  Layer3適用は`tail_kpi_map.json`を直接編集する手動照合で行った
+  ため、`xbrl_dimension`という構造化シグナル自体が存在しない。
+  今回は都度手動で`dimension`欄を確認したが、コード上の強制力はない）
+- **名称ベースの照合で拾えるもの**: 既知の語彙（地域名・セグメント
+  語・銘柄固有の製品名）を含む名称
+- **拾えないもの**: 未知の語彙（銘柄固有の造語・想定外の言い回し）、
+  nullでも名称が曖昧なケース、descriptionとの矛盾（今回は無かったが
+  機械的な必須チェックにはなっていない）
+- **「KPI名の粒度」と「Layer3の粒度」の一致を機械的に保証する方法**:
+  **無い。** Layer3の32フィールド（`sec_concept_definitions.json`）は
+  設計上すべて非ディメンション（会社全体集計）の事実のみを対象とする
+  ため、Layer3側にフィールド単位の「粒度」メタデータそのものが
+  存在しない。保証の余地があるとすれば登録側（KPI名・description・
+  `xbrl_dimension`）のみであり、現状は`xbrl_dimension`という1つの
+  構造化シグナルにしか強制力がない（対応策の案: ①`propose_kpis()`に
+  「description中の会社全体を示す語の有無」を必須メタデータ化して
+  `xbrl_dimension`と矛盾したら警告する、②core等`propose_kpis()`を
+  経由しない手動登録経路にも同種のガード関数を通す共通化、③今回のような
+  横断名称照合を`report_consistency_check.py`のWARN項目として定期
+  実行する。**いずれも未実装・提案のみ**）。
+
+**着手条件**: 今回0件だったため新規BACKLOG登録はしない
+（是正が必要な対象が無い）。ガードの構造的な穴自体は残存するため、
+次にsatelliteへ新規ティッカーを追加する、またはcore側へ手動でLayer3
+適用を行う際は、本節の3シグナル照合（名称・`xbrl_dimension`・
+description）を都度手動で再実施すること。
+
 ---
 
 ### [TAIL-LAYER3-FORMULA-YOY-UNSUPPORTED-1] layer3_formulaが除算のみ対応で、YoY成長率など系列比較を表現できない
