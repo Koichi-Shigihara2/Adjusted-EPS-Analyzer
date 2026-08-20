@@ -6345,7 +6345,7 @@ KPIの実測値が1件も取得できなかった**（全て「取得失敗」�
 
 ---
 
-### [TAIL-XBRL-SEGMENT-FETCHER-NONDIMENSIONED-GAP-1] xbrl_segment_fetcher.pyが非セグメント指標（会社全体のKPI）を構造的に取得できない — Layer3経由取得の自動振替を実装、satellite実取得38件へ改善（構造的制約自体は未解消）
+### [TAIL-XBRL-SEGMENT-FETCHER-NONDIMENSIONED-GAP-1] xbrl_segment_fetcher.pyが非セグメント指標（会社全体のKPI）を構造的に取得できない — Layer3経由取得の自動振替をcore 3銘柄にも適用、core+satellite合計53件へ改善（構造的制約自体は未解消）
 **優先度:** 高→**中**（2026-08-19⑨、機械的なLayer3振替を実装した
 結果、実務上の実害〈satelliteのKPI欠落〉はほぼ解消。
 `xbrl_segment_fetcher.py`自体の非ディメンション取得不可という構造的
@@ -6358,7 +6358,9 @@ KPIの実測値が1件も取得できなかった**（全て「取得失敗」�
 どの程度AI評価に混入していたか・なぜ沈黙していたか〉。Step 2: Layer3
 経由での代替取得可否をKPI単位で判定）→ 2026-08-19⑨（却下KPIをLayer3
 経由へ機械的に振り分ける仕組みを実装。satellite全体で却下26件中24件を
-解決、実取得成功KPIは14件→38件に増加。下記「Step 3」参照）
+解決、実取得成功KPIは14件→38件に増加。下記「Step 3」参照）→
+2026-08-20（core 3銘柄〈PLTR/SOFI/TSLA〉の`missing_kpis`7件にも同型の
+機械的照合を適用。下記「Step 4」参照）
 **発見:** `[[TAIL-KPI-PROPOSER-CORE-ONLY-GATE-1]]`のsatellite対応実装後、
 Step 3（KPI値の実際の取得確認）でsatellite 7銘柄のKPI提案値が1件も
 取得できなかったことの原因調査
@@ -6568,6 +6570,111 @@ Step 2で判定した(C)+(D)＝19件（セグメント分解・非GAAP指標、L
 実態）により、(C)+(D)として当初分類した19件のうち実際に必要となる
 ものは限定的である可能性が高い。
 
+#### Step 4: coreへのLayer3適用（2026-08-20）
+
+PLTR・SOFIの`missing_kpis`7件について、`kpi_proposer.py::propose_kpis()`
+は再実行せず（Grokに既存のcore設定を作り直させると精度を壊すリスクが
+あるため）、`tail_kpi_map.json`の既存登録エントリの`revenue_tag`を
+`route_rejected_to_layer3()`と同じ機械的照合（`sec_concept_definitions.
+json`の`candidates`と照合しGrokに判断させない）で`source: "layer3"`へ
+直接書き換えた。
+
+**解決した3件**:
+- PLTR「株式報酬費用」→ `layer3_field: stock_based_compensation`
+- SOFI「GAAP純利益」→ `layer3_field: net_income`
+- PLTR「営業利益率」→ `layer3_formula: "operating_income/revenue"`
+  （除算のみ対応の`layer3_formula`で表現可能と判定、実装）
+
+**意図的に未対応とした4件**:
+- PLTR「希薄化後EPS成長率」: `eps_diluted`系列の前年同期比（YoY）が
+  必要だが、現在の`layer3_formula`は`"field_a/field_b"`形式の除算のみ
+  対応でYoY比較を表現できない。機能拡張が必要なため
+  `[[TAIL-LAYER3-FORMULA-YOY-UNSUPPORTED-1]]`として新規登録（実装なし）
+- SOFI「Technology Platform売上成長率」: `revenue_tag`（`us-gaap:
+  RevenueFromContractWithCustomerExcludingAssessedTax`）は文字列上
+  Layer3の`revenue`（会社全体売上）フィールドと一致するが、登録エントリ
+  の`dimension`が`us-gaap:StatementBusinessSegmentsAxis`（セグメント
+  指標）であるため**意図的に除外した**。Layer3の`revenue`は会社全体
+  集計値であり、これをTechnology Platformセグメントの成長率として
+  登録すると値の意味が変わってしまう（下記`[[TAIL-LAYER3-ROUTING-
+  DIMENSION-BLIND-1]]`参照——satellite側で既に同型の事例が2件実在する
+  ことを本タスク中に発見した）
+- SOFI「正味貸倒率（NCO）」「純金利マージン（NIM）」: `revenue_tag`
+  （`NetChargeOffs`・`NetInterestMargin`）がLayer3の32フィールドの
+  候補タグいずれにも一致せず、機械的照合では解決不可
+
+`xbrl_segment_fetcher.py --ticker PLTR SOFI TSLA`を本番実行し
+`missing_kpis`を実測: PLTR 3→1、SOFI 4→3、TSLA 0→0（変更なし）。
+**core全体のmissing_count: 7→4**。手動妥当性確認（事例5の原則）:
+PLTRの株式報酬費用$201,592,000（2026Q1、Layer3経由）が`common/
+sec_data/data/PLTR/company_facts.json`の生タグ`ShareBasedCompensation`
+と完全一致することを確認。営業利益率の分子`OperatingIncomeLoss`
+$753,998,000も同様に生タグと一致を確認。
+
+`config/tail_kpi_fetch_baseline.json`のPLTR/SOFI行を実測値へ更新
+（`_meta.update_reason_2026_08_19_10`に詳細記録）。
+
+**総合計（core+satellite）: 実取得成功KPIは50件→53件に増加**
+（core 12→15件＋satellite 38件〈不変〉）。
+
+#### 全10銘柄レビュー再生成（2026-08-20、本問題の解消効果を実測）
+
+core 3銘柄への今回のLayer3適用、およびsatellite 7銘柄への
+2026-08-19⑨対応の効果を確認するため、TANUKI TAILの全10銘柄
+（ADBE/APGE/APP/CELH/CRWV/NVDA/PLTR/SOFI/SOUN/TSLA）の直近四半期
+（全銘柄2026Q2）レビューを再生成した（`quarterly_review_generator.py`
+の`generate_review()`を直接呼び出し、`review_queue.json`は変更せず）。
+
+NVDA 1銘柄で先行検証した結果、旧レビューに存在した「KPIデータが
+一切ない」旨の文言は新レビューから完全に消え（`summary`/`concerns`
+等の全文検索で該当0件）、代わりに実際のKPI値（R&D費用YoY+58.5%等）が
+評価根拠として使われていることを確認した上で、残り9銘柄を再生成した。
+
+**health_score / recommendation の変化（10銘柄、再生成前→後）**:
+
+| ticker | 再生成前 | 再生成後 | recommendation変化 |
+|---|---|---|---|
+| ADBE | 45点 WATCH | 62点 WATCH | なし |
+| APGE | 25点 **EXIT** | 72点 **WATCH** | **EXIT→WATCH** |
+| APP  | 25点 WATCH | 72点 WATCH | なし（スコアは大幅上昇） |
+| CELH | 42点 WATCH | 62点 WATCH | なし |
+| CRWV | 55点 WATCH | 62点 WATCH | なし |
+| NVDA | 55点 WATCH | 68点 WATCH | なし |
+| PLTR | 76点 WATCH | 72点 WATCH | なし |
+| SOFI | 47点 REVISE | 48点 REVISE | なし |
+| SOUN | 32点 WATCH | 62点 WATCH | なし（スコアは大幅上昇） |
+| TSLA | 42点 WATCH | 42点 WATCH | なし（KPI変更なし、スコアも不変） |
+
+**recommendationが変わったのはAPGEのみ（EXIT→WATCH）。** 旧レビューは
+`summary: "KPIデータが一切存在せず...評価軸が機能しない"`、
+`recommendation_reason: "エントリー根拠となるKPIがなく...撤退を推奨"`
+であり、**「データが無いこと自体」がEXIT判定の直接の根拠になっていた**
+（`optimism_bias_warning: "データゼロ状態での保有継続は根拠なき楽観
+バイアスの典型例"`）。新レビューでは現金残高QoQ+243%（$451.8M）・
+営業CF QoQ改善11.4%・R&D費YoY+31%という実データに基づき、
+`recommendation_reason: "資金面は改善したが治験結果次第で急変する
+可能性が高いため、引き続き監視が必要"`とWATCHへ変化した。**旧EXIT
+判定はファンダメンタルズの悪化ではなく、KPIデータの完全欠如という
+入力側の欠陥に起因していた可能性が高い**——今回の修正がなければ、
+この根拠薄弱なEXIT判定が投資判断としてそのまま参照され続けていた。
+
+その他9銘柄はrecommendationが変わらなかったが、satellite側（旧
+レビューはいずれも「KPIデータが一切ない/提示されていない」から
+始まる`summary`だった）はscoreが軒並み上昇し、`summary`の内容が
+KPI欠如の指摘から実データに基づく具体的な懸念・肯定材料の記述へ
+全て置き換わった（例: APP「米国売上QoQの伸び鈍化とR&D急増」、CRWV
+「営業損失が大幅に拡大しQoQでキャッシュも減少」等）。**「KPIが入っても
+recommendationは変わらなかった」銘柄が9/10ある一方、その内実は
+「KPI欠如を理由にした一律の減点」から「個別KPIの実測値に基づく評価」
+へ変わっており、評価の質そのものは変化している**（scoreの変動幅
+自体がその証拠——旧スコアはKPI欠如という共通要因で頭打ちに近かった
+可能性がある）。TSLAはcoreの中で唯一今回KPI変更がなく（元々6/6件
+全取得成功）、スコアも42点で完全に不変——今回の変化が実際にLayer3
+適用と連動していることの対照確認になっている。
+
+再生成した10件のレビューJSON（`docs/portfolio/tail/data/reviews/
+{ticker}_2026Q2_review.json`）はコミット対象とする。
+
 #### 関連
 - `[[TAIL-KPI-PROPOSER-CORE-ONLY-GATE-1]]`（本問題の発見元。KPI提案の
   生成・登録という入口は解消したが、本問題により値取得という出口が
@@ -6576,15 +6683,120 @@ Step 2で判定した(C)+(D)＝19件（セグメント分解・非GAAP指標、L
   名の精度問題を切り出した新規項目、2026-08-19⑤）
 - `[[LAYER3-ANNUAL-CLASSIFICATION-DROPS-DATA-1]]`（Layer3側のデータ
   存在確認の実測元。TAILの5フィールド消費経路確認から派生）
+- `[[TAIL-LAYER3-ROUTING-DIMENSION-BLIND-1]]`（本タスク中に発見。
+  `route_rejected_to_layer3()`が`dimension`を確認せずタグ名だけで
+  照合するため、セグメント/製品別指標に会社全体データを誤って紐付ける
+  リスクがある。satellite側で2件実例あり、2026-08-20新規登録）
+- `[[TAIL-LAYER3-FORMULA-YOY-UNSUPPORTED-1]]`（`layer3_formula`が
+  除算のみ対応でYoY等の系列比較を表現できない機能ギャップ、
+  2026-08-20新規登録。PLTR「希薄化後EPS成長率」が未解決のまま残る
+  直接原因）
 - `config/tail_kpi_fetch_baseline.json`（rejected_countをLayer3振替後の
-  実測値〈satellite残り2件〉へ引き下げ更新済み、2026-08-19⑨）
+  実測値〈satellite残り2件〉へ引き下げ更新済み、2026-08-19⑨。
+  2026-08-20にcore〈PLTR/SOFI〉のmissing_countも実測値へ更新）
 
-#### 着手条件（残課題、2026-08-19⑨時点）
-(d)は実装済み。残る(a)〈xbrl_segment_fetcher.py自体の非ディメンション
-取得対応〉・(b)〈text_kpi_extractor.pyへの誘導〉は、ADBE・APGEの
-2件および構造的制約が残る非セグメント指標について、着手要否・優先度を
-ユーザーに確認してから着手すること（実務上の実害はLayer3経由でほぼ
-解消済みのため、急ぎ性は低い）。
+#### 着手条件（残課題、2026-08-20時点）
+(d)は実装済み（satellite・core双方）。残る(a)〈xbrl_segment_fetcher.py
+自体の非ディメンション取得対応〉・(b)〈text_kpi_extractor.pyへの
+誘導〉は、ADBE・APGEの2件、SOFIの3件（Technology Platform売上成長率・
+NCO・NIM）、および構造的制約が残る非セグメント指標について、着手要否・
+優先度をユーザーに確認してから着手すること（実務上の実害はLayer3経由
+でほぼ解消済みのため、急ぎ性は低い）。
+
+---
+
+### [TAIL-LAYER3-ROUTING-DIMENSION-BLIND-1] route_rejected_to_layer3()がdimensionを確認せずタグ名だけで照合するため、セグメント/製品別指標に会社全体データを誤って紐付けるリスクがある
+**優先度:** 中（既存satellite実データに2件の実例あり。値そのものは
+Layer3から正しく取得できているため即座に誤情報とは言えないが、
+KPI名が示す意味〈特定セグメント/製品の指標〉と実際の値〈会社全体の
+集計値〉が食い違っており、レビュー生成AIやユーザーがKPI名を信じて
+読むと誤解する構造的リスクがある）
+**分類:** データ品質 / TAIL自動化パイプライン / ラベルと実データの
+不整合
+**登録日:** 2026-08-20
+**発見:** `[[TAIL-XBRL-SEGMENT-FETCHER-NONDIMENSIONED-GAP-1]]`Step 4
+（core 3銘柄へのLayer3適用）実装中。SOFI「Technology Platform売上
+成長率」（`dimension: us-gaap:StatementBusinessSegmentsAxis`、
+セグメント指標として登録済み）の`revenue_tag`がLayer3の`revenue`
+（会社全体売上）フィールドの候補タグと文字列一致することに気づき、
+機械的にLayer3へ振り替えるとセグメント売上のはずが会社全体売上に
+すり替わってしまうと判明。同型の事例が既存satelliteデータに実在
+するか確認したところ、2件発見した。
+
+#### 内容
+`src/tail/kpi_proposer.py::route_rejected_to_layer3()`（550-610行目）は
+却下されたKPIの`xbrl_tag`のローカル名を`sec_concept_definitions.json`
+の`candidates`と照合するだけで、元のKPI提案が持つ`xbrl_dimension`
+（セグメント/製品/地域区分の有無）を一切確認しない。Layer3の32
+フィールドはいずれも会社全体（非ディメンション）の集計値であるため、
+`xbrl_dimension`が設定されている＝特定区分の指標として提案された
+KPIをLayer3へ振り替えると、**KPI名はセグメント/製品名を含んだまま、
+実際の値は会社全体の集計値にすり替わる**。
+
+satellite側の既存登録（2026-08-19⑨実装、`config/tail_kpi_map.json`）
+から実例を確認:
+- APP「継続営業利益」（元提案`xbrl_dimension: us-gaap:
+  StatementOperatingActivitiesSegmentAxis`）→ `layer3_field:
+  net_income`（会社全体の純利益）に紐付け済み
+- CELH「機能性エナジードリンク売上」（元提案`xbrl_dimension: srt:
+  ProductOrServiceAxis`、Functional Energy Drinks製品区分の売上の
+  はず）→ `layer3_field: revenue`（会社全体売上）に紐付け済み
+
+いずれも元のセグメント/製品区分のXBRL事実が実際には存在しない
+（`validate_kpis_fetchable()`で却下された）ためLayer3へ回された経緯
+自体は正しいが、区分情報が失われたままKPI名だけがセグメント/製品名を
+名乗り続けている点が問題。
+
+#### 今回（core Step 4）での回避
+本項目と同じ問題を再発させないため、core 3銘柄（PLTR/SOFI）への
+Layer3適用では、登録エントリの`dimension`フィールドが空でないKPI
+（SOFI「Technology Platform売上成長率」）を意図的にLayer3振替の対象外
+とした（`tail_kpi_map.json`の該当エントリは`revenue_tag`のまま
+未変更、XBRL直接取得の失敗状態を維持）。詳細は
+`[[TAIL-XBRL-SEGMENT-FETCHER-NONDIMENSIONED-GAP-1]]`Step 4参照。
+
+#### 着手条件
+対応方針は2つ考えられるが、いずれも未実装・着手要否はユーザー判断待ち:
+(a) `route_rejected_to_layer3()`に`xbrl_dimension`非空ガードを追加し、
+セグメント/製品別指標のLayer3振替自体を機械的に禁止する（今回のcore
+対応と同型）。振替候補が減るため`rejected_count`が悪化する
+(b) 該当2件（APP「継続営業利益」・CELH「機能性エナジードリンク売上」）
+のKPI名を実態（会社全体指標）に合わせて改名する（値は変えず表示の
+誤解を解消）。実害の有無（レビュー内でこの2つのKPIが実際にどう
+言及されているか）を確認してから判断すること
+
+---
+
+### [TAIL-LAYER3-FORMULA-YOY-UNSUPPORTED-1] layer3_formulaが除算のみ対応で、YoY成長率など系列比較を表現できない
+**優先度:** 低（着手条件なし。現状ブロックしているのはPLTR「希薄化後
+EPS成長率」1件のみで、実害は限定的）
+**分類:** 機能不足 / TAIL自動化パイプライン
+**登録日:** 2026-08-20
+**発見:** `[[TAIL-XBRL-SEGMENT-FETCHER-NONDIMENSIONED-GAP-1]]`Step 4
+（core 3銘柄へのLayer3適用）でPLTR「希薄化後EPS成長率」をLayer3経由
+へ振り替えられるか判定中に発見。
+
+#### 内容
+`src/tail/xbrl_segment_fetcher.py::fetch_layer3_kpis()`の
+`layer3_formula`は`"field_a/field_b"`形式の**同一四半期内の2フィールド
+の除算のみ**対応する（439-454行目）。「希薄化後EPS成長率」のような
+「同一フィールドの前年同期比（YoY）」を表現する構文が存在しない
+（`eps_diluted`という1フィールドの時系列上で`(今期値-前年同期値)/
+前年同期値`を計算する必要があり、除算専用の現行パーサーでは表現
+不可能）。
+
+`layer3_field`を`eps_diluted`に設定して直接値を渡す代替も検討したが、
+それは希薄化後EPSの**水準**であって**成長率**ではなく、KPIの
+`warning_threshold`（成長率ベースの閾値）と意味が合わなくなるため
+採用しなかった。
+
+#### 着手条件
+着手条件なし。同型の「系列に対する前年同期比・前期比」を必要とする
+KPIが他にも将来登録される可能性があるため、個別対応ではなく
+`layer3_formula`のミニ構文自体を拡張する（例:
+`"yoy(eps_diluted)"`のような関数呼び出し記法）方が汎用的だが、
+現時点で対象は1件のみのため優先度は低いまま。対象KPIが増えた場合に
+再評価すること。
 
 ---
 

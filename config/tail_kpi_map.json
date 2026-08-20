@@ -56,32 +56,14 @@
     {
       "kpi_name": "営業利益率",
       "change_risk": "medium",
-      "tag_history": [
-        {
-          "tag": "",
-          "valid_from": "2019-01-01",
-          "valid_to": null
-        }
-      ],
-      "fallback_tags": [],
-      "fallback_action": "alert",
-      "revenue_tag": "us-gaap:OperatingIncomeLoss",
-      "dimension": ""
+      "source": "layer3",
+      "layer3_formula": "operating_income/revenue"
     },
     {
       "kpi_name": "株式報酬費用",
       "change_risk": "medium",
-      "tag_history": [
-        {
-          "tag": "",
-          "valid_from": "2019-01-01",
-          "valid_to": null
-        }
-      ],
-      "fallback_tags": [],
-      "fallback_action": "alert",
-      "revenue_tag": "us-gaap:ShareBasedCompensation",
-      "dimension": ""
+      "source": "layer3",
+      "layer3_field": "stock_based_compensation"
     },
     {
       "kpi_name": "希薄化後EPS成長率",
@@ -193,17 +175,8 @@
     {
       "kpi_name": "GAAP純利益",
       "change_risk": "medium",
-      "tag_history": [
-        {
-          "tag": "",
-          "valid_from": "2019-01-01",
-          "valid_to": null
-        }
-      ],
-      "fallback_tags": [],
-      "fallback_action": "alert",
-      "revenue_tag": "us-gaap:NetIncomeLoss",
-      "dimension": ""
+      "source": "layer3",
+      "layer3_field": "net_income"
     }
   ],
   "TSLA": [

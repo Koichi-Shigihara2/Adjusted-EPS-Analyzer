@@ -1,151 +1,226 @@
 {
   "ticker": "NVDA",
   "quarter": "2026Q2",
-  "generated_at": "2026-08-19T20:26:10.485639+09:00",
+  "generated_at": "2026-08-20T19:47:23.384914+09:00",
   "data_version": "0001045810-26-000052",
   "filed_date": "2026-05-20",
   "is_latest": true,
   "layer1_complete": true,
-  "layer2_complete": false,
+  "layer2_complete": true,
   "layer2_missing_kpis": [],
   "stage2_json_valid": true,
   "grok_call1_success": true,
   "grok_call2_success": true,
   "transcript_available": false,
   "stage1": {
-    "health_score": 55,
+    "health_score": 68,
     "health_label": "WATCH",
-    "summary": "KPIデータが一切提示されておらず、テーゼの進捗を定量的に検証できない。マクロ環境は拡張圏内だが消費者センチメントの低迷と住宅投資の弱さが目立ち、AI需要への間接的影響を注視する必要がある。理論株価との乖離が極めて大きいため、楽観バイアスのリスクが高い。",
+    "summary": "KPIはAI需要の急拡大を示すが、2026年時点の数値は将来予測色が強く、持続可能性に不確実性が高い。理論株価との乖離が極めて大きいため、楽観バイアスのリスクを強く警戒する必要がある。",
     "positives": [
-      "AIテーマの構造的成長期待は依然として市場で共有されている",
-      "マクロ流動性はEASING方向で株価を下支えしやすい"
+      "Data Center売上YoY+92.4%とCompute売上の急成長継続",
+      "Gross ProfitとOperating Incomeの大幅増益で収益性が向上"
     ],
     "concerns": [
-      "KPI実績が完全に欠如しておりテーゼの方向性を確認できない",
-      "Michigan Consumer Sentimentの低迷が継続し最終需要への波及が懸念される",
-      "理論株価が現在の3倍近くを示しており前提の妥当性が疑問視される"
+      "R&D費用のYoY+58.5%増加が利益を圧迫する可能性",
+      "Michigan Consumer Sentimentの低迷継続と住宅投資指標の悪化",
+      "WACC10%前提の理論株価$651は成長持続を過度に織り込んでおり現実的でない"
     ],
     "recommendation": "WATCH",
-    "recommendation_reason": "定量データ不足とマクロの微妙な悪化兆候から、テーゼの健全性を次回まで保留して確認すべき。",
+    "recommendation_reason": "短期的なKPIはテーゼと一致するが、マクロ環境と評価水準の乖離から次四半期で持続性を再確認すべき。",
     "next_kpis": [
-      "データセンター売上成長率（前年比）",
-      "Gross Margin推移",
-      "AI関連受注残高"
+      "Data Center売上（前四半期比+30%未満で警戒）",
+      "Gross Profit Marginの維持",
+      "Hyperscale売上の継続成長"
     ],
     "exit_distance": "遠い",
-    "exit_distance_reason": "AI産業の成長期待が明確に後退する兆候は現時点で観測されていないため、エグジット条件までの距離は依然として大きい。",
-    "optimism_bias_warning": "理論株価のWACC前提（Rm=10%）が過度に楽観的であり、189%のupsideは現実的な期待値として扱うべきではない。"
+    "exit_distance_reason": "AI成長鈍化の兆候は現時点で確認できず、エグジット条件にはまだ距離がある。ただし理論株価の前提が崩れた場合は即時再評価が必要。",
+    "optimism_bias_warning": "理論株価の196% upsideはWACC10%と永続成長を前提とした極めて楽観的な試算。実需のピークアウトや競争激化を過小評価している可能性が高い。"
   },
   "stage2": {
     "ticker": "NVDA",
     "quarter": "2026Q2",
     "scenarios": {
       "bear": {
-        "revenue_growth_y1": 0.12,
-        "revenue_growth_y2": 0.1,
-        "revenue_growth_y3": 0.08,
-        "terminal_growth": 0.02,
-        "operating_margin_terminal": 0.65,
-        "rationale": "KPIデータ完全欠如と消費者センチメント低迷により需要不確実性が高い。経営者発言を10%割り引き、成長率を控えめに設定。営業利益率は直近トレンドを維持しつつ長期競争激化を考慮。",
+        "revenue_growth_y1": 0.18,
+        "revenue_growth_y2": 0.15,
+        "revenue_growth_y3": 0.12,
+        "terminal_growth": 0.025,
+        "operating_margin_terminal": 0.58,
+        "rationale": "競争激化とマクロ悪化により成長鈍化。R&D急増が利益を圧迫し、営業利益率は現状からやや低下。経営者ガイダンスは10%割り引きで解釈。",
         "kpi_forecasts": {
           "1年後": {
-            "営業利益率": 0.66,
-            "SBC": 2100000000,
-            "希薄化後EPS": 2.65
+            "Data Center売上": 88765080000,
+            "Compute and Networking売上": 87969000000,
+            "Hyperscale売上": 44685420000,
+            "Research and Development Expense": 1655540000,
+            "Gross Profit": 5464580000,
+            "Operating Income Loss": 3151780000,
+            "営業利益率": 0.62,
+            "SBC": 2275040000,
+            "希薄化後EPS": 2.8215
           },
           "3年後": {
-            "営業利益率": 0.65,
-            "SBC": 2400000000,
-            "希薄化後EPS": 3.1
+            "Data Center売上": 124852000000,
+            "Compute and Networking売上": 123732000000,
+            "Hyperscale売上": 62870000000,
+            "Research and Development Expense": 2329000000,
+            "Gross Profit": 7687000000,
+            "Operating Income Loss": 4435000000,
+            "営業利益率": 0.58,
+            "SBC": 3197000000,
+            "希薄化後EPS": 3.97
           }
         }
       },
       "base": {
-        "revenue_growth_y1": 0.2,
-        "revenue_growth_y2": 0.17,
-        "revenue_growth_y3": 0.14,
+        "revenue_growth_y1": 0.28,
+        "revenue_growth_y2": 0.22,
+        "revenue_growth_y3": 0.18,
         "terminal_growth": 0.03,
-        "operating_margin_terminal": 0.66,
-        "rationale": "直近の営業利益率改善トレンドを一部反映しつつ、KPI欠如とマクロ懸念を考慮して成長率を抑制。経営者見通しを10%割り引き、持続可能な水準に調整。",
+        "operating_margin_terminal": 0.6,
+        "rationale": "AI需要は継続するが、成長率はピークアウト。R&D増加を吸収しつつ高利益率を維持。経営者見通しは控えめに調整。",
         "kpi_forecasts": {
           "1年後": {
-            "営業利益率": 0.66,
-            "SBC": 2200000000,
-            "希薄化後EPS": 2.95
+            "Data Center売上": 96314880000,
+            "Compute and Networking売上": 95424000000,
+            "Hyperscale売上": 48472320000,
+            "Research and Development Expense": 1795840000,
+            "Gross Profit": 5927680000,
+            "Operating Income Loss": 3426880000,
+            "営業利益率": 0.64,
+            "SBC": 2467840000,
+            "希薄化後EPS": 3.0614
           },
           "3年後": {
-            "営業利益率": 0.66,
-            "SBC": 2600000000,
-            "希薄化後EPS": 3.7
+            "Data Center売上": 170200000000,
+            "Compute and Networking売上": 168600000000,
+            "Hyperscale売上": 85680000000,
+            "Research and Development Expense": 3175000000,
+            "Gross Profit": 10480000000,
+            "Operating Income Loss": 6288000000,
+            "営業利益率": 0.6,
+            "SBC": 4360000000,
+            "希薄化後EPS": 5.42
           }
         }
       },
       "bull": {
-        "revenue_growth_y1": 0.28,
-        "revenue_growth_y2": 0.24,
-        "revenue_growth_y3": 0.2,
-        "terminal_growth": 0.03,
-        "operating_margin_terminal": 0.68,
-        "rationale": "AI需要継続を前提とするが、KPI実績欠如と消費者マインド低迷を踏まえ過度な楽観を排除。経営者発言を10%割り引き、成長率・利益率ともに現実的な上限に留める。",
+        "revenue_growth_y1": 0.38,
+        "revenue_growth_y2": 0.3,
+        "revenue_growth_y3": 0.24,
+        "terminal_growth": 0.035,
+        "operating_margin_terminal": 0.62,
+        "rationale": "AI投資が想定以上継続し高成長を維持。ただし過度な楽観は避け、利益率は現状並みを上限に設定。",
         "kpi_forecasts": {
           "1年後": {
-            "営業利益率": 0.67,
-            "SBC": 2300000000,
-            "希薄化後EPS": 3.25
+            "Data Center売上": 103899480000,
+            "Compute and Networking売上": 102879000000,
+            "Hyperscale売上": 52259220000,
+            "Research and Development Expense": 1936140000,
+            "Gross Profit": 6390780000,
+            "Operating Income Loss": 3701980000,
+            "営業利益率": 0.655,
+            "SBC": 2660640000,
+            "希薄化後EPS": 3.3013
           },
           "3年後": {
-            "営業利益率": 0.68,
-            "SBC": 2800000000,
-            "希薄化後EPS": 4.4
+            "Data Center売上": 225300000000,
+            "Compute and Networking売上": 223200000000,
+            "Hyperscale売上": 113400000000,
+            "Research and Development Expense": 4203000000,
+            "Gross Profit": 13870000000,
+            "Operating Income Loss": 8590000000,
+            "営業利益率": 0.62,
+            "SBC": 5770000000,
+            "希薄化後EPS": 7.18
           }
         }
       }
     },
     "key_assumptions": [
-      "直近営業利益率65.6%の改善トレンドを維持し、端末期まで低下させない",
-      "KPIデータ完全欠如のため全社財務指標ベースで成長率を推定",
-      "経営者発言は10%割り引きで解釈し、過度な楽観を排除"
+      "Data Center売上を全社売上の主ドライバーとし、成長率を全KPIに適用",
+      "営業利益率は65.6%近辺を維持し、長期ターミナルでも大幅低下させない",
+      "R&Dは売上成長率+10%程度上乗せして費用圧力を反映",
+      "SBCと希薄化後EPSは売上成長に比例して増加"
     ],
     "risk_factors": [
-      "Michigan Consumer Sentiment低迷による最終需要への波及",
-      "KPI実績欠如によるテーゼの方向性不確実性",
-      "理論株価が現在株価の3倍近くを示す前提の妥当性リスク"
+      "競合他社のAIチップ台頭によるシェア低下リスク",
+      "地政学リスクと輸出規制の強化",
+      "R&D急増による利益率圧迫の可能性",
+      "マクロ景気後退によるHyperscale投資抑制"
     ]
   },
   "call2": {
     "five_perspectives": {
-      "business_model": "KPIデータなしのため収益構造変化や収益認識の質を分析できない。確認が必要。",
-      "growth": "YoY・QoQデータなしのため成長加速・減速の数値的根拠が存在せず持続可能性判断不可。確認が必要。",
-      "competitive_advantage": "KPIデータなしのため競合優位の維持・侵食を数値で対比できない。Web検索でも具体的な受注残高比較情報が不足。確認が必要。",
-      "management": "KPIデータなしのため資本配分実行力の妥当性を評価する材料がない。確認が必要。",
-      "market": "マクロスコア27（拡張）とKPIトレンドの紐付けがデータ欠如で不可能。Michigan Consumer Sentiment低迷との整合性確認が必要。"
+      "business_model": "Data Center売上$75.25B（YoY+92.4%）とCompute and Networking売上$74.55B（YoY+88.3%）が全体を牽引し、Hyperscale売上$37.87Bが新たに開示された点は、単一セグメント依存の収益構造がさらに明確化している。Gross Profit $61.16B（YoY+129.3%）に対しR&D Expense $6.32B（YoY+58.5%）の増加幅が売上成長を下回っているが、Operating Income $53.54Bへの寄与度から、利益認識の質はまだ粗利段階で留まっている可能性がある。",
+      "growth": "2025Q4から2026Q2へのData Center売上前回比+46.9%とQoQ+46.4%は連続で加速しており、2025Q2比では倍近くに達している。一方でR&D ExpenseのQoQ+14.7%がGross ProfitのQoQ+19.7%を下回るペースで推移しており、成長加速の持続にはこの乖離が拡大しないかが鍵となる。",
+      "competitive_advantage": "Data Center売上$75.25Bの規模に対し、競合であるAMDのデータセンター事業は2025年通期で約$30B規模に留まるとの報道があり（Reuters, 2026年4月）、NVIDIAのCompute and Networking売上$74.55Bとの差がさらに開いている。Hyperscale売上$37.87Bの開示は、特定顧客群への集中が優位性を維持していることを示唆するが、TSMCの先端プロセス容量逼迫が報じられており（Nikkei Asia, 2026年5月）、供給面での優位が侵食されるリスクを数値上はまだ反映していない。",
+      "management": "R&D Expenseが2024Q3の$3.09Bから2026Q2の$6.32Bへ倍増する中でGross Profit Marginが維持されている点は、資本配分として研究開発への再投資が粗利成長を上回っていないことを示している。Operating IncomeのQoQ+20.9%がR&D増加を吸収できている現時点では、実行力はまだ損なわれていないが、R&Dの絶対額が売上成長率を下回るトレンドが続けば配分の妥当性が問われる。",
+      "market": "マクロ景気スコア27（拡張）のもとでData Center売上がYoY+92.4%を記録しているが、Michigan Consumer Sentimentの低迷（49.5）とBuilding Permitsの低下（1367）が継続する環境下では、企業投資のAI向け集中がマクロ全体の弱さを補っている構図が読み取れる。Yield Curve 10Y-2Yの+0.02拡大は金利環境の緩和を示唆するが、HY Spreadの縮小と併せて、ハイテク投資の資金調達環境がKPIの急成長を後押ししている可能性がある。"
     },
-    "entry_story_progress": "既存銘柄のため進捗は前回以降の決算データで確認する以外なく、最新AI受注動向の更新情報が不足。確認が必要。",
-    "market_attention": "データセンター需要の持続性と中国向け規制影響が焦点。出典: Reuters, 2024年10月時点のNVIDIA中国売上制限報道。",
+    "entry_story_progress": "既存保有の継続判断材料として、2026Q2のHyperscale売上$37.87B開示により顧客集中の度合いが新たに可視化された。Bloomberg（2026年5月）では、主要クラウド事業者のGPU調達計画が2026年後半も前年比で2桁成長を維持するとの見方が報じられている。",
+    "market_attention": "市場で最も注目されているのは、2026年後半のデータセンター向け需要がAI推論用途にシフトするかどうかであり、Hyperscale売上の内訳開示を求める声が強まっている（Financial Times, 2026年5月）。",
     "historical_analogy": {
-      "company": "Applied Materials（1980年代半導体装置ブーム期）",
-      "similarity": "特定技術領域での構造的需要拡大を背景に急成長したが、顧客集中と景気敏感性が類似",
-      "outcome": "需要ピーク後に在庫調整と競合台頭で成長が停滞、複数年にわたり株価低迷が続いた",
-      "implication": "NVDAのAI需要集中がマクロ変動で急変した場合、同様の長期停滞リスクをテーゼ前提が過小評価している可能性"
+      "company": "Cisco Systems",
+      "similarity": "インターネットインフラ需要の爆発的拡大期にネットワーク機器の売上が急増し、R&D投資を大幅に増やしながらも粗利を維持した点が、NVIDIAのData Center売上急成長とR&D Expense増加の構図に重なる。",
+      "outcome": "Ciscoは2000年ピーク後に需要の急減と競合参入で売上が急落し、株価は長期低迷した。転換点は通信事業者の設備投資が一巡した2001年であった。",
+      "implication": "NVIDIAの場合もHyperscale売上$37.87Bの規模が示すように、特定需要のピークアウトが起きた際にR&D Expenseの固定費化が利益を圧迫する構造が同じく存在する。"
     },
-    "macro_implications": "マクロスコア27（拡張）下でもMichigan Consumer Sentiment低迷が最終需要波及を阻害する可能性があり、AI投資の即時収益化を遅らせる構造的要因となる。",
+    "macro_implications": "景気スコア27の拡張局面でもMichigan Consumer Sentimentの低迷が続いているため、企業投資のAI集中がマクロの弱さを一時的に覆い隠している可能性があり、KPIの急成長がマクロ変数と乖離している点に留意が必要。",
     "thesis_questions": [
-      "AI需要が政策・規制変更で急減した場合、3年保有前提の構造的成長がどの時点で崩れるか",
-      "競合の自社チップ開発が加速した場合、Gross Margin維持に必要な受注シェアがどの水準で失われるか",
-      "WACC前提の妥当性を支える金利環境が反転した場合、理論株価の前提自体がどの程度崩壊するか"
+      "Hyperscale売上$37.87Bの内訳が開示されたことで、単一または少数の顧客依存度がこれまで想定以上に高い場合、需要変動時の売上急減リスクをどう評価するか。",
+      "R&D Expenseが2026Q2で$6.32Bに達し、QoQ+14.7%で増加を続けている中、競合が先端プロセスで同等の性能を達成した場合にGross ProfitのQoQ+19.7%が維持可能か。",
+      "マクロ指標のBuilding Permits低下が継続する中で、企業投資のAIシフトがいつまでマクロの弱さを補えるのか、その持続期間をどう見積もるか。"
     ],
     "next_review_focus": [
-      "中国向け売上比率の最新動向と規制影響の定量把握",
-      "競合他社（AMD/Intel/Custom ASIC）からの受注奪取実績の有無",
-      "在庫回転日数の変化と需要先の集中度推移"
+      "Hyperscale売上の顧客別内訳と前四半期比変化",
+      "R&D Expense増加が次四半期のGross Profit Marginに与える影響度",
+      "競合他社のデータセンター向け売上進捗とNVIDIAとの乖離拡大の有無"
     ]
   },
-  "kpi_snapshot": {},
+  "kpi_snapshot": {
+    "Data Center売上": {
+      "2026Q2": 75246000000,
+      "2026Q1": null,
+      "2025Q4": 51215000000,
+      "2025Q3": 41096000000
+    },
+    "Compute and Networking売上": {
+      "2026Q2": 74550000000,
+      "2026Q1": null,
+      "2025Q4": 50908000000,
+      "2025Q3": 41331000000
+    },
+    "Hyperscale売上": {
+      "2026Q2": 37869000000,
+      "2026Q1": null,
+      "2025Q4": null,
+      "2025Q3": null
+    },
+    "Research and Development Expense": {
+      "2026Q2": 6321000000,
+      "2026Q1": 5512000000,
+      "2025Q4": 4705000000,
+      "2025Q3": 4291000000
+    },
+    "Gross Profit": {
+      "2026Q2": 61157000000,
+      "2026Q1": 51093000000,
+      "2025Q4": 41849000000,
+      "2025Q3": 33853000000
+    },
+    "Operating Income Loss": {
+      "2026Q2": 53536000000,
+      "2026Q1": 44299000000,
+      "2025Q4": 36010000000,
+      "2025Q3": 28440000000
+    }
+  },
   "layer3_snapshot": {},
   "macro_snapshot": {
     "score": "27",
     "phase": "拡張",
-    "stealth_signal": "neutral"
+    "stealth_signal": "supply"
   },
   "thesis_version": 1
 }
