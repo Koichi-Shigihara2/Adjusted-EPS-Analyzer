@@ -91,6 +91,50 @@ except ImportError:
 from calculator.rice import calculate_rice, RICEResult
 
 
+def resolve_alpha_cap(
+    ticker: str,
+    sector: Optional[str],
+    industry: Optional[str],
+    default_alpha_cap: float = DEFAULT_ALPHA_CAP,
+) -> float:
+    """α（成長期待プレミアム）のセクター別・業種別上限を、
+    `config/maturity_config.json`から解決する。
+
+    優先順位: mega_tech（tickerが`_sector_caps._mega_tech_tickers`に
+    一致）→ 業種別（`_industry_alpha_caps`）→ セクター別（`_alpha_caps`）
+    → `default_alpha_cap`。
+
+    **[[VALIDATOR-ALPHA-CAP-STALE-1]]対応（2026-08-20）**: 元々
+    `calculate_pt()`内にインライン実装されていたロジックをそのまま
+    関数として切り出した（計算内容・優先順位は変更していない）。
+    `validator.py`がこの関数をimportして使うことで、alpha_cap解決
+    ロジックを2箇所に独立実装せず、本番（`core_calculator.py`）と
+    検証（`validator.py`）で常に同一の判定を保証する（今回の不具合の
+    再発防止——`validator.py`側で優先順位を書き写すと、将来
+    `core_calculator.py`側の判定が変わった際に再び乖離するため）。
+
+    設定読み込みに失敗した場合は`default_alpha_cap`をそのまま返す
+    （元の`try/except Exception: pass`と同じフォールバック挙動）。
+    """
+    alpha_cap = default_alpha_cap
+    try:
+        import json as _json, pathlib as _pl
+        _cfg_path = _pl.Path(__file__).parent.parent.parent.parent / "config" / "maturity_config.json"
+        _cfg_all  = _json.loads(_cfg_path.read_text(encoding="utf-8"))
+        _alpha_caps = _cfg_all.get("_alpha_caps", {})
+        _industry_alpha_caps = _cfg_all.get("_industry_alpha_caps", {})
+        _mega = _cfg_all.get("_sector_caps", {}).get("_mega_tech_tickers", [])
+        if ticker in _mega:
+            alpha_cap = _alpha_caps.get("mega_tech", default_alpha_cap)
+        elif industry and industry in _industry_alpha_caps:
+            alpha_cap = _industry_alpha_caps[industry]
+        elif sector and sector in _alpha_caps:
+            alpha_cap = _alpha_caps[sector]
+    except Exception:
+        pass
+    return alpha_cap
+
+
 class KoichiValuationCalculator:
     """
     Koichi式 v6.2 バリュエーション計算エンジン
@@ -500,22 +544,9 @@ class KoichiValuationCalculator:
         _rm = wacc_result.market_return   # Rm: 通常10.0%（βなし・メイン割引率）
 
         # ④ αセクター別・業種別上限を決定（業種 > セクター の優先順）
-        _alpha_cap = self.alpha_cap
-        try:
-            import json as _json, pathlib as _pl
-            _cfg_path = _pl.Path(__file__).parent.parent.parent.parent / "config" / "maturity_config.json"
-            _cfg_all  = _json.loads(_cfg_path.read_text(encoding="utf-8"))
-            _alpha_caps = _cfg_all.get("_alpha_caps", {})
-            _industry_alpha_caps = _cfg_all.get("_industry_alpha_caps", {})
-            _mega = _cfg_all.get("_sector_caps", {}).get("_mega_tech_tickers", [])
-            if ticker in _mega:
-                _alpha_cap = _alpha_caps.get("mega_tech", self.alpha_cap)
-            elif industry and industry in _industry_alpha_caps:
-                _alpha_cap = _industry_alpha_caps[industry]
-            elif sector and sector in _alpha_caps:
-                _alpha_cap = _alpha_caps[sector]
-        except Exception:
-            pass
+        # [[VALIDATOR-ALPHA-CAP-STALE-1]]対応: ロジックはモジュール
+        # 関数resolve_alpha_cap()へ切り出し済み（validator.pyと共用）。
+        _alpha_cap = resolve_alpha_cap(ticker, sector, industry, self.alpha_cap)
 
         # αはRM基準（βなし・市場期待リターン10%）で計算
         # roe_avg=None は負債超過（負PBR）を意味し alpha=0 として扱う

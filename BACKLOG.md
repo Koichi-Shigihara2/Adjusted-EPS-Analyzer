@@ -2500,10 +2500,11 @@ Gate2/`test_contracts.py`）のみが明確に機械検査下にある。
    （TAILで採用した手法と同型）は可能だが網羅性に限界があるため、
    横断的な仕組みとしての新設は見送りが妥当
 
-**着手条件（2026-08-23訂正）**: 上記1（`validation.overall`の
-`report_consistency_check.py`への接続）は2026-08-23に実装完了
-（下記「Phase4追加調査」参照）。2〜6は未実装のまま。着手要否・
-優先順位はユーザー判断とする。
+**着手条件（2026-08-20再訂正）**: 上記1（`validation.overall`の
+`report_consistency_check.py`への接続）は2026-08-23に実装完了。
+上記2（`test_iv_formula.py`の対象拡大）は2026-08-20に
+`[[TEST-STALE-IV-1]]`修正の一環として完了（5→100銘柄）。3〜6は
+未実装のまま。着手要否・優先順位はユーザー判断とする。
 
 #### Phase 4 追加調査（2026-08-23）: validation.overallの実測＋検知への接続
 
@@ -2602,13 +2603,22 @@ rpo_pv=$0, go_pv=$1.86B, diluted_shares=24.221B, net_cash_ps=$3.065`。
 `validator.py`式で計算すると`$651.37`（保存値と一致・pass）。
 `test_iv_formula.py`式で計算すると`$1299.59`（alphaを二重に乗算する
 ため約2倍）——これは既知の`test_iv_formula.py`失敗
-（`pytest`常時2件failed、`[[TEST-STALE-IV-1]]`として多数のセッション
-記録で「既知」と言及され続けていたが、正式なBACKLOGエントリが
-一度も作られていなかった）の失敗メッセージ
+（`pytest`常時2件failed）の失敗メッセージ
 （`recalculated=$1299.5915, stored=$651.3666`）と完全一致し、
-根本原因を確定した。**統合ではなく修正が必要な案件**として
-`[[TEST-STALE-IV-1]]`を正式登録した（修正は別途、本調査では
-実施していない）。
+根本原因を確定した。**統合ではなく修正が必要な案件**と判断した
+（**訂正、2026-08-20**: 当時「正式なBACKLOGエントリが一度も
+作られていなかった」と判断して`[[TEST-STALE-IV-1]]`を新規登録した
+が、これは誤りで、2026-07-02登録の既存`[[TEST-STALE-IV-1]]`エントリ
+を見落とした重複登録だった。翌日の修正作業で発覚し、既存エントリへ
+統合した。詳細は同エントリ参照）。
+
+**（2026-08-20追記）両バグとも修正完了。** `[[VALIDATOR-ALPHA-CAP-
+STALE-1]]`はcore_calculator.py側のalpha_cap解決ロジックを
+`resolve_alpha_cap()`として切り出しvalidator.pyがimportする設計で
+解消（全100銘柄再検証でWARN32→0）。`[[TEST-STALE-IV-1]]`は
+`validator.py::recalc_ivps_from_components()`という共有関数へ式を
+統合し、`test_iv_formula.py`がそれをimportする設計で解消（pytest
+既知failed2件が解消、対象銘柄も5→100へ拡張）。詳細は各エントリ参照。
 
 ---
 
@@ -6193,13 +6203,15 @@ TRUST-SUMMARY-EPIC-1へ統合済み（詳細は同エントリ参照）。
 
 ## 優先度：中（こなれてきたら対応）
 
-### [VALIDATOR-ALPHA-CAP-STALE-1] validator.pyのalpha_capが常に1.0固定で、セクター別alpha_cap（maturity_config.json）を反映せず32銘柄で偽陽性WARN
-**優先度:** 中（DCF計算自体〈core_calculator.py〉は正しく、実害は
-検証結果の誤表示のみ。ただし32/100銘柄という規模でWARNノイズを
-発生させ続けており、`[[QUALITY-GATES-EPIC-1]]`ゲート3の検証結果を
-信頼して読めなくする副作用があるため「低」ではない）
+### ✅ [VALIDATOR-ALPHA-CAP-STALE-1] validator.pyのalpha_capが常に1.0固定で、セクター別alpha_cap（maturity_config.json）を反映せず32銘柄で偽陽性WARN — 2026-08-20、alpha_cap解決ロジックをcore_calculator.pyへ一本化し解消
+**状態:** 完了（2026-08-20。`core_calculator.py`側のalpha_cap解決
+ロジックを`resolve_alpha_cap()`として切り出し、`validator.py`が
+importして使う設計に変更。全100銘柄再検証で32件の偽陽性が解消し
+FAIL1件〈LYFT、本バグとは無関係〉のみ残ることを確認。詳細は下記
+「対応（2026-08-20完了）」参照）
+**優先度:** 中→解消
 **分類:** バグ / 検証ロジック陳腐化（本番の設計変更に検証側が
-追従していない）
+追従していない）→ 解消
 **登録日:** 2026-08-23
 **発見:** `[[QUALITY-GATES-EPIC-1]]`ゲート3棚卸しの追加調査
 （`validation.overall`の全銘柄実測、CHECK-40接続作業）
@@ -6238,63 +6250,45 @@ TRUST-SUMMARY-EPIC-1へ統合済み（詳細は同エントリ参照）。
 `formula_verification`に集中していることから発見。`config/
 dcf_validation_baseline.json`の`_meta`に本項目への参照を記録済み。
 
-#### 着手条件
-着手条件なし。修正方針の候補（実装しない）: `validator.py::
-_extract_params()`が`maturity_config.json`を読み、対象銘柄の
-セクター/業種に応じた`alpha_cap`を`core_calculator.py`と同じロジック
-（`mega_tech`優先→`_industry_alpha_caps`→`_alpha_caps`→デフォルト）で
-算出するよう修正する。修正後は`config/dcf_validation_baseline.json`の
-32銘柄分の`fail_count`をほぼ解消できる見込み（LYFTの`anomaly_
-detection`1件は本バグとは無関係のため残る）。
+#### 対応（2026-08-20完了）
+**Step 1-1（重複実装を作らない）**: 依頼文の通り、`validator.py`側に
+alpha_cap解決ロジックを書き写すのではなく、`core_calculator.py`側の
+既存インライン実装（`calculate_pt()`内、旧503-518行目）を**モジュール
+関数`resolve_alpha_cap(ticker, sector, industry, default_alpha_cap)`
+として切り出し**、`calculate_pt()`側もこの関数を呼ぶよう書き換えた
+（計算内容・優先順位は変更なし、既存呼び出しへの影響なし）。
+`validator.py`は`from core_calculator import resolve_alpha_cap,
+DEFAULT_ALPHA_CAP`でこれをimportして使う。`pipeline.py`が既に
+`from core_calculator import ...`・`from validator import ...`という
+同一ディレクトリのflatインポートで両モジュールを読んでいるため、
+`validator.py`から`core_calculator.py`をimportしても既存のimport
+方式と矛盾しない（循環importも無いことを確認済み）。
 
----
+`_extract_params()`に`ticker`引数を追加し、`c.get("sector")`/
+`c.get("industry")`（`components`内、`core_calculator.py`が書き込む
+のと同じキー）を`resolve_alpha_cap()`に渡すよう変更した。
 
-### [TEST-STALE-IV-1] tests/test_iv_formula.pyがALPHA-REDESIGN-1後の式変更に追従しておらず、alphaを二重計算してIVが約2倍になる
-**優先度:** 低（pytest既知failed2件として長期間認識・運用されており
-実害はテスト出力のノイズのみ。ただし多数のセッション記録で「既知」
-とだけ言及され続け、正式なBACKLOGエントリが一度も作られていなかった
-ため、根本原因確定を機に正式登録する）
-**分類:** バグ / テストコード陳腐化（本番の設計変更にテストが
-追従していない）
-**登録日:** 2026-08-23（過去多数のセッションで「既知」と言及されて
-いたが、正式なヘッダー付きエントリは本日が初）
-**発見:** `[[QUALITY-GATES-EPIC-1]]`ゲート3棚卸しの追加調査
-（Step 3-4、`test_iv_formula.py`と`validator.py::pt_shares_
-consistency`の重複判定作業中に根本原因を確定）
+**Step 1-3（全100銘柄再検証）**: `pipeline.py`の全体再実行（SEC/
+yfinance再取得・DCF再計算を含む）ではなく、既存`latest.json`の
+`components`に対して`validate_calculation()`のみを再実行し
+`validation`フィールドだけを書き換える方式を採用した（実際のDCF
+計算値・IV・alpha等は本バグの影響を受けていないため、再取得・
+再計算は不要と判断）。
 
-#### 内容
-`tests/test_iv_formula.py`は`iv_pt = v0_rm * (1.0 + alpha) + rpo_pv
-+ go_pv`という式でIV per shareを再計算するが、この式は**alphaを
-乗算する旧式**であり、`ALPHA-REDESIGN-1`（本番`core_calculator.py`が
-`calculate_intrinsic_value(..., alpha=0.0, ...)`固定でP_t算出に
-alphaを乗算しなくなった設計変更）に追従していない。
+結果: PASS 67→**99**、WARN 32→**0**、FAIL 1→1（変化なし）。
+**formula_verificationの偽陽性32件は全件解消**。残るのはLYFT1件
+（`anomaly_detection`、alpha_capとは無関係のFCF恒久マイナス銘柄の
+構造的限界）のみで、これは想定通り。BKNG（TANUKI SCORE BUY判定）・
+ADBE（ポートフォリオ保有）を含む32銘柄で個別に`formula_verification.
+pass=True`への変化を確認済み。
 
-本番の正しい式は`src/value/tanuki_valuation/validator.py::
-run_basic_checks()`の`pt_shares_consistency`チェックが使っている
-`total_v0 = v0 + rpo_pv + growth_option_pv`（**alpha非乗算**）であり、
-こちらは全銘柄が合格している（誤差0.00%）。
+**Step 1-4（baseline更新）**: `config/dcf_validation_baseline.json`
+を33銘柄分のエントリ→LYFT1件のみへ引き下げ、`_meta.update_
+reason_2026_08_24`に更新理由を記録した。
 
-#### 実測（2026-08-23、NVDAで再現）
-`v0_rm=$15700.65B, alpha=1.0(capped), rpo_pv=$0, go_pv=$1.86B,
-diluted_shares=24.221B, net_cash_ps=$3.065`:
-- 正しい式（`validator.py`、alpha非乗算）: `$651.37`（保存値と一致）
-- `test_iv_formula.py`の式（alpha乗算）: `$1299.59`（約2倍）
-
-これは`pytest`常時2件failed（MSFT/NVDA）の失敗メッセージ
-（`recalculated=$1299.5915, stored=$651.3666`）と完全一致し、
-根本原因を確定した。CELH/PLTR/TSLAが失敗しないのはこれらの
-`alpha`が0に近い（cap適用なし、または低ROE）ため、alpha乗算の
-有無による差が$0.01の許容誤差に収まっているだけであり、式自体は
-これら3銘柄でも本質的に誤っている。
-
-#### 着手条件
-着手条件なし。修正方針の候補（実装しない）: `iv_pt`の式から
-`*(1.0 + alpha)`を除去し`validator.py`と同一の式に揃える。あわせて
-`TICKERS`定数（現在`MSFT/NVDA/CELH/PLTR/TSLA`の5銘柄ハードコード）を
-`common.sec_data.tickers.get_tanuki_tickers()`経由の動的リストへ
-拡張することも、`[[QUALITY-GATES-EPIC-1]]`Step 3提案②と合わせて
-検討可能（本項目とは別判断でよい）。修正後はpytestの既知failed2件が
-解消される見込み。
+**Step 3（CHECK-40への反映）**: `report_consistency_check.py
+--fail-on-ng`を再実行し、WARN-40が33件→1件（LYFTのみ）に減少・
+NG=0を確認した。
 
 ---
 
@@ -10980,14 +10974,25 @@ grepやスクリプトによる自動検出で漏れが発生しやすい。
 
 ---
 
-### [TEST-STALE-IV-1] test_iv_formula.pyがALPHA-REDESIGN-1に未追従
-**優先度:** 中（2026-07-12・低から格上げ）
-**分類:** テスト保守 / 品質管理
+### ✅ [TEST-STALE-IV-1] test_iv_formula.pyがALPHA-REDESIGN-1に未追従 — 2026-08-20、validator.pyの式をimportして統合し解消
+**状態:** 完了（2026-08-20。式の重複実装を解消し、pytest既知failed
+2件〈MSFT/NVDA〉が解消。詳細は下記「対応（2026-08-20完了）」参照）
+**優先度:** 中→解消
+**分類:** テスト保守 / 品質管理 → 解消
 **発見:** 2026-07-02（ARCH-DATA-1-YTDスポットチェック時）。
 2026-07-12: [[TTM-QUARTERS-CHECK-1]]Step4実施時にも独立発見
-（[[TEST-IV-FORMULA-ALPHA-1]]として重複登録されていたが本エントリに統合）
+（[[TEST-IV-FORMULA-ALPHA-1]]として重複登録されていたが本エントリに統合）。
+2026-08-23、`[[QUALITY-GATES-EPIC-1]]`ゲート3棚卸しの追加調査
+（`test_iv_formula.py`と`validator.py::pt_shares_consistency`の重複
+判定作業中）で根本原因をNVDA実データで再現・再確認した際、**本エントリ
+の存在を見落として同じ`TEST-STALE-IV-1`というIDで新規エントリを
+重複登録してしまった**（優先度：中セクションに別ヘッダーで作成）。
+2026-08-20、本タスクでの修正作業中にこの重複に気づき、新規側のエントリ
+（実測数値・修正内容）を本エントリへ統合し、新規側は削除して1本化した。
+BACKLOG ID使用前に既存エントリの存在をgrepで確認する運用ルールが
+守られていなかった実例として記録する
 
-#### 問題
+#### 問題（旧記述）
 tests/test_iv_formula.pyがALPHA-REDESIGN-1（2026-06-25完了）以前の旧計算式
 （iv_pt = v0_rm × (1+alpha) + rpo_pv + go_pv）をハードコードしたまま。
 現行core_calculator.pyはalpha=0.0固定（alpha廃止済み）だが、latest.jsonには
@@ -10999,17 +11004,43 @@ NVDA/MSFTで恒常的にpytest失敗する（機能的な実害はなし、テ�
 この回帰は登録（2026-07-02発見）から2026-07-12の再発見まで約2週間見逃されて
 いた。優先度格上げはこの見逃し期間の長さを踏まえた判断。
 
-#### 対応方針
-test_iv_formula.pyの期待値算出ロジック自体の修正が本タスクの残作業。
-CLAUDE_CODE_START.mdのStep 2実行対象への追加は[[QUALITY-GATES-EPIC-1]]
-Phase 1（2026-07-12完了）でtests/全体実行への変更により対応済み
-（同種見逃しの再発防止は解消、本エントリの残スコープは計算式修正のみ）。
-
 #### 追記（[[VALIDATOR-IVPS-MISMATCH-1]]対応時の発見、2026-07-15）
 本テストの失敗原因は、VALIDATOR-IVPS-MISMATCH-1で修正したvalidator.pyと
 同じ、ALPHA-REDESIGN-1（alpha乗算廃止）に追随していない廃止済みP_t式
 （× (1+alpha)）を使用していることが根本原因と判明。validator.py本体は
 既に修正済みだが、本テストファイル自体の式は未修正のまま残っている。
+
+#### 実測（2026-08-23、NVDAで再現）
+`v0_rm=$15700.65B, alpha=1.0(capped), rpo_pv=$0, go_pv=$1.86B,
+diluted_shares=24.221B, net_cash_ps=$3.065`:
+- 正しい式（`validator.py`、alpha非乗算）: `$651.37`（保存値と一致）
+- `test_iv_formula.py`の式（alpha乗算）: `$1299.59`（約2倍）
+
+`pytest`常時2件failed（MSFT/NVDA）の失敗メッセージ
+（`recalculated=$1299.5915, stored=$651.3666`）と完全一致。
+CELH/PLTR/TSLAが失敗しないのはこれらの`alpha`が0に近い（cap適用なし、
+または低ROE）ため、alpha乗算の有無による差が$0.01の許容誤差に収まって
+いるだけであり、式自体はこれら3銘柄でも本質的に誤っていた。
+
+#### 対応（2026-08-20完了）
+「式の重複実装を解消する」方針で対応した（`iv_pt`の式の書き換えでは
+なく、実装そのものを1箇所に統合）:
+
+1. `validator.py::run_basic_checks()`の`pt_shares_consistency`が使う
+   式を`recalc_ivps_from_components(v0, rpo_pv, growth_option_pv,
+   diluted_shares, net_cash_per_share)`という独立関数へ切り出した
+   （計算内容は変更なし）
+2. `tests/test_iv_formula.py`を書き換え、自前の式実装を削除して
+   `validator.py::recalc_ivps_from_components`をimportして使う形に
+   変更した。**同一概念の計算を2箇所以上独立実装しない**という
+   `[[QUALITY-GATES-EPIC-1]]`ゲート3の原則に沿った解消方法
+3. 修正後、既存5銘柄（MSFT/NVDA/CELH/PLTR/TSLA）で5/5 pass、
+   pytest既知failed2件が解消したことを確認
+4. `TICKERS`を`common.sec_data.tickers.get_tanuki_tickers()`経由の
+   動的リストへ拡張（100銘柄）。拡張前に全100銘柄を事前実測し
+   新規失敗が0件であることを確認した上でコミット（100/100 pass）
+5. pytest全体: 783 passed（拡張前）→ 878 passed（拡張後、+95件は
+   ticker拡張分）、failed 0件
 
 ---
 

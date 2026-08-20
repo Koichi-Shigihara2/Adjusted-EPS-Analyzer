@@ -549,6 +549,40 @@ FCF恒久マイナス銘柄の負の理論株価を正しく検知したもの�
 いる値がどこかに埋もれていないかを確認する価値があるパターンとして
 記録する。
 
+**解決ロジックの一本化パターン（2026-08-20追記、`[[VALIDATOR-ALPHA-
+CAP-STALE-1]]`・`[[TEST-STALE-IV-1]]`修正）**: 上記WARN32件の原因は
+`validator.py::_extract_params()`が`alpha_cap`を常に`1.0`固定で
+読んでいたことだった（本番`core_calculator.py`はセクター別alpha_cap
+を`maturity_config.json`から解決している）。修正では**validator.py
+側に本番の判定ロジック〈mega_tech優先→業種別→セクター別→デフォルト〉
+を書き写さなかった**——それをやると今回と同じ乖離が将来また起きる
+（本番側の優先順位が変わった際にvalidator.py側だけ取り残される）。
+代わりに`core_calculator.py`側の既存インライン実装を
+`resolve_alpha_cap(ticker, sector, industry, default_alpha_cap)`と
+いうモジュール関数へ切り出し、`validator.py`がそれをimportして使う
+形にした（本番と検証が常に同一のロジックを参照する設計）。
+
+同じパターンを`test_iv_formula.py`（IV per share再計算式の
+pytest回帰テスト、ALPHA-REDESIGN-1後の式変更に長期間追従できていな
+かった）にも適用した。`validator.py::pt_shares_consistency`が使う
+再計算式を`recalc_ivps_from_components(v0, rpo_pv, growth_option_pv,
+diluted_shares, net_cash_per_share)`という関数へ切り出し、
+`test_iv_formula.py`はこの関数をimportして使う（自前の式実装を
+削除）。
+
+**一般原則として記録**: 「同じ解決ロジック・計算式を2箇所以上に
+独立実装しない」（`[[QUALITY-GATES-EPIC-1]]`ゲート3の核心原則）を
+満たす具体的な手段は、**規約をdocstring等の文書で伝えるのではなく、
+本番コード側にある既存の実装を関数として切り出し、検証・テスト側は
+それをimportして使う**こと。切り出し可能かどうかは、対象ロジックが
+`self`（インスタンス状態）に依存しているかで判断する——今回はいずれも
+純粋なパラメータ→戻り値の関数に切り出せたため、クラスメソッドの
+外へ出す形を取った。pipeline.pyが既に`core_calculator.py`・
+`validator.py`を同一ディレクトリのflatインポート
+（`from core_calculator import ...`）で読んでいる前提があるため、
+`validator.py`から`core_calculator.py`をimportしても既存のimport
+方式と矛盾しない（循環importの有無は事前に確認すること）。
+
 ---
 
 ### operating_income（営業利益）の再構成方式とprovenance（2026-08-16追記）

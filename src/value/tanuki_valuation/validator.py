@@ -21,13 +21,21 @@ import requests
 from datetime import datetime
 from typing import Dict, Any, Optional
 
+# [[VALIDATOR-ALPHA-CAP-STALE-1]]対応（2026-08-20）: alpha_capの
+# セクター別・業種別解決ロジックはcore_calculator.py側に一本化し、
+# validator.pyでは複製せずimportして使う（同一ロジックを2箇所に
+# 独立実装すると将来core_calculator.py側の判定が変わった際に
+# 再び乖離するため）。pipeline.pyがvalidator.pyと同一ディレクトリの
+# flatインポートで動作させる前提を踏襲し、同じ方式でimportする。
+from core_calculator import resolve_alpha_cap, DEFAULT_ALPHA_CAP
+
 # xAI API設定
 XAI_API_KEY = os.environ.get("XAI_API_KEY", "")
 XAI_MODEL = "grok-3-mini"
 XAI_ENDPOINT = "https://api.x.ai/v1/chat/completions"
 
 
-def _extract_params(data: Dict[str, Any]) -> Dict[str, Any]:
+def _extract_params(data: Dict[str, Any], ticker: str = "") -> Dict[str, Any]:
     """
     latest.jsonから検証に必要なパラメータを動的抽出
 
@@ -46,7 +54,12 @@ def _extract_params(data: Dict[str, Any]) -> Dict[str, Any]:
     # α計算パラメータ
     retention_rate = 0.60
     discount_factor = 0.7
-    alpha_cap = 1.0
+    # [[VALIDATOR-ALPHA-CAP-STALE-1]]対応: 固定値1.0ではなく
+    # core_calculator.pyと同じresolve_alpha_cap()でセクター別・
+    # 業種別の実際の上限を解決する。
+    alpha_cap = resolve_alpha_cap(
+        ticker, c.get("sector"), c.get("industry"), DEFAULT_ALPHA_CAP
+    )
 
     # DCFタイプと内訳
     dcf_type = data.get("dcf_type", "two_stage")
@@ -73,7 +86,7 @@ def build_validation_prompt(ticker: str, data: Dict[str, Any]) -> str:
     """検証用プロンプトを構築（v6.x対応）"""
 
     c = data.get("components", {})
-    p = _extract_params(data)
+    p = _extract_params(data, ticker)
 
     ivps = data.get("intrinsic_value_per_share", 0)
     # プロンプト内ではβ込みWACC基準V0を使用（DCF構成要素との整合性のため）
@@ -235,6 +248,34 @@ def call_xai_api(prompt: str) -> Optional[Dict[str, Any]]:
     return None
 
 
+def recalc_ivps_from_components(
+    v0: float,
+    rpo_pv: float,
+    growth_option_pv: float,
+    diluted_shares: float,
+    net_cash_per_share: float = 0.0,
+) -> float:
+    """`intrinsic_value_per_share`をDCF構成要素から再計算する
+    （`pt_shares_consistency`チェックの中核式）。
+
+    ALPHA-REDESIGN-1: `core_calculator.py`はP_t算出にalphaを乗算しない
+    （`calculate_intrinsic_value(..., alpha=0.0, ...)`固定）。alphaは
+    参考値としてのみ扱い、本関数には一切登場しない。
+
+    **[[TEST-STALE-IV-1]]対応（2026-08-20）**: 元々`run_basic_checks()`
+    にインライン実装されていた式を関数として切り出した（計算内容は
+    変更していない）。`tests/test_iv_formula.py`も本関数をimportして
+    使うことで、同一概念の計算が2箇所以上に独立実装される状態
+    （`[[QUALITY-GATES-EPIC-1]]`ゲート3がNG検知の対象とする状態）を
+    解消する——`test_iv_formula.py`側が本式へ追従せず、ALPHA-
+    REDESIGN-1前の「alpha乗算あり」の旧式のまま2026-08-20まで残存し
+    pytest既知failed2件（MSFT/NVDA）の原因になっていた。
+    """
+    total_v0 = v0 + rpo_pv + growth_option_pv
+    p_t = total_v0
+    return p_t / diluted_shares + net_cash_per_share
+
+
 def run_basic_checks(ticker: str, data: Dict[str, Any]) -> Dict[str, Any]:
     """
     基本的な整合性チェック（API不要、v6.x対応）
@@ -243,7 +284,7 @@ def run_basic_checks(ticker: str, data: Dict[str, Any]) -> Dict[str, Any]:
     """
 
     c = data.get("components", {})
-    p = _extract_params(data)
+    p = _extract_params(data, ticker)
 
     ivps = data.get("intrinsic_value_per_share", 0)
     # pt_shares_consistencyはRM基準V0で検証（メイン理論株価と整合）
@@ -265,11 +306,9 @@ def run_basic_checks(ticker: str, data: Dict[str, Any]) -> Dict[str, Any]:
     net_cash_per_share = bs_adj.get("net_cash_per_share", 0.0) if bs_adj.get("applied", False) else 0.0
 
     if diluted_shares > 0:
-        # ALPHA-REDESIGN-1: core_calculator.pyはP_t算出にalphaを乗算しない
-        # （calculate_intrinsic_value(..., alpha=0.0, ...)固定）。alphaは参考値としてdetailに残す。
-        total_v0 = v0 + rpo_pv + growth_option_pv
-        p_t = total_v0
-        calculated_ivps = p_t / diluted_shares + net_cash_per_share
+        calculated_ivps = recalc_ivps_from_components(
+            v0, rpo_pv, growth_option_pv, diluted_shares, net_cash_per_share
+        )
         diff_pct = abs(calculated_ivps - ivps) / abs(ivps) * 100 if ivps != 0 else 0
 
         bs_note = f" + BS ${net_cash_per_share:+.2f}/株" if net_cash_per_share != 0 else ""
