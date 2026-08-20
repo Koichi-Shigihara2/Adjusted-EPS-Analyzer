@@ -2500,8 +2500,115 @@ Gate2/`test_contracts.py`）のみが明確に機械検査下にある。
    （TAILで採用した手法と同型）は可能だが網羅性に限界があるため、
    横断的な仕組みとしての新設は見送りが妥当
 
-**着手条件**: 上記1〜6のいずれも未実装。着手要否・優先順位は
-ユーザー判断とする。
+**着手条件（2026-08-23訂正）**: 上記1（`validation.overall`の
+`report_consistency_check.py`への接続）は2026-08-23に実装完了
+（下記「Phase4追加調査」参照）。2〜6は未実装のまま。着手要否・
+優先順位はユーザー判断とする。
+
+#### Phase 4 追加調査（2026-08-23）: validation.overallの実測＋検知への接続
+
+上記「Step 0-2」で「`validation.overall`が集約されず沈黙している」
+と発見した状態について、まず実測してから検知機構（CHECK-40）に
+接続した。
+
+**Step 1: 全銘柄実測**（`common.sec_data.tickers.get_tanuki_tickers()`
+＝本番の銘柄一覧関数、100銘柄全件に`validation`フィールド・
+`latest.json`とも存在）:
+
+| overall | 件数 |
+|---|---|
+| PASS | 67 |
+| WARN | 32 |
+| FAIL | 1 |
+
+**FAIL銘柄**: `LYFT`（1件のみ）。**WARN銘柄**（32件）:
+`AMAT/BSY/CAKE/KO/LLY/LMT/VRT/ADBE/BKNG/AVGO/ADSK/CDNS/INTU/HON/
+SCCO/V/CPRT/MSCI/FICO/ABBV/CAT/GEV/JNJ/MO/PEP/VZ/WMT/WST/CON/TER/
+KLAC/LRCX`。
+
+**項目別内訳**: WARN32件は**全件が`formula_verification`**
+（α公式の再計算突合）で不合格。FAIL1件（LYFT）は`anomaly_detection`
+（性質検査）。他の2項目（`pt_shares_consistency`・`dcf_components`）
+は100銘柄全件が合格——同じ項目に32件集中しているのは個別銘柄の
+問題ではなく式・思想側の問題という仮説を裏付ける（下記Step 2参照）。
+
+**ポートフォリオ保有銘柄・BUY判定銘柄との照合**（`docs/portfolio/
+data/portfolio.json`・`tanuki_score`フィールド）: 保有9銘柄
+（ADBE/APP/CELH/CRWV/NVDA/PLTR/SOFI/SOUN/TSLA）のうち**ADBEがWARN**。
+BUY判定4銘柄（BKNG/META/NVDA/TASK）のうち**BKNGがWARN**。FAIL銘柄
+LYFTはBUY・保有いずれにも該当せず`tanuki_score=WATCH`。
+
+**Step 2: FAILの中身の確認（原因判定）**
+
+*LYFT（FAIL、`anomaly_detection`）*: `pt_shares_consistency`・
+`dcf_components`・`formula_verification`は全て合格（α=0.000で
+cap判定自体も一致）。`anomaly_detection`のみ「理論株価$-1.34が
+ゼロ以下（FCF恒久マイナス銘柄）」で不合格。**検証側・計算側いずれの
+バグでもない**——LYFTはFCFが恒久的にマイナスの銘柄であり、DCF
+モデルが構造的にそのような銘柄に対して負の理論株価を算出しうる
+ことを、`anomaly_detection`が設計通り正しく検知したもの。
+
+*WARN32件（`formula_verification`、BKNG/ADBE/AMAT/KOで数値確認）*:
+`validator.py::_extract_params()`（49行目）が`alpha_cap`を**常に
+`1.0`固定**で返しているのに対し、本番の`core_calculator.py`
+（503-516行目）は`maturity_config.json`の`_alpha_caps`
+（セクター別、0.4〜1.0）・`_industry_alpha_caps`（業種別上書き）を
+参照してセクターごとに異なる上限を適用している。実測: BKNG
+（Consumer Cyclical想定）の実際のcapは0.6（stored alpha=0.6）・
+ADBE/AMAT（Technology）は0.8（stored alpha=0.8）・KO（Consumer
+Defensive想定）は0.6（stored alpha=0.6）——いずれも`_alpha_caps`の
+該当セクター値と完全一致し、本番の計算自体は正しいことを確認した。
+一方`validator.py`は`alpha_cap=1.0`との一致だけを見るため、
+セクターcapが1.0未満の全銘柄で機械的にWARNになる。**これは
+計算側ではなく検証側（`validator.py`）のバグ**であり、
+`[[VALIDATOR-ALPHA-CAP-STALE-1]]`として新規登録した（修正は
+別途、本調査では実施していない）。
+
+**Step 3: 検知への接続（実装）**
+
+`common/sec_data/report_consistency_check.py`にCHECK-40
+（`_check_dcf_validation_failures()`）を新設し、`main()`の
+CHECK-38/39と同じ位置に配線した。設計はCHECK-38を踏襲:
+- 対象銘柄は呼び出し元が`all_tickers`（`get_tanuki_tickers()`ベース、
+  既存の変数をそのまま渡す。事例5の原則、銘柄一覧の再実装なし）
+- `validation.overall`が`PASS`以外の銘柄ごとに、不合格チェック数
+  （`fail_count`）・`overall`・不合格チェック名をWARN表示
+- `config/dcf_validation_baseline.json`（新規）に33銘柄の現状
+  （fail_count・overall・failed_checks）を記録。`_meta`に
+  「許容値ではなく是正目標」である旨、および32件がValidator側の
+  既知バグ（`[[VALIDATOR-ALPHA-CAP-STALE-1]]`）由来の偽陽性である
+  旨を明記
+- baselineを超えて悪化した場合のみNG（CHECK-38と同一ロジック）
+
+実行確認: `report_consistency_check.py --fail-on-ng`でWARN-40が
+33件（32件`formula_verification`＋LYFT1件`anomaly_detection`）
+表示され、baselineと一致するためNG=0を確認。
+
+**Step 3-4: `test_iv_formula.py`との重複判定**
+
+`test_iv_formula.py`（5銘柄限定）と`validator.py::pt_shares_
+consistency`は同じ概念（P_t/shares整合性）を検証しているが、
+**「重複」ではなく「乖離（片方が古い式のまま）」だった**:
+
+- `validator.py`（正）: `total_v0 = v0 + rpo_pv + growth_option_pv`
+  （**alphaを乗算しない**、コード内コメント「ALPHA-REDESIGN-1:
+  core_calculator.pyはP_t算出にalphaを乗算しない」と明記）
+- `test_iv_formula.py`（誤）: `iv_pt = v0_rm * (1.0 + alpha) + rpo_pv
+  + go_pv`（**alphaを乗算している**、ALPHA-REDESIGN-1前の古い式の
+  まま）
+
+NVDAの実データで再現: `v0_rm=$15700.65B, alpha=1.0(capped),
+rpo_pv=$0, go_pv=$1.86B, diluted_shares=24.221B, net_cash_ps=$3.065`。
+`validator.py`式で計算すると`$651.37`（保存値と一致・pass）。
+`test_iv_formula.py`式で計算すると`$1299.59`（alphaを二重に乗算する
+ため約2倍）——これは既知の`test_iv_formula.py`失敗
+（`pytest`常時2件failed、`[[TEST-STALE-IV-1]]`として多数のセッション
+記録で「既知」と言及され続けていたが、正式なBACKLOGエントリが
+一度も作られていなかった）の失敗メッセージ
+（`recalculated=$1299.5915, stored=$651.3666`）と完全一致し、
+根本原因を確定した。**統合ではなく修正が必要な案件**として
+`[[TEST-STALE-IV-1]]`を正式登録した（修正は別途、本調査では
+実施していない）。
 
 ---
 
@@ -6085,6 +6192,111 @@ TRUST-SUMMARY-EPIC-1へ統合済み（詳細は同エントリ参照）。
 ---
 
 ## 優先度：中（こなれてきたら対応）
+
+### [VALIDATOR-ALPHA-CAP-STALE-1] validator.pyのalpha_capが常に1.0固定で、セクター別alpha_cap（maturity_config.json）を反映せず32銘柄で偽陽性WARN
+**優先度:** 中（DCF計算自体〈core_calculator.py〉は正しく、実害は
+検証結果の誤表示のみ。ただし32/100銘柄という規模でWARNノイズを
+発生させ続けており、`[[QUALITY-GATES-EPIC-1]]`ゲート3の検証結果を
+信頼して読めなくする副作用があるため「低」ではない）
+**分類:** バグ / 検証ロジック陳腐化（本番の設計変更に検証側が
+追従していない）
+**登録日:** 2026-08-23
+**発見:** `[[QUALITY-GATES-EPIC-1]]`ゲート3棚卸しの追加調査
+（`validation.overall`の全銘柄実測、CHECK-40接続作業）
+
+#### 内容
+`src/value/tanuki_valuation/validator.py::_extract_params()`
+（49行目）が`alpha_cap`を**常に`1.0`固定**で返す。しかし本番の
+`core_calculator.py`（503-516行目）は`config/maturity_config.json`の
+`_alpha_caps`（セクター別、`Consumer Cyclical: 0.6`・
+`Technology: 0.8`・`Utilities: 0.5`等）・`_industry_alpha_caps`
+（業種別上書き、`Telecom Services: 0.4`）を参照し、セクターごとに
+異なる上限を適用している（`ALPHA-SECTOR-1`、2026-08-15実装）。
+
+`validator.py::run_basic_checks()`の`formula_verification`チェックは
+`alpha_was_capped=True`の場合`abs(alpha - alpha_cap) < 0.01`
+（`alpha_cap`は常に1.0）で判定するため、**セクターcapが1.0未満の
+全銘柄で機械的に不合格になる**。2026-08-23時点でTANUKI VALUATION
+登録100銘柄中32銘柄が該当（`BKNG`/`ADBE`/`AMAT`/`KO`等、実測で
+`alpha_cap`が0.6/0.8等セクター値と完全一致し計算自体は正しいことを
+確認済み）。
+
+#### 実測（2026-08-23、4銘柄で数値確認）
+| ticker | ROE | 計算されたuncapped alpha | 実際のcap | stored alpha |
+|---|---|---|---|---|
+| BKNG | 38.3% | 1.6086 | 0.6（Consumer Cyclical想定） | 0.6 |
+| ADBE | 33.1% | 1.3910 | 0.8（Technology想定） | 0.8 |
+| AMAT | 39.2% | 1.6453 | 0.8（Technology想定） | 0.8 |
+| KO | 36.8% | 1.5436 | 0.6（Consumer Defensive想定） | 0.6 |
+
+いずれも`validator.py`は「capは1.0のはず」と期待するため、
+実際のcap値（0.6/0.8）と1.0を比較して不一致＝不合格と判定する。
+
+#### 発見経緯・関連
+`[[QUALITY-GATES-EPIC-1]]`Phase4追加調査（2026-08-23）でCHECK-40
+（`validation.overall`の集約・接続）を実装する過程で、WARN32件全件が
+`formula_verification`に集中していることから発見。`config/
+dcf_validation_baseline.json`の`_meta`に本項目への参照を記録済み。
+
+#### 着手条件
+着手条件なし。修正方針の候補（実装しない）: `validator.py::
+_extract_params()`が`maturity_config.json`を読み、対象銘柄の
+セクター/業種に応じた`alpha_cap`を`core_calculator.py`と同じロジック
+（`mega_tech`優先→`_industry_alpha_caps`→`_alpha_caps`→デフォルト）で
+算出するよう修正する。修正後は`config/dcf_validation_baseline.json`の
+32銘柄分の`fail_count`をほぼ解消できる見込み（LYFTの`anomaly_
+detection`1件は本バグとは無関係のため残る）。
+
+---
+
+### [TEST-STALE-IV-1] tests/test_iv_formula.pyがALPHA-REDESIGN-1後の式変更に追従しておらず、alphaを二重計算してIVが約2倍になる
+**優先度:** 低（pytest既知failed2件として長期間認識・運用されており
+実害はテスト出力のノイズのみ。ただし多数のセッション記録で「既知」
+とだけ言及され続け、正式なBACKLOGエントリが一度も作られていなかった
+ため、根本原因確定を機に正式登録する）
+**分類:** バグ / テストコード陳腐化（本番の設計変更にテストが
+追従していない）
+**登録日:** 2026-08-23（過去多数のセッションで「既知」と言及されて
+いたが、正式なヘッダー付きエントリは本日が初）
+**発見:** `[[QUALITY-GATES-EPIC-1]]`ゲート3棚卸しの追加調査
+（Step 3-4、`test_iv_formula.py`と`validator.py::pt_shares_
+consistency`の重複判定作業中に根本原因を確定）
+
+#### 内容
+`tests/test_iv_formula.py`は`iv_pt = v0_rm * (1.0 + alpha) + rpo_pv
++ go_pv`という式でIV per shareを再計算するが、この式は**alphaを
+乗算する旧式**であり、`ALPHA-REDESIGN-1`（本番`core_calculator.py`が
+`calculate_intrinsic_value(..., alpha=0.0, ...)`固定でP_t算出に
+alphaを乗算しなくなった設計変更）に追従していない。
+
+本番の正しい式は`src/value/tanuki_valuation/validator.py::
+run_basic_checks()`の`pt_shares_consistency`チェックが使っている
+`total_v0 = v0 + rpo_pv + growth_option_pv`（**alpha非乗算**）であり、
+こちらは全銘柄が合格している（誤差0.00%）。
+
+#### 実測（2026-08-23、NVDAで再現）
+`v0_rm=$15700.65B, alpha=1.0(capped), rpo_pv=$0, go_pv=$1.86B,
+diluted_shares=24.221B, net_cash_ps=$3.065`:
+- 正しい式（`validator.py`、alpha非乗算）: `$651.37`（保存値と一致）
+- `test_iv_formula.py`の式（alpha乗算）: `$1299.59`（約2倍）
+
+これは`pytest`常時2件failed（MSFT/NVDA）の失敗メッセージ
+（`recalculated=$1299.5915, stored=$651.3666`）と完全一致し、
+根本原因を確定した。CELH/PLTR/TSLAが失敗しないのはこれらの
+`alpha`が0に近い（cap適用なし、または低ROE）ため、alpha乗算の
+有無による差が$0.01の許容誤差に収まっているだけであり、式自体は
+これら3銘柄でも本質的に誤っている。
+
+#### 着手条件
+着手条件なし。修正方針の候補（実装しない）: `iv_pt`の式から
+`*(1.0 + alpha)`を除去し`validator.py`と同一の式に揃える。あわせて
+`TICKERS`定数（現在`MSFT/NVDA/CELH/PLTR/TSLA`の5銘柄ハードコード）を
+`common.sec_data.tickers.get_tanuki_tickers()`経由の動的リストへ
+拡張することも、`[[QUALITY-GATES-EPIC-1]]`Step 3提案②と合わせて
+検討可能（本項目とは別判断でよい）。修正後はpytestの既知failed2件が
+解消される見込み。
+
+---
 
 ### [OI-RECONSTRUCTION-MISSING-OPEX-LINES-1] 営業利益再構成が別建て営業費用（RestructuringCharges等）を見落とし系統的に誤差を生む
 **優先度:** 中（実測で-11.9%〜-38.3%〈HON〉・+320.9%〈COHR FY2023〉という

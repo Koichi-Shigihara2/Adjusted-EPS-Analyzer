@@ -510,6 +510,47 @@ CHECK-34では、この原則を**複数ファイルへ横展開する際の設�
 
 ---
 
+### DCF検証結果（validator.py）のCHECK-40接続（2026-08-23追記）
+
+TANUKI VALUATIONの`src/value/tanuki_valuation/validator.py::
+run_basic_checks()`は、`pipeline.py`実行時に全銘柄で4つの決定論的
+チェック（`pt_shares_consistency`・`dcf_components`・
+`formula_verification`・`anomaly_detection`）を既に実行しており、
+`[[QUALITY-GATES-EPIC-1]]`ゲート3（計算式検証）が求める「ゴールデン
+テスト」「性質テスト」に近い内容を本番パイプライン内で担っている。
+結果は`{ticker}/latest.json`の`validation`フィールドに保存され、
+`stock.html:838-840`が`validation.overall`を個別ページに表示するが、
+**`report_consistency_check.py`・`audit.py`・pytestのいずれからも
+参照されておらず**、FAILがあっても個別ページを開かない限り誰も
+気づけない沈黙構造だった（CHECK-32〜34と同型のパターン、上記参照）。
+
+CHECK-40（`_check_dcf_validation_failures()`）は、この沈黙を解消
+するため**新規の検証ロジックを実装せず、既に生成済みの`validation`
+フィールドを読んで集約表示するだけ**に留めた設計とした
+（CHECK-32〜34の「本番コードが実際に使う解決ロジックそのものを呼ぶ」
+原則の変形——本ケースでは「本番コードが既に算出済みの結果をそのまま
+読む」）。対象銘柄は呼び出し元の`all_tickers`
+（`get_tanuki_tickers()`ベース）をそのまま受け取り、CHECK内で銘柄
+一覧を再構築しない（事例5の原則）。
+
+`config/dcf_validation_baseline.json`にCHECK-38と同じ設計
+（baseline＝許容値ではなく是正目標、超過時のみNG）でbaselineを
+記録。2026-08-23実測ではPASS67/WARN32/FAIL1（100銘柄）。**WARN32件は
+全件が`formula_verification`に集中しており、`validator.py`の
+`alpha_cap`固定値バグ（`[[VALIDATOR-ALPHA-CAP-STALE-1]]`）による
+偽陽性と判明**（本番`core_calculator.py`はセクター別alpha_capを
+`maturity_config.json`から読むが、`validator.py`は1.0固定のまま
+追従していなかった）。FAIL1件（LYFT）は`anomaly_detection`が
+FCF恒久マイナス銘柄の負の理論株価を正しく検知したものでバグでは
+ない。
+
+**教訓**: ゲート3は「未実装」ではなく「実行結果を捨てていた」状態
+だった。新規の検証機構を作る前に、既存パイプラインが既に算出して
+いる値がどこかに埋もれていないかを確認する価値があるパターンとして
+記録する。
+
+---
+
 ### operating_income（営業利益）の再構成方式とprovenance（2026-08-16追記）
 
 `common/sec_data/parser.py`は`OperatingIncomeLoss`タグが欠落する年度

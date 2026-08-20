@@ -968,6 +968,95 @@ def _check_kpi_rejected_proposals() -> tuple[list[str], list[str]]:
     return ng, warn
 
 
+# CHECK-40: baselineファイルはCHECK-38/39と同じ`config/`配下に配置。
+_DCF_VALIDATION_BASELINE_PATH = os.path.join(REPO_ROOT, "config", "dcf_validation_baseline.json")
+
+
+def _check_dcf_validation_failures(tickers: list[str]) -> tuple[list[str], list[str]]:
+    """CHECK-40: TANUKI VALUATIONの`validator.py::run_basic_checks()`が
+    本番パイプライン実行時に既に算出している`{ticker}/latest.json`の
+    `validation.overall`（PASS/WARN/FAIL）を検知する。
+
+    **発見経緯（2026-08-23、`[[QUALITY-GATES-EPIC-1]]`ゲート3棚卸しの
+    追加調査）**: `validator.py::run_basic_checks()`は`pt_shares_
+    consistency`（P_t/shares再計算突合）・`dcf_components`（DCF構成
+    要素の合計突合）・`formula_verification`（α公式の教科書的再計算
+    突合）・`anomaly_detection`（異常値の性質検査）という、ゲート3
+    （計算式検証）が求める検証をpipeline.py実行時に全銘柄で既に行って
+    いた。しかし結果は`latest.json`の`validation`フィールドと
+    `stock.html`の個別ページ表示にのみ残り、`report_consistency_
+    check.py`・`audit.py`・pytestのいずれからも一切参照されておらず、
+    FAILが出ていても個別ページを開かない限り誰も気づけない沈黙構造
+    だった（CHECK-32〜36と同型のパターン）。本チェックは新規の検証
+    ロジックを実装せず、既に生成済みの`validation`フィールドを読んで
+    集約表示するだけに留める。
+
+    **対象銘柄の決定（事例5の原則）**: 呼び出し元がその都度
+    `common.sec_data.tickers.get_tanuki_tickers()`（本番の一覧取得
+    関数）で構築した`tickers`をそのまま受け取る。本関数内で独自の
+    銘柄一覧を再構築しない。
+
+    **NG/WARNの設計（CHECK-38と同じ考え方）**:
+    - `validation.overall`が`PASS`以外の銘柄が1件でもあればWARNとして
+      出し、**件数・overall・不合格チェック名を必ず表示する**
+    - `config/dcf_validation_baseline.json`に記録済みの銘柄別
+      `fail_count`（不合格サブチェック数、baselineは記録日時点の実測値
+      で**許容値ではなく是正目標**——同ファイル`_meta`に明記）を超えて
+      悪化した場合のみNGとする
+    - baselineに存在しない銘柄（新規追加等）は悪化判定をスキップし
+      WARNのみ（比較対象がないため）
+
+    Returns:
+        (ng_list, warn_list)
+    """
+    ng: list[str] = []
+    warn: list[str] = []
+
+    try:
+        with open(_DCF_VALIDATION_BASELINE_PATH, encoding="utf-8") as f:
+            baseline = json.load(f)
+    except Exception:
+        baseline = {}
+
+    for ticker in tickers:
+        latest_path = os.path.join(DATA_DIR, ticker, "latest.json")
+        if not os.path.exists(latest_path):
+            continue
+        try:
+            with open(latest_path, encoding="utf-8") as f:
+                latest = json.load(f)
+        except Exception:
+            continue
+
+        validation = latest.get("validation")
+        if not validation:
+            continue
+
+        overall = validation.get("overall", "PASS")
+        checks = validation.get("checks", {})
+        failed_names = [name for name, res in checks.items() if not res.get("pass", True)]
+        if not failed_names:
+            continue
+
+        warn.append(
+            f"  [WARN-40 DCF検証不合格] {ticker}: validation.overall="
+            f"{overall}（不合格チェック: {', '.join(failed_names)}）"
+        )
+
+        base_entry = baseline.get(ticker)
+        if base_entry is None:
+            continue
+        base_count = base_entry.get("fail_count", 0)
+        if len(failed_names) > base_count:
+            ng.append(
+                f"  [NG-40 DCF検証不合格の悪化] {ticker}: baseline"
+                f"（{base_entry.get('recorded_at', '不明')}時点）{base_count}件"
+                f" → 現在{len(failed_names)}件に悪化（overall={overall}）"
+            )
+
+    return ng, warn
+
+
 def annotate_warn(ticker: str, message: str, ledger: set[tuple[str, str]]) -> tuple[str, bool]:
     """
     WARNメッセージに台帳照合結果を反映する。
@@ -1981,6 +2070,19 @@ def run_checks(args=None) -> tuple[int, int]:
     if kpi_reject_ng:
         flagged.append(("[GLOBAL]", kpi_reject_ng, []))
         total_ng += len(kpi_reject_ng)
+
+    # CHECK-40: ティッカー非依存の単発チェック（validator.pyが本番算出
+    # 済みのDCF検証結果`validation.overall`の未接続を解消、
+    # [[QUALITY-GATES-EPIC-1]]ゲート3棚卸しの追加調査）。CHECK-35/36と
+    # 同様、--tickerフィルタの有無に関わらず常に全銘柄（all_tickers）を
+    # 対象にする。
+    dcf_validation_ng, dcf_validation_warn = _check_dcf_validation_failures(all_tickers)
+    if dcf_validation_warn:
+        flagged.append(("[GLOBAL]", [], dcf_validation_warn))
+        total_warn += len(dcf_validation_warn)
+    if dcf_validation_ng:
+        flagged.append(("[GLOBAL]", dcf_validation_ng, []))
+        total_ng += len(dcf_validation_ng)
 
     if not flagged:
         if not quiet:
