@@ -6757,7 +6757,7 @@ KPIの実測値が1件も取得できなかった**（全て「取得失敗」�
 
 ---
 
-### [TAIL-XBRL-SEGMENT-FETCHER-NONDIMENSIONED-GAP-1] xbrl_segment_fetcher.pyが非セグメント指標（会社全体のKPI）を構造的に取得できない — Layer3経由取得の自動振替をcore 3銘柄にも適用、core+satellite合計53件へ改善（構造的制約自体は未解消）
+### [TAIL-XBRL-SEGMENT-FETCHER-NONDIMENSIONED-GAP-1] xbrl_segment_fetcher.pyが非セグメント指標（会社全体のKPI）を構造的に取得できない — Layer3経由取得の自動振替をcore 3銘柄にも適用、core+satellite合計54件へ改善（構造的制約自体は未解消、ただし残5件のうち構造的制約が実際の原因だったものは0件と判明）
 **優先度:** 高→**中**（2026-08-19⑨、機械的なLayer3振替を実装した
 結果、実務上の実害〈satelliteのKPI欠落〉はほぼ解消。
 `xbrl_segment_fetcher.py`自体の非ディメンション取得不可という構造的
@@ -7107,13 +7107,140 @@ recommendationは変わらなかった」銘柄が9/10ある一方、その内�
   実測値〈satellite残り2件〉へ引き下げ更新済み、2026-08-19⑨。
   2026-08-20にcore〈PLTR/SOFI〉のmissing_countも実測値へ更新）
 
-#### 着手条件（残課題、2026-08-20時点）
-(d)は実装済み（satellite・core双方）。残る(a)〈xbrl_segment_fetcher.py
-自体の非ディメンション取得対応〉・(b)〈text_kpi_extractor.pyへの
-誘導〉は、ADBE・APGEの2件、SOFIの3件（Technology Platform売上成長率・
-NCO・NIM）、および構造的制約が残る非セグメント指標について、着手要否・
-優先度をユーザーに確認してから着手すること（実務上の実害はLayer3経由
-でほぼ解消済みのため、急ぎ性は低い）。
+#### Step 5: 残5件のうち3件を解消（2026-08-21⑦）
+
+2026-08-21⑥調査セッションの結果を受け、SOFI関連3件に対応した
+（コミット`bc5a47ed7`）。ADBE・APGEの2件は今回発見した別の構造的
+ギャップ（下記参照）のため対応せず、`[[TAIL-THESIS-KPIS-EMPTY-
+ADBE-APGE-1]]`として別項目に切り出し保留とした。
+
+**当初分類の訂正（重要）**: SOFI「Technology Platform売上成長率」は
+本エントリの表題が示す「非ディメンション取得の構造的制約」（本問題の
+核心）が原因ではなく、**`tail_kpi_map.json`の`xbrl_member`タグ名の
+単純な誤り**（`sofi:TechnologyPlatformMember`、"Segment"が脱落した
+誤記）が原因だった。実際のXBRLでは`sofi:TechnologyPlatformSegmentMember`
+（兄弟KPI「Technology Platform売上」が使用中の値と同一）が使われて
+おり、`config/tail_kpi_map.json`のtag_historyをこの正しい値に1行
+修正するだけで解決した。`xbrl_segment_fetcher.py --ticker SOFI`本番
+実行で`missing_kpis`からこのKPIが消え（3/7件失敗→2/7件失敗）、
+2026Q2実績値$50,512,000が生XBRLと一致することも確認済み。**「非
+ディメンション取得の構造的制約」に起因する障害は今回の5件には1件も
+含まれていなかった**（`[[TAIL-XBRL-MEMBER-VALIDATION-GAP-1]]`と同型の、
+個別タグ精度の問題だった）。
+
+正味貸倒率（NCO）・純金利マージン（NIM）は`us-gaap:NetChargeOffs`・
+`us-gaap:NetInterestMargin`いずれのタグもSOFIの直近10-Q生XBRL・
+`company_facts.json`に一切存在しないことを実測確認済み（0件ヒット、
+sofi固有拡張タグにも該当なし）。タグ訂正では直らないため、
+`quarterly_review_generator.py::_build_kpi_status_table()`に既存の
+「`auto_fetchable=True`でもlayer2にデータがなければlayer3に
+フォールバックする」ロジック（コード変更不要で機能する）を活用する
+方針で、`SOFI_proposal.json`・`SOFI_thesis.json`両方の`auto_fetchable`
+を`true`→`false`へ変更し`text_kpi_extractor.py`（Grokテキスト抽出）
+の対象に切り替えた。SOFI限定で実際に`text_kpi_extractor.py`を実行
+した結果、**NCO・NIMともGrokが決算資料（10-Q MD&A・8-K EX-99.1、
+結合12,000文字上限）から値を発見できず`not_found`として記録された**
+（`SOFI_layer3.json`）。追加のプロンプト調整等は行わず、この状態
+（`auto_fetchable=false`、取得を試みる経路には乗ったが現時点で
+未解決）のまま維持する。SoFiの銀行部門向け詳細開示（Credit Quality・
+NIM専用セクション等）が抽出対象テキストの範囲外にある可能性が
+推測されるが、未検証。
+
+option(a)（`xbrl_segment_fetcher.py`自体の非ディメンション取得対応、
+`parse_default_contexts()`新設によりexplicitMemberを持たない
+「会社全体」コンテキストを別途取得する設計案）は、**今回の5件の
+いずれにも必要なかったため実装しなかった**。将来同種の課題（Layer3の
+32フィールドにも存在せず、かつティッカー固有のXBRLタグとしては
+存在するような会社全体指標）が見つかった場合の設計案として、調査
+結果のみ記録に残す:
+- `parse_contexts()`と対になる新関数を追加し、explicitMemberを一切
+  持たないコンテキストのみを収集する（既存の`_CTX_RE`/
+  `_ALL_EXPLICIT_MEMBER_RE`/`_START_RE`/`_END_RE`を再利用、新規
+  コードは20〜30行程度の見積もり）
+- `parse_and_extract()`で`dimension`が空文字列のKPIをこの経路に
+  振り分ける
+- `route_rejected_to_layer3()`（Layer3の32フィールド一致のみを見る）
+  とは完全に補完的で衝突しない。前者はLayer3にもない、しかし
+  ティッカー固有のXBRLタグとしては存在する会社全体指標を拾う経路
+- 実装するとしても、対象KPIを`tail_kpi_map.json`へ再登録する作業
+  （Step4のPLTR/SOFI Layer3振替と同型の一回限りの手動パッチ）が
+  別途必要になる
+
+**新規発見（今回のスコープ外）**: ADBE・APGEの`{ticker}_thesis.json`
+の`kpis`フィールドがそもそも空（`None`）であり、PLTR/SOFI/TSLA
+（coreの`positions/`）とは異なり、レビューのKPIステータス表自体に
+一切表示されていないことが判明した。仮に研究開発費・営業費用を
+取得可能にしても、この表示側のギャップが別途解消されない限り
+実務上の効果がない。`[[TAIL-THESIS-KPIS-EMPTY-ADBE-APGE-1]]`として
+新規登録した（実装せず記録のみ、詳細は同エントリ参照）。
+
+**検証**: `pytest tests/` 892 passed / 0 failed（回帰なし）、
+`audit.py` NG=0、`report_consistency_check.py --fail-on-ng` NG=0・
+WARN=95（内訳変化: WARN-38 SOFIが3/7件失敗→2/7件失敗、WARN-39は
+CELH/APP/ADBE/APGEの4件のまま不変〈NCO/NIMは却下ではなく
+`auto_fetchable=false`という別状態のためWARN-39の対象外〉）。
+
+#### 着手条件（2026-08-21⑦時点）
+今回の5件対応は完了（3件解消・2件は`[[TAIL-THESIS-KPIS-EMPTY-
+ADBE-APGE-1]]`へ切り出し保留）。残るoption(a)〈`xbrl_segment_
+fetcher.py`自体の非ディメンション取得対応〉は、今回の5件では
+発生しなかったため着手条件なし（将来同種のケースが見つかった場合に
+再検討）。SOFI NCO/NIMの`text_kpi_extractor.py`抽出失敗への追加
+対応（プロンプト改善等）も着手条件なし（ユーザー判断待ち）。
+
+---
+
+### [TAIL-THESIS-KPIS-EMPTY-ADBE-APGE-1] ADBE・APGEの{ticker}_thesis.jsonのkpisフィールドが空でレビューのKPIステータス表に一切表示されない
+
+**優先度:** 低（実務上の実害は限定的。ADBE・APGEはsatelliteの
+ウォッチ対象であり、KPI追跡表自体が空でも他の分析セクション
+〈summary/concerns等〉は生成される。ただし研究開発費・営業費用を
+将来取得可能にしても、この表示側のギャップが解消されない限り
+効果が出ない点に注意）
+**分類:** バグ / TAIL自動化パイプライン / 表示側の欠落
+**登録日:** 2026-08-21
+**発見:** `[[TAIL-XBRL-SEGMENT-FETCHER-NONDIMENSIONED-GAP-1]]`残5件
+調査中（2026-08-21⑥⑦セッション）、ADBE「研究開発費」・APGE
+「営業費用」をtext_kpi_extractor.py誘導で解決できないか検討する
+過程で発見
+
+#### 内容
+`quarterly_review_generator.py::_build_kpi_status_table()`が表示する
+KPIステータス表は、`{ticker}_thesis.json`（`docs/portfolio/tail/data/
+positions/`配下）の`kpis`フィールドを唯一のソースとする
+（`thesis.get("kpis") or []`）。PLTR・SOFI・TSLA（core）の
+`{ticker}_thesis.json`はこの`kpis`フィールドに追跡対象KPIのリストが
+実際に登録されているが、**ADBE・APGE（satellite）の`{ticker}_
+thesis.json`は`kpis`フィールド自体が存在しない（`None`）**ことを
+実測確認した。
+
+`config/tail_kpi_map.json`にはADBE 5件・APGE 3件のKPIが登録されて
+おり`xbrl_segment_fetcher.py`が実際に値を取得して`{ticker}_layer2.
+json`へ保存しているにもかかわらず、`_build_kpi_status_table()`が
+`thesis_kpis`（空リスト）でループするため、**この表は完全に空
+（ヘッダーのみ）になり、取得済みのKPI値も含め一切表示されない**。
+これは`missing_kpis`の話（取得失敗の可視化不足）とは別次元の問題
+——取得に成功していても表示されない。
+
+#### 対応方針（未確定・着手前にユーザー判断を仰ぐこと）
+`[[TAIL-XBRL-SEGMENT-FETCHER-NONDIMENSIONED-GAP-1]]`Step5
+（2026-08-21⑦）の調査時点での結論: 対応するとしても以下2点を
+セットで検討する必要がある。
+- `[[TAIL-XBRL-SEGMENT-FETCHER-NONDIMENSIONED-GAP-1]]`のoption(a)
+  （`xbrl_segment_fetcher.py`自体の非ディメンション取得対応、
+  `parse_default_contexts()`新設）で研究開発費・営業費用自体を
+  取得可能にする
+- `ADBE_thesis.json`・`APGE_thesis.json`へ`kpis`フィールドを新規
+  登録する（`config/tail_kpi_map.json`の既存5件・3件をベースに、
+  `warning_threshold`/`exit_threshold`等の投資判断上の閾値を
+  ユーザーが設定する必要がある——他のticker同様、機械的に埋められる
+  性質の項目ではない）
+
+satellite全体（他5銘柄: APP/CELH/CRWV/NVDA/SOUN）でも同型のギャップが
+無いか未確認（今回はADBE・APGEの2件のみ実測、横断確認は未実施）。
+
+#### 着手条件
+なし（着手要否・優先度をユーザーに確認してから着手すること）
 
 ---
 
