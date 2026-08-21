@@ -6292,11 +6292,13 @@ NG=0を確認した。
 
 ---
 
-### [OI-RECONSTRUCTION-MISSING-OPEX-LINES-1] 営業利益再構成が別建て営業費用（RestructuringCharges等）を見落とし系統的に誤差を生む
-**優先度:** 中（実測で-11.9%〜-38.3%〈HON〉・+320.9%〈COHR FY2023〉という
-定量化済みの既知の誤差が判明しているため「低」ではないが、現時点で
-投資判断〈IV・TANUKI SCORE・MATRIX分類〉への実害は確認されていないため
-「高」でもない）
+### ✅ [OI-RECONSTRUCTION-MISSING-OPEX-LINES-1] 営業利益再構成が別建て営業費用（RestructuringCharges等）を見落とし系統的に誤差を生む — GP法へのRestructuringCharges控除を追加して解消（Layer3側は別項目へ切り出し）
+**状態:** 完了（2026-08-22、コミット`2eda3df90`。parser.py側のGP法に
+RestructuringCharges控除を追加。Layer3側〈`layer3_builder.py`のフォール
+バック不在〉は対象範囲外とし`[[LAYER3-OI-RECONSTRUCTION-FALLBACK-
+GAP-1]]`へ切り出し、詳細は下記「Step: 実装」参照）
+**優先度:** 中→解消（parser.py側）
+**分類:** バグ / データ品質 / SEC EDGAR / 確定・候補タグ設計欠陥
 **分類:** バグ / データ品質 / SEC EDGAR / 確定・候補タグ設計欠陥
 **登録日:** 2026-08-19
 **発見:** `[[OPERATING-INCOME-EXTRACTION-GAP-1]]`フォールバック向き
@@ -6420,7 +6422,93 @@ HON/COHRに限定せず全105銘柄の該当年度を使用した。
 - pretax法の候補拡充・その他GP法候補（Goodwill/Intangible減損等）は
   実測の結果採用しないと決定済みのため、再検証は不要
 
+#### 再検証（2026-08-21、実装前の追加確認）
+
+実装着手前に、登録内容を鵜呑みにせず以下を実データで再検証した:
+
+- `RestructuringCosts`（COHRが使う別名タグ）を単独でバックテストした
+  結果、**改善割合48%**（既に不採用と確定した他候補
+  〈GoodwillImpairmentLoss 32%・ImpairmentOfLongLivedAssetsHeldForUse
+  39%・AssetImpairmentCharges 50%〉と同水準）と判明。同じ判断基準
+  （改善行がより多いことを要求）に照らし、**RestructuringCostsは
+  不採用**と結論した（当初案にあった「両タグとも追加」から
+  `RestructuringCharges`のみに絞り込み）
+- Layer3側（`layer3_builder.py::build_ticker_store()`）は
+  `operating_income`フィールドの候補が`["OperatingIncomeLoss"]`単独
+  でGP法/pretax法相当のフォールバックが無いことを実コードで再確認
+  （記載は正確、状況変化なし）。消費者12ファイル・影響10銘柄76年度分
+  という規模のため、**Layer3側は本項目の対象外とし`[[LAYER3-OI-
+  RECONSTRUCTION-FALLBACK-GAP-1]]`として別項目に切り出した**（詳細は
+  同項目参照、実装未着手）
+- **登録エントリ自体の誤り訂正（重要・教訓として記録）**: 本項目は
+  「COHR FY2023: GP法でも誤差+320.9%」「COHRは`RestructuringCosts`
+  （$160M）・`OtherOperatingIncomeExpenseNet`（$47.6M）を別建て報告」
+  と記載していたが、**この$160M・$47.6Mという数値は実際にはFY2023では
+  なくFY2025のデータだった**（`company_facts.json`を横断検索し確認:
+  `RestructuringCharges`/`RestructuringCosts`のFY2025値=$160,081,000、
+  `OtherOperatingIncomeExpenseNet`のFY2025値=$47,554,000。FY2023の
+  実際の値は`RestructuringCharges`=$119,456,000〈後年訂正後
+  $119,101,000〉、`OtherOperatingIncomeExpenseNet`=-$31,566,000）。
+  +320.9%という誤差自体の年度（FY2023）は正しかったが、その内訳として
+  引用した具体的タグ値の年度ラベルが誤っていた。**今後同種の実測を
+  行う際は、複数年度にまたがる調査では必ず年度とタグ値の対応を
+  再確認すること**（本セッションでの教訓）
+- 上記の結果、**FY2023時点で`RestructuringCharges`タグ自体は存在して
+  おり**（$119,456,000）、これのみの控除で発端事例（COHR FY2023）の
+  誤差が解消することを実測確認した（下記「Step: 実装」参照）。当初
+  懸念されていた「発端事例がRestructuringChargesでは直らない可能性」
+  は、登録エントリの年度ラベル誤りに起因する誤解だった
+- IV/TANUKI SCORE/MATRIX分類への実際の影響も、`operating_income`→
+  `roic_wacc_ratio`→`moat_score`/`vc_factor`（RICE）という実際の消費
+  経路を`pipeline.py`/`core_calculator.py`/`calculator/adjustments.py`/
+  `calculator/rice.py`で特定した上で、COHR/JNJ/KLAC/SOFIの実データで
+  再計算し、**4銘柄とも変化なし**と確認した（COHRのRICE数値表示のみ
+  約30%変化するが、分類境界〈RICE≥3.0〉から大きく離れているため
+  quadrantは不変）
+
+#### Step: 実装（2026-08-22、コミット`2eda3df90`）
+
+`common/sec_data/parser.py::_backfill_operating_income()`のGP法計算に、
+`RestructuringCharges`タグが存在すれば追加控除するロジックを実装した
+（`_OI_RESTRUCTURING_TAGS = ("RestructuringCharges",)`、既存の
+`_find_fy_tag_value()`ヘルパーを再利用。`RestructuringCosts`は上記の
+再検証結果により意図的に含めない）。既存のR&D・SGA/S&M控除ロジック・
+他の呼び出し元・銘柄には影響しない後方互換設計（`gp_estimate`が算出
+できた年度でのみ、同年度のタグが存在する場合に限り追加控除）。
+
+**検証結果**（実装済みコードで再実測、`_find_fy_tag_value()`のfy/fp
+ベースマッチングにより2026-08-21⑥の日付窓ヒューリスティックより高精度
+なマッチングとなった）:
+- 全105銘柄・772件のGP法検証セットのうち、`RestructuringCharges`該当
+  232件中**68%で改善**（中央値誤差5.33%→4.72%）
+- COHR FY2023（発端事例）: 誤差**+320.9%→-0.96%**まで解消
+- COHR/JNJ/KLAC/SOFIの実際の最新年度（いずれもFY2025、GP法採用中）で
+  新しい`operating_income`値を実装コードで確認: COHR $534,947,000→
+  $374,866,000（-29.9%）・JNJ $25,596,000,000→$25,368,000,000
+  （-0.9%）・KLAC $5,014,227,000→$5,006,527,000（-0.2%）・SOFI
+  $1,260,612,000→$1,259,664,000（-0.1%）。いずれも上記「再検証」で
+  確認済みの通りIV・TANUKI SCORE・MATRIX分類への影響なし
+- `pytest tests/` 905 passed / 0 failed（回帰なし）、`audit.py` NG=0、
+  `report_consistency_check.py --fail-on-ng` NG=0
+
+**既知の制約（記録）**: COHRのようにFY2023実績で見た通り
+`RestructuringCharges`・`RestructuringCosts`の両方を報告する銘柄が
+存在する。将来、ある銘柄・年度で`RestructuringCharges`タグのみが
+欠落し`RestructuringCosts`のみ報告されるケースが出た場合、本フォール
+バックは効かず未控除のまま残る（`RestructuringCosts`は改善率48%の
+ため意図的に非対応としているため）。2026-08-22時点でCOHRはFY2023・
+FY2025とも`RestructuringCharges`タグ自体を報告しているため実害は
+確認されていない。
+
+**未実施（本番データ再生成）**: 本コミットはコード変更のみ。実際に
+`RestructuringCharges`を適用した`annual_*.json`の再生成・pushは
+未実施（対象10銘柄・76年度分、確立済みの「コード修正→push→
+全銘柄再生成→再生成結果push」の順序に従い、再生成は別セッションで
+実施すること）。
+
 #### 関連
+- `[[LAYER3-OI-RECONSTRUCTION-FALLBACK-GAP-1]]`（Layer3側フォール
+  バック不在、本項目から2026-08-22に切り出し新規登録）
 - `[[OPERATING-INCOME-EXTRACTION-GAP-1]]`（BACKLOG_DONE.md、本問題の
   発見元）
 - `[[QUALITY-GATES-EPIC-1]]`本線3（ゲート1のyfinance照合が本問題の
@@ -6431,8 +6519,61 @@ HON/COHRに限定せず全105銘柄の該当年度を使用した。
   欠陥、2026-08-19新規登録）
 
 #### 着手条件
-なし。ただし対象は`RestructuringCharges`/`RestructuringCosts`のGP法
-追加のみに絞る（pretax法拡充・他のGP法候補は実測により見送り済み）。
+なし（parser.py側は解消済み。本番データ再生成は別セッションで実施
+すること。Layer3側は`[[LAYER3-OI-RECONSTRUCTION-FALLBACK-GAP-1]]`へ
+切り出し済み・そちらの着手条件を参照）。
+
+---
+
+### [LAYER3-OI-RECONSTRUCTION-FALLBACK-GAP-1] layer3_builder.py::build_ticker_store()のoperating_incomeにGP法/pretax法相当のフォールバックが存在しない
+**優先度:** 中（影響範囲が12消費ファイルと広いため優先度を保持するが、
+実害〈IV・TANUKI SCORE・MATRIX分類への影響〉は未確認。着手前に設計
+判断が必要）
+**分類:** バグ / データ品質 / SEC EDGAR / Layer3統合スキーマ
+**登録日:** 2026-08-22
+**発見:** `[[OI-RECONSTRUCTION-MISSING-OPEX-LINES-1]]`の実装スコープ
+判断時（parser.py側のGP法対応と切り分け）
+
+#### 内容
+`common/sec_data/layer3_builder.py::build_ticker_store()`は
+`config/sec_concept_definitions.json`の`fields.operating_income.
+candidates`（現状`["OperatingIncomeLoss"]`単独）に基づく候補ベース
+抽出のみで、`common/sec_data/parser.py::_backfill_operating_income()`
+が持つGP法（`gross_profit - R&D - SGA/S&M`〈+`[[OI-RECONSTRUCTION-
+MISSING-OPEX-LINES-1]]`実装後は`RestructuringCharges`控除込み〉）・
+pretax調整法相当のフォールバックロジックが**一切存在しない**。標準
+タグ`OperatingIncomeLoss`が取得できない銘柄・年度では、Layer3側は
+`operating_income`が欠損したままになる。
+
+#### 影響範囲（実測、規模感の把握のみ）
+- **消費者**: `grep`で12ファイル確認（`pipeline.py`・`quarterly_
+  review_generator.py`・`kpi_proposer.py`・`xbrl_segment_fetcher.py`・
+  `tail_dcf_bridge.py`・`hypecore.py`・`financial_trend_calculator.py`
+  〈STONKS SILO〉等、TANUKI VALUATION/TANUKI TAIL/STONKS SILO/
+  HypeCoreの主要4系統全て）
+- **対象銘柄・年度**: parser.py側で現在再構成（GP法/pretax法）が発生
+  している年度は全1,314年度中76年度（5.8%）、対象10銘柄（ASTS/COHR/
+  HON/JNJ/KLAC/LLY/RCAT/SOFI/VRT/XOM）。Layer3側にフォールバックを
+  追加した場合、この10銘柄・76年度分でLayer3のoperating_income欠損が
+  解消される見込み
+- 詳細実装（parser.py側ロジックの移植方法・Layer3側での日付マッチング
+  設計等）は未検討
+
+#### 対応方針（未確定）
+`common/sec_data/parser.py::_backfill_operating_income()`と同型の
+GP法/pretax法フォールバックをLayer3側にも実装する案が考えられるが、
+実装場所（`layer3_builder.py`自体に組み込むか、`build_ticker_store()`
+呼び出し後の後処理として追加するか）・ロジック重複の回避方法
+（parser.py側の実装をそのまま呼び出せるか、Layer3独自の日付/タグ
+マッチング方式との整合）は未設計。
+
+#### 関連
+- `[[OI-RECONSTRUCTION-MISSING-OPEX-LINES-1]]`（parser.py側は解消済み、
+  本項目はそこから切り出したLayer3側の残課題）
+
+#### 着手条件
+なし。ただし本体スコープが広い（12消費ファイル）ため、**着手前に
+実装方針の設計判断をユーザーに確認すること**。
 
 ---
 
