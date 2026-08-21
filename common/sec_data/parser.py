@@ -870,6 +870,17 @@ class SECParser:
         "IncomeLossFromContinuingOperationsBeforeIncomeTaxesMinorityInterestAndIncomeLossFromEquityMethodInvestments",
     )
     _OI_NONOP_AGGREGATE_TAGS = ("NonoperatingIncomeExpense",)
+    # [[OI-RECONSTRUCTION-MISSING-OPEX-LINES-1]]: GP法（gross_profit -
+    # R&D - SGA/S&M）が控除しない別建て営業費用のうち、実データバック
+    # テスト（全105銘柄・772件、2026-08-21〜22再検証）でGP法の誤差改善に
+    # 一貫して寄与すると確認できたタグのみ。`RestructuringCosts`（COHR等
+    # 19銘柄が使用する別名タグ）は同一方法論で単独バックテストした結果
+    # 改善率48%（既に不採用の他候補と同水準）だったため意図的に含めない
+    # （COHRのようにChargesタグが欠落しCostsタグのみ報告される年度が
+    # 将来出た場合、本フォールバックは効かず未控除のまま残る既知の制約。
+    # 2026-08-22時点でCOHRはFY2023・FY2025ともRestructuringChargesタグ
+    # 自体を報告しているため実害なしを確認済み）。
+    _OI_RESTRUCTURING_TAGS = ("RestructuringCharges",)
     # 費用側（正の値=コスト）: pretaxから営業利益へ戻す際は加算（足し戻す）。
     # 同一概念の別タグ（片方のみ報告）のため候補内は先勝ち方式でよい。
     _OI_NONOP_EXPENSE_TAGS = ("InterestExpense", "InterestExpenseDebt")
@@ -1082,6 +1093,24 @@ class SECParser:
                     if sm_val is not None:
                         gp_estimate = gp_val - rd_val - sm_val
 
+            # [[OI-RECONSTRUCTION-MISSING-OPEX-LINES-1]]対応（2026-08-22）:
+            # GP法はRestructuringCharges等の別建て営業費用を控除しないため
+            # 系統的に誤差を生む（HON実測: -11.9%〜-38.3%、COHR FY2023実測:
+            # +320.9%）。全105銘柄・772件のバックテストでRestructuringCharges
+            # 追加が該当行の61%で改善に寄与する（中央値誤差5.82%→4.83%）ことを
+            # 確認した上で追加する。gp_estimateが算出できた年度でのみ、同年度の
+            # RestructuringChargesタグが存在すれば追加控除する（既存の
+            # R&D・SGA/S&M控除ロジック・他の呼び出し元・銘柄には影響しない）。
+            # 発見元のCOHR FY2023は誤差+320.9%→-0.96%まで解消することを
+            # 実測確認済み（詳細はBACKLOG.md参照）。
+            gp_restructuring_val: Optional[float] = None
+            if gp_estimate is not None:
+                gp_restructuring_val = self._find_fy_tag_value(
+                    us_gaap, self._OI_RESTRUCTURING_TAGS, year
+                )
+                if gp_restructuring_val is not None:
+                    gp_estimate = gp_estimate - gp_restructuring_val
+
             pretax, nonop_adjustment, nonop_items = self._lookup_pretax_and_nonop_adjustment(us_gaap, year)
 
             chosen_val = None
@@ -1109,9 +1138,16 @@ class SECParser:
                         # 診断指標（高い=pretaxもGP法に近かった、
                         # 低い=pretaxは大きく外れていた）。
                         "nonop_coverage_ratio": round(ratio, 4),
+                        # [[OI-RECONSTRUCTION-MISSING-OPEX-LINES-1]]:
+                        # gp_estimateは既にこの値を控除済み。未控除
+                        # （RestructuringChargesタグなし）の場合はNone。
+                        "restructuring_charges_deducted": gp_restructuring_val,
                     }
                 else:
-                    match_detail = {"gp_estimate": gp_estimate, "cross_check": "unavailable_no_pretax"}
+                    match_detail = {
+                        "gp_estimate": gp_estimate, "cross_check": "unavailable_no_pretax",
+                        "restructuring_charges_deducted": gp_restructuring_val,
+                    }
             elif pretax is not None:
                 if nonop_adjustment is not None:
                     chosen_val = pretax - nonop_adjustment
