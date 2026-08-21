@@ -585,14 +585,14 @@
           <span style="color:var(--red)">後退</span>
         </div>
         <div class="phase-bar" id="pg-track">
-          <div class="phase-bar-zone" style="left:25%"></div>
+          <div class="phase-bar-zone" style="left:30%"></div>
           <div class="phase-bar-zone" style="left:52%"></div>
           <div class="phase-bar-zone" style="left:70%"></div>
           <div class="phase-bar-fill" id="pg-track-fill" style="width:0%"></div>
           <div class="phase-bar-marker" id="pg-track-marker" style="left:0%"></div>
         </div>
         <div style="font-family:var(--mono);font-size:8px;color:var(--mut);display:flex;justify-content:space-between;margin-top:3px">
-          <span>0</span><span>25</span><span>52</span><span>70</span><span>100</span>
+          <span>0</span><span>30</span><span>52</span><span>70</span><span>100</span>
         </div>
         <div id="pg-signal-text" style="font-family:var(--mono);font-size:10px;color:var(--mut);margin-top:6px"></div>
       </div>
@@ -1667,8 +1667,8 @@ function renderScoreHistory() {
 
   // フェーズゾーン（背景）
   const zoneMarkAreas = [
-    [{yAxis:0},{yAxis:25}],   // 拡張
-    [{yAxis:25},{yAxis:52}],  // 踊り場
+    [{yAxis:0},{yAxis:30}],   // 拡張
+    [{yAxis:30},{yAxis:52}],  // 踊り場
     [{yAxis:52},{yAxis:70}],  // 後退入口
     [{yAxis:70},{yAxis:100}], // 後退
   ];
@@ -1766,8 +1766,8 @@ function renderScoreHistory() {
         markLine:{
           silent:true, symbol:'none',
           data:[
-            {yAxis:25, lineStyle:{color:'rgba(16,185,129,0.4)',type:'dashed',width:1},
-             label:{formatter:'25', color:'rgba(16,185,129,0.6)', fontSize:8, fontFamily:"'Space Mono',monospace"}},
+            {yAxis:30, lineStyle:{color:'rgba(16,185,129,0.4)',type:'dashed',width:1},
+             label:{formatter:'30', color:'rgba(16,185,129,0.6)', fontSize:8, fontFamily:"'Space Mono',monospace"}},
             {yAxis:52, lineStyle:{color:'rgba(59,130,246,0.4)',type:'dashed',width:1},
              label:{formatter:'52', color:'rgba(59,130,246,0.6)', fontSize:8, fontFamily:"'Space Mono',monospace"}},
             {yAxis:70, lineStyle:{color:'rgba(245,158,11,0.4)',type:'dashed',width:1},
