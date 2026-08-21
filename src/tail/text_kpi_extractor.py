@@ -286,6 +286,180 @@ def fetch_8k_exhibit99(cik: str) -> Optional[str]:
     return None
 
 
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# キーワードアンカー抽出（[[TAIL-XBRL-SEGMENT-FETCHER-
+# NONDIMENSIONED-GAP-1]] Step5、2026-08-21⑨新設）
+#
+# fetch_10q_mda()/fetch_8k_exhibit99()の「冒頭N文字」方式では、
+# 開示が文書の後方（例: SOFIのNCO/NIMは10-Q本文の35,772文字目・
+# 102,602文字目付近）にある場合に取りこぼす。本セクションの関数群は
+# 全文（切り詰めなし）からキーワードを手がかりに該当箇所だけを
+# 切り出す追加経路で、既存関数は一切変更しない（後方互換・追加のみ）。
+# そのため下記2関数は既存のfetch_10q_mda()/fetch_8k_exhibit99()と
+# フェッチ手順が重複するが、意図的な複製である。
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+def fetch_10q_mda_full(cik: str) -> Tuple[Optional[str], Optional[str]]:
+    """最新10-QのMD&Aセクション全文（切り詰めなし）と四半期文字列を返す。
+
+    fetch_10q_mda()と同じ取得手順を踏むが、セクション境界の特定は
+    独自実装する。当初はextract_mda_section()をmax_chars引数を巨大な
+    値にして呼び出すことで再利用しようとしたが、同関数はmax_charsを
+    「Item3が見つからない場合のフォールバック長」の算出にも使っており
+    （`end = s + max_chars * 2`）、巨大なmax_charsを渡すと10-Q Part II
+    に存在する同名の"Item 2"（"Unregistered Sales of Equity
+    Securities..."、Part Iの本来のMD&Aより大幅に短い）のフォールバック
+    長が異常に肥大化し、誤ってPart II側が「最長セクション」として
+    選ばれてしまうバグを実機検証で発見した（SOFI 2026Q2で実測:
+    本来187,179文字のMD&Aが3,421文字のPart II断片にすり替わった）。
+    そのため本関数はextract_mda_section()を呼ばず、「Item3が見つから
+    ない場合は文書末尾までを長さとする」という妥当なフォールバックを
+    独自実装する（正規表現パターン自体はextract_mda_section()と同一で
+    重複するが、意図的な複製である）。
+    """
+    filings = get_recent_filings(cik, "10-Q", count=1)
+    if not filings:
+        print("  [EDGAR] 10-Q が見つかりません")
+        return None, None
+
+    filing  = filings[0]
+    accn    = filing["accession"]
+    pdoc    = filing["primary_document"]
+    report  = filing["report_date"]
+    cik_int = int(cik.lstrip("0") or "0")
+    accn_nd = accn.replace("-", "")
+
+    if not pdoc:
+        print(f"  [EDGAR] primaryDocument なし ({accn})")
+        return None, None
+
+    url  = f"{EDGAR_BASE}/Archives/edgar/data/{cik_int}/{accn_nd}/{pdoc}"
+    resp = edgar_get(url, timeout=90)
+    if not resp:
+        return None, None
+
+    html = resp.text
+    if len(html) > 400_000:
+        html = html[len(html) // 4:]
+    raw_text = strip_html(html)
+
+    item2_re = re.compile(r"(?i)item\s+2[.\s]")
+    item3_re = re.compile(r"(?i)item\s+3[.\s]")
+    starts = [m.start() for m in item2_re.finditer(raw_text)]
+    if not starts:
+        mda_full = raw_text
+    else:
+        best_start  = starts[0]
+        best_length = 0
+        for s in starts:
+            m_end = item3_re.search(raw_text, s + 200)
+            end   = m_end.start() if m_end else len(raw_text)
+            length = end - s
+            if length > best_length:
+                best_length = length
+                best_start  = s
+        m_end = item3_re.search(raw_text, best_start + 200)
+        end   = m_end.start() if m_end else len(raw_text)
+        mda_full = raw_text[best_start:end]
+
+    quarter = _report_date_to_quarter(report)
+    print(f"  [EDGAR] 10-Q MD&A 全文取得完了 ({len(mda_full)}文字, {quarter})")
+    return mda_full, quarter
+
+
+def fetch_8k_exhibit99_full(cik: str) -> Optional[str]:
+    """最新8-KのExhibit 99.1全文（切り詰めなし）を返す。"""
+    filings = get_recent_filings(cik, "8-K", count=5)
+    if not filings:
+        print("  [EDGAR] 8-K が見つかりません")
+        return None
+
+    cik_int = int(cik.lstrip("0") or "0")
+
+    for filing in filings:
+        accn    = filing["accession"]
+        accn_nd = accn.replace("-", "")
+        idx_url = f"{EDGAR_BASE}/Archives/edgar/data/{cik_int}/{accn_nd}/{accn}-index.htm"
+        resp    = edgar_get(idx_url)
+        if not resp:
+            continue
+
+        m = re.search(
+            r'<td[^>]*>EX-99\.1</td>.*?<a[^>]+href="([^"]+)"',
+            resp.text, re.DOTALL | re.IGNORECASE
+        )
+        if not m:
+            continue
+
+        ex_path = m.group(1)
+        if not ex_path.startswith("http"):
+            ex_path = EDGAR_BASE + ex_path
+        ex_resp = edgar_get(ex_path, timeout=60)
+        if not ex_resp:
+            continue
+
+        text = strip_html(ex_resp.text)
+        print(f"  [EDGAR] 8-K EX-99.1 全文取得完了 ({len(text)}文字)")
+        return text
+
+    print("  [EDGAR] 8-K EX-99.1 見つからず")
+    return None
+
+
+def extract_by_keyword_anchor(
+    full_text: str,
+    keyword_candidates: List[str],
+    window: int = 1500,
+) -> Optional[str]:
+    """
+    全文（切り詰め前）に対し優先順位付きキーワード候補を順に試し、
+    最初にヒットした候補の前後（window文字）を切り出して返す。
+
+    「候補リストの先頭から順に試し、最初にヒットしたものを採用」する
+    設計であり、「テキスト中で最も早く出現する語」を採用するのでは
+    ない——候補の順序自体が定義の確からしさの優先度を表す。例えば
+    SOFIのNCOでは、8-Kの"would have been"を含む一過性除外後の調整値
+    ではなく、10-Qの正式な比率表現（"annualized ratio of net
+    charge-offs..."）を候補の先頭に置くことで、より曖昧な表現を
+    誤って拾わないようにする。
+
+    候補がいずれも見つからない場合はNoneを返す（Grokへは渡さず、
+    「未発見」のまま扱う。空文字列を渡して誤抽出を誘発しない）。
+    """
+    for kw in keyword_candidates:
+        m = re.search(re.escape(kw), full_text, re.IGNORECASE)
+        if m:
+            start = max(0, m.start() - window)
+            end   = min(len(full_text), m.end() + window)
+            return full_text[start:end]
+    return None
+
+
+# KPI名 → キーワードアンカー抽出の設定（優先順位付きフレーズ・検索
+# 対象ドキュメント）。fetch_10q_mda()/fetch_8k_exhibit99()の「冒頭N
+# 文字」方式で見つからなかったKPIのみ、このテーブルに登録があれば
+# 追加のフォールバック抽出を試みる（extract_layer3()参照）。
+# 登録の無いKPI・ティッカーには一切影響しない。
+KEYWORD_ANCHOR_CANDIDATES: Dict[str, Dict[str, Any]] = {
+    "正味貸倒率（NCO）": {
+        "phrases": [
+            "annualized ratio of net charge-offs to average loans outstanding",
+            "ratio of net charge-offs",
+        ],
+        # 8-Kの調整後仮定値（"would have been approximately 3.7%"）を
+        # 誤って拾わないよう、10-Q本文の正式な比率表現のみを対象とする
+        # （tail_kpi_map.jsonのxbrl_member="sofi:PersonalLoansMember"は
+        # この10-Q表と対応している）。
+        "sources": ["10-Q"],
+    },
+    "純金利マージン（NIM）": {
+        "phrases": ["net interest margin"],
+        # NIMは10-Q・8-Kとも同一値（5.98%）のため両方を対象にしてよい。
+        "sources": ["10-Q", "8-K"],
+    },
+}
+
+
 def _report_date_to_quarter(report_date: str) -> str:
     """'2026-03-31' → '2026Q1'"""
     if not report_date or len(report_date) < 7:
@@ -336,6 +510,65 @@ def build_extract_prompt(
 - 数値が明示されている場合のみ value を記入（推測・計算禁止）
 - 見つからない場合は not_found に名前を入れる
 - confidence: high=原文に明記 / medium=文脈から判断 / low=推測要素あり"""
+
+
+def _try_keyword_anchor_fallback(
+    ticker: str,
+    cik: str,
+    quarter: str,
+    not_found_kpis: List[Dict[str, Any]],
+) -> Dict[str, Any]:
+    """
+    通常抽出（冒頭N文字方式）でnot_foundとなったKPIのうち、
+    KEYWORD_ANCHOR_CANDIDATESに登録があるものだけを対象に、全文
+    キーワードアンカー抽出→追加のGrok呼び出しで再挑戦する。
+
+    登録の無いKPI・ティッカーでは`targets`が空になり、通常の
+    extract_layer3()フローには一切影響しない（extracted_kpis/
+    not_foundとも空のdictを返す）。
+    """
+    targets = [k for k in not_found_kpis if k["name"] in KEYWORD_ANCHOR_CANDIDATES]
+    if not targets:
+        return {}
+
+    full_10q_text: Optional[str] = None
+    full_10q_fetched = False
+    full_8k_text: Optional[str] = None
+    full_8k_fetched = False
+
+    snippets: Dict[str, str] = {}
+    for k in targets:
+        name = k["name"]
+        spec = KEYWORD_ANCHOR_CANDIDATES[name]
+        for source in spec["sources"]:
+            if source == "10-Q":
+                if not full_10q_fetched:
+                    full_10q_text, _q = fetch_10q_mda_full(cik)
+                    full_10q_fetched = True
+                text = full_10q_text
+            else:
+                if not full_8k_fetched:
+                    full_8k_text = fetch_8k_exhibit99_full(cik)
+                    full_8k_fetched = True
+                text = full_8k_text
+            if not text:
+                continue
+            snippet = extract_by_keyword_anchor(text, spec["phrases"])
+            if snippet:
+                snippets[name] = f"[{source}より抜粋]\n{snippet}"
+                break  # 最初に見つかったsourceを採用（sources順=優先度）
+
+    if not snippets:
+        return {}
+
+    kpi_subset = [k for k in targets if k["name"] in snippets]
+    combined_snippets = "\n\n".join(
+        f"### {name}\n{txt}" for name, txt in snippets.items()
+    )
+    prompt = build_extract_prompt(ticker, quarter, kpi_subset, combined_snippets)
+    print(f"\n  ── Grok キーワードアンカー抽出フォローアップ ({ticker}) ──")
+    raw = call_grok(user_prompt=prompt, system_prompt=EXTRACT_SYSTEM, max_tokens=1000)
+    return extract_json_from_response(raw)
 
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -399,6 +632,24 @@ def extract_layer3(ticker: str, dry_run: bool = False) -> Optional[str]:
         print(f"    ✓ [{e.get('confidence','?')}] {e.get('name','?')}: {e.get('value','?')}")
     for nf in not_found:
         print(f"    ✗ 未発見: {nf}")
+
+    # キーワードアンカー抽出フォールバック（[[TAIL-XBRL-SEGMENT-FETCHER-
+    # NONDIMENSIONED-GAP-1]] Step5）。KEYWORD_ANCHOR_CANDIDATESに登録の
+    # 無いKPI・ティッカーではtargetsが空になり、以降の処理に一切影響
+    # しない（extracted/not_foundとも変化しない）。
+    if not_found:
+        still_missing_kpis = [k for k in manual_kpis if k["name"] in not_found]
+        followup = _try_keyword_anchor_fallback(
+            ticker, cik, quarter or "不明", still_missing_kpis
+        )
+        f_extracted = followup.get("extracted_kpis", [])
+        if f_extracted:
+            print(f"  [キーワードアンカー] 追加取得: {len(f_extracted)} 件")
+            for e in f_extracted:
+                print(f"    ✓ [{e.get('confidence','?')}] {e.get('name','?')}: {e.get('value','?')}")
+            f_names = {e.get("name") for e in f_extracted if e.get("name")}
+            extracted = extracted + f_extracted
+            not_found = [n for n in not_found if n not in f_names]
 
     kpis_map: Dict[str, Any] = {}
     for e in extracted:
