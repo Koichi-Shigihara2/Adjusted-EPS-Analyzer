@@ -44,7 +44,7 @@
     }
   },
   "upside_percent": 81.7,
-  "calculation_date": "2026-08-20T23:54:27+09:00",
+  "calculation_date": "2026-08-21T23:53:06+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + tapering DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "tapering",
   "growth": {
@@ -391,7 +391,7 @@
     "max_eps_reliability": "MED"
   },
   "validation": {
-    "validated_at": "2026-08-20",
+    "validated_at": "2026-08-21",
     "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
@@ -529,5 +529,21 @@
   "forward_earnings_yield": 0.0357,
   "dilution_severity": "high",
   "dilution_comment": "高い希薄化 ⚠️ SBC・増資を確認",
-  "risk_events": []
+  "risk_events": [
+    {
+      "type": "litigation",
+      "summary": "Antitrust lawsuit against Clearwater Analytics",
+      "impact": "high"
+    },
+    {
+      "type": "regulatory",
+      "summary": "Ongoing SEC regulatory investigation",
+      "impact": "high"
+    },
+    {
+      "type": "earnings",
+      "summary": "Earnings warning impacting 2025-2026 outlook",
+      "impact": "mid"
+    }
+  ]
 }
