@@ -9013,8 +9013,14 @@ Adjusted EPSが新たに算出される**ようになった。株数の引き継
 
 ---
 
-### [GATE2-READER-FCFLIST-1] reader.py::get_fcf_list()のfcf_list順序規約が未検証のまま残存
-**優先度:** 中
+### ✅ [GATE2-READER-FCFLIST-1] reader.py::get_fcf_list()のfcf_list順序規約が未検証のまま残存 — get_fcf_list_with_dates()新設で解消
+**状態:** 完了（2026-08-21⑤、コミット`92e24be8d`。
+`[[GROWTH-FCFSERIES-ACCESSOR-ADOPT-1]]`の実装過程で解消。
+`get_fcf_list_with_dates()`を新設し、`get_annual_range()`が返す
+年次データの`period`（会計年度）を値と対で保持したまま返すようにした。
+下記`[[GROWTH-FCFSERIES-ACCESSOR-ADOPT-1]]`参照。両者は同一の実装作業
+であり、重複記録ではなく相互参照）
+**優先度:** 中→解消
 **分類:** アーキテクチャ / SECデータ取得層 / QUALITY-GATES-EPIC-1関連
 **登録日:** 2026-07-13
 **発見:** Gate2 Phase 3a実装時
@@ -9034,16 +9040,121 @@ quarterly.py/data_fetcher.py）のままでは順序検証を後付けできな�
 `annual_2024.json`→...）に依存して新しい順を実現しており、この規約自体も
 型で保証されていない。
 
-#### 対応方針（未確定・次回セッションで判断）
-- `get_fcf_list()`自体を対象ファイルに含め、`get_annual_range()`が返す
-  年次データの`period`（年度）情報を保持したまま`FCFSeries`を構築するよう
-  改修する
-- reader.pyはPhase 3aの当初スコープに含まれていなかったため、他の
-  reader.pyメソッド（get_roe_avg_detail等）への影響有無も含めて次回
-  セッションで規模を見積もる
+#### 対応（2026-08-21⑤、実装済み）
+`get_fcf_list()`自体は変更せず（既存呼び出し元1箇所への影響ゼロを維持）、
+新規`get_fcf_list_with_dates()`を追加して`get_annual_range()`が返す
+年次データの`period`（会計年度）を値と対で返すようにした。既存
+`get_fcf_list()`はこの新メソッドの薄いラッパー（値部分のみ返す）に
+変更し、フィルタリングロジックの重複実装を避けた。reader.pyの他メソッド
+（get_roe_avg_detail等）への影響はなし（対象は`get_fcf_list()`のみ）。
+実装詳細・呼び出し元での実際の検証方法は`[[GROWTH-FCFSERIES-
+ACCESSOR-ADOPT-1]]`参照。
 
 #### 着手条件
-なし（次回セッションで規模見積もり・優先順位判断してから着手）
+なし（解消済み）
+
+---
+
+### ✅ [GROWTH-FCFSERIES-ACCESSOR-ADOPT-1] growth.pyがFCFSeriesアクセサ（.newest/.oldest）を未採用だった件（Gate2積み残し） — 日付付き検証パスを追加して解消
+
+**状態:** 完了（2026-08-21⑤、コミット`92e24be8d`。reader.py/
+data_fetcher.py/core_calculator.py/growth.pyを変更。単体テスト16件
+追加（`tests/test_growth.py`11件・`tests/test_reader_fcf_list_with_
+dates.py`3件、既存2件は保持）。GEV・LOARのフローズン入力比較で出力が
+変更前と完全一致することを実測確認済み）
+**優先度:** 中→解消
+**分類:** 予防的強化 / TANUKI VALUATION / Gate2積み残し解消
+**登録日:** 2026-08-21
+**発見:** `[[QUALITY-GATES-EPIC-1]]`Phase 4棚卸し（2026-08-20実施、
+2026-08-21③調査・設計セッションを経て本セッションで実装）
+
+#### 内容
+Gate2 Phase 3aで新設した`FCFSeries`型（fcf_listの新しい順規約を
+construction時に検証し`.newest`/`.oldest`アクセサを提供）は
+`data_fetcher.py::TTMReader.get_fcf_series()`側では使われていたが、
+実際にFCF CAGRを計算する`calculator/growth.py::calculate_fcf_cagr()`
+は素の`list[float]`を受け取り、直接インデックスアクセス
+（`fcf_list[:5]`・`recent_fcfs[-1]`・`recent_fcfs[0]`）のみで実装
+されたままだった。
+
+**重要な性質の整理**（実害の区別、調査セッション報告より）:
+本件は`GROWTH-CAGR-SIGN-1`（`calculate_fcf_cagr()`内でstart_value/
+end_valueの変数割り当てを取り違えた符号反転バグ、データ自体は正しい
+順序だった）の実際のバグそのものを再現・検知するものではない。
+「同種（順序依存）の別の潜在バグを構造的に防げていなかった」という
+意味での予防的強化であり、実装時点で実際に誤った成長率が出ていた
+銘柄は確認されなかった（GEV・LOARとも既に正しい順序で計算されており、
+`growth_cap`上限0.50に到達する高成長企業として妥当な結果だった）。
+
+本番でこの関数が最終成長率を決めるのは全100銘柄中GEV・LOARの2銘柄
+のみ（他98銘柄はsegment_config.py側のsegment_weighted経由が優先され
+`calculate_fcf_cagr()`自体が呼ばれない）。
+
+#### 対応（2026-08-21⑤、コミット`92e24be8d`）
+影響範囲を「growth.pyが実際にFCF CAGRを計算する瞬間」だけに限定する
+統合案（2026-08-21④の調査・設計セッションで承認済みの推奨案）で実装:
+
+1. `common/sec_data/reader.py`: 新規`get_fcf_list_with_dates()`を
+   追加し、`get_annual_range()`が返す年次データの`period`（会計年度）
+   を値と対で返す。既存`get_fcf_list()`はこの新メソッドの薄い
+   ラッパーに変更（`[[GATE2-READER-FCFLIST-1]]`を同時に解消）。
+2. `src/value/tanuki_valuation/data_fetcher.py`:
+   `TTMReader._filtered_fcf()`/`_validated_fcf_series()`を新設し、
+   `get_fcf_series()`（既存・値のみ）と`get_fcf_dates()`（新規・
+   日付のみ）の共通実装に集約。`_select_fcf_dates()`を新設し
+   `_select_fcf_source()`が確定した採用経路（TTM/年次）に対応する
+   日付を選ぶ（`_select_fcf_source()`自体・その既存テスト6件への
+   影響はゼロ）。財務データdictに新規キー`fcf_dates_raw`を追加。
+3. `src/value/tanuki_valuation/core_calculator.py`:
+   `fcf_dates_raw`を取り出し`determine_growth_rate()`へ新規オプション
+   引数として渡す。他5箇所の`fcf_list_raw`消費（件数チェック・
+   `determine_fcf_base()`・`analyze_fcf_outlier()`・外れ値除外スライス・
+   JSON出力）は無変更。
+4. `src/value/tanuki_valuation/calculator/growth.py`:
+   `calculate_fcf_cagr()`/`determine_growth_rate()`に`fcf_dates`
+   （デフォルトNone、後方互換）を追加。`_filter_positive_with_dates()`
+   で正のFCFのみへのフィルタ処理を値と日付のペア対応を保ったまま実施。
+   日付がある場合のみ`FCFSeries(recent_fcfs, recent_dates)`で新しい順
+   規約を検証し、成功時は`.oldest`/`.newest`アクセサからstart_value/
+   end_valueを取得する。**順序違反（`ContractViolation`）検知時は
+   ログWARNのみで例外を送出せず、従来の直接インデックス方式に
+   フォールバックして処理を継続する**（CHECK-32〜40と同型の
+   「検知してWARN・処理は継続」方針、本番パイプラインを止めない）。
+
+**実装中に実データで発見した追加考慮事項**: 年次経路の`period`は
+ティッカーにより型が不統一（AAPLはint、LOARはstr）。同一ティッカー内で
+型が混在すると`dates[i] < dates[i+1]`比較が`ContractViolation`ではなく
+`TypeError`を送出しうるため、`except (ContractViolation, TypeError)`と
+広めに捕捉し同様にWARN・継続とした（単体テストで再現・確認済み）。
+
+#### 検証
+- 単体テスト16件追加（`tests/test_growth.py`: ペア整合性フィルタ3件・
+  アクセサ経由と直接インデックス方式の一致確認3件・順序違反時の
+  WARN/フォールバック3件・`determine_growth_rate()`伝播確認2件。
+  `tests/test_reader_fcf_list_with_dates.py`: 3件）。既存の
+  `test_segment_detail_source_*`2件（`GROWTH-SOURCE-LABEL-1`由来）も
+  同ファイルに保持。
+- フローズン入力比較: 変更前の`latest.json`（GEV・LOAR）の`growth`
+  セクションを退避した上で、本番の`update.py`等（SEC/yfinance再取得）
+  は実行せず、`TTMReader`/`SECReader`/`_select_fcf_source`/
+  `_select_fcf_dates`/`determine_growth_rate`を実データ（既存の
+  `annual_*.json`・`ttm_series`）に対して直接呼び出し、`growth.rate`・
+  `source`・`cagr_detail.start_value`/`end_value`が変更前と完全一致
+  することを確認（GEV: rate=0.5・start=595,000,000・
+  end=7,526,000,000。LOAR: rate=0.5・start=12,813,000・
+  end=112,280,000。いずれもWARNなし＝順序検証は正常にパス）。
+  segment_weighted経由の1銘柄（AAPL）で意図的に壊れたfcf_list/
+  fcf_datesを渡しても`calculate_fcf_cagr()`自体に到達しないことも
+  別途確認。
+- `pytest tests/`: 892 passed / 0 failed（新規16件含む、既存回帰なし）
+- `audit.py`: NG=0（🟢95/🟡5、既存の警告のみ）
+- `report_consistency_check.py --fail-on-ng`: NG=0/WARN=95、ゲート通過
+
+#### 関連
+`[[GATE2-READER-FCFLIST-1]]`（本件で解消、上記参照）。
+
+#### 着手条件
+なし（解消済み）
 
 ---
 
