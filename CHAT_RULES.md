@@ -190,18 +190,45 @@ TANUKI SCORE・RICE・成長率はいずれも真値が存在せず、的中率�
 `[[OPERATING-INCOME-EXTRACTION-GAP-1]]`「2026-08-19（完了）」参照）。
 `revenue`・`net_income`への横展開は着手していない。
 
-**次の本線候補（優先順位、2026-08-19時点、上記「精度の判断基準」に
-基づく）**——次セッション開始時に確定させること:
-1. `[[LAYER3-ANNUAL-CLASSIFICATION-DROPS-DATA-1]]`の範囲実測（データが
-   思想を裏切っている状態が他にも潜んでいないかの確認。範囲未確認で
-   実測自体は安価）
-2. `[[QUALITY-GATES-EPIC-1]]` Phase 4（ゲート3）の対象棚卸し（思想↔式
-   の整合を機械的に担保する唯一の層。現状完全未着手。実装前に対象
-   計算式の棚卸しが必要）
-3. `[[OI-RECONSTRUCTION-MISSING-OPEX-LINES-1]]`の`RestructuringCharges`
-   追加（実測で有望と判明した唯一の候補、小規模）
-4. 保留: ゲート1の`revenue`横展開（外部照合はデータの正しさは見るが
-   思想↔式の整合は見ないため、上記3件より後）
+~~**次の本線候補（優先順位、2026-08-19時点、上記「精度の判断基準」に
+基づく）**——次セッション開始時に確定させること:~~
+~~1. `[[LAYER3-ANNUAL-CLASSIFICATION-DROPS-DATA-1]]`の範囲実測（データが~~
+~~   思想を裏切っている状態が他にも潜んでいないかの確認。範囲未確認で~~
+~~   実測自体は安価）~~
+~~2. `[[QUALITY-GATES-EPIC-1]]` Phase 4（ゲート3）の対象棚卸し（思想↔式~~
+~~   の整合を機械的に担保する唯一の層。現状完全未着手。実装前に対象~~
+~~   計算式の棚卸しが必要）~~
+~~3. `[[OI-RECONSTRUCTION-MISSING-OPEX-LINES-1]]`の`RestructuringCharges`~~
+~~   追加（実測で有望と判明した唯一の候補、小規模）~~
+~~4. 保留: ゲート1の`revenue`横展開（外部照合はデータの正しさは見るが~~
+~~   思想↔式の整合は見ないため、上記3件より後）~~
+
+**（2026-08-19〜22追記）** 候補1（`[[LAYER3-ANNUAL-CLASSIFICATION-
+DROPS-DATA-1]]`範囲実測）・候補3（`[[OI-RECONSTRUCTION-MISSING-
+OPEX-LINES-1]]`の`RestructuringCharges`追加、GP法へ実装・対象10銘柄
+本番再生成まで完了）はいずれも完了済み。
+
+**（2026-08-22設定・現在の本線）** 現在の本線は候補2
+`[[QUALITY-GATES-EPIC-1]]` Phase 4（ゲート3）の対象棚卸し。Koichiさんの
+判断により、この棚卸しの完了をもって現在の作業スレッドの一旦の区切り
+とする。
+
+**（2026-08-22追記・棚卸し完了）** 対象計算式12式（WACC・α・2段階/
+3段階/逓減DCF・IV/P_t・RICE・moat_score・FCF CAGR・ROIC・TANUKI
+SCORE・RECESSION RISK SCORE）を実コード・既存テストの中身を確認して
+棚卸しした。ゴールデンテスト・性質テストとも完全未着手が6式
+（WACC・α・3段階DCF・moat_score・ROIC・RECESSION RISK SCORE）、
+薄い/中程度が3式、良好が3式。重複実装は登録済み6件のうち4件が現存
+（`[[HYPECORE-REALSTRONG-DUAL-IMPL-1]]`・`[[SENS-MATRIX-DUAL-
+IMPL-1]]`・`[[ERP-DUAL-CALC-1]]`＋副次確認1件）、1件
+（`[[Q4-IMPLIED-CALC-TRIPLICATION-1]]`）は別タスクで既に統合済みと
+判明（クローズ漏れ、BACKLOG記載が陳腐化）、2件（`[[MOAT-CATALOG-
+DUP-1]]`・`[[EPS-DISCREPANCY-FLAG-OVERLOAD-1]]`）はコード計算の
+重複ではないため対象外と整理した（本棚卸しはチャット記録のみに残し、
+BACKLOG.md `[[QUALITY-GATES-EPIC-1]]`本体への反映は今回未実施。
+反映要否は次回判断すること）。
+**次の本線は未定**（実装〈ゴールデンテスト・性質テスト追加、重複
+解消〉への着手要否は次セッション開始時にユーザー判断とする）。
 
 本線が変更された場合は、この節を更新すること（更新履歴として旧本線を
 取り消し線で残す運用でよい）。
