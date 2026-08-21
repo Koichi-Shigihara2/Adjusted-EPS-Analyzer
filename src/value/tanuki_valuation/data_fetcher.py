@@ -134,6 +134,22 @@ def _select_fcf_source(
     return ttm_fcf_series, True
 
 
+def _select_fcf_dates(
+    use_ttm: bool, annual_fcf_dates: list | None, ttm_fcf_dates: list | None
+) -> list | None:
+    """
+    _select_fcf_source()が確定した採用経路（use_ttm）に対応する日付リストを
+    返す薄いヘルパー（[[GROWTH-FCFSERIES-ACCESSOR-ADOPT-1]]）。
+
+    採用経路そのものの決定ロジック（min_years判定等）は_select_fcf_source()
+    にのみ実装されており、本関数はその結果をそのまま使って対応する日付集合を
+    選ぶだけ（ロジックの重複実装ではない）。_select_fcf_source()の既存の
+    呼び出し元・テスト（2-tuple返却）への影響を避けるため、あえて別関数に
+    分離した。
+    """
+    return ttm_fcf_dates if use_ttm else annual_fcf_dates
+
+
 def _quarters_complete(flow: dict, *field_names: str, min_quarters: int = 4) -> bool:
     """
     指定フィールドすべてがquarters_used>=min_quartersを満たすか判定する。
@@ -219,9 +235,12 @@ class TTMReader:
             self._series = None
             logging.warning("[%s] TTM series file not found: %s", self.ticker, self._path)
 
-    def get_fcf_series(self) -> list[float] | None:
+    def _filtered_fcf(self) -> tuple[list[float], list[str]] | tuple[None, None]:
         """
-        FCF系列をfloatリストで返す（降順・最新が先頭）。2点未満はNone
+        フィルタ・鮮度チェックのみを行い、検証前の(vals, dates)を返す。
+        get_fcf_series()/get_fcf_dates()共通のフィルタリング実装
+        （[[GROWTH-FCFSERIES-ACCESSOR-ADOPT-1]]、値と日付のペア整合性を
+        1箇所でのみ組み立てることで両者のズレを構造的に防ぐ）。
 
         OCF・CapExいずれかがquarters_used<4（四半期集計が不完全）の期間は
         除外する（TTM-QUARTERS-CHECK-1）。FCF=OCF-CapExのため、片方でも
@@ -234,36 +253,70 @@ class TTMReader:
         全エントリに鮮度フィルタを適用すると正常な過去実績まで陳腐化扱いされ
         全銘柄でシリーズが1点以下に縮退してしまうため、「最新のはずのデータが
         実際には新しくない」ことだけを検知する目的でseries[0]限定とする。
-
-        QUALITY-GATES-EPIC-1 Phase 3a: 戻り値を組み立てる際、common.sec_data.contracts
-        の FCFSeries を経由させ、「新しい順（ttm_end降順）」規約を construction 時に
-        検証する（GROWTH-CAGR-SIGN-1のような順序取り違えバグの再発防止）。
-        FCFSeries自体はJSONシリアライズ不可能なため、検証のみに使い
-        .as_list() で素の list[float] に変換してから返す（戻り値の型・呼び出し元
-        への影響は変えない）。
         """
         if not self._series:
-            return None
+            return None, None
         if not _quarters_fresh(_freshest_end(self._series)):
-            return None
+            return None, None
         filtered = [
             s for s in self._series
             if s.get("flow", {}).get("FCF", {}).get("val") is not None
             and _quarters_complete(s.get("flow", {}), "operating_cash_flow", "capital_expenditure")
         ]
         if len(filtered) < 2:
-            return None
+            return None, None
         vals = [s["flow"]["FCF"]["val"] for s in filtered]
+        dates = [s["ttm_end"] for s in filtered]
+        return vals, dates
+
+    def _validated_fcf_series(self) -> tuple[list[float], list[str]] | tuple[None, None]:
+        """
+        QUALITY-GATES-EPIC-1 Phase 3a: _filtered_fcf()の結果を
+        common.sec_data.contracts の FCFSeries を経由させ、「新しい順
+        （ttm_end降順）」規約を construction 時に検証する
+        （GROWTH-CAGR-SIGN-1のような順序取り違えバグの再発防止）。
+
+        get_fcf_series()/get_fcf_dates()の共通実装。検証を1箇所に
+        集約することで、値だけ検証して日付は未検証のまま返す、といった
+        ズレを防ぐ。
+        """
+        vals, dates = self._filtered_fcf()
+        if vals is None:
+            return None, None
         if FCFSeries is None:
             # contracts.py未import環境（HAS_SEC=False）向けフォールバック。
             # 通常の実行環境では発生しない。
-            return vals
+            return vals, dates
         try:
-            dates = [s["ttm_end"] for s in filtered]
-            return FCFSeries(vals, dates).as_list()
+            FCFSeries(vals, dates)
+            return vals, dates
         except ContractViolation as e:
             logging.error("[%s] FCFSeries順序規約違反: %s", self.ticker, e)
-            return None
+            return None, None
+
+    def get_fcf_series(self) -> list[float] | None:
+        """
+        FCF系列をfloatリストで返す（降順・最新が先頭）。2点未満・順序規約
+        違反はNone。
+
+        FCFSeries自体はJSONシリアライズ不可能なため、検証のみに使い
+        素の list[float] に変換してから返す（戻り値の型・呼び出し元への
+        影響は変えない）。
+        """
+        vals, _dates = self._validated_fcf_series()
+        return vals
+
+    def get_fcf_dates(self) -> list[str] | None:
+        """
+        get_fcf_series()が返すFCFリストに対応するttm_end日付リストを返す。
+
+        [[GROWTH-FCFSERIES-ACCESSOR-ADOPT-1]]: growth.py側でFCF CAGR計算
+        直前に順序を再検証するための日付供給元。get_fcf_series()と同一の
+        フィルタ・鮮度チェック・順序検証を経由するため、両者が非Noneの
+        場合は常に同じ長さ・同じ並び順で対応する。
+        """
+        _vals, dates = self._validated_fcf_series()
+        return dates
 
     def get_ttm_end(self) -> str | None:
         if self._series:
@@ -416,6 +469,7 @@ class TanukiDataFetcher:
         print(f"\n   [{ticker}] データ取得開始")
         
         fcf_list = []
+        annual_fcf_dates = None
         fcf_avg = 0.0
         sec_diluted = 0
         roe_avg = None
@@ -440,7 +494,7 @@ class TanukiDataFetcher:
                 fcf_avg = self.sec_reader.get_fcf_5yr_avg(ticker)
                 print(f"   [{ticker}] SEC FCF 5yr avg: ${fcf_avg:,.0f}")
                 
-                fcf_list = self.sec_reader.get_fcf_list(ticker, years=5)
+                fcf_list, annual_fcf_dates = self.sec_reader.get_fcf_list_with_dates(ticker, years=5)
                 print(f"   [{ticker}] SEC FCF list: {len(fcf_list)}年分")
                 
                 # ファイナンスリース除外が適用されたか確認
@@ -476,7 +530,9 @@ class TanukiDataFetcher:
         # ========================================
         ttm_reader = TTMReader(ticker, repo_root)
         fcf_series = ttm_reader.get_fcf_series()
+        ttm_fcf_dates = ttm_reader.get_fcf_dates()
         fcf_list, _use_ttm_fcf = _select_fcf_source(fcf_list, fcf_series)
+        fcf_dates = _select_fcf_dates(_use_ttm_fcf, annual_fcf_dates, ttm_fcf_dates)
 
         if _use_ttm_fcf:
             fcf_avg = float(mean(fcf_list))
@@ -751,6 +807,11 @@ class TanukiDataFetcher:
             "fcf_5yr_avg": fcf_avg,
             "fcf_2yr_avg": fcf_2yr_avg,
             "fcf_list_raw": fcf_list,
+            # [[GROWTH-FCFSERIES-ACCESSOR-ADOPT-1]]: fcf_list_rawと対応する日付
+            # （TTM経路はttm_end文字列、年次経路は会計年度int、未取得時はNone）。
+            # growth.py側でFCF CAGR算出直前の順序再検証にのみ使う。JSONへは
+            # 保存しない（fcf_list_rawと違い本番latest.json出力の対象外）。
+            "fcf_dates_raw": fcf_dates,
             "net_cash_data": net_cash_data,
             "diluted_shares": final_shares,
             "roe_10yr_avg": roe_avg,

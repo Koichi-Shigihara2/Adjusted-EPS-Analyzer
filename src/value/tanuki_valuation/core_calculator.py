@@ -177,6 +177,9 @@ class KoichiValuationCalculator:
         roe_outlier_adj = financials.get("roe_outlier_adj", False)
         latest_revenue = financials.get("latest_revenue", 0.0)
         fcf_list_raw   = financials.get("fcf_list_raw", [])
+        # [[GROWTH-FCFSERIES-ACCESSOR-ADOPT-1]]: fcf_list_rawの順序検証用日付
+        # （未取得時はNone。determine_growth_rate()側で検証可否を判定する）
+        fcf_dates_raw  = financials.get("fcf_dates_raw")
         current_price  = financials.get("current_price", 0.0)
         ticker         = financials.get("eps_data", {}).get("ticker", "Unknown")
         rpo            = financials.get("rpo", 0.0)
@@ -206,7 +209,7 @@ class KoichiValuationCalculator:
 
         # ── STEP 2: 成長率決定 ──
         growth_result: GrowthResult = determine_growth_rate(
-            ticker=ticker, fcf_list=fcf_list_raw
+            ticker=ticker, fcf_list=fcf_list_raw, fcf_dates=fcf_dates_raw
         )
         high_growth_rate = growth_result.rate
         print(f"   [{ticker}] 成長率: {high_growth_rate:.1%} (source: {growth_result.source})")

@@ -5,7 +5,7 @@ SEC データリーダー
 
 import json
 import os
-from typing import Optional, Dict, Any, List
+from typing import Optional, Dict, Any, List, Tuple
 
 from .config import TICKERS, get_ticker_info
 
@@ -238,16 +238,40 @@ class SECReader:
         
         return 0.0
     
-    def get_fcf_list(self, ticker: str, years: int = 5) -> List[float]:
-        """FCFリストを取得（新しい順、fcf_list[0]が直近）"""
+    def get_fcf_list_with_dates(self, ticker: str, years: int = 5) -> Tuple[List[float], Optional[List[int]]]:
+        """
+        FCFリストと対応する会計年度（period）を取得（新しい順）。
+
+        [[GATE2-READER-FCFLIST-1]]対応: get_fcf_list()は値だけを抽出して
+        年度情報を切り捨てていたため、FCFSeriesによる順序検証を呼び出し元で
+        後付けできなかった。get_annual_range()が返す各年次データは
+        トップレベルに"period"（会計年度、int）を保持しているので、値と
+        対にしたまま返す。
+
+        Returns:
+            (fcf_list, periods) のタプル。periodsはfcf_listと同じ長さ・
+            同じ並び順で対応する（periods[i]がfcf_list[i]の会計年度）。
+            いずれかの年度データに"period"が欠けている場合は、対応関係を
+            保証できないためperiods=Noneを返す（呼び出し元は日付なし
+            経路として扱う）。
+        """
         annual_data = self.get_annual_range(ticker, years)
         # annual_data は新しい順（get_annual_range の仕様）なのでそのまま使用
-        fcf_list = []
+        fcf_list: List[float] = []
+        periods: List[Any] = []
         for data in annual_data:
             fcf = data.get("cf", {}).get("free_cash_flow")
             if fcf is not None:
                 fcf_list.append(fcf)
-        
+                periods.append(data.get("period"))
+
+        if any(p is None for p in periods):
+            return fcf_list, None
+        return fcf_list, periods
+
+    def get_fcf_list(self, ticker: str, years: int = 5) -> List[float]:
+        """FCFリストを取得（新しい順、fcf_list[0]が直近）"""
+        fcf_list, _periods = self.get_fcf_list_with_dates(ticker, years)
         return fcf_list
     
     def get_rpo(self, ticker: str) -> float:
