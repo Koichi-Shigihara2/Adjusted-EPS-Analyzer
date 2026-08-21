@@ -6500,11 +6500,44 @@ HON/COHRに限定せず全105銘柄の該当年度を使用した。
 FY2025とも`RestructuringCharges`タグ自体を報告しているため実害は
 確認されていない。
 
-**未実施（本番データ再生成）**: 本コミットはコード変更のみ。実際に
-`RestructuringCharges`を適用した`annual_*.json`の再生成・pushは
-未実施（対象10銘柄・76年度分、確立済みの「コード修正→push→
-全銘柄再生成→再生成結果push」の順序に従い、再生成は別セッションで
-実施すること）。
+#### Step: 本番データ再生成（2026-08-22、コミット`610c18c71`）
+
+`python common/sec_data/update.py ASTS COHR HON JNJ KLAC LLY RCAT SOFI
+VRT XOM`（確立済みの全銘柄更新スクリプト、対象10銘柄限定）を実行し
+`RestructuringCharges`控除込みのGP法を`annual_*.json`へ反映した。
+COHR最新年度のoperating_incomeが実装時実測値$374,866,000と一致する
+ことを確認済み。
+
+**再生成に伴い発生した2件の想定外事象と対処**:
+1. **NG-31 fixed_registry不整合（JNJ・LLY計20エントリ）**:
+   `company_facts.json`が71時間ぶりのライブ再取得となったため
+   `operating_income`の再構成値が変化し、`compute_snapshot_hash()`
+   （ファイル全体をハッシュ化する二次防御）が不一致を検知した。JNJ・
+   LLYそれぞれの`fields_snapshot`（凍結対象フィールド）に
+   `operating_income`が含まれていないこと、かつ凍結対象フィールド
+   全件（JNJ 20年度・LLY 19年度）が再生成前後で一切変化していない
+   ことを個別に確認した上で、`fixed_registry.json`の該当20エントリの
+   `snapshot_hash`を新しい内容に合わせて更新した（過去の
+   `[[OPERATING-INCOME-EXTRACTION-GAP-1]]`ロールアウト時と同型の
+   確立済み対処手順）
+2. **無関係な4項目の変化（ASTS 2021・KLAC 2014・COHR 2022/2025）**:
+   調査の結果、いずれも私のコード変更とは無関係と判明した。ASTS
+   2021・KLAC 2014のshort_term_debt、COHR 2022のcash_and_equivalents
+   がNone化したのは、`submissions.json`のライブ再取得で新たに
+   `former_names`（法人名変更履歴）が取得できるようになったことで、
+   既存の`[[SPAC-SHELL-BS-ENTITY-MIXING-1]]`安全機構（複数accn混在
+   ＋法人名変更履歴の時間窓一致を検知し、合併/改称前後のエンティティ
+   混在データを安全側にNone化する設計）が新たに発火した結果と
+   `spac_shell_detection_log.json`で確認した（ASTS=SPAC合併、
+   KLAC=KLA-Tencor改称、COHR=II-VI改称）。COHR 2025の
+   short_term_investments/shares_basicが新規取得されたのは、
+   2026-08-14提出の新しいSEC filing（accn `0000820318-26-000020`）
+   による正当なデータ更新と確認した。いずれもデータ劣化ではなく、
+   私のコード変更に起因しないため同一コミットに含めた
+
+**検証**: `pytest tests/` 905 passed / 0 failed、`audit.py` NG=0、
+`report_consistency_check.py --fail-on-ng` NG=0（fixed_registry更新
+後）を確認済み。
 
 #### 関連
 - `[[LAYER3-OI-RECONSTRUCTION-FALLBACK-GAP-1]]`（Layer3側フォール
