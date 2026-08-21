@@ -7142,9 +7142,80 @@ sofi固有拡張タグにも該当なし）。タグ訂正では直らないた�
 結合12,000文字上限）から値を発見できず`not_found`として記録された**
 （`SOFI_layer3.json`）。追加のプロンプト調整等は行わず、この状態
 （`auto_fetchable=false`、取得を試みる経路には乗ったが現時点で
-未解決）のまま維持する。SoFiの銀行部門向け詳細開示（Credit Quality・
-NIM専用セクション等）が抽出対象テキストの範囲外にある可能性が
-推測されるが、未検証。
+未解決）のまま一旦維持した。
+
+#### Step 6: キーワードアンカー抽出を追加しSOFI NCO/NIMを解消（2026-08-21⑨、コミット`553d4e035`）
+
+Step5で「未発見」だった原因を、SOFI直近10-Q（accession
+`0001818874-26-000054`、2026Q2）・同時期8-K EX-99.1を切り詰めずに
+全文検索して切り分けた。NIM・NCOとも**実際には開示が存在し、
+現在の抽出範囲（10-Q冒頭8,000文字・8-K冒頭6,000文字）が単に届いて
+いないだけ**と判明した（NIMは10-Q約35,772文字目・8-K約7,843文字目、
+NCOの正式な比率表〈"annualized ratio of net charge-offs to average
+loans outstanding"、Personal loans区分〉は10-Q約102,602文字目）。
+8-Kには別途NCOの一過性除外後の調整値（"...would have been
+approximately 3.7%"という仮定法表現）があり、`tail_kpi_map.json`の
+`xbrl_member: "sofi:PersonalLoansMember"`が対応する10-Qの正式値
+（2.62%）とは定義が異なるため、これを誤って採用しないよう設計する
+必要があった。
+
+`src/tail/text_kpi_extractor.py`に、既存の「冒頭N文字」方式
+（`extract_mda_section()`/`fetch_8k_exhibit99()`、いずれも無変更）
+とは別の、キーワードアンカー抽出を追加した（既存呼び出し元・他
+ティッカー・他KPIへの影響ゼロの後方互換設計）:
+- `fetch_10q_mda_full()`/`fetch_8k_exhibit99_full()`: 全文（切り詰め
+  なし）を返す新規関数
+- `extract_by_keyword_anchor()`: 優先順位付きキーワード候補を順に
+  試し、最初にヒットした候補の前後（既定1,500文字）を切り出す
+- `KEYWORD_ANCHOR_CANDIDATES`: KPI名→候補フレーズ・検索対象
+  ドキュメントの設定テーブル。**NCOは`sources: ["10-Q"]`のみに限定し、
+  8-Kを検索対象から構造的に除外**することで、一過性除外後の調整値
+  （3.7%系）をそもそも参照させない設計とした（フレーズの巧拙に頼る
+  のではなく、ドキュメントレベルで切り分ける方が堅牢と判断）
+- `_try_keyword_anchor_fallback()`: `extract_layer3()`内で
+  `not_found`となったKPIのうち`KEYWORD_ANCHOR_CANDIDATES`に登録が
+  あるものだけを対象に追加のGrok呼び出しを行う。登録の無いKPI・
+  ティッカーでは即座に空dictを返し、通常フローに一切影響しない
+
+**実装中に発見・修正した重大バグ**: 当初`fetch_10q_mda_full()`は
+`extract_mda_section()`を`max_chars=10,000,000`で呼び出すことで
+全文取得を実現しようとしたが、同関数は`max_chars`を「Item3が見つから
+ない場合のフォールバック長」の算出（`end = s + max_chars * 2`）にも
+使っており、巨大な`max_chars`を渡すと10-Q **Part II** に存在する
+同名の"Item 2"（"Unregistered Sales of Equity Securities..."、
+本来のMD&A〈Part I〉より大幅に短い）のフォールバック長が異常に
+肥大化し、誤ってPart II側が「最長セクション」として選ばれてしまう
+バグを実機検証で発見した（SOFI 2026Q2で実測: 本来187,179文字ある
+MD&Aが3,421文字のPart II断片にすり替わっていた）。`extract_mda_
+section()`自体は変更せず、`fetch_10q_mda_full()`側に「Item3が
+見つからない場合は文書末尾までを長さとする」という妥当な独自の
+境界検出ロジックを実装して解消した（正規表現パターン自体は
+`extract_mda_section()`と重複するが、既存関数を変更しないための
+意図的な複製）。回帰テスト（`test_selects_long_part1_mda_over_
+short_part2_item2`）を追加。
+
+**抽出結果の検証**: バグ修正後、SOFI限定で`text_kpi_extractor.py`を
+実行した結果、**NCO=2.62%（`source_text`: "Personal loans
+$26,183,468 $171,015 2.62%"）・NIM=5.98%（`source_text`: "Net
+interest margin 5.98% 5.86%"）**がいずれも参照値と完全一致で抽出
+された。NCOの`source_text`から、8-Kの調整値（3.7%系）でも
+"Total loans"の合算行（1.81%）でもなく、10-Q正式表の**Personal
+loans区分・当四半期（Three Months Ended June 30, 2026）**の値である
+ことを確認した。
+
+**既知の限界（正直な記録）**: バグ修正直後〜`extraction_hint`改善の
+過程で、同じ表から異なるセル（"Total loans"の合算行1.81%、
+"Personal loans"だが"Six Months Ended"〈YTD〉列の2.79%等）を誤って
+選ぶ試行が複数回あった。表が区分（Personal/Student/Total等）×期間
+（Three Months/Six Months）の多次元であるため、Grok（temperature=
+0.1、非決定的）の判断だけでは選択が試行間で安定しない可能性が
+構造的に残る。今回`extraction_hint`を「Personal loans specifically
+...not the Total loans blended rate」まで具体化した最終試行では
+正しい値が得られたが、将来四半期の自動実行で同様に安定して正しい
+値が得られる保証はない。次回以降の週次自動実行（`TANUKI_TAIL_RSS_
+Monitor.yml`）で`SOFI_layer3.json`の`source_text`を確認し、
+"Personal loans"かつ"Three Months"（またはYTDでない）であることを
+定期的に目視確認することが望ましい。
 
 option(a)（`xbrl_segment_fetcher.py`自体の非ディメンション取得対応、
 `parse_default_contexts()`新設によりexplicitMemberを持たない
@@ -7174,19 +7245,31 @@ option(a)（`xbrl_segment_fetcher.py`自体の非ディメンション取得対�
 実務上の効果がない。`[[TAIL-THESIS-KPIS-EMPTY-ADBE-APGE-1]]`として
 新規登録した（実装せず記録のみ、詳細は同エントリ参照）。
 
-**検証**: `pytest tests/` 892 passed / 0 failed（回帰なし）、
-`audit.py` NG=0、`report_consistency_check.py --fail-on-ng` NG=0・
-WARN=95（内訳変化: WARN-38 SOFIが3/7件失敗→2/7件失敗、WARN-39は
-CELH/APP/ADBE/APGEの4件のまま不変〈NCO/NIMは却下ではなく
-`auto_fetchable=false`という別状態のためWARN-39の対象外〉）。
+**検証（2026-08-21⑦時点）**: `pytest tests/` 892 passed / 0 failed
+（回帰なし）、`audit.py` NG=0、`report_consistency_check.py
+--fail-on-ng` NG=0・WARN=95（内訳変化: WARN-38 SOFIが3/7件失敗→
+2/7件失敗、WARN-39はCELH/APP/ADBE/APGEの4件のまま不変〈NCO/NIMは
+却下ではなく`auto_fetchable=false`という別状態のためWARN-39の
+対象外〉）。
 
-#### 着手条件（2026-08-21⑦時点）
-今回の5件対応は完了（3件解消・2件は`[[TAIL-THESIS-KPIS-EMPTY-
+**検証（2026-08-21⑨時点、Step6反映後）**: `pytest tests/` 905 passed
+/ 0 failed（新規単体テスト13件含む、回帰なし）、`audit.py` NG=0、
+`report_consistency_check.py --fail-on-ng` NG=0・WARN=95（WARN-38の
+SOFI「2/7件失敗」は`layer2.json`〈XBRL直接取得〉ベースの集計のため
+不変のまま——今回の解決は`layer3.json`〈Grokテキスト抽出〉経由で
+`_build_kpi_status_table()`のフォールバックにより表示側で解消される
+設計であり、WARN-38自体の意味合いとは独立）。
+
+#### 着手条件（2026-08-21⑨時点）
+今回の5件は全件対応完了（3件〈Tech Platform・NCO・NIM〉解消、2件
+〈ADBE研究開発費・APGE営業費用〉は`[[TAIL-THESIS-KPIS-EMPTY-
 ADBE-APGE-1]]`へ切り出し保留）。残るoption(a)〈`xbrl_segment_
 fetcher.py`自体の非ディメンション取得対応〉は、今回の5件では
 発生しなかったため着手条件なし（将来同種のケースが見つかった場合に
-再検討）。SOFI NCO/NIMの`text_kpi_extractor.py`抽出失敗への追加
-対応（プロンプト改善等）も着手条件なし（ユーザー判断待ち）。
+再検討）。SOFI NCO/NIMの抽出結果は「既知の限界」に記載の通り表の
+セル選択が試行間で完全に安定する保証はないため、次回以降の週次
+自動実行時に`SOFI_layer3.json`の`source_text`をスポットチェックする
+ことが望ましい（着手条件なし、定期確認のみ）。
 
 ---
 
