@@ -373,12 +373,26 @@ runway計算ロジックを変更する場合、TANUKI VALUATION側のMatrix③�
 
 ---
 
-## ワークフロー依存関係定義（config/workflow_dependencies.json）（2026-07-10追記）
+## ワークフロー依存関係定義（config/workflow_dependencies.json）（2026-07-10追記、2026-08-22更新）
 
-GitHub Actions各ワークフロー（SEC_Data_Update → HypeCore_Update / Adjusted_EPS_Update等）の
+GitHub Actions各ワークフロー（SEC_Data_Update → HypeCore_Update / Adjusted_EPS_Update /
+Stonks_Silo_Update → TANUKI_VALUATION_Update、Market_Data_Daily_Update → TANUKI_VALUATION_Update）の
 依存関係グラフを定義するJSON。`docs/value-monitor/admin.html`の「実行」タブが読み取り、
 一括更新ボタンの実行順序制御に使用する。ワークフローを新設・依存関係変更した場合は
 このファイルへの追記が必要（admin.html側の実行UIに反映されないと手動個別実行が必要になる）。
+
+**（2026-08-22追記）** 上記の論理的依存関係は、以前は本JSON（admin.html手動実行用の
+メタデータ）にのみ定義され、実際のGitHub Actions自動トリガーには反映されていなかった
+（[[WORKFLOW-SEC-TANUKI-GAP-1]]・[[TANUKI-VALUATION-PRICE-SCHEDULE-LAG-1]]）。
+`HypeCore_Update.yml`・`Adjusted_Eps_Analyzer_update.yml`・`Stonks_Silo_Update.yml`・
+`TANUKI_VALUATION_Update.yml`の`on.workflow_run`トリガーとして実装し、実際のCI構成にも
+反映した（`TANUKI_Score_Update.yml`が先行して使っていたworkflow_run+conclusionチェック
+パターンに倣った。旧来の独立cronは低頻度の安全網フォールバックとしてのみ一部残存）。
+`Market_Data_Daily_Update`は本JSONに存在しなかった新規ノードとして追加登録した
+（`TANUKI_VALUATION_Update`のcurrent_price鮮度に必要な依存）。本JSON自体と実際の
+`.github/workflows/*.yml`の`on.workflow_run.workflows`設定は別々のファイルで手動同期される
+（本JSONを変更しても自動的にYAML側へは反映されない）ため、依存関係を変更する際は
+両方を更新すること。
 
 ---
 
@@ -1466,6 +1480,15 @@ MACRO PULSE   ← FREDデータ / FRBステートメント
 　　過去データ補正: src/market/macro_pulse/05_backfill_nfp_mom.py（05_events.csv内の
 　　既存NFP行を水準→前月比に一括変換する一回限りのバックフィルスクリプト。
 　　MACRO-NFP-HIST-1 2026-07-08新設、実行済み）
+　　RECESSION RISK SCORE（景気後退リスク複合スコア）: index.htmlの`computeCurrentScore()`
+　　（JS）が算出するが、2026-08-22以降は`05_main.py::_compute_current_score()`が
+　　AIウィークリーコメンタリー生成時（週1回、`05_weekly_analysis.csv`へ保存）に
+　　サーバー側で算出した値を`WEEKLY_SNAPSHOT`グローバル変数へ読み込み、これを正として
+　　返す（ブラウザ側ライブ再計算は未読込時のフォールバックのみ）。これにより「景気後退
+　　リスク複合スコア」ゲージ・スコア推移チャートの「本日」データ点・比較バー・AIウィーク
+　　リーコメンタリーが全て同一値を参照する（[[MACRO-PULSE-3M-FORECAST-SNAPSHOT-
+　　MISMATCH-1]]）。8指標ごとのsignals（現在地カード・アラート判定）はこの統合対象外で
+　　引き続きブラウザ側ライブ計算のまま。
 DISCOVER      ← Grok Web検索 / NewsAPI
 　　ニュース収集・分類: src/discover/collect.py → docs/discover/data/daily_report.json（日次）
 　　ニュース履歴: docs/discover/data/news_history_YYYY_MM.json（月別蓄積・翌日騰落率付き）

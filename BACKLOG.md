@@ -5098,6 +5098,14 @@ grepが、本項目の識別子`TRIPLE-CALC`や「3計算式併存」という�
 表示上の食い違いという実害自体は残っているため、③を「低」まで
 下げず「中」とした。
 
+**関連（2026-08-22追記）**: `[[MACRO-PULSE-3M-FORECAST-SNAPSHOT-
+MISMATCH-1]]`対応で`computeCurrentScore()`自体に変更が入った
+（AIウィークリーコメンタリー生成時のサーバー側スナップショット値を
+優先参照するよう変更、詳細は同エントリ参照）。この変更は`③`が指す
+`computeScoreAsOf()`の過去日付分岐（lerp補間）には影響しない
+（無変更を確認済み）が、`computeCurrentScore()`に着手する際は
+同エントリの実装内容も合わせて確認すること。
+
 #### 着手条件
 なし（③の対応要否・方法は次回セッションで判断）
 
@@ -6344,7 +6352,6 @@ RestructuringCharges控除を追加。Layer3側〈`layer3_builder.py`のフォ�
 バック不在〉は対象範囲外とし`[[LAYER3-OI-RECONSTRUCTION-FALLBACK-
 GAP-1]]`へ切り出し、詳細は下記「Step: 実装」参照）
 **優先度:** 中→解消（parser.py側）
-**分類:** バグ / データ品質 / SEC EDGAR / 確定・候補タグ設計欠陥
 **分類:** バグ / データ品質 / SEC EDGAR / 確定・候補タグ設計欠陥
 **登録日:** 2026-08-19
 **発見:** `[[OPERATING-INCOME-EXTRACTION-GAP-1]]`フォールバック向き

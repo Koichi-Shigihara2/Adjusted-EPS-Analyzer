@@ -1,5 +1,47 @@
 # Claude Code 作業開始テンプレート
 
+最終更新: 2026-08-22（**セッション終了時ブラッシュアップ・本日
+セッションサマリー**。5件を実施した:
+
+1. `[[OI-RECONSTRUCTION-MISSING-OPEX-LINES-1]]`: GP法への
+   `RestructuringCharges`控除実装（コミット`2eda3df90`）＋対象10銘柄の
+   本番データ再生成（`610c18c71`）。Layer3側の同型ギャップは
+   `[[LAYER3-OI-RECONSTRUCTION-FALLBACK-GAP-1]]`へ切り出し
+2. `[[QUALITY-GATES-EPIC-1]]` Phase 4（ゲート3）対象棚卸しを本線として
+   実施・完了（`bca010a89`）。対象計算式12式のテストカバレッジ状況を
+   確認。詳細は`CHAT_RULES.md`「本線の定義」節参照。次の本線は未定
+3. `[[TANUKI-VALUATION-PRICE-SCHEDULE-LAG-1]]`（PORTFOLIOページの
+   時価が1営業日遅れる問題を新規発見・登録）・`[[WORKFLOW-SEC-TANUKI-
+   GAP-1]]`（既存、SEC_Data_Update連携欠如）を、`workflow_run`連鎖化で
+   まとめて構造的に解消（`ca925ffa2`）。ただし実際のGitHub Actions発火
+   確認は次回発火サイクル待ちのため「実装完了・実地確認待ち」のまま
+   BACKLOG.mdに残置（BACKLOG_DONE.mdへの移設は未実施、意図的）。
+   副次発見の`[[STONKS-SILO-PRICE-SCHEDULE-LAG-SUSPECT-1]]`も登録
+4. BACKLOG.md重複登録の訂正: `[[RECESSION-SCORE-TRIPLE-CALC-1]]`
+   （2026-07-23登録）と`[[MACRO-PULSE-ZONE-25-STALE-1]]`（2026-08-21
+   登録・実装）が対応方針①②で内容重複していたことが判明
+   （`CHAT_RULES.md`事例10として教訓化）。`5be83e2f3`で訂正、
+   `RECESSION-SCORE-TRIPLE-CALC-1`は①②解消済み・③のみ残存の状態へ
+   優先度を高→中に見直し
+5. `[[MACRO-PULSE-3M-FORECAST-SNAPSHOT-MISMATCH-1]]`: 「3ヶ月先の
+   マクロ予測スコア」（ブラウザ側ライブ再計算）と「AIウィークリー
+   コメンタリー」（週1回のサーバー側スナップショット）のスコア不一致を
+   新規発見・登録の上、同日中にパイプライン統合で解消（`1d68c7342`）。
+   副次発見として`[[MACRO-PULSE-ZONE-25-STALE-1]]`の見落とし6箇所目
+   （スコア解説ツールチップの残存「25」）も同コミットで修正
+
+**次の本線は未定**（`CHAT_RULES.md`「本線の定義」節参照。2026-08-16
+時点の本ファイル内の旧「次セッションの着手候補」リストは6日分の
+セッションを経て陳腐化しているため、次セッション開始時は同節と
+BACKLOG.mdの優先順位から改めて判断すること）。
+
+詳細は各BACKLOGエントリ参照（1・4・5は✅付きでBACKLOG.mdに残置
+——既存の同型9件と同じく、まだ開いている兄弟課題〈[[LAYER3-OI-
+RECONSTRUCTION-FALLBACK-GAP-1]]・[[RECESSION-SCORE-TRIPLE-CALC-1]]③〉
+への相互参照が密なためBACKLOG_DONE.mdへは移設していない。2は
+`CHAT_RULES.md`「本線の定義」節にのみ記録、3は実地確認待ちのため
+未✅）。
+
 最終更新: 2026-08-21（**架空日付の訂正**。2026-08-20の長時間セッション
 中、Cowork側の指示文に実在しない日付（`2026-08-21`〜`2026-08-24`）が
 書かれ、Claude Code側もシステム日付を確認せずそれをBACKLOG.md・
