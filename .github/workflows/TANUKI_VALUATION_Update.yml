@@ -1,8 +1,27 @@
 name: TANUKI VALUATION Daily Update
 
+# [[TANUKI-VALUATION-PRICE-SCHEDULE-LAG-1]]・[[WORKFLOW-SEC-TANUKI-GAP-1]]
+# 対応: config/workflow_dependencies.jsonが定義する論理的依存
+# （HypeCore_Update・Adjusted_EPS_Update・Stonks_Silo_Update）に加え、
+# current_priceの取得元であるMarket_Data_Daily_Update（新たに判明した
+# 未定義の依存）もworkflow_runの対象に含め、4本いずれかの完了で連鎖実行
+# する。旧・独立cron（平日14:05 UTC）はMarket_Data_Daily_Update
+# （平日21:40 UTC完了）より先に発火してしまい、current_priceが常に
+# 前営業日終値になる構造的ラグの原因だったため削除。
+# 安全網として、chainが何らかの理由で発火しなかった場合に備え、
+# 週1回のみ低頻度フォールバックcronを残す（Market_Data_Daily_Updateの
+# 金曜実行〈21:40 UTC〉より確実に後になる時刻に設定し、旧cronと同じ
+# レースを再現しないようにする）。
 on:
+  workflow_run:
+    workflows:
+      - "Market Data Daily Update"
+      - "HypeCore Update"
+      - "Adjusted_EPS_Data_Update"
+      - "Stonks Silo Update"
+    types: [completed]
   schedule:
-    - cron: '5 14 * * 1-5'  # UTC 14:05 (JST 23:05) weekdays
+    - cron: '30 22 * * 5'  # 安全網: 金曜22:30 UTC（Market_Data_Daily_Update金曜分の完了後）
   workflow_dispatch:
     inputs:
       tickers:
@@ -15,6 +34,7 @@ env:
 
 jobs:
   update-valuations:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository

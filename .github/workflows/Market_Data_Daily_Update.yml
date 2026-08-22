@@ -16,29 +16,22 @@ env:
   TZ: Asia/Tokyo
 
 # ─────────────────────────────────────────────────────────────────
-# [[MARKETDATA-LAYER-CONSTRUCTION-1]] 設計確定事項8（workflow_run連鎖
-# トリガー）の準備メモ:
+# [[TANUKI-VALUATION-PRICE-SCHEDULE-LAG-1]] 2026-08-22: 上記の準備メモを
+# 有効化した。TANUKI_VALUATION_Update.ymlの`on.workflow_run.workflows`に
+# "Market Data Daily Update"を追加し、本ワークフロー完了後に連鎖実行する
+# ようになった（TANUKI_VALUATION_Update.yml側で実装。本ファイル自体の
+# 変更はこのコメント更新のみ）。旧・独立cron（14:05 UTC、本ワークフロー
+# の21:40 UTC完了より先に発火してしまいcurrent_priceが常に前営業日終値
+# になっていた）は削除し、週1回の安全網cronのみ残した。
 #
-# 本来は本ワークフロー完了後にTANUKI VALUATION・STONKS SILOを
-# workflow_runで連鎖起動する設計（前日終値ベース化に伴うレース条件
-# 〈日次バッチ未完了時に読みに行くリスク〉の回避が目的）。ただし
-# 本番消費者切替（着手順序3）が完了するまでは発火先が存在しないため、
-# 記法の準備のみ行い有効化しない。
-#
-# 着手順序3完了後、以下のスニペットを TANUKI_VALUATION_Update.yml・
-# Stonks_Silo_Update.yml それぞれの `on:` セクションに追加することで
-# 有効化する（本ファイル自体には実装しない。SEC_Data_Audit.ymlの
-# workflow_run連鎖と同型）。既存2ファイルは今回変更しない:
-#
-#   on:
-#     workflow_run:
-#       workflows: ["Market Data Daily Update"]
-#       types: [completed]
-#
-# 有効化と同時に、TANUKI_VALUATION_Update.yml・Stonks_Silo_Update.yml
-# 側の既存cronスケジュール（現状14:05 UTC・15:05 UTC、いずれも米国市場
-# 取引時間中）も前日終値ベースへの仕様変更に合わせて見直す必要がある
-# （現状のリアルタイム株価取得ロジック自体の切替は着手順序3の範囲）。
+# 【新たに判明した同型の未対応ギャップ（今回のスコープ外・報告のみ）】
+# Stonks_Silo_Update.yml（cron 15:05 UTC）も自身のvaluation_fetcher.py
+# 経由でcommon/market_data/daily/の日次終値に依存しているが、本
+# ワークフロー（21:40 UTC完了）より先に発火するため、TANUKI VALUATIONと
+# 同種の「常に前営業日終値を参照する」構造的ラグを抱えている可能性が
+# 高い。今回はTANUKI_VALUATION_Update用のworkflow_run連鎖のみ対応し、
+# Stonks_Silo_Update側への同種対応は意図的にスコープ外とした
+# （[[STONKS-SILO-PRICE-SCHEDULE-LAG-SUSPECT-1]]として別途登録）。
 # ─────────────────────────────────────────────────────────────────
 
 jobs:

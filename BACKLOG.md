@@ -9313,10 +9313,12 @@ FY52WEEK-BS-FADEOUT-FALLBACK-1で実装した履歴フォールバック（過�
 
 ---
 
-### [WORKFLOW-SEC-TANUKI-GAP-1] SEC_Data_UpdateとTANUKI_VALUATION_Updateの自動連携欠如
+### [WORKFLOW-SEC-TANUKI-GAP-1] SEC_Data_UpdateとTANUKI_VALUATION_Updateの自動連携欠如 — 実装完了・次回発火サイクルでの実地確認待ち
 **優先度:** 中
 **分類:** アーキテクチャ / GitHub Actions / 品質管理
 **登録日:** 2026-07-13
+**状態:** 実装完了（2026-08-22、[[TANUKI-VALUATION-PRICE-SCHEDULE-LAG-1]]と
+まとめて対応。次回発火サイクルでの実地確認待ち。未クローズ）
 **発見:** [[WARN12-COHR-ONDS-1]]実態調査時
 
 #### 背景
@@ -9347,8 +9349,67 @@ pipeline.py再実行のみで解消した）。
 - 案①を採用する場合、既存の個別cronスケジュール（HypeCore週次・
   EPS Analyzer等）との統合方法・実行時間帯の見直しが必要になる可能性がある
 
+#### 実装内容（2026-08-22、案①を採用）
+実装前に`config/workflow_dependencies.json`・各ワークフローの現行cronを
+実ファイルで再確認した上で着手（BACKLOG記載を鵜呑みにしない）。
+
+- `HypeCore_Update.yml`: `on`を独立cron（毎週日曜13:08 UTC）から
+  `workflow_run`（`workflows: ["SEC Data Update"]`, `types: [completed]`）
+  に変更。ジョブに`if: github.event_name != 'workflow_run' ||
+  github.event.workflow_run.conclusion == 'success'`を追加。旧cronは
+  削除し、安全網として月曜4:00 UTC（`SEC_Data_Update`日曜分完了後）の
+  週1回フォールバックcronのみ残した。`workflow_dispatch`は維持。
+- `Adjusted_Eps_Analyzer_update.yml`: 同様に独立cron（毎週月曜10:07 UTC）
+  を`workflow_run`（`SEC Data Update`）に置き換え、同じ`if`ガードを追加。
+  安全網として月曜4:10 UTCの週1回フォールバックcronのみ残した。本
+  パイプラインは`market_data`日次層に依存しないためSEC完了トリガーのみ
+  で鮮度要件を満たせると判断。`workflow_dispatch`（`branches: kaihatsu`
+  含む）は維持。
+- `Stonks_Silo_Update.yml`: `workflow_run`（`SEC Data Update`）を追加
+  トリガーとして新設したが、既存の平日日次cron（15:05 UTC）は**削除せず
+  維持**した。理由: `valuation_fetcher.py`が`common/market_data/daily/`の
+  日次終値にも依存しており、`SEC_Data_Update`（週次）だけをトリガーに
+  すると日次価格鮮度の要件を満たせなくなるため（案②寄りの判断、
+  「フォールバック」ではなく「別の鮮度要件を満たす並行トリガー」として
+  意図的に併存させた）。同じ`if`ガードを追加。
+- `TANUKI_VALUATION_Update.yml`: `workflow_run`の対象に上記3本に加え
+  `Market Data Daily Update`も含めた（[[TANUKI-VALUATION-PRICE-
+  SCHEDULE-LAG-1]]側の対応と統合実施のため）。詳細は同エントリ参照。
+- `config/workflow_dependencies.json`自体（`depends_on`グラフ）は
+  今回変更なし（既存定義が実装と一致することを確認済み。
+  `Market_Data_Daily_Update`ノードの追加は[[TANUKI-VALUATION-PRICE-
+  SCHEDULE-LAG-1]]側で実施）。`bulk_update_order`/`bulk_update_phases`/
+  `new_ticker_order`（admin.htmlの手動一括更新ボタンが参照）は意図的に
+  変更していない（手動トリガー経路への影響を避けるため）。
+
+#### 依存グラフ再確認結果（実装前、2026-08-22時点）
+`config/workflow_dependencies.json`の`depends_on`定義は本エントリの
+背景記載と完全に一致（`HypeCore_Update`/`Adjusted_EPS_Update`/
+`Stonks_Silo_Update`はいずれも`SEC_Data_Update`のみに依存、
+`TANUKI_VALUATION_Update`はこの3本に依存）。ただし
+`Market_Data_Daily_Update`は`TANUKI_VALUATION_Update`の依存先として
+論理的にも一切定義されていなかった（[[TANUKI-VALUATION-PRICE-
+SCHEDULE-LAG-1]]側で新規追加）。
+
+#### 同型の未対応ギャップ（今回のスコープ外・報告のみ）
+`Stonks_Silo_Update.yml`（cron 15:05 UTC）が`Market_Data_Daily_Update`
+（21:40 UTC完了）より先に発火するため、`valuation_fetcher.py`経由の
+日次終値参照が常に前営業日終値になっている可能性が高い
+（`TANUKI_VALUATION_Update`が抱えていたのと同型の問題）。今回は
+`TANUKI_VALUATION_Update`側の対応のみ実施し、`Stonks_Silo_Update`側は
+意図的にスコープ外とした。`[[STONKS-SILO-PRICE-SCHEDULE-LAG-
+SUSPECT-1]]`として新規登録。
+
+#### 検証状況
+YAML構文（`yaml.safe_load`）・JSON構文（`json.load`）は確認済み。`gh`
+CLIが本セッション環境で利用不可（Bash/PowerShellとも`command not
+found`）のため、GitHub Actions側の実際の発火・連鎖動作は本セッションでは
+検証不能。次回発火サイクル（最短で次回日曜`SEC_Data_Update`実行後）に
+コミット履歴で`HypeCore_Update`等が連鎖起動されたか確認するまでは
+「未検証」として扱う。
+
 #### 着手条件
-なし（次回セッションで方針判断してから着手）
+なし（実装完了。次回発火サイクルでの実地確認後にクローズ判断）
 
 ---
 
@@ -12752,11 +12813,13 @@ OpenD常時起動という前提条件が既に満たされているため、「
 
 ---
 
-### [TANUKI-VALUATION-PRICE-SCHEDULE-LAG-1] TANUKI_VALUATION_Updateの実行時刻がMarket_Data_Daily_Updateより早く、`current_price`が常に1営業日遅れる
+### [TANUKI-VALUATION-PRICE-SCHEDULE-LAG-1] TANUKI_VALUATION_Updateの実行時刻がMarket_Data_Daily_Updateより早く、`current_price`が常に1営業日遅れる — 実装完了・次回発火サイクルでの実地確認待ち
 
 **優先度:** 中
 **分類:** アーキテクチャ / GitHub Actions / データ鮮度
 **登録日:** 2026-08-22
+**状態:** 実装完了（2026-08-22、次回発火サイクルでの実地確認待ち。
+未クローズ）
 **発見:** PORTFOLIOページの時価が古く見えるというユーザー指摘の実データ調査
 
 #### 内容
@@ -12815,8 +12878,84 @@ PLTR/SOFI/SOUN/TSLA全件で確認）で、`daily/`自体は最新営業日
 - 案③: 許容運用として現状維持し、UI側に「前営業日終値」であることを
   明示するのみに留める
 
+#### 実装内容（2026-08-22、案②を採用、[[WORKFLOW-SEC-TANUKI-GAP-1]]と
+まとめて構造的に解消）
+- `config/workflow_dependencies.json`に`Market_Data_Daily_Update`を
+  新規ノード（`depends_on: []`）として追加し、`TANUKI_VALUATION_Update`の
+  `depends_on`に`Market_Data_Daily_Update`を追加（実装前の再確認で、
+  この依存関係が論理的にも一切定義されていなかったことを確認済み）。
+- `TANUKI_VALUATION_Update.yml`の`on:`を独立cron（平日14:05 UTC）から
+  `workflow_run`（`Market Data Daily Update`・`HypeCore Update`・
+  `Adjusted_EPS_Data_Update`・`Stonks Silo Update`の4本いずれかの
+  完了で発火、`types: [completed]`）に変更。ジョブに
+  `if: github.event_name != 'workflow_run' || github.event.workflow_run.
+  conclusion == 'success'`を設定し、前提ワークフロー失敗時は連鎖しない。
+  旧cronは削除し、chainが発火しなかった場合の安全網として金曜22:30 UTC
+  （`Market_Data_Daily_Update`金曜分21:40 UTC完了より確実に後）の週1回
+  フォールバックcronのみ残した。`workflow_dispatch`（admin.htmlの手動
+  一括更新ボタン用）はそのまま維持。
+- `TANUKI_Score_Update.yml`が既に同型パターン（workflow_run +
+  conclusionチェック + 独立cronフォールバック）で稼働中の実例だった
+  ため、これに倣った。
+- 詳細な依存グラフ再確認結果・他3ワークフロー（HypeCore_Update・
+  Adjusted_EPS_Update・Stonks_Silo_Update）側の対応は
+  [[WORKFLOW-SEC-TANUKI-GAP-1]]エントリ参照（まとめて1回の作業で実施）。
+- **新たに判明した同型の未対応ギャップ（今回のスコープ外・報告のみ）**:
+  `Stonks_Silo_Update.yml`（cron 15:05 UTC）も自身の
+  `valuation_fetcher.py`経由で`common/market_data/daily/`の日次終値に
+  依存しているが、`Market_Data_Daily_Update`（21:40 UTC完了）より先に
+  発火するため同種の構造的ラグを抱えている可能性が高い。今回は
+  `TANUKI_VALUATION_Update`用の連鎖のみ対応し、`Stonks_Silo_Update`側の
+  同種対応は意図的にスコープ外とした。
+  `[[STONKS-SILO-PRICE-SCHEDULE-LAG-SUSPECT-1]]`として新規登録。
+- **検証状況**: YAML構文（`yaml.safe_load`）・JSON構文
+  （`json.load`）は確認済み。`gh`CLIが本セッション環境で利用不可
+  （Bash/PowerShellとも`command not found`）のため、GitHub Actions側の
+  実際の発火・連鎖動作は本セッションでは検証不能。次回発火サイクル
+  （最短で次の平日`Market_Data_Daily_Update`実行後）にコミット履歴で
+  `TANUKI_VALUATION_Update`が連鎖起動されたか確認するまでは
+  「未検証」として扱う。
+
 #### 着手条件
-なし（次回セッションで方針判断してから着手。今回は調査・原因特定のみ）
+なし（実装完了。次回発火サイクルでの実地確認後にクローズ判断）
+
+---
+
+### [STONKS-SILO-PRICE-SCHEDULE-LAG-SUSPECT-1] Stonks_Silo_Updateも同種のcron実行順序ラグを抱えている疑い（未確認・報告のみ）
+
+**優先度:** 低（実害未確認、疑いのみ）
+**分類:** アーキテクチャ / GitHub Actions / データ鮮度
+**登録日:** 2026-08-22
+**発見:** [[TANUKI-VALUATION-PRICE-SCHEDULE-LAG-1]]・
+[[WORKFLOW-SEC-TANUKI-GAP-1]]実装時の依存グラフ点検で発見
+
+#### 内容
+`discover/stonks-silo/src/valuation_fetcher.py`が
+`common/market_data/daily/`（yfinance統合層）の日次終値に依存している
+ことをコードから確認した。一方`Stonks_Silo_Update.yml`のcronは
+`5 15 * * 1-5`（UTC15:05、平日）であり、`Market_Data_Daily_Update.yml`
+の`40 21 * * 1-5`（UTC21:40完了、平日）より**先**に発火する。
+
+これは[[TANUKI-VALUATION-PRICE-SCHEDULE-LAG-1]]で確認・修正した
+`TANUKI_VALUATION_Update`の構造的ラグ（現在の日次終値がまだ`daily/`に
+反映される前にパイプラインが実行され、常に前営業日終値を参照して
+しまう問題）と**同型**であり、Stonks Siloのスコア計算内で使われる
+価格データも同じラグを抱えている可能性が高い。
+
+ただし本エントリ登録時点では、Stonks Silo側で実際にどのフィールドに
+`daily/`終値が使われているか（スコア計算への実際の影響範囲）は
+未調査であり、「疑い」の段階に留まる。
+
+#### 対応方針（未着手）
+- 次回セッションで、TANUKI VALUATIONの調査と同じ手順（保有/監視銘柄で
+  `results.json`側の価格関連フィールドと`daily/`の実際の最新保存日を
+  突合）で実データ確認してから、着手要否・優先度を判断する
+- 実害が確認された場合、`Stonks_Silo_Update.yml`に
+  `workflow_run: ["Market Data Daily Update"]`を追加する対応が
+  想定される（既存の平日日次cronとの併存要否も含めて設計要）
+
+#### 着手条件
+なし（次回セッションでの実データ調査待ち）
 
 ---
 

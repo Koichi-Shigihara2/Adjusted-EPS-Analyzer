@@ -1,8 +1,18 @@
 name: HypeCore Update
 
+# [[WORKFLOW-SEC-TANUKI-GAP-1]]対応: config/workflow_dependencies.jsonが
+# 定義するSEC_Data_Update依存を実際のworkflow_runトリガーに反映。
+# 旧・独立cron（毎週日曜13:08 UTC=SEC Data Updateの1時間後、という
+# 手動オフセット推測）はworkflow_runに置き換え、代わりにworkflow_run
+# 連鎖が発火しなかった場合の安全網として低頻度（週1回）の
+# フォールバックcronのみ残す。TANUKI_Score_Update.ymlと同型の
+# workflow_run+conclusionチェックパターン。
 on:
+  workflow_run:
+    workflows: ["SEC Data Update"]
+    types: [completed]
   schedule:
-    - cron: '8 13 * * 0'  # Sunday 13:08 UTC (JST 22:08) - SEC Data Update の1時間後
+    - cron: '0 4 * * 1'  # 安全網: 月曜4:00 UTC（SEC Data Update日曜分の完了後、低頻度フォールバック）
   workflow_dispatch:
     inputs:
       tickers:
@@ -15,6 +25,7 @@ env:
 
 jobs:
   update-hypecore:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository

@@ -1,8 +1,18 @@
 name: Stonks Silo Update
 
+# [[WORKFLOW-SEC-TANUKI-GAP-1]]対応: config/workflow_dependencies.jsonが
+# 定義するSEC_Data_Update依存をworkflow_runで追加（SEC更新完了後、
+# 既存の平日cronの実行を待たず即座に反映）。既存の平日日次cronは
+# 削除せず維持する — valuation_fetcher.pyがcommon/market_data/daily/の
+# 日次終値にも依存しており、SEC_Data_Update（週次）だけをトリガーに
+# するとその依存を満たせなくなる（案②: フォールバックではなく
+# 「別の鮮度要件を満たす並行トリガー」として意図的に併存）。
 on:
+  workflow_run:
+    workflows: ["SEC Data Update"]
+    types: [completed]
   schedule:
-    - cron: '5 15 * * 1-5'  # UTC 15:05 (JST 翌0:05) weekdays
+    - cron: '5 15 * * 1-5'  # UTC 15:05 (JST 翌0:05) weekdays — 日次価格鮮度用
   workflow_dispatch:
     inputs:
       tickers:
@@ -15,6 +25,7 @@ env:
 
 jobs:
   update-stonks-silo:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository

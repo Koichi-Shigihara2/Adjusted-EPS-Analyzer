@@ -8,6 +8,14 @@
       "accepts_tickers": true,
       "input_param": "tickers"
     },
+    "Market_Data_Daily_Update": {
+      "label": "① Market Data 日次取得",
+      "yml": "Market_Data_Daily_Update.yml",
+      "depends_on": [],
+      "outputs": ["common/market_data/daily/"],
+      "accepts_tickers": true,
+      "input_param": "tickers"
+    },
     "HypeCore_Update": {
       "label": "② HypeCore",
       "yml": "HypeCore_Update.yml",
@@ -35,7 +43,7 @@
     "TANUKI_VALUATION_Update": {
       "label": "⑤ TANUKI VALUATION",
       "yml": "TANUKI_VALUATION_Update.yml",
-      "depends_on": ["HypeCore_Update", "Adjusted_EPS_Update", "Stonks_Silo_Update"],
+      "depends_on": ["HypeCore_Update", "Adjusted_EPS_Update", "Stonks_Silo_Update", "Market_Data_Daily_Update"],
       "outputs": ["docs/value-monitor/tanuki_valuation/data/"],
       "accepts_tickers": true,
       "input_param": "tickers"
