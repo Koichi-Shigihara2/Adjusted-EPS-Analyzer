@@ -407,7 +407,10 @@
     .phase-verdict .pv-label { font-size: 9px !important; letter-spacing: .22em !important; }
     .phase-verdict .pv-label::before { content: "▸ "; color: var(--acc); }
     .phase-verdict .pv-label::after {
-      content: " · 3か月先";
+      /* [[MACRO-PULSE-3M-FORECAST-SNAPSHOT-MISMATCH-1]]: 「3か月先」は
+         時間シフトした予測値であるかのような誤解を招くため、実態
+         （週次算出のスナップショット）に即した文言へ是正 */
+      content: " · 週次算出";
       color: var(--acc);
       font-weight: 700;
     }
@@ -621,8 +624,8 @@
         </table>
         <div style="font-family:var(--mono);font-size:9px;color:var(--mut);border-top:1px solid var(--bdr);padding-top:8px;margin-top:8px;margin-bottom:4px">スコアの解釈</div>
         <table style="width:100%;font-family:var(--mono);font-size:9px;border-collapse:collapse">
-          <tr><td style="padding:2px 4px"><span style="color:#10b981">0〜25</span></td><td style="padding:2px 4px;color:var(--mut)">拡張局面 — 景気後退リスク低</td></tr>
-          <tr><td style="padding:2px 4px"><span style="color:#3b82f6">25〜52</span></td><td style="padding:2px 4px;color:var(--mut)">踊り場 — 拡張と後退の境界付近</td></tr>
+          <tr><td style="padding:2px 4px"><span style="color:#10b981">0〜30</span></td><td style="padding:2px 4px;color:var(--mut)">拡張局面 — 景気後退リスク低</td></tr>
+          <tr><td style="padding:2px 4px"><span style="color:#3b82f6">30〜52</span></td><td style="padding:2px 4px;color:var(--mut)">踊り場 — 拡張と後退の境界付近</td></tr>
           <tr><td style="padding:2px 4px"><span style="color:#f59e0b">52〜70</span></td><td style="padding:2px 4px;color:var(--mut)">後退入口 — 複数指標が悪化傾向</td></tr>
           <tr><td style="padding:2px 4px"><span style="color:#f43f5e">70〜100</span></td><td style="padding:2px 4px;color:var(--mut)">後退局面 — 景気後退の可能性高</td></tr>
         </table>
@@ -752,6 +755,12 @@ const COL = {
 const DAILY_INDICATORS = new Set(['Yield Curve 10Y-2Y','HY Spread','VIX','Michigan Inflation 5Y']);
 
 let DATA = [];
+// [[MACRO-PULSE-3M-FORECAST-SNAPSHOT-MISMATCH-1]]: AIウィークリー
+// コメンタリー生成時にサーバー側で算出・保存された最新スコア
+// （05_weekly_analysis.csv最新行）。{score, phase, analysis_date}。
+// loadWeeklyAnalysis()が読み込み次第セットする。未読込時はnull
+// （computeCurrentScore()はその間ライブ計算値にフォールバックする）。
+let WEEKLY_SNAPSHOT = null;
 let RAW  = [];
 let CHARTS = {};
 
@@ -1143,7 +1152,19 @@ function computeCurrentScore() {
 signals.push({name:'Sahm Rule',val:sahmLabel,score:sahmScore,signal:sahmSignal,weight:7,lead:'先行1ヶ月',desc:'サームルール不況指標。失業率の3ヶ月移動平均が過去12ヶ月の最低値より0.5pp以上上昇で不況シグナル。',thresh:'BULL<0.3 / BEAR≥0.5'});
   const totalW=signals.reduce((s,sg)=>s+(sg.val!=='—'?sg.weight:0),0);
   const rawScore=totalW>0?signals.reduce((s,sg)=>s+(sg.val!=='—'?sg.score*sg.weight:0),0)/totalW:50;
-  const score=Math.round(rawScore);
+  const liveScore=Math.round(rawScore);
+
+  // [[MACRO-PULSE-3M-FORECAST-SNAPSHOT-MISMATCH-1]]: 集計スコアはAI週次解説
+  // 生成時（05_main.py::_compute_current_score()）にサーバー側で算出・
+  // 05_weekly_analysis.csvへ保存された値（WEEKLY_SNAPSHOT）を正とする。
+  // ブラウザ側のライブ再計算（rawScore由来）は、そのスナップショットが
+  // まだ読み込まれていない場合のフォールバックとしてのみ使う。これにより
+  // 「3ヶ月先のマクロ予測」ゲージと「AIウィークリーコメンタリー」が
+  // 常に同一の値を参照する（computeScoreAsOf()のisEffectivelyNow分岐
+  // 経由で、スコア推移チャートの「本日」データ点・比較バーにも波及する）。
+  // 各指標ごとのsignals（8指標の現在地カード・アラート判定）は
+  // AIコメンタリーが表現しない粒度のためライブ計算のまま維持する。
+  const score=WEEKLY_SNAPSHOT?WEEKLY_SNAPSHOT.score:liveScore;
 
   return { score, signals };
 }
@@ -2191,6 +2212,19 @@ function renderWeeklyAnalysis(rows) {
 
   // ── DESIGN-13: サプライズバナー（最新週のデータを使用）──
   const latestRow = sorted[0] || {};
+
+  // [[MACRO-PULSE-3M-FORECAST-SNAPSHOT-MISMATCH-1]]: 最新行のスコアを
+  // WEEKLY_SNAPSHOTへ反映し、「3ヶ月先のマクロ予測」ゲージ（および
+  // スコア推移チャートの「本日」データ点・比較バー）をAIウィークリー
+  // コメンタリーと同一値に揃える。loadCSVData()とloadWeeklyAnalysis()は
+  // 並行fetchのため、どちらが先に完了してもDATAが読み込み済みなら
+  // ここで再描画して整合させる。
+  const snapScoreRaw = parseInt(latestRow.score);
+  if(!isNaN(snapScoreRaw)){
+    WEEKLY_SNAPSHOT = { score: snapScoreRaw, phase: latestRow.phase || '', analysis_date: latestRow.analysis_date || '' };
+    if(DATA.length) renderPhaseGauge();
+  }
+
   const surpriseRaw = latestRow.surprise_alerts || '';
   const banner = el('surpriseBanner');
   const bannerBody = el('surpriseBannerBody');
@@ -2316,6 +2350,9 @@ function renderWeeklyAnalysis(rows) {
         <span class="ai-card-toggle">▼</span>
       </div>
       <div class="ai-card-body">
+        ${idx===0 ? `<div style="font-family:var(--mono);font-size:9px;color:var(--mut);margin-bottom:8px;padding:4px 8px;border-left:2px solid var(--acc);background:color-mix(in oklab, var(--acc) 6%, transparent)">
+          このスコアは${dFmt}時点のものです（週次更新、次回は日曜更新後）。上部「景気後退リスク複合スコア」の数値・ゲージも同じ値を参照しています。
+        </div>` : ''}
         <div class="ai-card-section">
           <div class="ai-card-section-label">総括</div>
           <div class="ai-card-section-text">${summary}</div>
@@ -2796,9 +2833,13 @@ document.addEventListener('DOMContentLoaded', () => {
       return d;
     }
 
-    var hero   = banner('v3-hero-banner', '3M FORECAST',
-                        '3か月先のマクロ予測',
-                        '8つの先行指標（Yield Curve / ISM / HY Spread 等）を統合した3〜6か月先の景気フェーズ。');
+    // [[MACRO-PULSE-3M-FORECAST-SNAPSHOT-MISMATCH-1]]: 「3M FORECAST /
+    // 3か月先のマクロ予測」は、時間シフトした予測計算が存在しないにも
+    // かかわらず「未来の値」であるかのような誤解を招いていたため是正。
+    // 実態はAIウィークリーコメンタリーと同じ、週次算出の複合スコア。
+    var hero   = banner('v3-hero-banner', 'COMPOSITE SCORE',
+                        '景気後退リスク複合スコア',
+                        '8つの先行指標（Yield Curve / ISM / HY Spread 等）を統合したスコア。AIウィークリーコメンタリーと同一の値（週次算出）。');
     var now    = banner('v3-now-banner', 'NOW',
                         '足許の状況',
                         'FED 金融政策・実勢金利・流動性。予測ではなく現時点の市場環境。');
