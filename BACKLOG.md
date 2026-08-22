@@ -12752,6 +12752,74 @@ OpenD常時起動という前提条件が既に満たされているため、「
 
 ---
 
+### [TANUKI-VALUATION-PRICE-SCHEDULE-LAG-1] TANUKI_VALUATION_Updateの実行時刻がMarket_Data_Daily_Updateより早く、`current_price`が常に1営業日遅れる
+
+**優先度:** 中
+**分類:** アーキテクチャ / GitHub Actions / データ鮮度
+**登録日:** 2026-08-22
+**発見:** PORTFOLIOページの時価が古く見えるというユーザー指摘の実データ調査
+
+#### 内容
+PORTFOLIOページ（`docs/portfolio/index.html`）が表示する「時価」は
+`docs/value-monitor/tanuki_valuation/data/{TICKER}/latest.json`の
+`components.current_price`を参照している（`portfolio.json`の
+`last_updated`はポートフォリオ構成の編集日であり時価の鮮度とは無関係）。
+この`current_price`自体は`data_fetcher.py`が`common.market_data.reader`
+経由で`common/market_data/daily/{SYMBOL}.json`（yfinance統合層）から
+正しく取得しており、参照先データソース自体に誤りはない。
+
+しかし実データ調査（2026-08-22、保有9銘柄 ADBE/APP/CELH/CRWV/NVDA/
+PLTR/SOFI/SOUN/TSLA全件で確認）で、`daily/`自体は最新営業日
+（2026-08-21・金）のクローズまで正しく保存済みにもかかわらず、
+`latest.json`の`current_price`は全銘柄例外なく**1営業日前**
+（2026-08-20・木）のクローズと完全一致していることを確認した。
+`latest.json`の`calculation_date`自体は直近（2026-08-21 23:5X JST）で
+パイプラインは正常稼働している＝ワークフロー障害ではない。
+
+原因はcronスケジュールの実行順序不備：
+- `Market_Data_Daily_Update.yml`: `40 21 * * 1-5`（UTC21:40=JST翌6:40）
+- `TANUKI_VALUATION_Update.yml`: `5 14 * * 1-5`（UTC14:05=JST23:05）
+
+`TANUKI_VALUATION_Update`（JST23:05）は同日分の米国市場クローズが
+`Market_Data_Daily_Update`（JST翌6:40）でまだ`daily/`に反映される前に
+実行されるため、常に「前日の前営業日」のクローズしか参照できない
+構造的な恒常ラグが平日毎回発生する。土日は両ワークフローとも
+`1-5`（平日のみ）で停止するため、金曜夜〜月曜のPORTFOLIO閲覧では
+木曜クローズが暦日換算で最大4〜5日分「古く」見える（実質1営業日遅れが
+週末を挟んで見た目に拡大する）。次回`TANUKI_VALUATION_Update`
+（月曜23:05 JST）も月曜分のクローズはまだ`daily/`未反映のため金曜
+クローズしか反映できず、火曜早朝の`Market_Data_Daily_Update`後、
+月曜夜のパイプライン実行分（火曜0時台）でようやく金曜クローズが
+反映される見込み。
+
+`config/workflow_dependencies.json`にはこの2ワークフロー間の依存関係が
+論理的にも一切定義されていない（`SEC_Data_Update`↔`TANUKI_VALUATION_Update`
+間の同種ギャップである[[WORKFLOW-SEC-TANUKI-GAP-1]]とは異なるペアであり
+重複ではないが、同じ「cronスケジュールが独立していて実行順序を
+保証する仕組みがない」という構造的パターンの別インスタンス）。
+
+#### 切り分け結果
+ユーザー提示の(a)〜(d)のいずれにも単純には一致しない。両ワークフロー
+とも障害・停止なし（(b)否定）、参照先データソース自体も`daily/`で
+正しい（(c)否定）、GitHub Pagesキャッシュの問題でもない（(d)否定）。
+単純な「前日終値ラグ」（(a)）として片付けるには、週末を挟むと見た目の
+遅延が暦日換算で最大4〜5日に拡大する点で許容範囲を超えていると判断。
+実質は「ワークフロー実行順序の設計不備」というカテゴリ。
+
+#### 対応方針（未確定・次回セッションで判断）
+- 案①: `TANUKI_VALUATION_Update.yml`の実行時刻を`Market_Data_Daily_Update.yml`
+  完了後（JST翌6:40以降）に変更する
+- 案②: `Market_Data_Daily_Update`完了後に`TANUKI_VALUATION_Update`を
+  `workflow_run`トリガーで自動連鎖させる（[[WORKFLOW-SEC-TANUKI-GAP-1]]の
+  案①と同種のアプローチ）
+- 案③: 許容運用として現状維持し、UI側に「前営業日終値」であることを
+  明示するのみに留める
+
+#### 着手条件
+なし（次回セッションで方針判断してから着手。今回は調査・原因特定のみ）
+
+---
+
 ## システム設計の基本思想（2026-05-31）
 
 ### On-a-journeyの本質的な目的
