@@ -13215,6 +13215,211 @@ daily cron（`15 22 * * *`、無指定モード）が毎日`05_events.csv`を更
 
 ---
 
+### [LAYER1-GROWTH-HYPEPHASE-DECAY-GAP-1] セグメント加重モデル（Layer 1）のDCF成長率がHypePhaseによる減速調整を受けていない疑い
+**優先度:** 中（仮置き。次回セッションでの実コード確認結果を踏まえて見直す）
+**分類:** 設計判断要確認 / TANUKI VALUATION / DCF成長率
+**登録日:** 2026-08-23
+**発見:** Koichiさんがチャット側でAPP report.txtを検討中に発見
+
+#### 内容
+report.txt[4]「成長率根拠」欄で、Layer 1（セグメント加重モデル、
+`segment_configured=True`銘柄）はセグメント加重成長率がそのままDCFの
+成長率Gとして直接使用される。一方、同[4]の定義欄には「GROWTH-1:
+Decay model weight adjusted by HypeCore phase」というHypePhaseに応じた
+成長率減速モデルの説明があるが、実コード確認の結果、これはLayer 2
+（`segment_configured=False`銘柄向けのrecommended_g自動適用）にのみ
+適用されるロジックであり、Layer 1には適用されていないことを確認した。
+
+実例（APP、2026-08-21生成のreport.txt）: HypePhase=Phase4（期待剥落期）
+にもかかわらず、DCF適用成長率45.0%（セグメント加重平均）は推奨成長率
+24.8%（Layer 2参考値。HypePhase4であれば本来はTTM×35%+業界×65%まで
+減速される想定の値）を+20.2pt上回ったまま、一切の減速調整を受けずに
+そのままDCFへ使用されている。
+
+#### 実コード確認結果（登録前に実施）
+- `src/value/tanuki_valuation/calculator/growth.py::get_segment_growth()`
+  （72-123行目）: segment_config.pyから取得した`weighted_growth`を
+  そのまま`GrowthResult(rate=weighted_growth, source="segment_weighted")`
+  として返すのみで、HypePhase等の減速要素は一切参照していない。
+  `segment_config.py`自体もhype/phase/decay関連の記述なし（grep 0件で
+  確認）。
+- `pipeline.py:772`: `_is_seg_unconfigured = not extra.get(
+  "segment_configured", True)` でLayer1/Layer2を判定。
+- `pipeline.py:782`: `if _is_seg_unconfigured and _recommended_g is not
+  None and financials is not None:` — recommended_g（GROWTH-1のHypePhase
+  減速込み）によるDCF再計算ブロックは、この条件が真の場合（＝Layer2）
+  にしか実行されない。Layer1では`_phase1_growth`（セグメント加重平均
+  そのまま）がDCFのGとして使われ続ける。
+- GROWTH-1導入コミット（`c040075ea`、2026-05-31）のコミットメッセージは
+  「DCF-1の逓減DCF(TTM>50%銘柄)で使用するrecommended_gの計算式を改善」
+  であり、対象を明示的にrecommended_g経路（Layer2/3/4）に限定して設計
+  されている。Layer1への適用を検討した形跡はコミットメッセージ・
+  `BACKLOG_DONE.md`完了記録のいずれにも見当たらない。
+- 関連する既存クローズ済み課題`[[BUG-INTU-GROWTH-1]]`（2026-06-14完了、
+  `BACKLOG_DONE.md`参照）はLayer1銘柄でSection4の表示ラベルがLayer2の
+  ものを流用していた**表示バグ**を修正したものであり、「Layer1のDCF
+  成長率にHypePhase減速を適用すべきか」という設計判断そのものには
+  触れていない（「セグメント加重モデル（Layer 1）」「Layer 2参考値・
+  DCF未適用」という正しい表示ラベルに修正しただけ）。本エントリの論点
+  とは重複しないと判断した。
+
+#### 対応方針（未定・要判断）
+Layer1にHypePhase減速が適用されない設計が意図的なもの（例: 手動設定
+したセグメント別成長率はアナリストの一次情報に基づく確度の高い値で
+あり、機械的な市場心理減速を上書きすべきでない、という設計思想）か、
+それとも見落とし・未対応なのかを、次回セッションでKoichiさんに確認の
+上、方針を決定する。
+- 意図的設計と判断する場合: その設計思想を本エントリに追記した上で
+  「対応不要」としてクローズする
+- 見落とし・対応すべきと判断する場合: Layer1にも何らかのHypePhase減速
+  （既存のGROWTH-1と同型 or 別方式）を適用する実装方針を検討する
+
+#### 着手条件
+上記の実コード確認結果をKoichiさんに報告し、対応方針の承認を得てから
+着手すること。今回は登録のみで実装しない。
+
+---
+
+### [REPORT-TXT-CAPM-IV-MISSING-1] report.txt[3]にCAPMベース割引率でのIV（intrinsic_value_beta）が欠落している
+**優先度:** 中
+**分類:** データ品質 / AI向け出力の網羅性 / TANUKI VALUATION
+**登録日:** 2026-08-23
+**発見:** Koichiさんがチャット側でAPP report.txtとstock.htmlの表示差分を
+検討中に発見
+
+#### 内容
+report.txt[3]（TANUKI VALUATION）には`WACC_CAPM_Reference: 18.55%`と
+いう割引率（%）は表示されるが、その割引率を使って算出したIV（$の値）
+はreport.txt内のどこにも存在しない。一方report.txt自身の[3]定義欄
+（118-128行目付近）には「高β銘柄では市場WACC比でIVが高めに出る...
+市場リスク調整後はWACC_CAPM_ReferenceでのIVを参照（割高/割安の絶対
+判断には両者を併用）」という記述があり、**「WACC_CAPM_Reference
+でのIV」という値の存在を前提とした文章になっているにもかかわらず、
+その値自体はreport.txt中のどこにも出力されていない**（自己言及の
+矛盾）。
+
+stock.htmlのWeb画面では、この値は「β込みWACC」ラベルの下に実際に
+表示されている（例: APP 2026-08-21時点で$648.17）。
+
+#### 実コード確認結果（登録前に実施）
+- 値の出所を特定: `latest.json`の`intrinsic_value_beta`フィールド
+  （APP実測値: 648.17）。
+- 算出元: `core_calculator.py:827`（`"intrinsic_value_beta":
+  round(float(intrinsic_value_per_share_beta), 2)`）で算出され、
+  `pipeline.py`が構築する`valuation`dictに格納される。
+- stock.html側の表示ロジック: `stock.html:751`（`const ivpsBeta =
+  d.intrinsic_value_beta || 0; // 参考①: β込みWACC`）が`latest.json`
+  から直接読み込み、同ファイル1065行目付近の「SENSITIVITY ANALYSIS」
+  ヘッダー内`id="displayIvps"`に`$${fmt(ivpsBeta > 0 ? ivpsBeta :
+  ivps)}`として表示。JS側で独自計算はしておらず、latest.json
+  （バックエンド算出済みの値）をそのまま表示している。
+- report.txt生成ロジック（`pipeline.py::_generate_report()`、
+  1165行目〜）を確認したところ、**同じ`valuation`dict
+  （`intrinsic_value_beta`キーを含む）を引数として受け取っているにも
+  かかわらず、`_generate_report()`内に`valuation.get(
+  "intrinsic_value_beta")`を参照する行が一つも存在しない**。つまり
+  「算出はしているが出力していないだけ」であり、算出自体をしていない
+  ケースではないと切り分けが完了した。
+- 追加発見: `intrinsic_value_beta`と同様に「参考値」として位置づけ
+  られている`intrinsic_value_rf`（`d.intrinsic_value_rf`、
+  `stock.html:752`「参考②: Rf理論上限」、`id="rfValueBlock"`に表示）
+  も同様にreport.txtに一切出力されていないことを確認した。つまり
+  stock.htmlが表示する参考IV2種（β込みWACC・Rf理論上限）がいずれも
+  report.txtから欠落している。
+
+#### 関連する既存BACKLOG項目との重複確認
+- `[[V0-V0RM-CONFUSION-RISK-1]]`（2026-07-23登録、優先度中・未着手）:
+  `v0`（`intrinsic_value_beta`の計算根拠）と、メインIVが実際に使う
+  `v0_rm`（`dcf_components.v0_rm`）の**フィールド命名・配置**が
+  紛らわしく、latest.jsonを直接読む外部AIが取り違えるリスクを指摘する
+  もの。本エントリは「report.txtにCAPMベースIVの値自体が出力されて
+  いない」という別の問題であり、対象ファイル（report.txt vs
+  latest.jsonのフィールド構造）も論点も異なるため重複ではないと
+  判断したが、いずれも`intrinsic_value_beta`まわりのAI向け情報設計の
+  弱さという共通点があるため、対応時は合わせて参照する。
+- `[[MACRO-PULSE-3M-FORECAST-SNAPSHOT-MISMATCH-1]]`（2026-08-22完了、
+  `BACKLOG_DONE.md`参照）: MACRO PULSEのスコア表示不一致に関する別
+  サブシステムの課題であり、対象コード・論点とも無関係と確認した。
+- report.txtの網羅性そのものを扱った既存エントリは`report\.txt.*欠落`
+  等の複数パターンでBACKLOG.md/BACKLOG_DONE.md両方をgrepしたが該当
+  なし。
+
+#### 対応方針（未定）
+- report.txt[3]セクションに`WACC_CAPM_Reference`と対になる形でCAPM
+  ベースIV（`intrinsic_value_beta`）を追記し、stock.htmlとの表示内容の
+  整合性を取る（併せて`intrinsic_value_rf`の追記も検討）
+- これを機に、report.txt全体がstock.html（および他の関連フロント
+  エンド）で表示されている項目を漏れなく反映できているかを横断的に
+  見直す（今回発見した1件の局所修正にとどめず、report.txtの網羅性を
+  横断チェックする課題として扱う）
+
+#### 着手条件
+上記の網羅性見直しの結果を次回セッションでKoichiさんに報告し、対応
+範囲の確認を得てから着手すること。今回は登録のみで実装しない。
+
+---
+
+### [STOCKHTML-SIGNAL-CONSISTENCY-SECTION-1] stock.htmlへの「シグナル整合性チェック」新設セクション追加
+**優先度:** 中（投資判断の質向上に資するが、緊急性はない）
+**分類:** 新機能 / TANUKI VALUATION / フロントエンド
+**登録日:** 2026-08-23
+**発見:** チャット側Claudeとの検討で設計方針が固まった（Koichiさん発案）
+
+#### 内容
+DCFの理論価格とERP（市場織り込み型の期待水準指標）の方向性が食い違う
+場合、それはDCFが拾いきれていない要素（当該銘柄のBeta〈市場リスク〉、
+個別リスクイベント〈訴訟・規制調査等〉、HypePhaseが示す成長持続性への
+市場の懐疑）が存在することを意味しうる、という考察に基づき、これを
+個別銘柄ごとの一過性コメントではなく全ティッカー共通で再利用できる
+仕組みとして、stock.html（個別銘柄ページ）に新設のセクション
+「シグナル整合性チェック」を追加する。
+
+新設セクションの目的: DCF乖離率・ERP・アナリスト目標株価・HypePhase
+を横断的に照合し、これらが同じ方向を示さない場合に、既存データ
+（Beta、RISK EVENTSの重要度、Growth_Rate_Recとの乖離フラグ等）から
+導ける乖離要因の候補を自動的に表示する。
+
+#### 実コード確認結果（登録前に実施した最小限の事前調査）
+各データソースの現状把握:
+- Beta: `latest.json`の`wacc.beta`（`stock.html:916`で`const beta =
+  wacc.beta || 1.0;`として既に読み込み・表示中）
+- ERP: `pipeline.py:978`で`latest_data["erp"]`として保存されているが、
+  **stock.htmlは現状これを一切参照していない**（`stock.html`全体を
+  grepしてもERP関連の変数・表示は0件。report.txt[7]HYPECOREセクション
+  にのみ表示されている）
+- アナリスト目標株価: `latest.json`の`components.analyst_target_median`
+  等（`stock.html:950`で既に読み込み・表示中）
+- HypePhase: stock.htmlは`docs/value-monitor/hypecore/data/
+  {ticker}_poc.json`を`stock.html:659`で既に直接fetchしている
+- RISK EVENTS: `latest.json`の`risk_events`（`type`/`summary`/`impact`
+  の3フィールド構成、`stock.html:1332`で`const evs = d.risk_events;`
+  として既に読み込み・表示中）
+- 上記よりERP以外は既にstock.html側で取得済みのデータであり、新
+  セクションは主にERPの新規配線＋既存データの横断ロジック追加で実現
+  できる可能性が高いが、確定的な判断は次回セッションでの詳細調査が
+  必要
+- `[[LAYER1-GROWTH-HYPEPHASE-DECAY-GAP-1]]`（Layer1成長率のHypePhase
+  減速適用有無）の結論は、この新セクションが提示する「乖離要因候補」
+  の一つ（HypePhaseが示す成長持続性への市場の懐疑、という論点）として
+  扱うため、**同課題の結論が出るまで本セクションの詳細設計は確定
+  しない**
+
+#### 対応方針（未定・要調査）
+- stock.htmlの現在の生成・データ取得構造を上記より詳しく確認し、新
+  セクションが既存データの組み合わせだけで実現できるか、追加のデータ
+  生成（バックエンド側の新規計算）が必要かを判断する
+- ポートフォリオ・TAILウォッチリスト全体で、このセクションが実際に
+  何か表示する対象となる銘柄数（Beta高×RISK EVENTS高重要度×DCF乖離
+  大×ERP中立以下、に該当する銘柄数）を概算し、実装の投資対効果を
+  判断する材料とする
+
+#### 着手条件
+上記調査結果と`[[LAYER1-GROWTH-HYPEPHASE-DECAY-GAP-1]]`の結論を
+踏まえて、次回セッションでKoichiさんに実装要否・設計詳細の確認を
+得てから着手すること。今回は登録のみで実装しない。
+
+---
+
 ## システム設計の基本思想（2026-05-31）
 
 ### On-a-journeyの本質的な目的
