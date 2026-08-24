@@ -1,7 +1,85 @@
 {
   "ticker": "LITE",
-  "last_updated": "2026-08-17T10:49:14.950387",
+  "last_updated": "2026-08-24T05:00:22.347750",
   "quarters": [
+    {
+      "gaap_eps": -96.00134048257372,
+      "adjusted_eps": -95.00362403487392,
+      "gaap_net_income": -7161700000.0,
+      "adjusted_net_income": -7087270353.001595,
+      "diluted_shares_used": 74600000.0,
+      "adjustments": [
+        {
+          "item_id": "sbc",
+          "item_name": "株式報酬費用",
+          "amount": 40800000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金費用",
+          "extracted_from": "us-gaap:ShareBasedCompensation",
+          "category": "株式報酬関連",
+          "net_amount": 39489331.56742439,
+          "tax_rate_applied": 0.032124226288617996
+        },
+        {
+          "item_id": "amortization_intangibles",
+          "item_name": "無形資産償却費",
+          "amount": 33500000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "買収関連無形資産の償却",
+          "extracted_from": "us-gaap:AmortizationOfIntangibleAssets",
+          "category": "買収・統合関連",
+          "net_amount": 32423838.419331297,
+          "tax_rate_applied": 0.032124226288617996
+        },
+        {
+          "item_id": "loan_loss_provision_abnormal",
+          "item_name": "貸倒引当金繰入（異常変動分）",
+          "amount": 200000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "マクロ変動による一時的影響",
+          "extracted_from": "us-gaap:ProvisionForDoubtfulAccounts",
+          "category": "金融関連",
+          "net_amount": 193575.1547422764,
+          "tax_rate_applied": 0.032124226288617996
+        },
+        {
+          "item_id": "restructuring",
+          "item_name": "リストラ費用",
+          "amount": 2400000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "一過性の事業再編費用",
+          "extracted_from": "us-gaap:RestructuringCharges",
+          "category": "リストラ・事業再編関連",
+          "net_amount": 2322901.856907317,
+          "tax_rate_applied": 0.032124226288617996
+        }
+      ],
+      "net_adjustment_total": 74429646.99840528,
+      "filing_date": "2026-06-27",
+      "form": "10-K",
+      "sector": null,
+      "sector_exclusions": [],
+      "revenue": 3014000000.0,
+      "diluted_shares": 74600000.0,
+      "period_end": "2026-06-27",
+      "fiscal_year": 2026,
+      "quarter": 4,
+      "tax_expense": -237700000.0,
+      "pretax_income": -7399400000.0,
+      "ai_analysis": {
+        "health": "Error",
+        "comment": "AI分析中にリクエストエラーが発生しました: Request failed: HTTPSConnectionPool(host='api.x.ai', port=443): Read timed out. (read timeout=30)",
+        "sources": []
+      }
+    },
     {
       "gaap_eps": 1.498960498960499,
       "adjusted_eps": 2.1228477577770284,
@@ -60,12 +138,7 @@
       "fiscal_year": 2026,
       "quarter": 3,
       "tax_expense": 39600000.0,
-      "pretax_income": 183800000.0,
-      "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にリクエストエラーが発生しました: Request failed: HTTPSConnectionPool(host='api.x.ai', port=443): Read timed out. (read timeout=30)",
-        "sources": []
-      }
+      "pretax_income": 183800000.0
     },
     {
       "gaap_eps": 0.8906605922551253,

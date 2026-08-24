@@ -1,6 +1,6 @@
 {
   "ticker": "PEP",
-  "last_updated": "2026-08-17T10:54:24.588832",
+  "last_updated": "2026-08-24T05:06:28.002990",
   "quarters": [
     {
       "gaap_eps": 2.1775018261504746,
@@ -49,9 +49,15 @@
         }
       },
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にリクエストエラーが発生しました: Request failed: HTTPSConnectionPool(host='api.x.ai', port=443): Read timed out. (read timeout=30)",
-        "sources": []
+        "health": "調整小",
+        "comment": "調整項目は恒常的な株式報酬費用(SBC)であり、非現金だが株主希薄化を伴う継続コストです。市場がGAAP EPS(2.1775)で判断する場合、非現金費用を差し引いた数字に注目するためキャッシュ生成力や実質的な企業実力をやや過小評価している可能性があります。ただしSBCを加回調整したAdjusted EPS(2.2167)は実態を過大に示すリスクもあり、投資家は希薄化影響を加味した実質EPSやキャッシュフローを注視すべきです。過小評価リスクは限定的ですが、恒常コストの調整として注意が必要です。",
+        "sources": [
+          {
+            "item": "sbc",
+            "snippet": "非現金費用として株式報酬費用をadd_back。毎期発生する恒常的な報酬コストであり、株主希薄化の経済的影響を伴う。",
+            "confidence": 0.2
+          }
+        ]
       }
     },
     {
