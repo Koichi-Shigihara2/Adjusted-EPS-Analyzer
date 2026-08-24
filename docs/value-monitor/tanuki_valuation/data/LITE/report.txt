@@ -1,5 +1,5 @@
 LITE INTEGRATED INVESTMENT REPORT
-Generated: 2026-08-24T13:47:30+09:00
+Generated: 2026-08-24T14:13:51+09:00
 Price: $866.71
 
 ⚠️ CIK断絶(構造的境界): 2015年8月JDS Uniphase(JDSU)の会社分割によりLumentum Holdings発足。分割以前のデータは親会社(JDSU)連結からの区分推定値であり接続していません。
@@ -7,7 +7,7 @@ Price: $866.71
 [1. TANUKI SCORE]
 Classification: WATCH
 Classification_Pre_Rounding: TRIM
-Funda_Score: 100/100
+Funda_Score: 75/100
 Timing_Score (components):
   Deviation_Rate: -99.1%
   MA200_Deviation: +32.8%
@@ -84,9 +84,10 @@ DCF_Reliability: LOW ⚠️ (FCF_Base方式: 要注意フラグ検出, IV参考�
   [Policy B: LOW時はBUY/TRIM/HOLD/WATCHをWATCHへ丸め。SELL/PASSは維持。
    fcf_outlier未解消（一過性費用で説明不可）のため、IVは参考値扱い。]
    [DCF-REL-SYNC-1: FCF実績が5年平均から1534%乖離]
-⚠️ 買収・統合関連加算$119Mを控除後も調整済み
-    純利益がマイナスのため、生FCFへフォールバックしています。詳細は
-    BACKLOG_DONE.md [[CWAN-SNPS-MA-DISTORTION-1]]参照。]
+ℹ️ 買収・統合関連加算$114Mを検出したが未控除
+   [控除すると生FCFを下回る（過小推定側）と判定されたため、方向性
+    ガードにより調整済み純利益をそのまま採用しています。詳細は
+    BACKLOG_DONE.md [[FCF-EST-DIRECTION-GUARD-1]]参照。]
 DCF_FCF_PV: $0.15B (4yr discounted FCF sum, pre-alpha, Rm=10%)
 DCF_TV_PV:  $0.67B (terminal value present value, pre-alpha, Rm=10%)
 DCF_v0:     $0.82B (= FCF_PV + TV_PV, Rm=10% enterprise value)
@@ -228,15 +229,15 @@ for unconfigured segments.
 
 
 [6. EPS ANALYZER]
-Latest_Adjusted_EPS: $2.1228 (直近四半期値)
-Latest_GAAP_EPS: $1.4990
-Adjustment_Delta: $0.6239 (sbc/amortization_intangibles/restructuring)
-YoY_Growth: 192.9%
+Latest_Adjusted_EPS: $-95.0036 (直近四半期値)
+Latest_GAAP_EPS: $-96.0013
+Adjustment_Delta: $0.9977 (sbc/amortization_intangibles/loan_loss_provision_abnormal/restructuring)
+YoY_Growth: -200271.3%
 Recent Surprises (Adjusted EPS):
+  2026 Q4: Actual=$-95.0036 vs Est=N/A -> N/A%
   2026 Q3: Actual=$2.1228 vs Est=N/A -> N/A%
   2026 Q2: Actual=$1.6198 vs Est=N/A -> N/A%
   2026 Q1: Actual=$0.9304 vs Est=N/A -> N/A%
-  2025 Q4: Actual=$-0.0474 vs Est=N/A -> N/A%
 Definition:
 
 EPS_Source: SEC EDGAR XBRL (EPS Basic/Diluted tags). May differ from
@@ -251,8 +252,7 @@ Positive surprise historically correlates with
 short-term price appreciation (PEAD effect)
 PER_Comparison:
   Market_PER_GAAP: 26.3x
-  Adjusted_EPS_PER: 187.4x (TTM調整後EPS: $4.6257)
-  Delta: +161.1x (more expensive on adjusted basis)
+  Adjusted_EPS_PER: N/A
 Forward_Estimates:
   Next_Earnings_Date: 2026-11-06
   Next_Quarter_EPS: N/A (no analyst estimates in data)
@@ -353,7 +353,7 @@ based on recent 4Q linear trend. Rough estimate only.
 Source: Grok web search (直近3ヶ月)
   [high] litigation: Antitrust lawsuit
   [high] regulatory: SEC regulatory investigation
-  [mid] earnings: Earnings warning with competition risks 2025-2026
+  [mid] earnings: Earnings warning for 2025-2026 amid competition
 
 ==============================================
 DISCLAIMER: This report is generated automatically
