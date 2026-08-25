@@ -13584,6 +13584,114 @@ HypeCoreを「本源価値(IV)と市場価格の関係の分析・将来予測�
 影響対象10銘柄と重複0件のため、保有・監視中銘柄への影響は引き続き
 ゼロ（2026-08-26①調査結果と同じ）。
 
+#### 2026-08-26③ ASTSの逆方向IV変動に関する追加調査（調査のみ・実装なし）
+
+STEP A（コミット`686706666`）の影響対象7銘柄のうち、ASTS**のみ**
+recommended_gが上昇（28.5%→40.1%、+11.6pt）したにもかかわらずIVが
+下落（$3.74→$3.66、-2.2%）する逆方向の動きを示していたため、Koichiさん
+の指示により追加調査した。結論: **バグではなく、DCFの逓減モデルが
+負のFCFに成長率を複利適用する際の数学的に正しい挙動**。
+
+**1. 他のDCF入力パラメータの不変確認**（`git diff 62305b7d5 686706666
+-- .../ASTS/latest.json`で全項目を突合）:
+- `current_price`: $62.0099983215332（不変）
+- `wacc.beta`: 2.50（不変、ログ`[ASTS] WACC (CAPM): 18.6% (β=2.50)`が
+  変更前後で完全一致）
+- `diluted_shares`: 389,167,494（不変）
+- BS調整額: `pt_shares_consistency.detail`の「BS $+4.15/株」が変更前後で
+  完全一致
+- RPO_PV・Growth_Option_PV: いずれも$0.00B（不変、「RPO補正: スキップ
+  〈適用率0%: Non-SaaS〉」で両者とも未適用）
+- `roe_10yr_avg`: -0.3495788394646131→-0.34957883946461304（浮動小数点の
+  末尾桁のみの表記差、実質同値）
+- 変化していたのはrecommended_gとその下流（DCFキャッシュフロー
+  トラジェクトリ・IV）、および`risk_events`のGrok生成文言（下記参照）
+  のみ
+
+**2. recommended_gとdecay model本体の計算経路の関係**（実コード確認）:
+`recommended_g`は表示専用ではなく、`pipeline.py:782`の
+`_seg_cfg.set_growth_override(ticker, _recommended_g)`経由で実際に
+セグメント成長率として上書きされ、`core_calculator.py`の`high_growth_
+rate`としてDCF計算へ渡る。`core_calculator.py:466-473`:
+```python
+_tapering_result = calculate_tapering_dcf(
+    base_fcf=base_fcf,
+    g_start=high_growth_rate,      # ← recommended_gそのもの
+    g_end=tapering_g_end,          # ← industry_benchmark（hype_phase非依存）
+    wacc=wacc,
+    high_growth_years=_moat_phase1_years,
+    terminal_growth=terminal_growth,
+)
+```
+`calculator/dcf.py::calculate_tapering_dcf()`の実装（308-322行目）:
+```python
+current_fcf = base_fcf
+for t in range(high_growth_years):
+    g_t = g_start + (g_end - g_start) * t / (high_growth_years - 1)
+    current_fcf *= (1 + g_t)          # ← 複利計算
+    ...
+    pv_year = current_fcf / discount_factor
+    pv_high += pv_year
+```
+`g_start`（year1の成長率）は`recommended_g`と厳密に一致することを
+実測確認（ASTS: before year1_growth_rate=0.2852=recommended_g(before)、
+after year1_growth_rate=0.4012=recommended_g(after)）。`g_end`
+（`tapering_g_end`＝`industry_benchmark`）はhype_phaseと無関係の
+Damodaranデータのため変更前後で完全に同一値（0.0144）。**つまり
+recommended_gはDCFの実際のキャッシュフロー計算に直接使われており、
+表示専用の別経路ではない**——ここまでは他の6銘柄と同じ設計。
+
+**3. ASTS固有の要因の特定**: `base_fcf`（上記コードの複利計算の起点）
+が、ASTSに限り**負値**だったことが根本原因。ASTS単独で`pipeline.py
+ASTS`を再実行しログを確認（本調査でのみ実行、生成データはコミット
+対象外として復元済み・下記参照）:
+```
+[ASTS] FCFベース: avg_5yr  5yr=$0.01B  2yr=$-1.16B  → 採用=$0.01B  (CV=データ不足)
+[ASTS] FCF外れ値: latest_negative → 要確認（一過性費用の証拠なし）
+[ASTS] FCF実力推定: フォールバック → 調整済み純利益がマイナス($-295M) → 従来FCFを使用
+[ASTS] R&D資本化: $-0.01B → 調整後FCF=$-0.01B (R&D/Rev=39.6%)
+```
+「採用FCF」段階では$5,673,440（プラス）だが、R&D資本化調整
+（R&D/Rev=39.6%という高いR&D比率のため、この調整が今回はマイナス
+方向に作用）を経て、実際に`calculate_tapering_dcf`へ渡る`base_fcf`は
+約**-$680万（負値）**に転じている（`dcf_components.high_growth_
+detail[0].fcf / (1+g_start)`で逆算し確認: before -8,792,210 /
+1.2852 ≈ -6,841,058、after -9,586,158 / 1.4012 ≈ -6,841,058で完全
+一致——同一の負のbase_fcfに異なるg_startを複利適用した結果と確定）。
+
+`current_fcf *= (1 + g_t)`は`current_fcf`が負の場合、`g_t`が大きい
+ほど**負の方向に絶対値が拡大**する（負債・損失が「速く成長する」＝
+より速く悪化する、という経済的に正しい解釈）。このためASTSでは
+recommended_gの上昇が`pv_high_growth`をより負に（-$27.8M→-$32.3M）、
+連動して`terminal_fcf`・`terminal_value`もより負に
+（-$40.99M→-$49.25M）し、結果としてV0がより負に
+（-$68.8M→-$81.5M）、IV per shareが低下する。
+
+他の6銘柄（IONQ/KULR/QBTS/RCAT/RXRX/CWAN）は実測確認の結果、いずれも
+`high_growth_detail[0].fcf`・`pv_high_growth`が**正値**であり
+（例: IONQ year1_fcf=$348.4M、CWAN year1_fcf=$264.6M）、正の複利計算
+のため「gが上がればIVも上がる」という直感通りの方向になる。ASTSは
+今回の7銘柄中、最終DCF入力`base_fcf`が負値になる**唯一の銘柄**
+だった。
+
+**副次確認（データ品質、実害なし）**: 調査のためASTS単独で
+`pipeline.py`を再実行した際、`calculation_date`と`risk_events`の
+Grok生成文言（例:「Antitrust lawsuit ongoing」⇔「Ongoing antitrust
+lawsuit」）が実行毎に微妙に変化することを確認した。これは既知の
+Grok API非決定性（事実関係は同一、表現のみ変動）であり、STEP Aの
+コード変更とは無関係の既存の挙動。財務数値（IV・recommended_g・
+dcf_components等）は完全に再現し、変化がなかったことも確認済み
+（GROWTH-1除去の計算結果が決定論的であることの追加検証にもなった）。
+この再実行で生じた差分（タイムスタンプ・risk_events文言のみ）は
+調査目的外のためコミット対象から除外し、`git checkout --`で
+STEP A時点の内容へ復元済み。
+
+**最終判断**: ASTSの逆方向の動きは、`calculate_tapering_dcf()`の
+複利計算式（STEP Aで変更していない既存ロジック）を、負のbase_fcfに
+異なるg_startで適用した結果として完全に説明可能であり、数学的・
+経済的に正当な挙動。STEP Aのコード変更・本番反映（コミット
+`686706666`）にバグはなく、**完了として確定してよい**と判断する。
+
 ---
 
 ### [REPORT-TXT-CAPM-IV-MISSING-1] report.txt[3]にCAPMベース割引率でのIV（intrinsic_value_beta）が欠落している
