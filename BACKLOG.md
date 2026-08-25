@@ -13215,13 +13215,39 @@ daily cron（`15 22 * * *`、無指定モード）が毎日`05_events.csv`を更
 
 ---
 
-### [LAYER1-GROWTH-HYPEPHASE-DECAY-GAP-1] セグメント加重モデル（Layer 1）のDCF成長率がHypePhaseによる減速調整を受けていない疑い
-**優先度:** 中（仮置き。次回セッションでの実コード確認結果を踏まえて見直す）
+### [LAYER1-GROWTH-HYPEPHASE-DECAY-GAP-1] GROWTH-1（Layer2 recommended_g）のHypePhase加重がFunda/Timing分離の設計思想と非対称という設計矛盾（論点をLayer1起点からLayer2起点へ再整理）
+**優先度:** 中（次回セッションでの最終方針確定を経て見直す）
 **分類:** 設計判断要確認 / TANUKI VALUATION / DCF成長率
 **登録日:** 2026-08-23
-**発見:** Koichiさんがチャット側でAPP report.txtを検討中に発見
+**追記日:** 2026-08-26（論点再整理＋調査完了。実装はまだ行っていない）
+**発見:** Koichiさんがチャット側でAPP report.txtを検討中に発見（2026-08-23）
 
-#### 内容
+#### 論点の再整理（2026-08-26、Koichiさんとチャット側で合意済み・議論のみでコード変更なし）
+チャット側でKoichiさんと「HypePhaseは企業成長フェーズの定義ではなく、
+本源価値算出とは関係のない、株価の価格形成に顕著なサイクルパターン
+（技術的・センチメント指標）である」という認識で合意した。根拠は
+report.txt[7]HYPECOREの定義（Phase1-4がいずれも価格とMA200の位置関係・
+モメンタム・RSI・出来高のみで構成され、売上・受注等のファンダメンタ
+ルズ要素を含まない）、および[1]TANUKI SCOREの`Funda_Score`/
+`Timing_Score`分離でHypeCore_Phaseが`Timing_Score`側の構成要素として
+明記されていること。
+
+この認識に基づくと、GROWTH-1（下記、Layer2のrecommended_g計算で
+HypePhaseに応じてTTM成長率と業界ベンチマークの加重比率を変える仕組み）
+は、Funda側の入力（DCF成長率）にTiming側の信号（HypePhase）を混ぜて
+いるという点で、システム自身の設計思想（割引率側はRm=10%固定・Beta
+非考慮でセンチメントを意図的に排除している）と非対称であり、設計矛盾
+ではないか、という結論に至った。
+
+**Koichiさんの判断**: この設計矛盾を見直し、HypePhase依存を削除する
+方向で調査を進める。ただし調査結果次第で最終的な削除の是非・代替方式は
+改めて確認する。
+
+これにより本エントリの論点は、当初の「Layer1にもHypePhase減速を追加
+すべきか」から「Layer2のGROWTH-1がHypePhaseを使っていること自体が
+適切か」へ再整理された（下記「2026-08-26 調査結果」参照）。
+
+#### 元の内容（2026-08-23登録、Layer1起点の発見。背景として保持）
 report.txt[4]「成長率根拠」欄で、Layer 1（セグメント加重モデル、
 `segment_configured=True`銘柄）はセグメント加重成長率がそのままDCFの
 成長率Gとして直接使用される。一方、同[4]の定義欄には「GROWTH-1:
@@ -13263,7 +13289,8 @@ Decay model weight adjusted by HypeCore phase」というHypePhaseに応じた
   DCF未適用」という正しい表示ラベルに修正しただけ）。本エントリの論点
   とは重複しないと判断した。
 
-#### 対応方針（未定・要判断）
+#### 元の対応方針（2026-08-23登録時点のもの。下記2026-08-26調査結果により
+論点が再整理されたため、参考として保持）
 Layer1にHypePhase減速が適用されない設計が意図的なもの（例: 手動設定
 したセグメント別成長率はアナリストの一次情報に基づく確度の高い値で
 あり、機械的な市場心理減速を上書きすべきでない、という設計思想）か、
@@ -13274,9 +13301,196 @@ Layer1にHypePhase減速が適用されない設計が意図的なもの（例: 
 - 見落とし・対応すべきと判断する場合: Layer1にも何らかのHypePhase減速
   （既存のGROWTH-1と同型 or 別方式）を適用する実装方針を検討する
 
+---
+
+#### 2026-08-26 調査結果（実装なし・調査のみ。GROWTH-1のロジック自体は
+一切変更していない）
+
+##### 1. GROWTH-1導入時の実際の意図・実証データの有無
+
+`git show c040075ea`（2026-05-31、コミットメッセージ「feat: GROWTH-1
+逓減モデルの傾きをHypeCoreフェーズで調整」）の実差分を確認した。
+
+- 変更ファイル: `growth_sanity.py`（`check_growth_sanity()`に
+  `hype_phase`引数追加、`_ttm_weight`分岐: Phase1-2=0.65 / Phase3・
+  不明=0.50 / Phase4=0.35）・`pipeline.py`（`_load_hype_phase()`新設、
+  `check_growth_sanity()`へ`hype_phase`を渡す）・
+  `tests/test_pipeline_logic.py`（`TestGrowthDecayModelPhaseWeight`
+  3件追加）
+- **重要**: 追加されたテスト3件はいずれも「与えたhype_phaseに対して
+  加重比率通りの算術結果が返るか」を検証する単体テストであり、
+  「HypePhase加重が予測精度・的中率を改善するか」を検証するバック
+  テストではない。コミットメッセージ本文にも「旧: (TTM+業界平均)/2
+  固定50:50」「新: フェーズ別重み」という**設計の説明**のみが記載され、
+  改善率・検証データへの言及はゼロ。
+- `BACKLOG_DONE.md`の完了記録（`### ✅ [GROWTH-1] 成長逓減モデルの
+  精緻化（2026-05-31 完了）`）も同様にコミットメッセージの内容を要約
+  したのみで、バックテスト結果・改善率データの記載はない。
+- **結論**: GROWTH-1のHypePhase加重は、導入当時から実証データに基づく
+  ものではなく、「Phase1-2は成長継続余地あり」「Phase4は正規化が
+  加速する」という**理論的仮説（机上の設計判断）のみ**で導入された
+  ことを確認した。的中率・予測精度の改善を裏付けるデータは存在しない。
+
+##### 2. 影響範囲の実データ確認（2026-08-26時点の本番データで実測）
+
+**Layer2該当銘柄数**: `get_tanuki_tickers()`（tanuki=true）100銘柄中、
+`latest.json`の`segment_configured=False`銘柄は**64銘柄**。
+
+ただし、GROWTH-1のHypePhase加重が実際に効くのは、この64銘柄のうち
+`growth_sanity.growth_model == "decay"`（TTM Revenue成長率>50%の
+高成長銘柄、DCF-1の5年逓減DCFが適用される銘柄）に該当する場合のみ。
+`growth_model == "median"`（TTM≤50%、候補値の中央値を採用するモデル、
+64銘柄中54銘柄）はhype_phaseを一切参照しない（`growth_sanity.py`の
+分岐構造上、573行目以降のmedianブランチにhype_phase使用箇所なし）。
+**decay modelに該当するのは64銘柄中わずか10銘柄**（ALAB, ASTS, CWAN,
+IONQ, KULR, QBTS, RCAT, RXRX, SITM, S）。
+
+**decay model 10銘柄の実測内訳**（`growth_sanity.growth_model_reason`
+から実際の加重式を抽出し、HypePhase加重を外し固定50:50にした場合の
+recommended_gと比較。IVは現状値、参考として併記。DCF再計算は未実施
+——後述の通り本調査ではpipeline再実行を伴う実装を避けた）:
+
+| 銘柄 | HypePhase | 現在の加重 | 現在のrecommended_g | 固定50:50の場合 | 差分 | 現在のIV |
+|---|---|---|---|---|---|---|
+| ASTS | Phase4 | TTM35%/業界65% | 28.5% | 40.1% | **-11.6pt** | $3.74 |
+| CWAN | Phase2 | TTM65%/業界35% | 55.3% | 47.6% | **+7.8pt** | $44.61 |
+| IONQ | Phase4 | TTM35%/業界65% | 41.2% | 54.8% | **-13.6pt** | $21.98 |
+| KULR | Phase4 | TTM35%/業界65% | 37.7% | 50.1% | **-12.4pt** | $4.53 |
+| QBTS | Phase4 | TTM35%/業界65% | 24.3% | 30.4% | **-6.1pt** | $3.11 |
+| RCAT | Phase4 | TTM35%/業界65% | 41.5% | 55.0% | **-13.5pt** | $6.08 |
+| RXRX | Phase4 | TTM35%/業界65% | 34.5% | 45.0% | **-10.5pt** | $15.49 |
+| ALAB | Phase3 | TTM50%/業界50% | 54.8% | 54.8% | 0pt（差分なし） | $173.12 |
+| SITM | Phase3 | TTM50%/業界50% | 37.4% | 37.4% | 0pt（差分なし） | $84.09 |
+| S | Phase3 | TTM50%/業界50% | 41.2% | 41.2% | 0pt（差分なし） | $22.32 |
+
+**recommended_gは該当銘柄でそのままDCFの成長率Gとして直接上書き
+採用される**（`pipeline.py:782`の`_seg_cfg.set_growth_override(ticker,
+_recommended_g)`）ため、7銘柄で6〜14ptという成長率の変動幅は、5年
+逓減DCFの現在価値計算に対して無視できない規模である。ただし、実際の
+新IV・新TANUKI SCORE分類までの精密な数値は、`calculate_pt()`の再実行
+（DCF-1の逓減終端値`tapering_g_end`・感応度分析等を含むフルパイプ
+ライン計算）が必要であり、本調査ではpipeline.pyの本番再実行を伴う
+検証は行っていない（`CLAUDE_CODE_START.md`の「調査・診断タスクでの
+書き込み系コマンド実行の注意」・本依頼文の「実装はまだ行わない」方針
+に従い、コード変更を伴わない範囲＝上記のrecommended_g段階の比較に
+とどめた）。実装着手時に該当7銘柄で実際にDCF再計算・IV変化を確認する
+必要がある。
+
+**ポートフォリオ保有銘柄・TAILウォッチリストとの重複確認**:
+`docs/portfolio/data/portfolio.json`の保有銘柄9件（ADBE, APP, CELH,
+CRWV, NVDA, PLTR, SOFI, SOUN, TSLA）と、`config/tail_kpi_map.json`の
+TAILウォッチリスト10件（上記9件＋APGE）を、上記Layer2該当64銘柄と
+突合した結果、**いずれも重複0件**（両リストの銘柄は全てLayer1
+＝`segment_configured=True`）。
+
+**つまりGROWTH-1のHypePhase加重は、現状Koichiさんが実際に保有・
+監視している銘柄には一切影響していない。**影響が及ぶのはDiscover
+経由で発掘・登録されたが未保有・未ウォッチのtanuki=true銘柄（実質的な
+影響対象は上記decay model 7銘柄）に限られる。これは「削除しても実害の
+即時発生はない」一方、「削除する緊急性も高くない」ことを意味する
+——設計の非対称性という論点自体は保有・監視銘柄の有無とは独立した
+問題である。
+
+##### 3. 代替方式の選択肢の整理（実装はまだしない）
+
+調査の過程で、`growth_model == "decay"`という条件は二重の役割を
+担っていることが判明した: ①recommended_gの計算式（TTM/業界平均の
+加重比率）を選ぶ役割、②DCF-1の5年逓減DCF（`tapering_g_end`＝
+`industry_benchmark`終端の線形逓減）を発火させる役割。案の検討時は
+この二重性を踏まえ、「recommended_gの加重方式」と「decay/median
+モデル判定自体（TTM>50%というdecay発火条件）」を混同しないよう
+注意する必要がある。
+
+**案A: 固定比率（常にTTM50%/業界50%）に単純化する**
+- 内容: `growth_sanity.py`543-571行目の`_ttm_weight`分岐を削除し、
+  常に`0.50`に戻す（GROWTH-1導入前の式に復元）。`hype_phase`引数・
+  `_load_hype_phase()`/`_load_hype_info()`は残置（他の用途——
+  report.txt表示・`growth_model_reason`文言——で引き続き使われている
+  ため、完全削除は別スコープ）か、あるいはGROWTH-1関連の記述のみ
+  削除するかは要判断。
+- 長所: 実装が最小。DCF成長率（Funda側）からTiming信号を完全に排除
+  でき、設計思想との非対称性を解消する。decay/medianモデルの判定
+  条件（TTM>50%というトリガー自体）には触れないため、DCF-1の逓減
+  DCF発火条件は不変。
+- 短所: HypePhaseが（実証されていないとはいえ）捉えようとしていた
+  「勢いの持続性／剥落」という情報を完全に手放す。
+- 実装規模感: **小規模**（該当関数1箇所の分岐削除＋
+  `TestGrowthDecayModelPhaseWeight`3件の更新or削除＋
+  report.txt/pipeline.py内のGROWTH-1関連説明文の整理、対象7銘柄の
+  再生成・pytest確認）
+
+**案B: ファンダメンタルズ由来の信号（四半期成長率の減速トレンド・
+粗利率トレンド等）で加重比率を決める方式に置き換える**
+- 内容: HypePhaseの代わりに、STONKS/SEC quarterlyデータから算出する
+  「売上成長率の四半期推移が加速/減速しているか」「粗利率トレンド」
+  等の信号で`_ttm_weight`を決める。
+- 長所: 設計思想（Funda_Scoreはファンダメンタルズのみで構成）と整合
+  する。GROWTH-1が本来意図していたと推測される「勢いの持続性評価」を
+  ファンダメンタルズの土俵で再現できる。
+- 短所: 新規の減速検知信号自体を設計・閾値較正する必要があり、
+  GROWTH-1が抱えていた「実証データなしに導入された」という同じ問題を
+  今度は新信号側で繰り返すリスクがある。四半期データの欠損銘柄
+  （TAIL-LAYER3-FORMULA-YOY-UNSUPPORTED-1等、既知のYoY系列比較の
+  機能ギャップ）への対応も必要。
+- 実装規模感: **中〜大規模**（新規信号の設計・実装・閾値較正・
+  バックテストでの効果検証・テスト追加。既存のYoY系列比較機能ギャップ
+  にも影響される可能性）
+
+**案C: 加重を撤廃し、Layer3/4と同様の中央値ロジック（median of
+[rev_cagr_3yr, rev_cagr_5yr, industry_benchmark, g_fundamental]）に
+統一する**
+- 内容: `recommended_g_median`（medianブランチが使う中央値、decay
+  ブランチでも参考値として既に算出済み——ASTS実測で確認: `"recommended_
+  g_median": 0.4012...`）を、decay/median問わず全銘柄でrecommended_g
+  として採用する。
+- 長所: 加重ロジックの二重管理（decay用の重み付け式とmedian用の中央値
+  式）を一本化でき、コードのシンプルさは最も高い。
+- 短所・要注意点: `growth_model`（"decay"/"median"の判定自体、
+  TTM>50%というトリガー条件）とDCF-1の5年逓減DCF発火条件
+  （`_tapering_g_end = industry_benchmark`）は**別の仕組み**である
+  ため、recommended_gの計算式だけをmedianへ統一しても、TTM>50%銘柄
+  向けの5年逓減DCF自体（DCF-1の主目的）は引き続き発火させることが
+  可能。ただし「decay判定は残すがrecommended_g計算はmedian式を使う」
+  という組み合わせは現行コードのブランチ構造にない状態のため、
+  新たに実装する必要がある（単純な「案A同様に固定式へ差し替え」より
+  やや複雑）。
+- 実装規模感: **中規模**（`growth_sanity.py`のdecayブランチ内で
+  `recommended_g_median`を採用するよう分岐変更、DCF-1発火条件の非
+  回帰確認、report.txt文言更新、対象7銘柄の再生成・pytest確認）
+
+上記3案のいずれも、Koichiさんとの最終確認前の設計選択肢の整理段階
+であり、実装はまだ行っていない。
+
+##### 4. Layer1との関係整理の結論
+
+`src/value/tanuki_valuation/calculator/growth.py`・`segment_config.py`
+を再度grep確認した結果、`hype`/`phase`関連の記述は**引き続き0件**
+（2026-08-23登録時点の実コード確認結果と変化なし）。
+
+依頼文にあった理解「Layer2側の結論（削除する/代替方式に変える）が
+固まった場合、Layer1に何かを追加する必要は基本的にはなくなる（Layer1
+は元々HypePhase非依存のままで、その状態がむしろ設計思想と整合して
+いたことになる）」は、**実コードの構造から正しいと確認した**。
+
+理由: 本エントリの論点が「Layer1にHypePhase減速が欠けている」から
+「Layer2のGROWTH-1がHypePhaseを使っていること自体が設計矛盾」へ
+反転した以上、Layer1にHypePhase減速を追加することは、Layer2側で
+これから削除・置換しようとしている**同じ設計矛盾をLayer1にも新規に
+持ち込む**ことを意味し、今回の結論（HypePhase＝Timing信号をFunda計算
+から排除する方向）と正面から矛盾する。したがってLayer1側の対応は
+「現状維持（追加不要）」が唯一の整合的な結論であり、追加調査・追加
+実装は不要と判断する。
+
+##### 次回アクション
+上記調査結果（GROWTH-1に実証データなし・実質影響対象は7銘柄・保有/
+ウォッチ銘柄への影響ゼロ・代替案3種の実装規模感・Layer1追加不要の
+確認）をKoichiさんに報告し、最終方針（案A/B/C いずれか、または現状
+維持）を確定してから着手する。
+
 #### 着手条件
-上記の実コード確認結果をKoichiさんに報告し、対応方針の承認を得てから
-着手すること。今回は登録のみで実装しない。
+上記2026-08-26調査結果をKoichiさんに報告し、最終方針の承認を得てから
+着手すること。今回も調査・記録のみで実装しない（GROWTH-1のロジック
+自体は一切変更していない）。
 
 ---
 
