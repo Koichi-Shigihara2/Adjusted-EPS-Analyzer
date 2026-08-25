@@ -13215,11 +13215,15 @@ daily cron（`15 22 * * *`、無指定モード）が毎日`05_events.csv`を更
 
 ---
 
-### [LAYER1-GROWTH-HYPEPHASE-DECAY-GAP-1] GROWTH-1（Layer2 recommended_g）のHypePhase加重がFunda/Timing分離の設計思想と非対称という設計矛盾（論点をLayer1起点からLayer2起点へ再整理）
-**優先度:** 中（次回セッションでの最終方針確定を経て見直す）
+### ✅ [LAYER1-GROWTH-HYPEPHASE-DECAY-GAP-1] GROWTH-1（Layer2 recommended_g）のHypePhase加重をFunda側から削除（案A採用・固定50:50へ復元、2026-08-26完了）
+**優先度:** 中 → 完了
 **分類:** 設計判断要確認 / TANUKI VALUATION / DCF成長率
 **登録日:** 2026-08-23
-**追記日:** 2026-08-26（論点再整理＋調査完了。実装はまだ行っていない）
+**追記日:** 2026-08-26（論点再整理＋調査完了）
+**完了日:** 2026-08-26②（Koichiさんの最終判断を受け、案A〈固定50:50への復元〉を実装。
+下記「2026-08-26② 実装完了」参照。HypePhaseが捉えようとしていた「勢いの
+持続性・剥落」という発想は、Timing側〈HypeCore〉の新機能として
+`[[STOCKHTML-SIGNAL-CONSISTENCY-SECTION-1]]`へ引き取る形で別途登録済み）
 **発見:** Koichiさんがチャット側でAPP report.txtを検討中に発見（2026-08-23）
 
 #### 論点の再整理（2026-08-26、Koichiさんとチャット側で合意済み・議論のみでコード変更なし）
@@ -13487,10 +13491,98 @@ TAILウォッチリスト10件（上記9件＋APGE）を、上記Layer2該当64�
 確認）をKoichiさんに報告し、最終方針（案A/B/C いずれか、または現状
 維持）を確定してから着手する。
 
-#### 着手条件
+#### 元の着手条件（2026-08-26①登録時点のもの、下記実装完了により解消）
 上記2026-08-26調査結果をKoichiさんに報告し、最終方針の承認を得てから
 着手すること。今回も調査・記録のみで実装しない（GROWTH-1のロジック
 自体は一切変更していない）。
+
+---
+
+#### 2026-08-26② 実装完了（STEP A、コミットは別途STEP Bと分離）
+
+**Koichiさんの最終判断**: HypePhase加重をDCF成長率計算（Funda側）から
+完全に削除する（上記代替案の**案A**を採用）。HypePhaseが捉えようと
+していた「勢いの持続性・剥落」という発想自体は無駄にせず、行動経済学的
+要素（未実装）と共にHypeCore側（Timing側）の機能として引き取り、
+HypeCoreを「本源価値(IV)と市場価格の関係の分析・将来予測」に特化させる
+方向で再編する。新機能は`[[STOCKHTML-SIGNAL-CONSISTENCY-SECTION-1]]`と
+統合して設計する（詳細は同エントリ2026-08-26②追記を参照）。
+
+**変更箇所**:
+- `growth_sanity.py`（538-571行目付近）: `_ttm_weight`のPhase別分岐
+  （Phase1-2=0.65 / Phase3・不明=0.50 / Phase4=0.35）を削除し、常に
+  `0.50`固定に復元。`growth_model_reason`の文言から「PhaseX(...)に
+  基づき」という加重根拠の記述を削除し、「固定50:50」と明記する形に
+  修正（GROWTH-1導入前の文言に近い形へ復元）
+- `hype_phase`引数・`_load_hype_info()`・`hype_phase_used`/
+  `hype_phase_label`出力フィールドは**残置**: `pipeline.py:954`
+  （score_historyへのhype_phase記録）・`pipeline.py:1982-1994`
+  （report.txt「成長モデル」表示欄のHypePhase情報付記）で、decay
+  weight計算とは独立した表示・記録用途に引き続き使われているため
+  （削除するとTiming側情報がreport.txtから失われる）
+- `pipeline.py:1947-1951`（report.txt[4]成長率根拠の定義欄）: 「GROWTH-1:
+  Decay model weight adjusted by HypeCore phase」という説明を削除し、
+  「固定50% TTM + 50% Industry benchmark。GROWTH-1のフェーズ加重版は
+  2026-08-26に廃止（Funda側にTiming側信号を混ぜる設計矛盾、実証データ
+  なし）」という実態に即した説明に修正
+- 副次発見（未修正・報告のみ）: `pipeline.py:3138`の`_load_hype_phase()`
+  メソッドは、より新しい`_load_hype_info()`への切替後、呼び出し元が
+  既に存在しない**死蔵コード**だったことを判明（GROWTH-1除去とは無関係の
+  既存の軽微な技術的負債）。実害なし・優先度低のため本タスクでは修正せず
+  （CHAT_RULES.md「調査中に発見した別バグの実装は別途依頼を待つ」原則
+  に従う）。新規BACKLOG登録するほどの規模ではないため、本記録のみに
+  とどめる
+
+**テスト更新**: `tests/test_pipeline_logic.py::TestGrowthDecayModelPhaseWeight`
+（フェーズ別加重を検証する3件）を`TestGrowthDecayModelFixedWeight`
+（フェーズによらず固定50:50であることを検証する回帰テスト3件）に
+置き換えた。
+
+**影響対象10銘柄の再生成結果（before/after）**:
+
+| 銘柄 | recommended_g (before→after) | IV (before→after) | IV変化率 | tanuki_score | pre_rounding_score |
+|---|---|---|---|---|---|
+| ALAB | 54.8%→54.8%（Phase3=元々50:50） | $173.12→$173.12 | 0.0% | WATCH→WATCH（不変） | GROWTH_PREMIUM→GROWTH_PREMIUM（不変） |
+| ASTS | 28.5%→40.1% | $3.74→$3.66 | -2.2% | WATCH→WATCH（不変） | TRIM→TRIM（不変） |
+| CWAN | 55.3%→47.6% | $44.61→$37.75 | -15.4% | WATCH→WATCH（不変） | BUY→BUY（不変） |
+| IONQ | 41.2%→54.8% | $21.98→$25.53 | +16.1% | WATCH→WATCH（不変） | GROWTH_PREMIUM→GROWTH_PREMIUM（不変） |
+| KULR | 37.7%→50.1% | $4.53→$5.38 | +18.8% | PASS→PASS（不変） | None→None（不変・funda<25でPASS確定のためpre_rounding未算出） |
+| QBTS | 24.3%→30.4% | $3.11→$3.52 | +13.1% | PASS→PASS（不変） | None→None（不変・同上） |
+| RCAT | 41.5%→55.0% | $6.08→$7.27 | +19.6% | WATCH→WATCH（不変） | **GROWTH_PREMIUM→HOLD（変化）** |
+| RXRX | 34.5%→45.0% | $15.49→$18.95 | +22.3% | WATCH→WATCH（不変） | BUY→BUY（不変） |
+| SITM | 37.4%→37.4%（Phase3=元々50:50） | $84.09→$84.09 | 0.0% | WATCH→WATCH（不変） | TRIM→TRIM（不変） |
+| S | 41.2%→41.2%（Phase3=元々50:50） | $22.32→$22.32 | 0.0% | WATCH→WATCH（不変） | WATCH→WATCH（不変） |
+
+**TANUKI SCORE分類変化の確認（RCAT）**: 最終`tanuki_score`（画面表示値）は
+10銘柄すべてで不変。ただし`pre_rounding_score`（DCF信頼性LOW丸め適用前の
+生分類）はRCATのみGROWTH_PREMIUM→HOLDへ変化した。原因を個別確認:
+- `upside_percent`が-33.2%→-20.2%へ変化（現在株価$9.10は前後で完全に
+  不変、recommended_g上昇によるIV上昇$6.08→$7.27のみが原因）。
+  `pipeline.py`の分類ロジックは`upside < -30% かつ stage>=3`の場合のみ
+  GROWTH_PREMIUM/TRIM判定ブロックに入る設計のため、upsideが-30%ラインを
+  跨いだことでこのブロック自体を通らなくなり、`else: HOLD`へ落ちた
+- beta（1.349）・current_price（$9.10）は前後で完全一致を確認し、
+  recommended_g変化以外の要因（市場データのドリフト等）が混入していない
+  ことを確認済み
+- RCATの最終`tanuki_score`は「DCF信頼性LOW（実績FCF赤字）のためupside
+  依存判定を抑制→WATCH」という別ルールで`pre_rounding_score`によらず
+  WATCHに上書きされるため、画面表示上の実害はゼロ
+
+**検証ゲート結果**（全て通過）:
+- `pytest tests/`: **905 passed, 0 failed**
+- `python common/sec_data/audit.py`: 🟢正常95銘柄/🟡警告5銘柄（CART・
+  CON・JOBY・RCAT・Vの既存WARN、いずれも今回の変更対象外の項目
+  〈OCF/Revenue一部None・株式数フォールバック〉で新規NGなし）
+- `python common/sec_data/report_consistency_check.py --fail-on-ng`:
+  **NG=0件** / WARN=96件（全件、GROWTH-1除去とは無関係の既存SECデータ
+  品質WARN。growth_sanity/recommended_g関連の新規WARNなし）
+- `common/sec_data/fixed_registry.json`: CWAN・RCAT・ASTSにエントリが
+  存在するが差分なし（凍結フィールドへの副作用なし）を確認
+
+**副次確認**: `docs/portfolio/data/portfolio.json`保有9銘柄・
+`config/tail_kpi_map.json`TAILウォッチリスト10銘柄はいずれも今回の
+影響対象10銘柄と重複0件のため、保有・監視中銘柄への影響は引き続き
+ゼロ（2026-08-26①調査結果と同じ）。
 
 ---
 

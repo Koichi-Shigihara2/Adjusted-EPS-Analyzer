@@ -631,65 +631,69 @@ class TestGrowthDecayModel:
 #    TTM / 業界平均の重みが変わることを検証
 # ─────────────────────────────────────────────
 
-class TestGrowthDecayModelPhaseWeight:
-    """GROWTH-1: フェーズ別逓減カーブの傾き調整テスト"""
+class TestGrowthDecayModelFixedWeight:
+    """[[LAYER1-GROWTH-HYPEPHASE-DECAY-GAP-1]]（2026-08-26）:
+    GROWTH-1のHypePhaseフェーズ別加重（Phase1-2=65%/Phase3=50%/Phase4=35%）は、
+    実証データなしに導入されておりFunda側(DCF成長率)にTiming側(HypePhase)の
+    信号を混ぜる設計矛盾だったため廃止し、固定50:50へ復元した。
+    本クラスは「hype_phaseにどの値を渡しても結果が変わらない」ことを
+    検証する回帰テスト（旧TestGrowthDecayModelPhaseWeightを置き換え）。
+    """
 
     @patch.object(_gs, "get_industry_benchmark", return_value={
         "industry": "Semiconductor", "g_ebit": 0.096, "roc": 0.20, "rr": 0.60,
     })
-    def test_phase1_gives_ttm_heavy_recommended_g(self, _mock):
-        """Phase1（黎明期）→ TTM重み65%: recommended_g がフェーズなし(50%)より高い"""
+    def test_recommended_g_is_fixed_50_50_regardless_of_hype_phase(self, _mock):
+        """hype_phase=1/3/4/Noneのいずれでもrecommended_gは固定50:50で同一"""
         ttm, industry = 0.80, 0.096
-        result_phase1 = _gs.check_growth_sanity(
-            "ALAB", phase1_growth=ttm, sector="Semiconductor",
-            annual_revenues=None, ttm_actual=ttm, hype_phase=1,
-        )
-        result_no_phase = _gs.check_growth_sanity(
-            "ALAB", phase1_growth=ttm, sector="Semiconductor",
-            annual_revenues=None, ttm_actual=ttm, hype_phase=None,
-        )
-        assert result_phase1["growth_model"] == "decay"
-        # Phase1: TTM×0.65 + industry×0.35
-        expected_phase1 = ttm * 0.65 + industry * 0.35
-        assert abs(result_phase1["recommended_g"] - expected_phase1) < 0.001
-        # Phase1 は フェーズなし(50:50) より recommended_g が高い
-        assert result_phase1["recommended_g"] > result_no_phase["recommended_g"]
+        expected_50_50 = ttm * 0.50 + industry * 0.50
+        results = {}
+        for phase in (1, 2, 3, 4, None):
+            results[phase] = _gs.check_growth_sanity(
+                "ALAB", phase1_growth=ttm, sector="Semiconductor",
+                annual_revenues=None, ttm_actual=ttm, hype_phase=phase,
+            )
+        for phase, result in results.items():
+            assert result["growth_model"] == "decay"
+            assert abs(result["recommended_g"] - expected_50_50) < 0.001, (
+                f"hype_phase={phase} で固定50:50から外れている"
+            )
+        # 全フェーズで同一のrecommended_gであること（フェーズ間で差が生じない）
+        values = {round(r["recommended_g"], 6) for r in results.values()}
+        assert len(values) == 1
 
     @patch.object(_gs, "get_industry_benchmark", return_value={
         "industry": "Semiconductor", "g_ebit": 0.096, "roc": 0.20, "rr": 0.60,
     })
-    def test_phase4_gives_industry_heavy_recommended_g(self, _mock):
-        """Phase4（剥落期）→ 業界平均重み65%: recommended_g がフェーズなし(50%)より低い"""
-        ttm, industry = 0.80, 0.096
+    def test_hype_phase_used_still_recorded_for_display(self, _mock):
+        """hype_phase_used/hype_phase_labelはTiming側表示用に引き続き記録される
+        （DCF成長率の計算には使われないが、report.txt等の表示情報としては残置）"""
+        ttm = 0.80
         result_phase4 = _gs.check_growth_sanity(
             "ALAB", phase1_growth=ttm, sector="Semiconductor",
             annual_revenues=None, ttm_actual=ttm, hype_phase=4,
         )
+        assert result_phase4["hype_phase_used"] == 4
         result_no_phase = _gs.check_growth_sanity(
             "ALAB", phase1_growth=ttm, sector="Semiconductor",
             annual_revenues=None, ttm_actual=ttm, hype_phase=None,
         )
-        assert result_phase4["growth_model"] == "decay"
-        # Phase4: TTM×0.35 + industry×0.65
-        expected_phase4 = ttm * 0.35 + industry * 0.65
-        assert abs(result_phase4["recommended_g"] - expected_phase4) < 0.001
-        # Phase4 は フェーズなし(50:50) より recommended_g が低い
-        assert result_phase4["recommended_g"] < result_no_phase["recommended_g"]
+        assert result_no_phase["hype_phase_used"] is None
+        # 表示用フィールドが異なっても、DCFに使うrecommended_gは同一
+        assert result_phase4["recommended_g"] == result_no_phase["recommended_g"]
 
     @patch.object(_gs, "get_industry_benchmark", return_value={
         "industry": "Semiconductor", "g_ebit": 0.096, "roc": 0.20, "rr": 0.60,
     })
-    def test_phase3_equals_default_50_50(self, _mock):
-        """Phase3（陶酔期）→ 従来と同じ50:50の挙動"""
-        ttm, industry = 0.80, 0.096
-        result_phase3 = _gs.check_growth_sanity(
-            "ALAB", phase1_growth=ttm, sector="Semiconductor",
-            annual_revenues=None, ttm_actual=ttm, hype_phase=3,
+    def test_growth_model_reason_no_longer_references_phase_weighting(self, _mock):
+        """growth_model_reasonの文言に「Phase」による加重を示す記述が残っていないこと"""
+        result = _gs.check_growth_sanity(
+            "ALAB", phase1_growth=0.80, sector="Semiconductor",
+            annual_revenues=None, ttm_actual=0.80, hype_phase=4,
         )
-        expected_50_50 = ttm * 0.50 + industry * 0.50
-        assert abs(result_phase3["recommended_g"] - expected_50_50) < 0.001
-        # 戻り値に hype_phase_used が記録されている
-        assert result_phase3["hype_phase_used"] == 3
+        reason = result["growth_model_reason"]
+        assert "Phase" not in reason
+        assert "固定50:50" in reason
 
 
 # ─────────────────────────────────────────────

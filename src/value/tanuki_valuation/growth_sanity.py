@@ -536,17 +536,18 @@ def check_growth_sanity(
     _trigger_max = max(_trigger_vals) if _trigger_vals else None
 
     if _trigger_max is not None and _trigger_max > 0.50:
-        # ── GROWTH-1: HypeCoreフェーズで逓減カーブの傾きを調整 ──
-        # Phase 1-2（黎明〜拡大）: TTM寄り（成長継続余地あり） → TTM重みを高く
-        # Phase 3 （陶酔期）      : バランス（旧来の50:50）
-        # Phase 4 （剥落期）      : 業界平均寄り（正規化加速）  → 業界平均重みを高く
-        # hype_phase=None        : Phase3相当のデフォルト挙動
-        if hype_phase is None or hype_phase == 3:
-            _ttm_weight = 0.50   # 従来通り
-        elif hype_phase <= 2:
-            _ttm_weight = 0.65   # TTM寄り: Phase1-2は高成長が続きやすい
-        else:
-            _ttm_weight = 0.35   # 業界平均寄り: Phase4は正規化が速い
+        # ── 逓減モデル: TTM/CAGRピークと業界平均の中間値 ──
+        # GROWTH-1（2026-05-31導入、HypeCoreフェーズに応じてTTM/業界平均の
+        # 加重比率をPhase1-2=65%/Phase3=50%/Phase4=35%と変えていた）は、実証
+        # データ（バックテスト等）なしに理論的仮説のみで導入されており、かつ
+        # Funda側（DCF成長率）にTiming側（HypePhase＝価格・出来高ベースの
+        # センチメント指標、report.txt[7]HYPECORE参照）の信号を混ぜるという
+        # 設計思想上の非対称性があったため、2026-08-26
+        # [[LAYER1-GROWTH-HYPEPHASE-DECAY-GAP-1]]の結論に基づき固定50:50へ
+        # 復元した。HypePhase由来の「勢いの持続性・剥落」という発想自体は
+        # 無駄にせず、Timing側（HypeCore）の機能として
+        # [[STOCKHTML-SIGNAL-CONSISTENCY-SECTION-1]]で別途引き取りを検討中。
+        _ttm_weight = 0.50  # 固定（GROWTH-1のフェーズ別加重は廃止）
 
         # A-2: decay モデルの start_g を「逓減を発動させた最大値」に統一。
         # ttm_actual (phase1_growth) と cagr_3yr/5yr の最大値をスタート点とする。
@@ -563,12 +564,10 @@ def check_growth_sanity(
         end_g = industry_g if (industry_g is not None and industry_g > 0) else 0.10
         recommended_g = start_g * _ttm_weight + end_g * (1 - _ttm_weight)
         growth_model = "decay"
-        _phase_label = {1: "Phase1(黎明)", 2: "Phase2(拡大)", 3: "Phase3(陶酔)", 4: "Phase4(剥落)"}.get(
-            hype_phase, "Phase不明"
-        )
         growth_model_reason = (
-            f"{_phase_label}に基づき{_start_src}={start_g:.1%}×{_ttm_weight:.0%}＋"
-            f"業界平均{end_g:.1%}×{1-_ttm_weight:.0%}＝{recommended_g:.1%}を採用"
+            f"{_start_src}={start_g:.1%}と業界平均{end_g:.1%}の中間値"
+            f"{recommended_g:.1%}を採用（固定50:50、将来の成長減速を"
+            f"織り込んだ保守的推定）"
         )
     else:
         # 中央値モデル

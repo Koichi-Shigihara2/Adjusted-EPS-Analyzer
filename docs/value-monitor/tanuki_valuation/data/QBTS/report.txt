@@ -1,16 +1,16 @@
 QBTS INTEGRATED INVESTMENT REPORT
-Generated: 2026-08-26T07:08:23+09:00
+Generated: 2026-08-26T08:06:41+09:00
 Price: $19.35
 
 [1. TANUKI SCORE]
 Classification: PASS
 Funda_Score: 10/100
 Timing_Score (components):
-  Deviation_Rate: -83.9%
+  Deviation_Rate: -81.8%
   MA200_Deviation: -11.6%
   HypeCore_Phase: Phase4 (期待剥落期)
-  Analyst_Consensus: Strong Buy | Target: $36 median ($22-$43) | 16 analysts | vs IV: +1057.4%
-Comment: 割高(-84%超)、FCFマイナス（投資フェーズ）、売上成長停滞
+  Analyst_Consensus: Strong Buy | Target: $36 median ($22-$43) | 16 analysts | vs IV: +923.5%
+Comment: 割高(-82%超)、FCFマイナス（投資フェーズ）、売上成長停滞
 Definition:
 
 Funda_Score: Composite score of financial health,
@@ -32,7 +32,7 @@ Matrix: ④キャッシュ創出力系
 Quadrant: 左下
 Label: 割高×低FCF
 Key_Metric_Y: FCF_Margin = -308.5%
-Deviation_Rate: -83.9%
+Deviation_Rate: -81.8%
 Thresholds:
   RICE_Threshold: 3.0/1.0/0 (>=3.0=high, 1.0-3.0=medium, 0-1.0=low, <0=undefined OCF-negative)
   ROE_Threshold: 15% (above=high profitability)
@@ -57,24 +57,24 @@ Positive deviation = undervalued (intrinsic > current)
 
 [3. TANUKI VALUATION]
 Current_Price: $19.35
-Intrinsic_Value_BASE: $3.11
-Deviation_BASE: -83.9%
+Intrinsic_Value_BASE: $3.52
+Deviation_BASE: -81.8%
 Growth_Rate_Original: -41.8% (TTM実績)
-Growth_Rate_Adjusted: 24.3% (推奨値・逓減モデル)
+Growth_Rate_Adjusted: 30.4% (推奨値・逓減モデル)
 Scenarios:
-BEAR: Growth=17.0%, IV=$2.72 （推奨値ベース）
-BASE: Growth=24.3%, IV=$3.11 （推奨値ベース）
-BULL: Growth=29.1%, IV=$3.43 （推奨値ベース）
+BEAR: Growth=21.3%, IV=$2.94 （推奨値ベース）
+BASE: Growth=30.4%, IV=$3.52 （推奨値ベース）
+BULL: Growth=36.5%, IV=$4.00 （推奨値ベース）
 TTM_YoY_Growth: 178.5%
-(DCF Base vs TTM actual: -154.2pt discount)
+(DCF Base vs TTM actual: -148.1pt discount)
 Discount_Rate_Primary: 10.00% (DCF discount rate used)
 WACC_CAPM_Reference: 16.63%
 Terminal_Growth_Rate: 3.0%
 Beta: 2.164
 Valuation_Gap_Analysis:
-  DCF_IV:           $3 (保守的FCFベース・現在実力値)
+  DCF_IV:           $4 (保守的FCFベース・現在実力値)
   Market_Price:     $19
-  Gap:              -84% (市場が将来成長を先取り)
+  Gap:              -82% (市場が将来成長を先取り)
   Implied_FCF_2030: $0.45B (現在株価を正当化するために必要な5年後FCF)
   Current_FCF:      $0.02B
   Required_Growth:  91%/yr (現在FCFから必要成長率を逆算)
@@ -86,15 +86,15 @@ DCF_Reliability: LOW ⚠️ (FCF実績マイナス: revenue_floor適用, IV参�
    [控除すると生FCFを下回る（過小推定側）と判定されたため、方向性
     ガードにより調整済み純利益をそのまま採用しています。詳細は
     BACKLOG_DONE.md [[FCF-EST-DIRECTION-GUARD-1]]参照。]
-DCF_FCF_PV: $0.13B (5yr discounted FCF sum, pre-alpha, Rm=10%)
-DCF_TV_PV:  $0.48B (terminal value present value, pre-alpha, Rm=10%)
-DCF_v0:     $0.61B (= FCF_PV + TV_PV, Rm=10% enterprise value)
+DCF_FCF_PV: $0.15B (5yr discounted FCF sum, pre-alpha, Rm=10%)
+DCF_TV_PV:  $0.61B (terminal value present value, pre-alpha, Rm=10%)
+DCF_v0:     $0.76B (= FCF_PV + TV_PV, Rm=10% enterprise value)
 Alpha_Premium: 0.0000 (HypeCore expectation premium; Rm basis)
 RPO_PV: $0
 Growth_Option_PV: $0
-Equity_Value: $1.16B (= v0 + RPO_PV + GO_PV + Net_Cash $0.55B)
+Equity_Value: $1.31B (= v0 + RPO_PV + GO_PV + Net_Cash $0.55B)
 Shares_Used: 372.4M (source: yf_implied)
-→ Intrinsic_Value: $3.11 (= Equity_Value ÷ Shares_Used)
+→ Intrinsic_Value: $3.52 (= Equity_Value ÷ Shares_Used)
 Financial_Health:
   Net_Debt: $-0.55B (negative=net cash)
   Total_Debt: $0.04B  Cash: $0.34B  ST_Invest: $0.25B
@@ -111,8 +111,8 @@ FCF_History:
   2024: $-0.04B (FCF_Margin: -507.0%)
   2025: $-0.08B (FCF_Margin: -308.5%)
 Segment_Breakdown:
-  General: $0.0B (100%, YoY 24%)
-  Segment_Weighted_Growth: 24.3% (推奨値・中央値を自動適用)
+  General: $0.0B (100%, YoY 30%)
+  Segment_Weighted_Growth: 30.4% (推奨値・中央値を自動適用)
   (= basis for TANUKI forward growth rate G)
 Definition:
 
@@ -150,10 +150,11 @@ For manually configured segments: used directly as DCF growth rate G
 For unconfigured segments: TTM Revenue Growth is auto-applied,
 then adjusted via recommended_g (median of historical CAGR,
 industry benchmark, RR×ROIC)
-GROWTH-1: Decay model weight adjusted by HypeCore phase:
-  Phase1-2 (early): TTM×65% + Industry×35% (growth has room)
-  Phase3 (euphoria): TTM×50% + Industry×50% (balanced)
-  Phase4 (deflation): TTM×35% + Industry×65% (normalization accelerated)
+Decay model (TTM/CAGR>50%): fixed 50% TTM + 50% Industry benchmark.
+(GROWTH-1's HypeCore-phase-weighted variant was removed
+2026-08-26; mixing a Timing-side signal into Funda-side
+growth was a design inconsistency with no backtest evidence
+of improved accuracy. See [[LAYER1-GROWTH-HYPEPHASE-DECAY-GAP-1]])
 Next_Earnings_Date: Next quarterly earnings release
 Valuation_Gap_Analysis: Reverse DCF calculation showing
 what FCF growth rate the current market price implies.
@@ -162,11 +163,11 @@ market-priced future potential.
 
 
 [4. 成長率根拠]
-Phase1成長率 : 24.3% (DCF適用値・推奨成長率)
+Phase1成長率 : 30.4% (DCF適用値・推奨成長率)
 元成長率      : -41.8% (推奨適用前)
-成長モデル: 逓減モデル（Phase4(剥落)に基づきCAGR_max=50.8%×35%＋業界平均10.0%×65%＝24.3%を採用）  HypePhase=4
+成長モデル: 逓減モデル（CAGR_max=50.8%と業界平均10.0%の中間値30.4%を採用（固定50:50、将来の成長減速を織り込んだ保守的推定））  HypePhase=4
 推奨成長率内訳:
-  最終推奨値:            24.3%
+  最終推奨値:            30.4%
 判定         : PLAUSIBLE
 業界ベンチマーク: N/A
 signals:
@@ -323,7 +324,7 @@ Note: Uses ForwardEPS from yfinance (analyst consensus).
 Short_Report_Target: yes
 Short_Interest: 20.0%
 Institutional_Ownership: N/A (not in data source)
-Analyst_Consensus: Strong Buy | Target: $36 median ($22-$43) | 16 analysts | vs IV: +1057.4%
+Analyst_Consensus: Strong Buy | Target: $36 median ($22-$43) | 16 analysts | vs IV: +923.5%
 Insider_Activity: Sell優勢 | 買い0件 / 売り10件 | 直近90日
 Runway_Months: 139.9
 Revenue_Growth_YoY: 178.5%
@@ -348,8 +349,8 @@ based on recent 4Q linear trend. Rough estimate only.
 [9. RISK EVENTS]
 Source: Grok web search (直近3ヶ月)
   [high] litigation: Antitrust lawsuit against D-Wave Quantum Inc.
-  [high] regulatory: Ongoing SEC regulatory investigation
-  [mid] earnings: Earnings warning issued amid competition risks for 2025-2026
+  [high] regulatory: SEC regulatory investigation
+  [mid] earnings: Earnings warning with competitive threats 2025-2026
 
 ==============================================
 DISCLAIMER: This report is generated automatically
