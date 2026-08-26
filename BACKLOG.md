@@ -9325,13 +9325,9 @@ BACKLOG記載の前提を着手時に再検証する原則に従い、`collect_a
   保存されているため一貫性が保たれる」に反し、671-675行目の後方互換
   フォールバック（`divergence.value`未記録の旧エントリ向け）が
   `tech_pulse.components.fg_score`（feargreedchart.com由来の
-  `fg_score_tech`、CNN由来ではない）で乖離値を代替計算する構造が現存。
-  **実データで実害を定量化**: `market_data.json`全131件のうち直近90日
-  ウィンドウ内で`divergence.value`欠落（＝このフォールバックが実際に
-  発火する）エントリが**10件**（2026-05-28〜2026-06-02等）存在し、
-  `_calc_divergence_zscore()`のZスコア計算に feargreedchart.com由来の
-  値がCNN由来の値と無区別で混入していることを確認した（潜在バグでは
-  なく現在進行形で発火中）
+  `fg_score_tech`、CNN由来ではない）で乖離値を代替計算する**設計上の
+  不整合はコードとして現存**（2026-08-26②で訂正、下記参照。以前の
+  「現在進行形で発火中」という実害判定は誤りだったため取り消す）
 - **⑥Tech Pulseバックフィル式相違**: `backfill_tech_pulse.py:121-130`
   の`_calc_score()`（docstring「固定範囲方式 Tech Pulse スコア
   （バックフィル専用）」、加算方式）と`collect_and_send.py:711-729`の
@@ -9348,6 +9344,77 @@ TANUKI VALUATIONで past発見された`[[TANUKI-VALUATION-PRICE-SCHEDULE-
 LAG-1]]`のようなワークフロー間タイミング競合のリスクは構造上存在しない
 ことを確認した（他ワークフローからの`workflow_run`依存もなし、単独で
 完結）。他に構造的な新規問題は発見しなかった。
+
+#### 2026-08-26② ⑤F&G情報源混同の追加調査（調査のみ・実装なし。
+前回判定の訂正を含む）
+
+MACRO-TRUTHY-ZERO-BUG-1対応完了を受け、優先順位に従い次に着手した
+本項目の詳細調査で、**前回（2026-08-26①）の実害判定に誤りがあった
+ことが判明したため訂正する**。
+
+**発生メカニズムの再確認**（実コード引用、行番号は現状に一致）:
+- 「今日」の値: `collect_and_send.py:1621-1628`
+  `fg_cnn_score = (fear_greed_data or {}).get("score")` →
+  `div_value = round(float(tp_score) - float(fg_cnn_score), 1) if
+  fg_cnn_score is not None else None`（CNN由来）
+- 過去データ再構築のフォールバック: `collect_and_send.py:667-675`
+  `divergence.value`が欠損している場合、
+  `tech_pulse.components.fg_score`（`fg_score_tech`、
+  feargreedchart.com由来）で代替計算する
+- **由来の経緯（`git log`で確認）**: 2026-06-14に2コミットが同日連続で
+  入っている。`886654a97`（14:05、当時は「今日の値」もfeargreedchart.com
+  由来だったため両者をfeargreedchart.comに揃えた）→`39be125a6`
+  （15:55、90分後。「今日の値」をCNN由来へ切替、docstringも
+  「CNN F&Gベースで一貫性が保たれる」と書き換えたが、**フォールバック
+  側の参照先修正が漏れた**）。設計上の不整合自体はこの時点から現存
+
+**実害の再定量化（訂正）**: `_load_div_history()`のロジックを実データ
+（`market_data.json`全131件）に対して直接シミュレートした結果:
+- 90日ウィンドウ内の`div_hist`（実際にZスコア計算に使われる系列）:
+  長さ80件、**全80件が`divergence.value`（CNN由来）から取得**、
+  feargreedchart.comフォールバックからの取得は**0件**
+- `divergence.value`欠損の10件（2026-05-28〜06-07）は、前回「フォール
+  バックが発火している」と誤認したが、実際には`tech_pulse`ブロック
+  自体（`score`含む）が丸ごと`null`（Tech Pulse機能導入以前の旧
+  スキーマ時代のエントリ）であり、フォールバック条件`tp_s is not
+  None and fg_s is not None`を満たさず**完全にスキップされている**
+  （Zスコア計算に一切寄与しない）
+- 全131件の履歴を通じて、このフォールバックが実際に発火した
+  （＝`divergence.value`欠損かつ`tp_s`・`fg_s`とも取得できた）事例は
+  **ゼロ件**
+- **前回判定「潜在バグではなく現在進行形で発火中」は誤りであり撤回する。
+  正しくは「コード上の設計不整合は現存するが、現在の実データでは
+  一度も発火したことがない（潜在的リスクに留まる）」**
+
+**潜在リスクとしての性質**: `calc_tech_pulse_score()`はCNNの成否と
+無関係にscipy/QQQ/VXNデータのみから算出されるため、理論上は「CNN取得
+が失敗しTech Pulse計算だけ成功する日」が発生すればフォールバックが
+発火しうる。ただし実データ131件中この組み合わせは一度も発生していない
+ことを確認済み。加えて、`divergence.value`欠損10件は2026-09-05頃には
+90日ウィンドウから自然に外れるため、現行データに起因する発火条件は
+今後さらに希少化する（コード自体の設計不整合は残存するため優先度は
+維持するが、緊急性は低い）。
+
+**下流への伝播**: 現状ゼロ（`div_hist`が100%CNN一貫のため、
+`div_zscore`・`tp_signal`とも汚染なし）。
+
+**修正方式の選択肢（実装はまだしない）**:
+- 案A（推奨）: フォールバックの参照先を`components.fg_score`
+  （feargreedchart.com）から`(entry.get("fear_greed") or
+  {}).get("score")`（CNN）へ差し替える。docstringが既に主張している
+  内容を実際に真にする1行修正。実装規模: 小（1行＋docstring調整＋
+  テスト1件追加）
+- 案B: フォールバック自体を廃止し、`divergence.value`欠損日は単純に
+  スキップする。CNN取得失敗日は案Aでも`fear_greed.score`がNoneのため
+  結局値が取れず、実質的な結果は案Aとほぼ同じ。実装規模: 小
+  （コード削減のみ）
+- 案C: 欠損日を前日値でforward-fillする。データ完全性は上がるが
+  Zスコアの分散を人為的に縮小させる副作用があり非推奨。実装規模: 中
+
+**横断確認**: `collect_and_send.py`全体を"CNN"/"feargreedchart"で
+確認した結果、同種の「複数情報源の無区別混在」はこの1箇所のみ。
+隣接する既知課題（②credit.stock/bondの原資産不一致）は既存カタログ
+済みで別種の問題であり、新規の類似箇所は発見しなかった。
 
 #### 着手条件
 なし
