@@ -1468,16 +1468,46 @@ def save_data_to_json_and_csv(report_text, structured_data, sentiment_data, fear
 
     # ── Credit / Risk-Off Score 計算 ──
     # 3軸（株・債券・クレジット）のリスクオフ判定からスコアを算出
+    #
+    # [[MARKETPULSE-MINOR-INCONSISTENCIES-1]]②再確認（2026-08-26、案c採用
+    # ＝現状維持・意図的差異として容認、コメント明記のみでロジック変更なし）:
+    # credit_stock（下記）は structured_data["S&P500"]（^GSPC指数）を、
+    # credit_bond（後述）は asset_flow_data["equity"]（SPY ETF）をそれぞれ
+    # 参照しており、同じ「株式」でも原資産が異なる。これは無区別な混在では
+    # なく意図的な使い分け:
+    #   - credit_stock: 「市場全体の今日の方向性」を測る単純な指標のため、
+    #     ETFの分配・トラッキング誤差の影響を受けない指数（^GSPC）が適切
+    #   - credit_bond: 「資金が株式から債券へ逃避しているか」という資金
+    #     フロー概念のため、指数自体には資金流出入が存在せず、実際に売買
+    #     可能なファンド（SPY/TLT、collect_asset_flow()の7資産クラス
+    #     ラインナップと整合）の比較が必須
+    # 統一案（credit_stockをSPY化 or credit_bondを^GSPC化）はいずれも
+    # 個別の設計上の問題を生むため見送った（それぞれ後述コメント参照）。
+    # 残存リスク: SPYの四半期分配落ち（ex-dividend）時、^GSPCとSPYの
+    # change_percentが最大0.673pt（2026-06-27〜29で実測）乖離することを
+    # 確認済み。credit_bondの閾値（spy_af_chg<-0.5）はこの乖離幅より
+    # 小さいため、TLT側条件が同時に境界へ来る局面ではinstrument選択が
+    # credit_bondの最終判定を左右しうる（今回の実測期間ではTLT側条件が
+    # 不成立だったため実際の判定は変わらなかった）。
     sp500_chg   = ((structured_data.get("S&P500") or {}).get("change_percent") or 0)
     hyg_chg_pct = ((structured_data.get("HYG（ハイイールド債ETF）") or {}).get("change_percent") or 0)
     lqd_chg_pct = ((structured_data.get("LQD（投資適格債ETF）") or {}).get("change_percent") or 0)
 
+    # credit_stock: ^GSPC（S&P500指数）ベース。ETFの分配・トラッキング
+    # 誤差を含まない、市場全体の日次方向性を測る単純な指標として指数を使う
+    # （SPY統一案〈②案a〉は asset_flow_data取得失敗時にcredit_stockまで
+    # 連鎖的に判定不能になる結合リスクを生むため見送った）。
     credit_stock  = "リスクオフ" if sp500_chg < -1.0 else "リスクオン"
     # クレジット: HYG変化率 < LQD変化率 → スプレッド拡大 → リスクオフ
     credit_credit = "リスクオフ" if (hyg_chg_pct - lqd_chg_pct) < 0 else "リスクオン"
 
     # 債券: TLT(long_bond)上昇 & SPY(equity)下落 → 質への逃避 → 債券買い
     # TLTが下落（利回り上昇＝債券安）の場合は債券売り。"リスクオン/オフ"表記は誤解を招くため廃止。
+    # credit_bond: SPY（S&P500 ETF）ベース。「資金が株式から債券へ逃避
+    # しているか」という資金フロー概念のため、実際に売買可能なファンド
+    # （TLTとの比較対象としてもSPY）が必須（^GSPC統一案〈②案b〉は指数
+    # 自体に資金流出入の概念がなく、collect_asset_flow()の7資産クラス
+    # ラインナップとの整合性も失われるため見送った）。
     credit_bond = "債券売り"
     tlt_af = ((asset_flow_data or {}).get("long_bond") or {})
     spy_af = ((asset_flow_data or {}).get("equity")    or {})
