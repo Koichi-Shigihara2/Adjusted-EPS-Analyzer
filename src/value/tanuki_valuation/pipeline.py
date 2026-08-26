@@ -28,6 +28,7 @@ from validator import validate_calculation
 from growth_sanity import check_growth_sanity, calc_fundamental_growth
 import segment_config as _seg_cfg
 from risk_fetcher import fetch_risk_events
+from kpi_fetcher import build_kpi_data, get_fiscal_year_latest  # [[TANUKI-VALUATION-MISC-GAPS-1]]⑧
 
 _SCRIPT_DIR_FOR_IMPORT = os.path.dirname(os.path.abspath(__file__))
 _REPO_ROOT_FOR_IMPORT = os.path.dirname(os.path.dirname(os.path.dirname(_SCRIPT_DIR_FOR_IMPORT)))
@@ -2485,6 +2486,21 @@ class TanukiValuationPipeline:
                     pass
 
         result["fcf_history"] = fcf_history
+
+        # [[TANUKI-VALUATION-MISC-GAPS-1]]⑧: kpi_fetcher.py::build_kpi_data()は
+        # 実装済みだがpipeline.pyのどこからも呼び出されておらず、stock.htmlの
+        # 「セグメントKPIテーブル」（renderSegmentKpiTable()がd.kpi_dataを参照）が
+        # 本番で恒久的に非表示だった。ここで配線する。外部API呼び出しはなく、
+        # annual_*.json・segment_config.pyのローカル読込のみ（呼び出しコスト軽微）。
+        # kpi_config.pyにsegments未定義（空リスト）の銘柄はbuild_kpi_data()自体が
+        # Noneを返す（現状NVDA/TSLA/PLTR/MSFT/AMZN/AMD/APP/CELH/SOFI/RKLBの10銘柄が対象）。
+        try:
+            _kpi_sec_data_dir = os.path.join(self.repo_root, "common", "sec_data", "data")
+            _kpi_fy_latest = get_fiscal_year_latest(ticker, _kpi_sec_data_dir)
+            result["kpi_data"] = build_kpi_data(ticker, _kpi_sec_data_dir, _kpi_fy_latest)
+        except Exception as e:
+            print(f"   [{ticker}] kpi_data構築エラー: {e}")
+            result["kpi_data"] = None
 
         # net_debt / SBC from latest available year
         if debt_cash_by_year:
