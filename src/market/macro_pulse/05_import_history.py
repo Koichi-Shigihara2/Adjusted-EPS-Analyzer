@@ -6,6 +6,7 @@ MACRO PULSE v6.0 — 過去データ一括投入スクリプト
   python 05_import_history.py fred --from 2001-01-01
   python 05_import_history.py csv --source <CSV_FILE> --indicator <INDICATOR_NAME>
   python 05_import_history.py liquidity --from 2023-01-01
+  python 05_import_history.py context --from 2020-03-16 --to 2022-03-16
 
 機能:
   1. fred: common/macro_data/series/（common.macro_data.reader経由）
@@ -13,6 +14,10 @@ MACRO PULSE v6.0 — 過去データ一括投入スクリプト
   2. csv: tradingeconomics 等から手動DLした CSV を変換して投入
   3. liquidity: common/macro_data/series/ から過去の流動性データを
      一括取得して 05_liquidity.csv にバックフィル
+  4. context: 既存イベント行のregime/ff_rate/yc_10y2y/hy_spread/vix/
+     cuts_impliedのみをget_historical_context()で再計算して埋め直す
+     （actual/consensus/surprise/forecast_source等の他列は変更しない。
+     [[MACRO-TRUTHY-ZERO-BUG-1]]修正後のゼロ金利期間データ復元用）
 
 対応指標（FRED自動、05_main.py::INDICATOR_CONFIGを単一の正として参照。
 MACRODATA-IMPORT-HISTORY-CONFIG-DRIFT-1対応、2026-08-15、独自辞書は
@@ -118,10 +123,14 @@ def get_historical_context(target_date) -> dict:
     vx    = _lookup_ctx("VIXCLS",       target_date)
     ff_hi = _lookup_ctx("DFEDTARU",     target_date)
     ff_lo = _lookup_ctx("DFEDTARL",     target_date)
-    if ff_hi and ff_lo: ctx["ff_rate"]  = str(round((ff_hi + ff_lo) / 2, 4))
-    if yc: ctx["yc_10y2y"]  = str(round(yc, 4))
-    if hy: ctx["hy_spread"]  = str(round(hy, 4))
-    if vx: ctx["vix"]        = str(round(vx, 2))
+    # [[MACRO-TRUTHY-ZERO-BUG-1]]: truthy判定(`if ff_hi and ff_lo:`等)は
+    # 2020-2022年のゼロ金利期間(ff_lo=0.0)のような正当なゼロ値をPythonの
+    # 偽値として扱い欠落させていた。is not Noneによる明示判定へ修正
+    # （05_main.py::get_financial_context()と同じパターンに統一）。
+    if ff_hi is not None and ff_lo is not None: ctx["ff_rate"]  = str(round((ff_hi + ff_lo) / 2, 4))
+    if yc is not None: ctx["yc_10y2y"]  = str(round(yc, 4))
+    if hy is not None: ctx["hy_spread"]  = str(round(hy, 4))
+    if vx is not None: ctx["vix"]        = str(round(vx, 2))
     return ctx
 
 # ─────────────────────────────────────────────────────────────────
@@ -444,6 +453,74 @@ def backfill_liquidity(from_date: str, to_date: str, overwrite: bool = False) ->
 
 
 # ─────────────────────────────────────────────────────────────────
+#  金融環境コンテキストの再計算（既存行の対象6列のみを更新）
+#  [[MACRO-TRUTHY-ZERO-BUG-1]]: get_historical_context()のtruthy判定
+#  バグ修正後、既存の05_events.csv行（regime/ff_rate/yc_10y2y/
+#  hy_spread/vix/cuts_impliedが欠落したまま保存済み）を再計算で埋め
+#  直すための専用サブコマンド。import_from_fred(--overwrite)は
+#  actual/consensus/surprise/forecast_source等の全列を再構築して
+#  しまい、事後の予想値解決（resolve_forecast）等で蓄積した情報が
+#  失われるリスクがあるため使わない。本関数は対象6列のみを更新し、
+#  他列には一切触れない。
+# ─────────────────────────────────────────────────────────────────
+def backfill_context(from_date: str, to_date: str, overwrite: bool = False) -> None:
+    """既存イベント行のregime/ff_rate/yc_10y2y/hy_spread/vix/cuts_implied
+    のみを get_historical_context() で再計算し埋め直す。
+    actual/consensus/surprise/surprise_pct/forecast_source/data_source
+    等の他列は一切変更しない。
+
+    Args:
+        from_date: 対象開始日（release_date、YYYY-MM-DD）
+        to_date:   対象終了日（release_date、YYYY-MM-DD）
+        overwrite: Trueの場合、既に値がある行も再計算値で上書きする。
+                   False（デフォルト）の場合、現在空欄の値のみ埋める
+                   （非破壊、誤って広い期間を指定しても安全）。
+    """
+    if not HAS_MACRO_DATA:
+        logger.error("common.macro_data.reader が利用できません（backfill失敗）。")
+        return
+
+    events = load_events()
+    if events.empty:
+        logger.info("events.csv が空です。終了。")
+        return
+
+    context_cols = ["regime", "ff_rate", "yc_10y2y", "hy_spread", "vix", "cuts_implied"]
+    mask = (events["release_date"] >= from_date) & (events["release_date"] <= to_date)
+    target_idx = events.index[mask]
+    logger.info(f"対象行: {len(target_idx)}件（release_date {from_date}〜{to_date}）")
+
+    updated_rows = 0
+    updated_cells = 0
+    for idx in target_idx:
+        rd_str = events.at[idx, "release_date"]
+        try:
+            rd = datetime.strptime(rd_str, "%Y-%m-%d").date()
+        except Exception:
+            continue
+        ctx = get_historical_context(rd)
+        row_changed = False
+        for col in context_cols:
+            new_val = ctx.get(col, "")
+            if not new_val:
+                continue  # 再計算しても値が取れない場合は既存値を保持
+            cur_val = events.at[idx, col]
+            if (overwrite or cur_val == "") and cur_val != new_val:
+                events.at[idx, col] = new_val
+                row_changed = True
+                updated_cells += 1
+        if row_changed:
+            updated_rows += 1
+
+    if updated_rows == 0:
+        logger.info("更新対象なし（全て既に値が埋まっているか、再計算でも値が取れませんでした）。")
+        return
+
+    save_events(events)
+    logger.info(f"コンテキスト再計算完了: {updated_rows}行 / {updated_cells}セル更新 → {EVENTS_PATH}")
+
+
+# ─────────────────────────────────────────────────────────────────
 #  Entry Point
 # ─────────────────────────────────────────────────────────────────
 def main():
@@ -467,6 +544,12 @@ def main():
     liq_p.add_argument("--to",        dest="to_date",    default=date.today().strftime("%Y-%m-%d"), help="終了日")
     liq_p.add_argument("--overwrite", action="store_true", help="既存日付も上書き")
 
+    # context サブコマンド（[[MACRO-TRUTHY-ZERO-BUG-1]]対応）
+    ctx_p = sub.add_parser("context", help="既存イベント行のregime/ff_rate/yc_10y2y/hy_spread/vix/cuts_impliedのみを再計算して埋め直す（他列は変更しない）")
+    ctx_p.add_argument("--from",      dest="from_date",  required=True, help="対象開始日 YYYY-MM-DD（release_date基準）")
+    ctx_p.add_argument("--to",        dest="to_date",    required=True, help="対象終了日 YYYY-MM-DD")
+    ctx_p.add_argument("--overwrite", action="store_true", help="既に値がある行も再計算値で上書き（デフォルトは空欄のみ埋める）")
+
     args = p.parse_args()
 
     if args.mode == "fred":
@@ -475,6 +558,8 @@ def main():
         import_from_csv(args.source, args.indicator, args.overwrite)
     elif args.mode == "liquidity":
         backfill_liquidity(args.from_date, args.to_date, args.overwrite)
+    elif args.mode == "context":
+        backfill_context(args.from_date, args.to_date, args.overwrite)
 
 if __name__ == "__main__":
     main()

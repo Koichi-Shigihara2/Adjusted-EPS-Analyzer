@@ -4990,8 +4990,8 @@ RMBS）・案d（BSY個別対応）は、いずれもゲート条件込みの再
 
 ---
 
-### [MACRO-TRUTHY-ZERO-BUG-1] MACRO PULSE履歴バックフィルのtruthy判定によるゼロ値欠落
-**優先度:** 高
+### ✅ [MACRO-TRUTHY-ZERO-BUG-1] MACRO PULSE履歴バックフィルのtruthy判定によるゼロ値欠落（2026-08-26修正・10,570行復元完了）
+**優先度:** 高 → 完了
 **分類:** バグ / MACRO PULSE
 **登録日:** 2026-07-23
 **発見:** `FIELD_DEFINITIONS.md`フェーズ10（AS-IS-184関連）
@@ -5040,8 +5040,90 @@ RMBS）・案d（BSY個別対応）は、いずれもゲート条件込みの再
 `05_main.py`のregime分析等で参照される設計であり、優先度「高」は
 これまで以上に妥当と判断する。
 
+#### 2026-08-26② 実装完了
+
+**STEP 1: コード修正**（`src/market/macro_pulse/05_import_history.py`）
+- `get_historical_context()`の`ff_hi`/`ff_lo`は`common.macro_data.reader`
+  経由のFRED系列`DFEDTARU`（Federal Funds Target Range上限）/
+  `DFEDTARL`（下限）から取得されることを確認
+- `if ff_hi and ff_lo:`/`if yc:`/`if hy:`/`if vx:`の4行を、
+  `05_main.py::get_financial_context()`（本番稼働中の正しい実装）と
+  同じ`is not None`パターンへ統一
+- 横断確認（`grep -n`）: 同ファイル・`05_main.py`に他の同型truthy-zero
+  判定は存在しないことを確認（`elif rrp_inc and tga_inc:`はbool型変数
+  同士のand判定で該当なし、false positive）
+
+**STEP 2: 影響範囲の復元（スコープが依頼時想定の4.5倍に拡大、Koichi
+さん承認の上で対応）**
+`DFEDTARL.json`の生データを実測したところ、`value==0.0`の連続期間が
+**2つ**存在することが判明した（依頼時点で定量化済みだったのは②のみ）:
+- ①**2008-12-16〜2015-12-15**（GFC後の量的緩和期、新発見・未定量化
+  だった）: `05_events.csv`該当行**8,214行**、`ff_rate`欠落率100%
+- ②2020-03-16〜2022-03-16（依頼時に定量化済み）: **2,356行**、欠落率100%
+- 合計 **10,570行**（依頼時把握の2,356行の4.5倍）
+
+`import_from_fred(--overwrite)`は`actual`/`consensus`/`surprise`/
+`forecast_source`等の全列を再構築してしまい、事後の予想値解決
+（`resolve_forecast`）等で蓄積した情報が失われるリスクがあるため
+使用せず、`regime`/`ff_rate`/`yc_10y2y`/`hy_spread`/`vix`/
+`cuts_implied`の6列のみを対象に、現在空欄の値だけを埋める新規
+サブコマンド`context`（`backfill_context()`、デフォルトで非破壊）を
+`05_import_history.py`に追加して実行した。
+
+`python 05_import_history.py context --from 2008-12-16 --to 2015-12-15`・
+`--from 2020-03-16 --to 2022-03-16`を実行し、両期間とも対象行数と
+同数（8,214行/2,356行）が更新されたことをログで確認。実データで
+復元値をサンプル確認（例: 2009-01-05・2012-06-15・2020-04-01・
+2021-06-01・2022-02-01のいずれも`ff_rate=0.125`＝`(0.00+0.25)/2`、
+FRB実際の政策金利レンジと一致）。
+
+**diff範囲の確認**: `event_id`集合は前後で完全一致（34,317件、行の
+追加・削除なし）。全34,317行を1件ずつ突合した結果、**変更があった
+のは10,570行（8,214+2,356と完全一致）で、変更された列は`ff_rate`
+のみ**（`yc_10y2y`/`hy_spread`/`vix`/`regime`/`cuts_implied`は元々
+両期間とも正しく埋まっていたため変更なし。`actual`/`consensus`/
+`surprise`/`forecast_source`/`data_source`等、対象外の列は完全に
+不変）であることをPythonで機械的に確認した。対象期間外（2016-2019年
+等）への意図しない変更は皆無。なお1949〜2008-12-15の期間も`ff_rate`
+空欄のままだが、これはDFEDTARU/DFEDTARL系列自体がFRB「目標レンジ」
+方式導入（2008年12月）以前に存在しないためで、本バグとは無関係の
+正当な欠落（修正後も空欄のまま、想定通り）。
+
+**STEP 3: 下流影響の確認（結論: 影響なし、過去スコアの再計算は不要）**
+`05_main.py::_compute_current_score()`（RECESSION RISK SCOREの算出
+関数）の実装を確認した結果、8指標（YC/HY/Philly Fed/CFNAI/Initial
+Claims/Building Permits/Michigan Sentiment/Sahm Rule）はいずれも
+`events`DataFrameの`actual`列のみから算出されており、`ff_rate`/
+`regime`/`yc_10y2y`等の列は一切参照していないことを確認した。
+週次AI解説プロンプト内の「FED政策局面」「FF金利」表示も、
+`events.csv`の per-event 列ではなく`05_fed_context.csv`
+（`get_financial_context()`が生成する別ファイル、常に正しい実装）を
+参照しており無関係。フロントエンド`index.html`にも`COL.ff_rate`等の
+列マッピング定義自体はあるが、実際に参照・表示している箇所は
+コードベース全体で0件（死蔵定義）であることも確認した。
+
+**結論**: `regime`/`ff_rate`/`yc_10y2y`/`hy_spread`/`vix`/
+`cuts_implied`列は、各イベント行作成時点の金融環境を記録する
+**恒久的な履歴スナップショット**として保存されるのみで、現在・過去
+いずれのスコア計算・AI解説生成・フロントエンド表示からも参照されて
+いない（write-onlyなフィールド）。したがって**過去のweekly分析・
+スコア履歴の再計算は不要**（対象外）と判断した。今回の修正は
+「本番CSVの恒久的なデータ完全性の是正」のみが目的であり、既存の
+スコア・分析結果には一切影響しない。
+
+**検証ゲート結果**（全て通過）:
+- `pytest tests/`: **905 passed, 0 failed**
+- `pytest tests/test_macro_pulse_logic.py -v`: 18 passed
+- `python 05_audit.py`（MACRO PULSE専用整合性チェック）: NG=0件/
+  WARN=48件（全件CHECK-1重複疑い、`ff_rate`等の対象列とは無関係の
+  既存WARN。`ff_rate`/`context`/`regime`関連の新規WARNなし）
+- `python common/sec_data/audit.py`: 🟢正常95銘柄/🟡警告5銘柄
+  （既存WARN、MACRO PULSE非対象で無変化）
+- `python common/sec_data/report_consistency_check.py --fail-on-ng`:
+  NG=0件/WARN=96件（既存WARN、MACRO PULSE非対象で無変化）
+
 #### 着手条件
-なし
+なし（解消済み）
 
 ---
 
