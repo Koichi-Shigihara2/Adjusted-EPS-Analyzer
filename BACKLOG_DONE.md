@@ -4,6 +4,107 @@
 
 ## 2026-08-27（完了）
 
+### ✅ [STONKS-SILO-CLI-TICKERS-SHADOW-1] pipeline.pyの変数名衝突でSTONKS SILO自動更新が2026-07-13以降45日間完全停止していた問題を修正・全25銘柄再生成完了（2026-08-27）
+
+**優先度:** 中 → 高 → 完了
+**分類:** バグ / 変数名衝突 / STONKS SILO / 本番障害
+**登録日:** 2026-08-11
+**発見:** `[[MARKETDATA-LAYER-CONSTRUCTION-1]]`着手順序4-3（`valuation_
+fetcher.py`切替）のStep3検証中（チャット記録、2026-08-11）
+
+#### 内容（登録時点）
+`discover/stonks-silo/src/pipeline.py`の`if __name__ == "__main__":`
+ブロックが`tickers = sys.argv[1:] if len(sys.argv) > 1 else None`という
+モジュールレベル変数代入を行っており、これがファイル冒頭で`from
+common.sec_data import tickers`によりimportされたモジュール参照を
+グローバルスコープごと上書きしてしまう問題。`stonks_tickers()`が
+`tickers.get_stonks_silo_tickers()`を呼ぼうとした時点で`tickers`が
+（モジュールではなく）CLI引数のリストや`None`になっており
+`AttributeError`で必ず失敗する。
+
+登録時点（2026-08-11）では「CLI引数あり実行のみ影響、引数なし実行
+（cronが使う経路）は要実機再確認」として優先度を中に留めていたが、
+**この再確認が16日間行われないまま放置され**、実際にはcronの自動
+実行経路も同一原因で失敗し続けていた。
+
+#### 2026-08-27①: 実害範囲の再確認で判明した事実（想定より大幅に大きい）
+`[[STONKS-SILO-PRICE-SCHEDULE-LAG-SUSPECT-1]]`（cron実行順序ラグの疑い）
+の調査中、`docs/value-monitor/stonks-silo/data/results.json`の
+`generated_at`が2026-08-13から更新されていないことに気づき、GitHub
+Actions API（`gh` CLI不可のため`curl`で直接照会、リポジトリは
+`Koichi-Shigihara2/On-a-journey`）で`Stonks_Silo_Update`ワークフローの
+実行履歴（`/actions/workflows/{id}/runs`）を確認したところ：
+
+- **最後に成功したスケジュール実行: 2026-07-10T16:55:54Z**
+- **その次から2026-08-26まで、スケジュール実行は例外なく全て`failure`**
+  （2026-07-13・14・15・16・17・20・21・22・23・24・27・28・29・30・31、
+  8/3・4・5・6・7・10・11・12・13・14・17・18・19・20・21・24・25・26、
+  計約30回連続失敗を確認。唯一の例外は2026-08-23のworkflow_run経由
+  実行が`skipped`）
+- 失敗ジョブのステップを確認したところ、`Run Stonks Silo Pipeline`
+  ステップ自体が失敗（後続の`Consistency Check Gate`/`Commit and
+  push changes`は`skipped`）。詳細ログはアクセス権限不足
+  （`Must have admin rights to Repository.`、認証トークンなし）で
+  直接確認不可だったが、失敗パターン・タイミング・原因コードの一致から
+  高確度で同一原因（本バグ）と判断
+- `results.json`は2026-08-13T11:55:21Zの手動コミット時点の内容
+  （SEC/財務データ側の別修正に伴う再生成）のまま45日間更新されて
+  おらず、STONKS SILO画面が表示するスコア・判定・評価指標が全て古い
+  ままだった
+
+`results.json`単一ファイルへの現在値スナップショット方式であり
+（TANUKI/MACRO PULSEのような日次履歴JSONに相当するファイルは
+STONKS SILOには存在しないことを`docs/value-monitor/stonks-silo/`配下・
+`pipeline.py`の出力ロジックで確認済み）、過去45日分の日次スナップショット
+自体がそもそも存在しない設計だったため、「過去分の履歴が失われた」という
+形の恒久的損失は発生していない（現在値のみを扱う機能のため、最新化すれば
+実質的に復旧する）。
+
+この時点で優先度を中→高へ訂正し、Koichiさんに状況を報告、「今すぐ修正・
+全銘柄再生成・pushまで実施」の承認を得た。
+
+#### 2026-08-27②: 修正実装
+`__main__`ブロックの変数名を`tickers`から`cli_tickers`へリネーム
+（登録時点の対応方針通り、設計判断は不要な軽微な修正）。
+
+回帰テストを`tests/test_stonks_silo_pipeline.py::TestMainBlockTickersShadow`
+に新規追加。既存テストは`importlib.util.spec_from_file_location`で
+pipeline.pyをロードするが`__name__`が`"__main__"`にならないため
+`if __name__ == "__main__":`ブロック自体は一度も実行されておらず、
+本バグを検知できない構造だった（既存テストカバレッジの死角）。今回、
+pipeline.py自身の`__main__`ブロックのソースをファイルから直接抽出して
+exec する方式で、CLI引数あり・なし（cronが使う経路）の両方を実ファイルの
+コードに対して検証する回帰テスト2件を追加した。
+
+**修正前のコードに対してこの2件のテストを実行し、両経路とも実際に
+`AttributeError`相当の失敗（モジュール参照がCLI引数値に上書きされる）を
+確認**（`assert sp.tickers is original_tickers_module`が
+`None is <module>`/`['SOUN','BBAI'] is None`で失敗）。修正後は両方とも
+成功することを確認。pytest全体926件全パス（既存924件＋新規2件）、
+`report_consistency_check.py --fail-on-ng` NG=0。
+
+#### 2026-08-27③: 全25銘柄再生成
+修正後のパイプラインを実行し、`Stonks_Silo_Update.yml`が実際に使う
+引数なし実行経路（`python pipeline.py`）で25銘柄全件を処理。
+**2026-07-13以降、45日ぶりに正常完走**（成功25/失敗0）。
+
+再生成前後の比較（`results.json`のbefore/afterスナップショットで実施）:
+- `generated_at`: `2026-08-13T11:55:21Z` → `2026-08-26T22:28:05Z`
+  （実行環境のUTC時刻、JSTでは2026-08-27朝）
+- 25銘柄全件で`overall_verdict`/`overall_score`は**完全に不変**
+  （fundamentalsデータ自体は変化していないため、想定通り）
+- `current_price`のみ市場変動を反映して変化（ほとんどの銘柄で下落、
+  CWANのみ完全一致=13日間の株価変動が偶然一致）。異常値
+  （NaN/Inf/None化等）は機械的チェックで0件
+- 構造的差分（キーの追加・欠落）も0件（`ASTS`で全キー一致を確認）
+- `errors`は前後とも空（全銘柄成功）
+
+#### コミット
+- `ff59e7b13`: 修正・回帰テスト追加
+- `c649741ca`: 全25銘柄再生成（データのみ、コード変更なし）
+
+---
+
 ### ✅ [LIQUIDITY-CSV-FIRST-ROW-UNBOUNDLOCALERROR-1] update_liquidity_csv()が05_liquidity.csv完全空状態からの初回実行でUnboundLocalErrorになる（2026-08-27修正完了）
 
 **優先度:** 低 → 完了

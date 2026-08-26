@@ -3810,73 +3810,8 @@ Yahoo Finance自体が2026-07-13〜07-17の5件しか返さず、`period="5d"`�
 
 ---
 
-### [STONKS-SILO-CLI-TICKERS-SHADOW-1] pipeline.pyの変数名衝突でSTONKS SILO自動更新が2026-07-13以降45日間完全停止している（実害を大幅過小評価していたことが判明、緊急）
-**優先度:** 中 → **高**（2026-08-27実地確認で「cronは影響を受けない」
-という登録時点の想定が誤りだったと確定。CLI手動実行だけでなく
-`Stonks_Silo_Update.yml`の自動cronも100%失敗しており、STONKS SILO
-全体が2026-07-13から本日〈2026-08-27〉まで45日間・連続約30回の
-スケジュール実行全てで更新停止している）
-**分類:** バグ / 変数名衝突 / STONKS SILO / 本番障害
-**登録日:** 2026-08-11
-**更新日:** 2026-08-27（`[[STONKS-SILO-PRICE-SCHEDULE-LAG-SUSPECT-1]]`
-調査中に実害範囲を再確認、優先度を中→高へ訂正）
-**発見:** `[[MARKETDATA-LAYER-CONSTRUCTION-1]]`着手順序4-3（`valuation_
-fetcher.py`切替）のStep3検証中（チャット記録、2026-08-11）
-
-#### 内容
-`discover/stonks-silo/src/pipeline.py`の`if __name__ == "__main__":`
-ブロックが`tickers = sys.argv[1:] if len(sys.argv) > 1 else None`という
-モジュールレベル変数代入を行っており、これがファイル冒頭で`from
-common.sec_data import tickers`によりimportされたモジュール参照を
-グローバルスコープごと上書きしてしまう。結果として`python pipeline.py
-TICKER1 TICKER2`のようにティッカーを指定して実行すると、`run()`内部の
-`_filter_stonks_silo_tickers()` → `stonks_tickers()`が
-`tickers.get_stonks_silo_tickers()`を呼ぼうとした時点で`tickers`が
-（モジュールではなく）CLI引数のリストになっており
-`AttributeError: 'list' object has no attribute 'get_stonks_silo_tickers'`
-で必ず失敗する。
-
-登録時点では「引数なし実行（cronが使う経路）は要実機再確認」として
-未確定のまま優先度を中に留めていたが、**この再確認が長期間行われない
-まま放置されていた**。
-
-#### 2026-08-27 実地確認で判明した実害（想定より大幅に大きい）
-`[[STONKS-SILO-PRICE-SCHEDULE-LAG-SUSPECT-1]]`（cron実行順序ラグの疑い）
-の調査中、`docs/value-monitor/stonks-silo/data/results.json`の
-`generated_at`が2026-08-13から更新されていないことに気づき、GitHub
-Actions API（`gh` CLI不可のため`curl`で直接照会）で
-`Stonks_Silo_Update`ワークフローの実行履歴を確認したところ：
-
-- **最後に成功したスケジュール実行: 2026-07-10T16:55:54Z**
-- **その次から現在まで、スケジュール実行は例外なく全て`failure`**
-  （2026-07-13・14・15・16・17・20・21・22・23・24・27・28・29・30・31、
-  8/3・4・5・6・7・10・11・12・13・14・17・18・19・20・21・24・25・26、
-  計約30回連続失敗を確認）
-- 失敗ジョブのステップを確認したところ、`Run Stonks Silo Pipeline`
-  ステップ自体が失敗（後続の`Consistency Check Gate`/`Commit and
-  push changes`は`skipped`）——想定通り引数なし実行でも同じ
-  `AttributeError`で落ちていると推定される（詳細ログはアクセス権限
-  不足で直接確認不可だったが、失敗パターン・タイミング・原因コードの
-  一致から高確度で同一原因と判断）
-- 結果、`results.json`は2026-08-13T11:55:21Zの手動コミット時点の内容
-  （SEC/財務データ側の別修正に伴う再生成）のまま**45日間更新されて
-  おらず、STONKS SILO画面が表示するスコア・判定・評価指標が全て古い
-  ままになっている**
-
-#### 対応方針（変更なし、実装は未実施）
-`__main__`ブロックの変数名を`tickers`から別名（例: `cli_tickers`）に
-変更するだけの軽微な修正で解消できる見込み（対応方針自体は登録時点から
-変更なし）。修正方針の妥当性は変わらないが、**本番の45日分停止データを
-どう復旧するか（過去分の遡及再構成は行わず、修正後の初回実行時点の
-最新データのみ反映される想定で問題ないか等）はKoichiさんの確認を経てから
-実施すべきと判断し、2026-08-27時点では実装を保留した**（`[[STONKS-
-SILO-PRICE-SCHEDULE-LAG-SUSPECT-1]]`側の「別の原因だった場合は実装せず
-報告する」という着手条件に従った）。
-
-#### 着手条件
-なし（技術的な修正内容自体に設計判断は不要。ただし本番障害の復旧
-タイミング——今すぐ修正・全銘柄再生成・pushまで行うか、Koichiさんの
-確認後にするか——について着手前に一言確認することを推奨）
+（[[STONKS-SILO-CLI-TICKERS-SHADOW-1]]は2026-08-27実装完了・全25銘柄
+再生成完了、BACKLOG_DONE.md「2026-08-27（完了）」参照）
 
 ---
 
@@ -12133,13 +12068,17 @@ OpenD常時起動という前提条件が既に満たされているため、「
 
 ---
 
-### [STONKS-SILO-PRICE-SCHEDULE-LAG-SUSPECT-1] Stonks_Silo_Updateも同種のcron実行順序ラグを抱えている疑い（2026-08-27調査完了・疑いは別原因により実質検証不能と判明、対応保留）
+### [STONKS-SILO-PRICE-SCHEDULE-LAG-SUSPECT-1] Stonks_Silo_Updateも同種のcron実行順序ラグを抱えている疑い（真因の`[[STONKS-SILO-CLI-TICKERS-SHADOW-1]]`が2026-08-27に復旧、再検証待ち）
 
-**優先度:** 低→ 保留（下記の通り、真因は別バグと判明したため本項目
-単体としての優先度判断は一旦意味を持たない）
+**優先度:** 低（`[[STONKS-SILO-CLI-TICKERS-SHADOW-1]]`復旧により
+`Stonks_Silo_Update`が正常稼働を再開したため、本項目の実データ検証が
+今回初めて可能になった。ただし本タスクは緊急復旧にスコープを限定して
+おり、cron順序ラグの再検証自体は次回セッションへ持ち越し）
 **分類:** アーキテクチャ / GitHub Actions / データ鮮度
 **登録日:** 2026-08-22
-**更新日:** 2026-08-27（実データ調査完了）
+**更新日:** 2026-08-27②（`[[STONKS-SILO-CLI-TICKERS-SHADOW-1]]`修正・
+全銘柄再生成完了。cronが正常に動き出したため、次回は本項目自体の
+実データ検証に着手できる状態になった）
 **発見:** [[TANUKI-VALUATION-PRICE-SCHEDULE-LAG-1]]・
 [[WORKFLOW-SEC-TANUKI-GAP-1]]実装時の依存グラフ点検で発見
 
@@ -12171,6 +12110,22 @@ CLI-TICKERS-SHADOW-1]]`、2026-08-11登録時点では影響範囲を「CLI手�
 `Stonks_Silo_Update`が正常稼働を再開してから、本項目のcron順序ラグの
 有無を実データで再検証するのが妥当な順序と判断する。
 
+#### 2026-08-27② 追記: 前提条件が解消、次回セッションで再検証可能
+`[[STONKS-SILO-CLI-TICKERS-SHADOW-1]]`の緊急復旧（コミット
+`ff59e7b13`・`c649741ca`）により、`Stonks_Silo_Update`は2026-07-13
+以来45日ぶりに正常完走した（全25銘柄成功）。これにより上記で指摘した
+「検証の前提自体が成立しない」状態は解消された。ただし本タスクは
+緊急復旧（コード修正＋データ再生成）にスコープを限定しており、本項目
+自体（`Market_Data_Daily_Update`との実行順序ラグの実害有無）の
+実データ検証は今回実施していない。
+
+**次回セッションでの再検証手順**: `Stonks_Silo_Update`が今後複数回
+正常に自動実行された後（cronは`5 15 * * 1-5` UTCのまま変更していない
+ため、次回発火は次の平日）、`[[TANUKI-VALUATION-PRICE-SCHEDULE-
+LAG-1]]`と同じ手順——STONKS SILO対象銘柄の`results.json`側の価格
+関連フィールドと`common/market_data/daily/`の実際の最新保存日を
+突合——で実データ確認し、着手要否・優先度を判断する。
+
 #### 内容
 `discover/stonks-silo/src/valuation_fetcher.py`が
 `common/market_data/daily/`（yfinance統合層）の日次終値に依存している
@@ -12197,7 +12152,8 @@ CLI-TICKERS-SHADOW-1]]`、2026-08-11登録時点では影響範囲を「CLI手�
   想定される（既存の平日日次cronとの併存要否も含めて設計要）
 
 #### 着手条件
-なし（次回セッションでの実データ調査待ち）
+なし。`[[STONKS-SILO-CLI-TICKERS-SHADOW-1]]`復旧により実データ検証の
+前提が整ったため、次回セッションで上記手順により再検証すること
 
 ---
 
