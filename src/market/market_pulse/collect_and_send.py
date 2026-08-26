@@ -643,8 +643,9 @@ def _fill_fallbacks(current_dict, container_key, recent_entries):
 
 def _load_div_history(json_path, window=90):
     """過去window日分の乖離値（TP score − CNN F&G）リストを返す。
-    保存済み divergence.value を優先使用し、ない場合は components.fg_score で代替計算。
-    divergence.value は CNN F&G ベースで保存されているため一貫性が保たれる。
+    保存済み divergence.value を優先使用し、ない場合は fear_greed.score
+    （CNN、当日のdiv_value算出と同一ソース）で代替計算する。
+    どちらの経路もCNN F&Gベースで一貫性が保たれる。
     """
     if not os.path.exists(json_path):
         return []
@@ -668,9 +669,14 @@ def _load_div_history(json_path, window=90):
         if div_stored is not None:
             result.append(float(div_stored))
             continue
-        # 旧エントリ（divergence.value 未記録）: components.fg_score で再計算
+        # [[MARKETPULSE-MINOR-INCONSISTENCIES-1]]⑤対応: 旧エントリ
+        # （divergence.value 未記録）は fear_greed.score（CNN、当日の
+        # div_value算出と同一ソース）で再計算する。旧実装は
+        # tech_pulse.components.fg_score（feargreedchart.com、別ソース）
+        # を参照しておりdocstringの「CNN F&Gベースで一貫性が保たれる」
+        # という主張と矛盾していた（2026-08-26②で発見・修正）。
         tp_s = (entry.get("tech_pulse") or {}).get("score")
-        fg_s = ((entry.get("tech_pulse") or {}).get("components") or {}).get("fg_score")
+        fg_s = (entry.get("fear_greed") or {}).get("score")
         if tp_s is not None and fg_s is not None:
             result.append(float(tp_s) - float(fg_s))
     return result

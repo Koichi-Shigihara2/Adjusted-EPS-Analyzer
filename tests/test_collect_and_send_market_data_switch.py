@@ -195,3 +195,67 @@ class TestFetchQqqTechData:
         qqq_vs_ma125, qqq_vs_spy_20d = cs.fetch_qqq_tech_data()
         assert qqq_vs_ma125 == 5.0
         assert qqq_vs_spy_20d is None
+
+
+class TestLoadDivHistory:
+    """[[MARKETPULSE-MINOR-INCONSISTENCIES-1]]⑤対応: _load_div_history()の
+    フォールバックがCNN由来（fear_greed.score）を使い、feargreedchart.com由来
+    （tech_pulse.components.fg_score）を使わないことを検証する回帰テスト。
+    """
+
+    def _write_json(self, tmp_path, entries):
+        import json
+        path = tmp_path / "market_data.json"
+        path.write_text(json.dumps(entries), encoding="utf-8")
+        return str(path)
+
+    def _recent_date(self, days_ago=1):
+        from datetime import datetime, timedelta, timezone
+        return (datetime.now(timezone.utc) - timedelta(days=days_ago)).isoformat()
+
+    def test_uses_stored_divergence_value_when_present(self, tmp_path):
+        entries = [{
+            "date": self._recent_date(1),
+            "tech_pulse": {"score": 70, "divergence": {"value": 12.3}},
+        }]
+        path = self._write_json(tmp_path, entries)
+        assert cs._load_div_history(path, window=90) == [12.3]
+
+    def test_fallback_uses_cnn_score_not_feargreedchart_score(self, tmp_path):
+        """divergence.value欠損時、fear_greed.score（CNN）を使い、
+        tech_pulse.components.fg_score（feargreedchart.com）は使わないこと。
+        CNN=30・feargreedchart.com=57のように大きく異なる値を与え、
+        混入していれば誤った期待値になるよう設計する。
+        """
+        entries = [{
+            "date": self._recent_date(2),
+            "tech_pulse": {
+                "score": 72,
+                "components": {"fg_score": 57},  # feargreedchart.com（使われてはいけない）
+                # divergence未記録（旧エントリを再現）
+            },
+            "fear_greed": {"score": 30},  # CNN（使われるべき）
+        }]
+        path = self._write_json(tmp_path, entries)
+        result = cs._load_div_history(path, window=90)
+        assert result == [72 - 30]  # = 42.0
+        assert result != [72 - 57]  # feargreedchart.com由来(15.0)ではない
+
+    def test_entry_missing_both_scores_is_skipped(self, tmp_path):
+        """tech_pulseブロック自体が丸ごとnull（旧スキーマ）のエントリは、
+        フォールバック条件を満たさず完全にスキップされる
+        （2026-08-26②で確認した実データの挙動と同じ）。"""
+        entries = [
+            {"date": self._recent_date(3), "tech_pulse": None, "fear_greed": None},
+            {"date": self._recent_date(1), "tech_pulse": {"score": 60, "divergence": {"value": 5.0}}},
+        ]
+        path = self._write_json(tmp_path, entries)
+        assert cs._load_div_history(path, window=90) == [5.0]
+
+    def test_entry_outside_window_excluded(self, tmp_path):
+        entries = [
+            {"date": self._recent_date(200), "tech_pulse": {"score": 70, "divergence": {"value": 99.0}}},
+            {"date": self._recent_date(1), "tech_pulse": {"score": 70, "divergence": {"value": 1.0}}},
+        ]
+        path = self._write_json(tmp_path, entries)
+        assert cs._load_div_history(path, window=90) == [1.0]

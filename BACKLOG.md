@@ -9261,8 +9261,8 @@ MACRO PULSE・Market Pulse間の統合は`INPUT_DATA_TOBE.md`のyfinance
 
 ---
 
-### [MARKETPULSE-MINOR-INCONSISTENCIES-1] Market Pulseの軽微な構造的不整合まとめ（Hindenburg固定値・credit原資産不整合・CSV列欠落・breadthパススルー漏れ・F&G情報源混同・Tech Pulseバックフィル式相違）
-**優先度:** 中
+### [MARKETPULSE-MINOR-INCONSISTENCIES-1] Market Pulseの軽微な構造的不整合まとめ（Hindenburg固定値・credit原資産不整合・CSV列欠落・breadthパススルー漏れ・⑤F&G情報源混同は2026-08-26修正済み・Tech Pulseバックフィル式相違）
+**優先度:** 中（①②③④⑥は未着手のまま残存、⑤のみ2026-08-26完了）
 **分類:** データ品質 / Market Pulse
 **登録日:** 2026-07-23
 **発見:** `FIELD_DEFINITIONS.md`フェーズ10
@@ -9320,14 +9320,12 @@ BACKLOG記載の前提を着手時に再検証する原則に従い、`collect_a
   `spy_return_1d`を含むことを実データで確認済み）から特定フィールドのみ
   ホワイトリスト方式でコピーしており、この5フィールドは現在も
   コピー対象に含まれず欠落が現存
-- **⑤F&G情報源混同**: `collect_and_send.py:646-647`の
-  `_load_div_history()`docstring「divergence.value は CNN F&G ベースで
-  保存されているため一貫性が保たれる」に反し、671-675行目の後方互換
-  フォールバック（`divergence.value`未記録の旧エントリ向け）が
-  `tech_pulse.components.fg_score`（feargreedchart.com由来の
-  `fg_score_tech`、CNN由来ではない）で乖離値を代替計算する**設計上の
-  不整合はコードとして現存**（2026-08-26②で訂正、下記参照。以前の
-  「現在進行形で発火中」という実害判定は誤りだったため取り消す）
+- **✅⑤F&G情報源混同**（2026-08-26③修正完了、下記参照）: 旧実装は
+  `_load_div_history()`のフォールバック（`divergence.value`未記録の
+  旧エントリ向け）が`tech_pulse.components.fg_score`（feargreedchart.com
+  由来）を参照しており、docstringの「CNN F&Gベースで一貫性が保たれる」
+  という主張と矛盾していた。`(entry.get("fear_greed") or
+  {}).get("score")`（CNN）を参照するよう修正済み
 - **⑥Tech Pulseバックフィル式相違**: `backfill_tech_pulse.py:121-130`
   の`_calc_score()`（docstring「固定範囲方式 Tech Pulse スコア
   （バックフィル専用）」、加算方式）と`collect_and_send.py:711-729`の
@@ -9416,8 +9414,52 @@ MACRO-TRUTHY-ZERO-BUG-1対応完了を受け、優先順位に従い次に着手
 隣接する既知課題（②credit.stock/bondの原資産不一致）は既存カタログ
 済みで別種の問題であり、新規の類似箇所は発見しなかった。
 
+#### 2026-08-26③ ⑤F&G情報源混同の実装完了（案A採用）
+
+**修正内容**（`src/market/market_pulse/collect_and_send.py:667-679`）:
+`_load_div_history()`のフォールバックの参照先を
+`(entry.get("tech_pulse") or {}).get("components", {}).get("fg_score")`
+（feargreedchart.com由来）から`(entry.get("fear_greed") or
+{}).get("score")`（CNN由来、当日の`div_value`算出と同一ソース）へ
+差し替え。docstringも「どちらの経路もCNN F&Gベースで一貫性が保たれる」
+へ修正し、実態と一致させた。
+
+**追加テスト**（`tests/test_collect_and_send_market_data_switch.py::
+TestLoadDivHistory`、4件）:
+- `test_uses_stored_divergence_value_when_present`: `divergence.value`
+  存在時はそのまま使う（既存挙動の回帰確認）
+- `test_fallback_uses_cnn_score_not_feargreedchart_score`:
+  `divergence.value`欠損時、CNN score=30・feargreedchart.com
+  score=57という意図的に大きく異なる値を与え、結果が
+  `72-30=42.0`（CNN）であり`72-57=15.0`（feargreedchart.com）では
+  ないことを検証。**修正前のコードに対して実行すると`[15.0]`を返し
+  失敗することを確認済み**（`git stash`で一時的に修正前へ戻して
+  実行、regression testとして機能することを確認した上で修正を復元）
+- `test_entry_missing_both_scores_is_skipped`: `tech_pulse`ブロック
+  自体が丸ごと`null`のエントリ（旧スキーマ）は完全にスキップされる
+  ことを検証（2026-08-26②で確認した実データの挙動を固定化）
+- `test_entry_outside_window_excluded`: window日数外のエントリが
+  除外されることを検証
+
+**影響確認**: 修正後、本番`market_data.json`（131件）に対して
+`_load_div_history(window=90)`を実行した結果、`div_hist`は修正前と
+同じ**80件**（全件CNN由来の`divergence.value`から取得、フォール
+バック発火は0件）で完全に一致することを確認した。2026-08-26②で
+確認済みの通り、現行データではフォールバックが一度も発火していない
+ため、この修正による既存の表示・スコアへの影響はない（想定通り）。
+
+**検証ゲート結果**（全て通過）:
+- `pytest tests/`: **909 passed, 0 failed**（新規4件含む、既存905件
+  無変化）
+- `python common/sec_data/audit.py`: 🟢正常95銘柄/🟡警告5銘柄
+  （既存WARN、Market Pulse非対象で無変化）
+- `python common/sec_data/report_consistency_check.py --fail-on-ng`:
+  NG=0件/WARN=96件（既存WARN、Market Pulse非対象で無変化）
+- Market Pulse専用の検証スクリプトは存在しない（`find`で確認済み、
+  MACRO PULSEの`05_audit.py`に相当するものはなし）
+
 #### 着手条件
-なし
+①②③④⑥は引き続き未着手（優先順位は次回Koichiさんと相談）
 
 ---
 
