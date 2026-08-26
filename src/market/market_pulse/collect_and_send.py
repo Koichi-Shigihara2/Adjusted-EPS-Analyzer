@@ -1627,20 +1627,38 @@ def send_email(body, sentiment_data):
 
 
 def fetch_cnn_fear_greed():
-    """CNN Fear & Greed Indexを取得する"""
+    """CNN Fear & Greed Indexを取得する。
+
+    [[FEARGREED-DUPKEY-BUG-1]]対応（2026-08-26）: 旧実装は`fg.get()`
+    （ラッパー、`history`辞書は`1w`/`1m`/`3m`/`6m`/`1y`の5キーのみで
+    日次・前日相当のキーが存在しない）を使い、`previous_close`と
+    `one_week_ago`の両方を誤って`history.get("1w")`（1週間前の値）で
+    埋めていた。真の前日終値は生API応答
+    （`fg.fetch()`、`get()`が内部で呼ぶのと同じセッション・エラー
+    ハンドリングを使う単一のHTTPリクエスト）の
+    `data["fear_and_greed"]["previous_close"]`にのみ存在し、`get()`は
+    これを握りつぶして返さない。`get()`を経由せず`fetch()`から直接
+    score/rating/previous_close/previous_1_week/previous_1_monthを
+    抽出することで、二重フェッチを避けつつ正しい値を取得する。
+    """
     try:
         import fear_greed as fg
-        data = fg.get()
-        score = data.get("score")
-        rating = data.get("rating", "")
-        history = data.get("history", {})
+        data = fg.fetch()
+        fear = data["fear_and_greed"]
+        score = fear.get("score")
+        rating = fear.get("rating", "")
         print(f"[INFO] CNN Fear & Greed: {score:.1f} ({rating})")
+
+        def _r(key):
+            v = fear.get(key)
+            return round(v, 2) if v is not None else None
+
         return {
             "score": round(score, 1) if score is not None else None,
             "rating": rating,
-            "previous_close": history.get("1w"),
-            "one_week_ago": history.get("1w"),
-            "one_month_ago": history.get("1m"),
+            "previous_close": _r("previous_close"),
+            "one_week_ago": _r("previous_1_week"),
+            "one_month_ago": _r("previous_1_month"),
         }
     except ImportError:
         print("[WARN] fear-greed パッケージ未インストール。CNN F&Gスキップ。")

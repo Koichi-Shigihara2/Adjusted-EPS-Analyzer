@@ -8714,8 +8714,8 @@ generated_at`より1日古い値になりうる。`catalyst.py`の同種の`date
 
 ---
 
-### [FEARGREED-DUPKEY-BUG-1] fear_greed.previous_close/one_week_agoの重複キーバグ
-**優先度:** 中
+### ✅ [FEARGREED-DUPKEY-BUG-1] fear_greed.previous_close/one_week_agoの重複キーバグ（2026-08-26修正完了）
+**優先度:** 中 → 完了
 **分類:** バグ / Market Pulse
 **登録日:** 2026-07-23
 **発見:** `FIELD_DEFINITIONS.md`フェーズ10（AS-IS-346/347）
@@ -8766,8 +8766,76 @@ generated_at`より1日古い値になりうる。`catalyst.py`の同種の`date
 優先度は実害ゼロを理由に引き下げず「中」を維持する（対応方針自体の
 前提誤りを訂正した記録的価値が今回の主目的）。
 
+#### 2026-08-26② 実装完了
+
+**STEP 1 再確認**: `collect_and_send.py:1629-1644`の`fetch_cnn_fear_
+greed()`が`fg.get()`を使い、`previous_close`・`one_week_ago`とも
+`history.get("1w")`のまま現存していることを確認。消費先の再確認でも
+`market_data.json`保存以外の参照は0件（実害は引き続きゼロ）。
+
+**STEP 2 修正方針**: `fear_greed`パッケージの`__init__.py`を確認した
+ところ、`fg.get()`とは別に**モジュールレベルの`fg.fetch()`関数が
+既に公開されている**ことを発見した（`_default_client.fetch()`を
+呼ぶだけの薄いラッパー、`get()`が内部で使うのと同一のセッション・
+エラーハンドリングを共有）。ユーザー提案の`FearGreedClient()`を
+新規インスタンス化する方式より単純に、`fg.fetch()`を直接呼べば
+生API応答へアクセスできると判明。`get()`と`fetch()`は別々にHTTP
+リクエストを発生させるため、両方を呼ぶ（`get()`でscore/history、
+`fetch()`でprevious_close）と二重フェッチになる。そこで**`get()`を
+使わず`fetch()`のみで完結させ**、`score`/`rating`/`previous_close`/
+`previous_1_week`/`previous_1_month`を生応答から直接抽出する設計に
+変更した（`get()`が内部でやっているhistory辞書構築・3m/6m用の
+historical point検索は今回使う3フィールドには不要なため省略）。
+
+**修正箇所**（`collect_and_send.py::fetch_cnn_fear_greed()`）:
+`fg.get()`→`fg.fetch()`に変更し、`data["fear_and_greed"]`から
+直接`previous_close`/`previous_1_week`/`previous_1_month`を取得する
+実装へ書き換えた。
+
+**修正前後の値の具体例**（実際にAPIを呼び出して確認、2026-08-26）:
+
+| フィールド | 修正前 | 修正後 |
+|---|---|---|
+| `previous_close` | 57.2（`previous_1_week`由来、誤り） | **58.8**（真の前日終値） |
+| `one_week_ago` | 57.2 | 57.2（変化なし、意味的に正しいまま） |
+| `one_month_ago` | 41.34 | 41.34（変化なし） |
+
+`previous_close`のみが誤った値（57.2）から正しい値（58.8）へ訂正
+された。`one_week_ago`/`one_month_ago`は元々正しいキー（`1w`/`1m`）を
+参照していたため数値は変わらない（取得経路のみ`get()`→`fetch()`へ
+変更）。
+
+**テスト追加**（`tests/test_collect_and_send_market_data_switch.py::
+TestFetchCnnFearGreed`、3件）:
+- `test_previous_close_distinct_from_one_week_ago`:
+  `previous_close`と`previous_1_week`に意図的に異なる値を与え、
+  `previous_close`が`previous_1_week`（旧バグ値）ではなく真の値を
+  返すことを確認
+- `test_missing_previous_close_returns_none`: `previous_close`欠損時に
+  `None`を返すことを確認
+- `test_fetch_exception_returns_none`: `fetch()`が例外を送出した場合
+  `None`を返すことを確認（既存の例外ハンドリングが`fetch()`ベースでも
+  維持されていることの確認）
+
+3件とも`git stash`で修正前コードに一時的に戻して実行した結果、失敗
+することを確認済み。**副次的な発見**: 修正前コードの`fg.get()`は
+モジュールレベルの`fear_greed.fetch`をmonkeypatchしても影響を受けず
+（`_default_client`インスタンスの`self.fetch`メソッドを呼ぶ別経路の
+ため）実際にCNNへ生の通信を行った。これは「`get()`と`fetch()`は独立
+した呼び出し経路」というSTEP 2の分析を、モックが素通りする挙動として
+実地に裏付ける結果となった。
+
+**検証ゲート結果**（全て通過）:
+- `pytest tests/`: **923 passed, 0 failed**（新規3件含む、既存920件
+  無変化）
+- `python common/sec_data/audit.py`: 🟢正常95銘柄/🟡警告5銘柄
+  （既存WARN、Market Pulse非対象で無変化）
+- `python common/sec_data/report_consistency_check.py --fail-on-ng`:
+  NG=0件/WARN=96件（既存WARN、Market Pulse非対象で無変化）
+- Market Pulse専用の検証スクリプトは存在しない（既存確認通り）
+
 #### 着手条件
-なし
+なし（解消済み）
 
 ---
 

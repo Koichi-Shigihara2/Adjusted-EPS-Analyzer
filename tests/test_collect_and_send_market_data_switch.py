@@ -372,3 +372,48 @@ class TestSaveDataCsvFields:
         assert rows[0]["summary"] == "old row"
         assert rows[0]["NASDAQ_value"] == ""       # 旧行に新列は空欄で追加
         assert rows[1]["NASDAQ_value"] == "24000.0"
+
+
+class TestFetchCnnFearGreed:
+    """[[FEARGREED-DUPKEY-BUG-1]]対応: previous_closeが正しく生API応答の
+    previous_close（fear_greed.fetch()経由）から取得され、
+    previous_1_week（旧実装が誤って両方に使い回していた値）とは
+    区別されることを検証する。
+    """
+
+    def _mock_fetch(self, monkeypatch, fear_and_greed_dict):
+        import fear_greed
+        monkeypatch.setattr(fear_greed, "fetch", lambda: {"fear_and_greed": fear_and_greed_dict})
+
+    def test_previous_close_distinct_from_one_week_ago(self, monkeypatch):
+        """previous_closeとprevious_1_weekに意図的に異なる値を与え、
+        previous_closeがprevious_1_week（旧実装のバグ値）ではなく
+        真の値を返すことを確認する。"""
+        self._mock_fetch(monkeypatch, {
+            "score": 58.6, "rating": "greed",
+            "previous_close": 58.8, "previous_1_week": 57.2, "previous_1_month": 41.3428571428571,
+        })
+        result = cs.fetch_cnn_fear_greed()
+        assert result["previous_close"] == 58.8
+        assert result["previous_close"] != 57.2  # previous_1_week由来のバグ値ではない
+        assert result["one_week_ago"] == 57.2
+        assert result["one_month_ago"] == 41.34
+        assert result["score"] == 58.6
+        assert result["rating"] == "greed"
+
+    def test_missing_previous_close_returns_none(self, monkeypatch):
+        self._mock_fetch(monkeypatch, {
+            "score": 50.0, "rating": "neutral",
+            "previous_1_week": 48.0, "previous_1_month": 45.0,
+            # previous_close欠損
+        })
+        result = cs.fetch_cnn_fear_greed()
+        assert result["previous_close"] is None
+        assert result["one_week_ago"] == 48.0
+
+    def test_fetch_exception_returns_none(self, monkeypatch):
+        import fear_greed
+        def _raise():
+            raise ConnectionError("network down")
+        monkeypatch.setattr(fear_greed, "fetch", _raise)
+        assert cs.fetch_cnn_fear_greed() is None
