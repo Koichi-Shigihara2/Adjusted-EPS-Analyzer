@@ -34,6 +34,37 @@
   （完了）」「2026-08-21（完了）」参照。新DB構築プロジェクトのコード・
   データには変更なし。
 
+- **2026-08-26②**（同日、上記に続く3件の指示書を順次実施）:
+  1. **層単位/フロントエンド単位の方法論導入**: `CHAT_RULES.md`へ
+     事例13（層単位横串検証よりフロントエンド起点の縦割り検証を優先する
+     教訓）を追加。`SYSTEM_MAP.md`へMarket Pulse・MACRO PULSEの
+     「画面要素→導出関数→生データソース」依存関係マップ（7要素）を
+     新設（コミット`ee6adccbf`・`071d7704d`）
+  2. **実地確認2件**: `[[TANUKI-VALUATION-PRICE-SCHEDULE-LAG-1]]`は
+     `Market_Data_Daily_Update`→`TANUKI_VALUATION_Update`の
+     `workflow_run`連鎖を2営業日連続（16分ラグ）で確認・current_price
+     鮮度も実測確認しBACKLOG_DONE.mdへクローズ。`[[WORKFLOW-SEC-
+     TANUKI-GAP-1]]`は下流チェーン（HypeCore/EPS→TANUKI VALUATION）は
+     確認できたが`SEC_Data_Update`起点のチェーン自体は唯一の発火機会
+     （2026-08-23）で証拠見つからず未確定のまま現状維持。
+     `[[Q4-IMPLIED-CALC-TRIPLICATION-1]]`は実装（2026-07-24完了済み）を
+     再確認しBACKLOG_DONE.mdへクローズ移設（コミット`fbc8c6f95`・
+     `c40c0124d`）
+  3. **CAPM-IV調査（実装なし）・Playwright体系的拡張**:
+     `[[REPORT-TXT-CAPM-IV-MISSING-1]]`の対応要否・範囲を調査し
+     （実装せず報告のみ）、同種の見落とし7件を追加発見。副次発見の
+     `kpi_data`未配線（セグメントKPIテーブル恒久非表示）を
+     `[[TANUKI-VALUATION-MISC-GAPS-1]]`へ⑧として追記。
+     `browser_checks/check_dependency_map.py`を新設し、SYSTEM_MAP.mdの
+     依存関係マップ7要素を実ブラウザで初回確認（全一致、consoleエラー
+     0件）（コミット`040a2142e`・`74f836586`）
+  4. **セッション終了時ブラッシュアップ**: `CLAUDE_CODE_START.md`の
+     陳腐化記載2件（SEC/TANUKI VALUATION生成順序ズレ節の「対応未実装」・
+     低優先度課題リスト中の`[[Q4-IMPLIED-CALC-TRIPLICATION-1]]`）を
+     現状に合わせて訂正
+  詳細はBACKLOG_DONE.md「2026-08-26（完了）」参照。新DB構築プロジェクトの
+  コード・データには変更なし。
+
 ---
 
 更新日: 2026-08-15（**フェーズ3「導出データ層の管理方法検討」完了**。
