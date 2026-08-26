@@ -1971,11 +1971,18 @@ LIQUIDITY_COLUMNS = [
     "stealth_absorb_weeks",   # 連続ステルス吸収週数
     "net_liq_decline_weeks",  # NET流動性連続減少週数
     "stealth_alert",          # 警戒アラート（|区切り）
+    "sp500",                  # [[HOLLOW-RALLY-DEAD-1]]: S&P500終値レベル（日次、FRED "SP500"系列）
 ]
 
-def update_liquidity_csv(target_date: date) -> None:
+def update_liquidity_csv(target_date: date, sp500_val: float | None = None) -> None:
     """流動性指標を FRED から取得して 05_liquidity.csv に追記・更新する。
     RRP / reserve_balance は Billions → Millions に変換して保存する。
+
+    sp500_val: [[HOLLOW-RALLY-DEAD-1]]対応。呼び出し元run()が既に
+    get_sp500(target_date)で取得済みの値を渡す（本関数内で新規に
+    FRED取得を発生させない）。未取得（値なし）の日は空欄のまま保存する
+    （carry-forwardしない。5営業日リターン計算に古い価格が紛れ込む
+    ことを避けるため、他の週次系列とは異なり意図的に非補完とする）。
     """
     # M2マネーサプライ: 月次, Billions USD
     m2_val,  _ = fred_latest("M2SL")
@@ -2136,13 +2143,15 @@ def update_liquidity_csv(target_date: date) -> None:
         "stealth_absorb_weeks":  str(_absorb_weeks),
         "net_liq_decline_weeks": str(_decline_weeks),
         "stealth_alert":         "|".join(_alerts),
+        "sp500":                 str(sp500_val) if sp500_val is not None else "",
     }
     if _alerts:
         logger.info(f"[Stealth L3] alerts={_alerts}")
 
     update_cols = ["m2", "hy_spread", "fed_balance", "tga", "rrp", "net_liquidity",
                    "reserve_balance", "stealth_signal",
-                   "stealth_absorb_weeks", "net_liq_decline_weeks", "stealth_alert"]
+                   "stealth_absorb_weeks", "net_liq_decline_weeks", "stealth_alert",
+                   "sp500"]
     if date_str in df["date"].values:
         idx = df.index[df["date"] == date_str][0]
         for col in update_cols:
@@ -2165,7 +2174,7 @@ def update_liquidity_csv(target_date: date) -> None:
         f"[Liquidity] Saved {date_str}: "
         f"m2={new_row['m2']} fed={new_row['fed_balance']} "
         f"tga={new_row['tga']} rrp_M={new_row['rrp']} net_liq={new_row['net_liquidity']} "
-        f"rsv_M={new_row['reserve_balance']} stealth={stealth_sig}"
+        f"rsv_M={new_row['reserve_balance']} stealth={stealth_sig} sp500={new_row['sp500']}"
     )
 
 # ─────────────────────────────────────────────────────────────────
@@ -2283,7 +2292,9 @@ def run(target_date: date, test_mode: bool = False, do_recalc: bool = False,
     save_events(combined)
 
     # 流動性モニター更新（スコア計算には影響しない参考情報）
-    update_liquidity_csv(target_date)
+    # [[HOLLOW-RALLY-DEAD-1]]: sp500_t0は本関数冒頭で既にget_sp500()
+    # 取得済みのため、update_liquidity_csv()内で再取得せずそのまま渡す
+    update_liquidity_csv(target_date, sp500_t0)
 
     logger.info("=== Run complete ===")
 

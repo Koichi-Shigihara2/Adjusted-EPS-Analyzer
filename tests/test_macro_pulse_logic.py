@@ -270,6 +270,95 @@ class TestAuditDuplicateEvents:
         assert ng == [] and warn == []
 
 
+class TestUpdateLiquidityCsvSp500:
+    """[[HOLLOW-RALLY-DEAD-1]]対応: update_liquidity_csv()がsp500_val引数を
+    LIQUIDITY_COLUMNSの"sp500"列へ正しく格納し、他列には影響しないことを検証する。
+
+    テストは事前に前日分の1行を種としてCSVへ書き込んでから対象日を実行する
+    （実運用のCSVは常に履歴を持つため、この状態が実際の挙動を反映する。
+    完全に空のCSVへ直接update_liquidity_csv()を呼ぶと、prev_rows.emptyが
+    真になりprev_rrp等が未定義のままステルスシグナル計算部で参照される
+    既存のUnboundLocalError〈本タスクのスコープ外、[[LIQUIDITY-CSV-FIRST-
+    ROW-UNBOUNDLOCALERROR-1]]として別途報告〉に当たるため、この回避は
+    意図的）。
+    """
+
+    def _mock_fred_series(self, monkeypatch, values):
+        """series_id -> valueのdictを渡し、_md_reader.get_latest()をmockする。
+        未指定のseries_idはNoneを返す（値なし扱い）。"""
+        def _get_latest(series_id):
+            if series_id in values:
+                return {"value": values[series_id], "as_of": "2026-01-01"}
+            return None
+        monkeypatch.setattr(main05._md_reader, "get_latest", _get_latest)
+
+    def _seed_prior_row(self, liq_path):
+        seed = {c: "" for c in main05.LIQUIDITY_COLUMNS}
+        seed.update({
+            "date": "2026-01-01", "m2": "22900.0", "hy_spread": "2.6",
+            "fed_balance": "6690000.0", "tga": "890000.0", "rrp": "280.0",
+            "net_liquidity": "5.82", "reserve_balance": "2880000.0",
+            "stealth_signal": "neutral", "stealth_absorb_weeks": "0",
+            "net_liq_decline_weeks": "0", "stealth_alert": "", "sp500": "6000.0",
+        })
+        pd.DataFrame([seed], columns=main05.LIQUIDITY_COLUMNS).to_csv(liq_path, index=False)
+
+    def test_sp500_value_is_stored(self, tmp_path, monkeypatch):
+        liq_path = tmp_path / "05_liquidity.csv"
+        self._seed_prior_row(liq_path)
+        monkeypatch.setattr(main05, "LIQUIDITY_PATH", str(liq_path))
+        monkeypatch.setattr(main05, "BASE_DATA_DIR", str(tmp_path))  # 05_meta.json書き込み隔離
+        self._mock_fred_series(monkeypatch, {
+            "M2SL": 23000.0, "BAMLH0A0HYM2": 2.7, "WALCL": 6700000.0,
+            "WTREGEN": 900000.0, "RRPONTSYD": 0.3, "WRBWFRBL": 2900000.0,
+        })
+        main05.update_liquidity_csv(date(2026, 1, 2), sp500_val=6234.56)
+
+        df = pd.read_csv(liq_path, dtype=str)
+        assert "sp500" in df.columns
+        row = df[df["date"] == "2026-01-02"].iloc[0]
+        assert row["sp500"] == "6234.56"
+        # 他列（m2等）が影響を受けていないことも確認
+        assert row["m2"] == "23000.0"
+        # 種として入れた前日行が変更されていないことも確認
+        prior = df[df["date"] == "2026-01-01"].iloc[0]
+        assert prior["sp500"] == "6000.0"
+
+    def test_sp500_none_leaves_column_blank(self, tmp_path, monkeypatch):
+        liq_path = tmp_path / "05_liquidity.csv"
+        self._seed_prior_row(liq_path)
+        monkeypatch.setattr(main05, "LIQUIDITY_PATH", str(liq_path))
+        monkeypatch.setattr(main05, "BASE_DATA_DIR", str(tmp_path))  # 05_meta.json書き込み隔離
+        self._mock_fred_series(monkeypatch, {
+            "M2SL": 23000.0, "BAMLH0A0HYM2": 2.7, "WALCL": 6700000.0,
+            "WTREGEN": 900000.0, "RRPONTSYD": 0.3, "WRBWFRBL": 2900000.0,
+        })
+        main05.update_liquidity_csv(date(2026, 1, 2), sp500_val=None)
+
+        df = pd.read_csv(liq_path, dtype=str).fillna("")
+        row = df[df["date"] == "2026-01-02"].iloc[0]
+        assert row["sp500"] == ""
+
+    def test_rerun_same_date_updates_sp500(self, tmp_path, monkeypatch):
+        """既存日付への再実行時もsp500列がupdate_colsに含まれ更新されること
+        （[[HOLLOW-RALLY-DEAD-1]]対応で追加、既存日付の上書きロジックの回帰確認）。
+        """
+        liq_path = tmp_path / "05_liquidity.csv"
+        self._seed_prior_row(liq_path)
+        monkeypatch.setattr(main05, "LIQUIDITY_PATH", str(liq_path))
+        monkeypatch.setattr(main05, "BASE_DATA_DIR", str(tmp_path))  # 05_meta.json書き込み隔離
+        self._mock_fred_series(monkeypatch, {
+            "M2SL": 23000.0, "BAMLH0A0HYM2": 2.7, "WALCL": 6700000.0,
+            "WTREGEN": 900000.0, "RRPONTSYD": 0.3, "WRBWFRBL": 2900000.0,
+        })
+        main05.update_liquidity_csv(date(2026, 1, 2), sp500_val=6000.0)
+        main05.update_liquidity_csv(date(2026, 1, 2), sp500_val=6100.0)
+
+        df = pd.read_csv(liq_path, dtype=str)
+        assert len(df) == 2  # 種の前日行＋対象日1行（対象日は追記ではなく上書き）
+        assert df[df["date"] == "2026-01-02"].iloc[0]["sp500"] == "6100.0"
+
+
 if __name__ == "__main__":
     import sys
     sys.exit(pytest.main([__file__, "-v"]))

@@ -7,6 +7,7 @@ MACRO PULSE v6.0 — 過去データ一括投入スクリプト
   python 05_import_history.py csv --source <CSV_FILE> --indicator <INDICATOR_NAME>
   python 05_import_history.py liquidity --from 2023-01-01
   python 05_import_history.py context --from 2020-03-16 --to 2022-03-16
+  python 05_import_history.py liquidity-sp500
 
 機能:
   1. fred: common/macro_data/series/（common.macro_data.reader経由）
@@ -18,6 +19,9 @@ MACRO PULSE v6.0 — 過去データ一括投入スクリプト
      cuts_impliedのみをget_historical_context()で再計算して埋め直す
      （actual/consensus/surprise/forecast_source等の他列は変更しない。
      [[MACRO-TRUTHY-ZERO-BUG-1]]修正後のゼロ金利期間データ復元用）
+  5. liquidity-sp500: 05_liquidity.csvの既存行のsp500列のみをFRED
+     "SP500"系列から再計算して埋め直す（他列は変更しない。
+     [[HOLLOW-RALLY-DEAD-1]]対応のsp500列新設後の過去データ復元用）
 
 対応指標（FRED自動、05_main.py::INDICATOR_CONFIGを単一の正として参照。
 MACRODATA-IMPORT-HISTORY-CONFIG-DRIFT-1対応、2026-08-15、独自辞書は
@@ -90,6 +94,8 @@ _safe_float          = _m._safe_float
 LIQUIDITY_PATH       = _m.LIQUIDITY_PATH
 LIQUIDITY_COLUMNS    = _m.LIQUIDITY_COLUMNS
 update_liquidity_csv = _m.update_liquidity_csv
+_load_sp500_cache    = _m._load_sp500_cache  # [[HOLLOW-RALLY-DEAD-1]]
+_lookup_sp500        = _m._lookup_sp500      # [[HOLLOW-RALLY-DEAD-1]]
 
 # common/macro_data - MACRODATA-IMPORT-HISTORY-CONFIG-DRIFT-1対応
 # （2026-08-15）: 旧`get_fred()`（05_main.pyがMACRODATA-LAYER-
@@ -521,6 +527,75 @@ def backfill_context(from_date: str, to_date: str, overwrite: bool = False) -> N
 
 
 # ─────────────────────────────────────────────────────────────────
+#  05_liquidity.csv の sp500 列のみを再計算して埋め直す
+#  [[HOLLOW-RALLY-DEAD-1]]: LIQUIDITY_COLUMNSにsp500列を新設した後、
+#  既存の1300件超の履歴行が空欄のままだと検知ロジック
+#  （sp500Rows.length>=6）が発火するまで新規行が6件蓄積されるのを
+#  待つ必要がある。common/macro_data/series/SP500.json（FRED "SP500"、
+#  2016年以降蓄積済み）から過去分を一括バックフィルする。
+#  sp500列のみを対象とし、他の列（m2/hy_spread/fed_balance等）には
+#  一切触れない（backfill_context()と同じ非破壊方針）。
+# ─────────────────────────────────────────────────────────────────
+def backfill_liquidity_sp500(overwrite: bool = False) -> None:
+    """05_liquidity.csvの既存行に対し、sp500列のみをFRED "SP500"系列から
+    再計算して埋め直す。日付範囲は05_liquidity.csv自身の最小日付〜
+    最大日付を自動的に使う。
+
+    Args:
+        overwrite: Trueの場合、既に値がある行も再計算値で上書きする。
+                   False（デフォルト）の場合、現在空欄の行のみ埋める
+                   （非破壊）。
+    """
+    if not HAS_MACRO_DATA:
+        logger.error("common.macro_data.reader が利用できません（backfill失敗）。")
+        return
+    if not os.path.exists(LIQUIDITY_PATH):
+        logger.info("05_liquidity.csv が存在しません。終了。")
+        return
+
+    import pandas as pd
+    df = pd.read_csv(LIQUIDITY_PATH, dtype=str).fillna("")
+    if df.empty:
+        logger.info("05_liquidity.csv が空です。終了。")
+        return
+    if "sp500" not in df.columns:
+        df["sp500"] = ""
+
+    from_date = df["date"].min()
+    to_date   = df["date"].max()
+    logger.info(f"sp500バックフィル対象期間: {from_date} 〜 {to_date}（{len(df)}行）")
+
+    cache = _load_sp500_cache(from_date, to_date)
+    if cache.empty:
+        logger.warning("SP500データが取得できませんでした（キャッシュ空）。終了。")
+        return
+
+    updated = 0
+    for idx in df.index:
+        cur_val = df.at[idx, "sp500"]
+        if cur_val != "" and not overwrite:
+            continue
+        try:
+            target = datetime.strptime(df.at[idx, "date"], "%Y-%m-%d").date()
+        except Exception:
+            continue
+        val = _lookup_sp500(cache, target)
+        if val is None:
+            continue
+        new_val = str(val)
+        if cur_val != new_val:
+            df.at[idx, "sp500"] = new_val
+            updated += 1
+
+    if updated == 0:
+        logger.info("更新対象なし（全て既に値が埋まっているか、SP500データが取得できませんでした）。")
+        return
+
+    df.to_csv(LIQUIDITY_PATH, index=False, encoding="utf-8")
+    logger.info(f"sp500バックフィル完了: {updated}行更新 → {LIQUIDITY_PATH}")
+
+
+# ─────────────────────────────────────────────────────────────────
 #  Entry Point
 # ─────────────────────────────────────────────────────────────────
 def main():
@@ -550,6 +625,10 @@ def main():
     ctx_p.add_argument("--to",        dest="to_date",    required=True, help="対象終了日 YYYY-MM-DD")
     ctx_p.add_argument("--overwrite", action="store_true", help="既に値がある行も再計算値で上書き（デフォルトは空欄のみ埋める）")
 
+    # liquidity-sp500 サブコマンド（[[HOLLOW-RALLY-DEAD-1]]対応）
+    sp_p = sub.add_parser("liquidity-sp500", help="05_liquidity.csvのsp500列のみを再計算して埋め直す（他列は変更しない）")
+    sp_p.add_argument("--overwrite", action="store_true", help="既に値がある行も再計算値で上書き（デフォルトは空欄のみ埋める）")
+
     args = p.parse_args()
 
     if args.mode == "fred":
@@ -560,6 +639,8 @@ def main():
         backfill_liquidity(args.from_date, args.to_date, args.overwrite)
     elif args.mode == "context":
         backfill_context(args.from_date, args.to_date, args.overwrite)
+    elif args.mode == "liquidity-sp500":
+        backfill_liquidity_sp500(args.overwrite)
 
 if __name__ == "__main__":
     main()

@@ -5228,8 +5228,8 @@ BACKLOG項目は見当たらなかった。
 
 ---
 
-### [HOLLOW-RALLY-DEAD-1] Hollow Rally検知の構造的恒久不発火
-**優先度:** 高
+### ✅ [HOLLOW-RALLY-DEAD-1] Hollow Rally検知の構造的恒久不発火（2026-08-26案X実装・過去データバックフィル完了）
+**優先度:** 高 → 完了
 **分類:** バグ / MACRO PULSE
 **登録日:** 2026-07-23
 **発見:** `FIELD_DEFINITIONS.md`フェーズ10（AS-IS-204、依頼文名指し）
@@ -5357,9 +5357,166 @@ BACKLOG登録は不要と判断する。
 発生させない。次回セッションでKoichiさんに最終確認の上、実装に着手
 する。
 
+#### 2026-08-26③ 案Xの実装完了
+
+**修正内容**（`src/market/macro_pulse/05_main.py`）:
+- `LIQUIDITY_COLUMNS`に`"sp500"`を追加
+- `update_liquidity_csv(target_date, sp500_val=None)`へシグネチャ変更。
+  `run()`側で既に取得済みの`sp500_t0`（`get_sp500(target_date)`）を
+  引数で渡す設計とし、本関数内での新規FRED取得は発生させない
+- `new_row`辞書・`update_cols`（既存日付への再実行時の上書き対象列）
+  双方に`sp500`を追加。既存日付の再実行でもsp500が正しく更新される
+  ことをテストで確認済み
+- 呼び出し元`update_liquidity_csv(target_date)` →
+  `update_liquidity_csv(target_date, sp500_t0)`へ変更
+- sp500列はcarry-forwardしない設計とした（他の週次系列とは異なり、
+  5営業日リターン計算に古い価格が紛れ込むことを避けるため意図的な
+  非対称設計。docstringに明記）
+
+**過去データのバックフィル**: 実施し完了。判断根拠:
+`common/macro_data/series/SP500.json`（FRED "SP500"系列）は2016年から
+蓄積済みで、`05_liquidity.csv`の全履歴（2023-01-01〜、1311行）を完全に
+カバーしていることを確認したため、全履歴バックフィルを実施した。
+
+`src/market/macro_pulse/05_import_history.py`に新規サブコマンド
+`liquidity-sp500`（`backfill_liquidity_sp500()`）を追加。
+`backfill_context()`（`[[MACRO-TRUTHY-ZERO-BUG-1]]`対応時）と同じ
+非破壊方針（sp500列のみ対象、既に値がある行は`--overwrite`指定時のみ
+上書き、他列には一切触れない）。`_load_sp500_cache()`/`_lookup_sp500()`
+（`--fill-returns`用に既存だった「日付as-ofの直近値」ルックアップ）を
+再利用し、1回の一括フェッチで全期間を処理（1311行のバックフィルが
+0.1秒程度で完了、`[[MACRO-TRUTHY-ZERO-BUG-1]]`のcontextバックフィル
+〈1行ずつ5系列を個別ルックアップ、8214行で約4.5分〉より大幅に高速）。
+
+`python 05_import_history.py liquidity-sp500`を実行し、**1309/1311行**
+のsp500列を復元した（残り2行は2023-01-01・01-02——バックフィル対象
+期間の起点に一致する米国市場休場日で、キャッシュの起点より前の参照値が
+存在しないための正当な空欄。他の全ての休場日はキャッシュ内の直前
+取引日終値へ`_lookup_sp500()`のas-of方式で自動的にフォワードフィル
+されている）。
+
+**diff確認**: `git show HEAD:...05_liquidity.csv`との全行突合を実施し、
+event_id相当の行数（1311行、行の追加・削除なし）が前後で完全一致、
+**変更があったのはsp500列のみ**（他の11列は1件も変更なし）であることを
+機械的に確認した。
+
+**HOLLOW-RALLY検知ロジックの初回発火時の挙動**（`index.html:2570-2596`）:
+条件（S&P500の5営業日リターン>+1.0% かつ FRB純流動性の前回比<-0.5%）が
+成立すると、`<div class="hollow-rally-badge">`が流動性カードグリッド
+（`#liqGrid`）の直上に挿入される。CSS（289行目）はアンバー色
+（`border`/`background`/`color`とも`--amb`系、`rgba(245,158,11,...)`）の
+横幅いっぱいのバッジバナーとして表示され、本文は「⚠ HOLLOW RALLY 検知
+— 株価上昇（S&P500 5日 +X.X%）に対しFRB純流動性が縮小中（Y.YY% 前週
+比）。流動性に裏付けのない上昇は持続性に疑問。」という日本語文。
+ページ読み込み毎に条件を再評価し、非該当時は既存バッジを`remove()`する
+ため、永続アラートではなく「その時点で条件が成立している間だけ表示
+される」動的バナーである。
+
+**実データでの動作確認**: バックフィル後の`05_liquidity.csv`（sp500Rows
+1309件・nlRows 1308件、いずれも発火に必要な最低6件/2件を大幅に上回る）
+に対しJSロジックをPythonで再現実行した結果、2026-08-26時点では
+`sp5dChg=-1.19%`（S&P500は5営業日で下落）のため条件不成立
+（`trigger=False`）であることを確認した。**本修正の反映直後にバッジが
+突然表示されることはない**（意図しない初回発火の心配なし）。
+
+**副次発見（未修正・報告のみ）**: `update_liquidity_csv()`の
+ステルス流動性シグナル計算部（`prev_rrp`/`prev_tga`/`prev_rsv`が
+`if not prev_rows.empty:`ブロック内でのみ定義される一方、後続の
+ステルス吸収額比較で無条件に参照される）が、`05_liquidity.csv`が
+完全に空の状態から初回実行された場合に`UnboundLocalError`で
+クラッシュする設計であることをテスト作成中に発見した。本番の
+`05_liquidity.csv`は既に1311行の履歴を持つため現在は再現しないが、
+ファイル消失等で再現しうる潜在バグのため、
+`[[LIQUIDITY-CSV-FIRST-ROW-UNBOUNDLOCALERROR-1]]`として新規登録した
+（優先度低、着手条件なし。CHAT_RULES.md「調査中に発見した別バグの
+実装は別途依頼を待つ」原則に従い本タスクでは修正せず）。
+
+**テスト追加**（`tests/test_macro_pulse_logic.py::
+TestUpdateLiquidityCsvSp500`、3件）:
+- `test_sp500_value_is_stored`: sp500列への正しい格納、他列（m2等）・
+  種として与えた前日行への非影響を確認
+- `test_sp500_none_leaves_column_blank`: `sp500_val=None`時に空欄の
+  ままであることを確認
+- `test_rerun_same_date_updates_sp500`: 既存日付への再実行時も
+  `update_cols`経由でsp500が正しく上書きされることを確認（追記される
+  のではなく1行のまま更新されることも確認）
+
+3件とも修正前コード（`git stash`で一時的に戻して実行）に対して
+`TypeError: unexpected keyword argument 'sp500_val'`で失敗することを
+確認済み。**テスト作成中に自己発見・自己修正した副次的な問題**:
+初回実装のテストが`update_liquidity_csv()`内の`05_meta.json`書き込み
+（`BASE_DATA_DIR`直接参照、`LIQUIDITY_PATH`とは独立した書き込み先）を
+monkeypatchし忘れており、テスト実行が実際の本番`05_meta.json`
+（タイムスタンプのみ）を書き換えてしまっていたことにpytest実行後の
+`git status`確認で気づいた。`git checkout --`で復元の上、全テストに
+`BASE_DATA_DIR`のmonkeypatchを追加して再発防止した。
+
+**検証ゲート結果**（全て通過）:
+- `pytest tests/`: **912 passed, 0 failed**（新規3件含む、既存909件
+  無変化）
+- `python 05_audit.py`（MACRO PULSE専用）: NG=0件/WARN=48件（既存WARN
+  と同一件数、sp500関連の新規WARNなし）
+- `python common/sec_data/audit.py`: 🟢正常95銘柄/🟡警告5銘柄（既存
+  WARN、MACRO PULSE非対象で無変化）
+- `python common/sec_data/report_consistency_check.py --fail-on-ng`:
+  NG=0件/WARN=96件（既存WARN、MACRO PULSE非対象で無変化）
+
 #### 着手条件
-案X/案YいずれかをKoichiさんと確定してから着手する。今回は調査・記録
-のみで実装しない。
+なし（解消済み）
+
+---
+
+### [LIQUIDITY-CSV-FIRST-ROW-UNBOUNDLOCALERROR-1] update_liquidity_csv()が05_liquidity.csv完全空状態からの初回実行でUnboundLocalErrorになる
+**優先度:** 低（本番の05_liquidity.csvは既に1311行の履歴を持ち現在は
+再現しない。ファイル消失等の特殊状況でのみ再現しうる潜在バグ）
+**分類:** バグ / MACRO PULSE
+**登録日:** 2026-08-26
+**発見:** `[[HOLLOW-RALLY-DEAD-1]]`案X実装（sp500列追加）のテスト作成中、
+`update_liquidity_csv()`をtmp_pathの空CSVに対して直接呼び出した際に
+偶然発見
+
+#### 内容
+`src/market/macro_pulse/05_main.py::update_liquidity_csv()`の
+ステルス流動性シグナル計算部で、`prev_rrp`/`prev_tga`/`prev_rsv`が
+`if not prev_rows.empty:`ブロック内でのみ定義される
+（`prev_rows = df[df["date"] < date_str].sort_values("date")`が空の
+場合、これらの変数は未定義のまま）。しかし後続の「ステルス吸収額 vs
+FED供給額の比較」ブロックで、この分岐の外から無条件に`prev_rrp`等を
+参照しており、`05_liquidity.csv`が存在しない・完全に空の状態から
+本関数を初めて実行すると`UnboundLocalError: cannot access local
+variable 'prev_rrp' where it is not associated with a value`で
+クラッシュする。
+
+#### 実コード確認結果（登録前に実施）
+```python
+prev_rows = df[df["date"] < date_str].sort_values("date")
+if not prev_rows.empty:
+    prev = prev_rows.iloc[-1]
+    prev_rrp = float(prev["rrp"]) if prev.get("rrp", "") != "" else None
+    prev_tga = float(prev["tga"]) if prev.get("tga", "") != "" else None
+    prev_rsv = float(prev["reserve_balance"]) if prev.get("reserve_balance", "") != "" else None
+    ...
+# ── DESIGN-12: Layer 3 ── （prev_rows.emptyの分岐外）
+...
+_fed_prev = float(prev_rows.iloc[-1].get("fed_balance", 0) or 0) if not prev_rows.empty else None
+_stealth_absorb_vol = None
+_fed_supply_vol     = None
+if (prev_rrp is not None and rrp_val is not None and  # ← ここでNameError相当
+        prev_tga is not None and tga_val is not None and _fed_prev is not None and fed_val is not None):
+```
+テストで`tmp_path`の新規空ファイルパスへ`LIQUIDITY_PATH`を
+monkeypatchし`update_liquidity_csv()`を直接呼んだところ、上記行で
+`UnboundLocalError`が発生することを実際に確認した。本番の
+`05_liquidity.csv`は2023-01-01から1311行の履歴が既に存在するため、
+`prev_rows`が空になることは現状ない（現在は非再現）。
+
+#### 対応方針（未確定）
+`_fed_prev`と同様に`prev_rrp = prev_tga = prev_rsv = None`を
+`if not prev_rows.empty:`ブロックの外側（関数冒頭付近）で初期化して
+おく、が最小修正。
+
+#### 着手条件
+なし（実害なしのため優先度低・着手は任意）
 
 ---
 
