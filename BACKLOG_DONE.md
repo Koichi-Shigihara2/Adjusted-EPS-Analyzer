@@ -4,6 +4,63 @@
 
 ## 2026-08-26（完了）
 
+### ✅ [Q4-IMPLIED-CALC-TRIPLICATION-1] 「FY年次値-(Q1+Q2+Q3)=Q4」のQ4逆算ロジックが3箇所に独立実装されている（2026-08-26クローズ、実装自体は2026-07-24完了済み）
+
+**優先度:** 低 → 完了
+**分類:** リファクタリング / 技術的負債
+**登録日:** 2026-07-24
+**発見:** CapEx符号処理・TTM入力元確認調査（フェーズ1）
+
+#### 内容
+「FY年次値 - (Q1+Q2+Q3) = Q4」という同一のQ4逆算ロジックが、
+normalizer.py::_build_q4_implied_entries()・ttm_calculator.py::
+_build_q4_quarterly_entries()・financial_trend_calculator.py（STONKS
+SILO、同種の_build_q4_implied）の最低3箇所に独立実装されている。
+ttm_calculator.py側はnormalizer.py側と重複しないよう明示的なガード
+（BUG-TTM-Q4DUP-1）を持つが、3箇所とも同一ロジックが個別に保守されて
+いる状態自体は変わらない。現状ロジックは一貫しており直ちに実害は
+ないが、将来1箇所だけ修正すると挙動が分岐するリスクを構造的に
+抱えている。
+
+#### 対応方針・実装記録
+【2026-07-24対応完了】コミット`a7678d16c`（"consolidate Q4-implied calc
+into common/sec_data/q4_implied.py (Phase B)"）。3箇所の独立実装を
+`common/sec_data/q4_implied.py::build_q4_implied_entries()`へ集約し、
+normalizer.py・ttm_calculator.py・financial_trend_calculator.pyの
+いずれも同関数をimportして呼び出す形に統一した。
+
+後日発見された4箇所目（フェーズAの新規コードだった`layer3_builder.py`
+独自実装、q4_implied.pyへの移行漏れ）は別途
+`[[LAYER3-Q4-IMPLIED-NOT-MIGRATED-1]]`として登録され2026-07-24中に
+対応完了済み（コミット`76ff0cf1d`、同日中にBACKLOG_DONE.mdへ登録済み）。
+
+#### 2026-08-26 クローズ前の実地再確認（「解消済みだが未クローズ」の裏取り）
+Koichiさんからの指示「解消済みだが未クローズ」の前提を鵜呑みにせず、
+実コードで独立に再検証した。
+
+- `def _build_q4_implied_entries|def _build_q4_quarterly_entries|def
+  build_q4_implied_entries`でリポジトリ全体を検索した結果、
+  関数定義は`common/sec_data/q4_implied.py::build_q4_implied_entries()`
+  の1箇所のみで、独立実装は現存しないことを確認
+- `normalizer.py`・`ttm_calculator.py`・`financial_trend_calculator.py`
+  （STONKS SILO）のいずれも`from .q4_implied import
+  build_q4_implied_entries`（または`from common.sec_data.q4_implied
+  import ...`）でimportし、同一関数を呼び出していることを確認
+- `layer3_builder.py`（4箇所目、`[[LAYER3-Q4-IMPLIED-NOT-MIGRATED-1]]`
+  対応分）も同様に共通関数へ委譲済みであることを確認
+- `pytest -k q4`: 9件全パス（`test_ttm_calculator.py`・
+  `test_normalizer.py`・`test_gate2_phase3b1_reader_integration.py`等）
+
+**結論**: 「解消済み」の前提は実コードで裏付けが取れた。実装自体は
+2026-07-24に完了していたが、本エントリのBACKLOG.md記載・
+BACKLOG_DONE.mdへの移設が漏れていたため、本タスクでクローズする。
+
+#### コミット
+- `a7678d16c`: refactor(sec_data): consolidate Q4-implied calc into
+  common/sec_data/q4_implied.py (Phase B)（実装、2026-07-24）
+
+---
+
 ### ✅ [TANUKI-VALUATION-PRICE-SCHEDULE-LAG-1] TANUKI_VALUATION_Updateの実行時刻がMarket_Data_Daily_Updateより早く、`current_price`が常に1営業日遅れる（2026-08-26実地確認完了）
 
 **優先度:** 中 → 完了
