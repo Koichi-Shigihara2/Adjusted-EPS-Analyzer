@@ -2,6 +2,49 @@
 
 ---
 
+## 2026-08-27（完了）
+
+### ✅ [LIQUIDITY-CSV-FIRST-ROW-UNBOUNDLOCALERROR-1] update_liquidity_csv()が05_liquidity.csv完全空状態からの初回実行でUnboundLocalErrorになる（2026-08-27修正完了）
+
+**優先度:** 低 → 完了
+**分類:** バグ / MACRO PULSE
+**登録日:** 2026-08-26
+**発見:** `[[HOLLOW-RALLY-DEAD-1]]`案X実装（sp500列追加）のテスト作成中、
+`update_liquidity_csv()`をtmp_pathの空CSVに対して直接呼び出した際に
+偶然発見
+
+#### 内容（登録時点）
+`src/market/macro_pulse/05_main.py::update_liquidity_csv()`の
+ステルス流動性シグナル計算部で、`prev_rrp`/`prev_tga`/`prev_rsv`が
+`if not prev_rows.empty:`ブロック内でのみ定義される
+（`prev_rows = df[df["date"] < date_str].sort_values("date")`が空の
+場合、これらの変数は未定義のまま）。しかし後続の「ステルス吸収額 vs
+FED供給額の比較」ブロックで、この分岐の外から無条件に`prev_rrp`等を
+参照しており、`05_liquidity.csv`が存在しない・完全に空の状態から
+本関数を初めて実行すると`UnboundLocalError`でクラッシュする。
+
+#### 2026-08-27 再確認・実装
+コード再確認の結果、登録時点の記載通り現存することを確認（実データ・
+実コードで再現条件を再検証済み）。`_fed_prev`が同型のNone初期化ガードを
+既に持っていたため、これと同じパターンで`prev_rrp = prev_tga =
+prev_rsv = None`を`if not prev_rows.empty:`ブロックの外側（分岐前）に
+追加する最小修正を実装した。
+
+回帰テスト`test_empty_csv_first_run_does_not_raise`を
+`tests/test_macro_pulse_logic.py::TestUpdateLiquidityCsvSp500`に新規
+追加し、`05_liquidity.csv`が存在しない状態から`update_liquidity_csv()`
+を直接呼び出してもエラーにならず、`stealth_signal=neutral`で正常に
+1行保存されることを確認した。修正前の状態でこのテストを実行すると
+`UnboundLocalError`で再現することも確認済み。
+
+pytest 924件全パス（既存923件＋新規1件）。本番の`05_liquidity.csv`は
+1311行の履歴を持つため実運用への影響はなし（潜在バグの解消のみ）。
+
+#### コミット
+- `823ad7404`: 修正・回帰テスト追加
+
+---
+
 ## 2026-08-26（完了）
 
 ### ✅ [Q4-IMPLIED-CALC-TRIPLICATION-1] 「FY年次値-(Q1+Q2+Q3)=Q4」のQ4逆算ロジックが3箇所に独立実装されている（2026-08-26クローズ、実装自体は2026-07-24完了済み）

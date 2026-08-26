@@ -3810,12 +3810,16 @@ Yahoo Finance自体が2026-07-13〜07-17の5件しか返さず、`period="5d"`�
 
 ---
 
-### [STONKS-SILO-CLI-TICKERS-SHADOW-1] pipeline.pyのCLIティッカー指定実行が変数名衝突で必ず失敗する
-**優先度:** 中（デフォルト全件実行の自動cronは影響を受けないが、個別
-ティッカー指定でのCLI手動実行——新規登録直後の確認等——が現在完全に
-機能しない）
-**分類:** バグ / 変数名衝突 / STONKS SILO
+### [STONKS-SILO-CLI-TICKERS-SHADOW-1] pipeline.pyの変数名衝突でSTONKS SILO自動更新が2026-07-13以降45日間完全停止している（実害を大幅過小評価していたことが判明、緊急）
+**優先度:** 中 → **高**（2026-08-27実地確認で「cronは影響を受けない」
+という登録時点の想定が誤りだったと確定。CLI手動実行だけでなく
+`Stonks_Silo_Update.yml`の自動cronも100%失敗しており、STONKS SILO
+全体が2026-07-13から本日〈2026-08-27〉まで45日間・連続約30回の
+スケジュール実行全てで更新停止している）
+**分類:** バグ / 変数名衝突 / STONKS SILO / 本番障害
 **登録日:** 2026-08-11
+**更新日:** 2026-08-27（`[[STONKS-SILO-PRICE-SCHEDULE-LAG-SUSPECT-1]]`
+調査中に実害範囲を再確認、優先度を中→高へ訂正）
 **発見:** `[[MARKETDATA-LAYER-CONSTRUCTION-1]]`着手順序4-3（`valuation_
 fetcher.py`切替）のStep3検証中（チャット記録、2026-08-11）
 
@@ -3830,22 +3834,49 @@ TICKER1 TICKER2`のようにティッカーを指定して実行すると、`run
 `tickers.get_stonks_silo_tickers()`を呼ぼうとした時点で`tickers`が
 （モジュールではなく）CLI引数のリストになっており
 `AttributeError: 'list' object has no attribute 'get_stonks_silo_tickers'`
-で必ず失敗する（実機確認済み、2026-07-12の最終更新時点から存在する
-既存バグ、今回の`market_data`切替とは無関係）。
+で必ず失敗する。
 
-引数なし実行（`python pipeline.py`、`stonks_silo=true`全件処理、
-Stonks_Silo_Update.ymlの自動cronが使う経路）は`run(None)`が呼ばれるため
-`partial=False`分岐となり、こちらも同じグローバル`tickers`上書きの影響を
-受けるはずだが要実機再確認（`stonks_tickers()`が`tickers`モジュールを
-参照する点は同じ）。
+登録時点では「引数なし実行（cronが使う経路）は要実機再確認」として
+未確定のまま優先度を中に留めていたが、**この再確認が長期間行われない
+まま放置されていた**。
 
-#### 対応方針（未定）
+#### 2026-08-27 実地確認で判明した実害（想定より大幅に大きい）
+`[[STONKS-SILO-PRICE-SCHEDULE-LAG-SUSPECT-1]]`（cron実行順序ラグの疑い）
+の調査中、`docs/value-monitor/stonks-silo/data/results.json`の
+`generated_at`が2026-08-13から更新されていないことに気づき、GitHub
+Actions API（`gh` CLI不可のため`curl`で直接照会）で
+`Stonks_Silo_Update`ワークフローの実行履歴を確認したところ：
+
+- **最後に成功したスケジュール実行: 2026-07-10T16:55:54Z**
+- **その次から現在まで、スケジュール実行は例外なく全て`failure`**
+  （2026-07-13・14・15・16・17・20・21・22・23・24・27・28・29・30・31、
+  8/3・4・5・6・7・10・11・12・13・14・17・18・19・20・21・24・25・26、
+  計約30回連続失敗を確認）
+- 失敗ジョブのステップを確認したところ、`Run Stonks Silo Pipeline`
+  ステップ自体が失敗（後続の`Consistency Check Gate`/`Commit and
+  push changes`は`skipped`）——想定通り引数なし実行でも同じ
+  `AttributeError`で落ちていると推定される（詳細ログはアクセス権限
+  不足で直接確認不可だったが、失敗パターン・タイミング・原因コードの
+  一致から高確度で同一原因と判断）
+- 結果、`results.json`は2026-08-13T11:55:21Zの手動コミット時点の内容
+  （SEC/財務データ側の別修正に伴う再生成）のまま**45日間更新されて
+  おらず、STONKS SILO画面が表示するスコア・判定・評価指標が全て古い
+  ままになっている**
+
+#### 対応方針（変更なし、実装は未実施）
 `__main__`ブロックの変数名を`tickers`から別名（例: `cli_tickers`）に
-変更するだけの軽微な修正で解消できる見込み。修正後、CLI引数あり・
-なし両方の実行パスで動作確認すること。
+変更するだけの軽微な修正で解消できる見込み（対応方針自体は登録時点から
+変更なし）。修正方針の妥当性は変わらないが、**本番の45日分停止データを
+どう復旧するか（過去分の遡及再構成は行わず、修正後の初回実行時点の
+最新データのみ反映される想定で問題ないか等）はKoichiさんの確認を経てから
+実施すべきと判断し、2026-08-27時点では実装を保留した**（`[[STONKS-
+SILO-PRICE-SCHEDULE-LAG-SUSPECT-1]]`側の「別の原因だった場合は実装せず
+報告する」という着手条件に従った）。
 
 #### 着手条件
-なし
+なし（技術的な修正内容自体に設計判断は不要。ただし本番障害の復旧
+タイミング——今すぐ修正・全銘柄再生成・pushまで行うか、Koichiさんの
+確認後にするか——について着手前に一言確認することを推奨）
 
 ---
 
@@ -4990,57 +5021,8 @@ RMBS）・案d（BSY個別対応）は、いずれもゲート条件込みの再
 
 ---
 
-### [LIQUIDITY-CSV-FIRST-ROW-UNBOUNDLOCALERROR-1] update_liquidity_csv()が05_liquidity.csv完全空状態からの初回実行でUnboundLocalErrorになる
-**優先度:** 低（本番の05_liquidity.csvは既に1311行の履歴を持ち現在は
-再現しない。ファイル消失等の特殊状況でのみ再現しうる潜在バグ）
-**分類:** バグ / MACRO PULSE
-**登録日:** 2026-08-26
-**発見:** `[[HOLLOW-RALLY-DEAD-1]]`案X実装（sp500列追加）のテスト作成中、
-`update_liquidity_csv()`をtmp_pathの空CSVに対して直接呼び出した際に
-偶然発見
-
-#### 内容
-`src/market/macro_pulse/05_main.py::update_liquidity_csv()`の
-ステルス流動性シグナル計算部で、`prev_rrp`/`prev_tga`/`prev_rsv`が
-`if not prev_rows.empty:`ブロック内でのみ定義される
-（`prev_rows = df[df["date"] < date_str].sort_values("date")`が空の
-場合、これらの変数は未定義のまま）。しかし後続の「ステルス吸収額 vs
-FED供給額の比較」ブロックで、この分岐の外から無条件に`prev_rrp`等を
-参照しており、`05_liquidity.csv`が存在しない・完全に空の状態から
-本関数を初めて実行すると`UnboundLocalError: cannot access local
-variable 'prev_rrp' where it is not associated with a value`で
-クラッシュする。
-
-#### 実コード確認結果（登録前に実施）
-```python
-prev_rows = df[df["date"] < date_str].sort_values("date")
-if not prev_rows.empty:
-    prev = prev_rows.iloc[-1]
-    prev_rrp = float(prev["rrp"]) if prev.get("rrp", "") != "" else None
-    prev_tga = float(prev["tga"]) if prev.get("tga", "") != "" else None
-    prev_rsv = float(prev["reserve_balance"]) if prev.get("reserve_balance", "") != "" else None
-    ...
-# ── DESIGN-12: Layer 3 ── （prev_rows.emptyの分岐外）
-...
-_fed_prev = float(prev_rows.iloc[-1].get("fed_balance", 0) or 0) if not prev_rows.empty else None
-_stealth_absorb_vol = None
-_fed_supply_vol     = None
-if (prev_rrp is not None and rrp_val is not None and  # ← ここでNameError相当
-        prev_tga is not None and tga_val is not None and _fed_prev is not None and fed_val is not None):
-```
-テストで`tmp_path`の新規空ファイルパスへ`LIQUIDITY_PATH`を
-monkeypatchし`update_liquidity_csv()`を直接呼んだところ、上記行で
-`UnboundLocalError`が発生することを実際に確認した。本番の
-`05_liquidity.csv`は2023-01-01から1311行の履歴が既に存在するため、
-`prev_rows`が空になることは現状ない（現在は非再現）。
-
-#### 対応方針（未確定）
-`_fed_prev`と同様に`prev_rrp = prev_tga = prev_rsv = None`を
-`if not prev_rows.empty:`ブロックの外側（関数冒頭付近）で初期化して
-おく、が最小修正。
-
-#### 着手条件
-なし（実害なしのため優先度低・着手は任意）
+（[[LIQUIDITY-CSV-FIRST-ROW-UNBOUNDLOCALERROR-1]]は2026-08-27実装完了、
+BACKLOG_DONE.md「2026-08-27（完了）」参照）
 
 ---
 
@@ -12151,13 +12133,43 @@ OpenD常時起動という前提条件が既に満たされているため、「
 
 ---
 
-### [STONKS-SILO-PRICE-SCHEDULE-LAG-SUSPECT-1] Stonks_Silo_Updateも同種のcron実行順序ラグを抱えている疑い（未確認・報告のみ）
+### [STONKS-SILO-PRICE-SCHEDULE-LAG-SUSPECT-1] Stonks_Silo_Updateも同種のcron実行順序ラグを抱えている疑い（2026-08-27調査完了・疑いは別原因により実質検証不能と判明、対応保留）
 
-**優先度:** 低（実害未確認、疑いのみ）
+**優先度:** 低→ 保留（下記の通り、真因は別バグと判明したため本項目
+単体としての優先度判断は一旦意味を持たない）
 **分類:** アーキテクチャ / GitHub Actions / データ鮮度
 **登録日:** 2026-08-22
+**更新日:** 2026-08-27（実データ調査完了）
 **発見:** [[TANUKI-VALUATION-PRICE-SCHEDULE-LAG-1]]・
 [[WORKFLOW-SEC-TANUKI-GAP-1]]実装時の依存グラフ点検で発見
+
+#### 2026-08-27 調査結果（疑いは「別の原因」により棚上げ、実装せず）
+`Stonks_Silo_Update.yml`のcronが`Market_Data_Daily_Update`完了より
+先に発火する構造自体は実コードで確認した（変更なし、依然として
+`5 15 * * 1-5` UTC＝`Market_Data_Daily_Update`完了`21:40 UTC`より先）。
+
+しかし本項目が想定する「1日分の価格鮮度ラグ」を検証する前提——
+「`Stonks_Silo_Update`が定期的に成功実行され`results.json`が更新
+され続けている」——自体が成立していないことが判明した。GitHub
+Actions実行履歴を確認したところ、`Stonks_Silo_Update`は**2026-07-13
+以降、本日〈2026-08-27〉までの全スケジュール実行（約30回）で
+100%失敗しており、`results.json`は2026-08-13から更新されていない**。
+真因は変数名衝突による`AttributeError`（既存登録`[[STONKS-SILO-
+CLI-TICKERS-SHADOW-1]]`、2026-08-11登録時点では影響範囲を「CLI手動
+実行のみ」と過小評価していたが、cronの自動実行経路も同一原因で
+100%失敗していたと今回確定）。
+
+「価格が1営業日遅れる」どころか**パイプライン自体が45日間一度も
+正常完了していない**ため、cron実行順序ラグ（今回の疑い）が実害として
+顕在化しているかどうかを実データで検証すること自体ができない状態
+にある。
+
+**対応**: 依頼文の「疑いが実データで否定された、または別の原因
+だった場合は実装せず報告」に従い、`workflow_run`連鎖化の実装は
+見送った。真因である`[[STONKS-SILO-CLI-TICKERS-SHADOW-1]]`の修正
+（優先度を中→高へ訂正済み）が先決であり、そちらの復旧後に
+`Stonks_Silo_Update`が正常稼働を再開してから、本項目のcron順序ラグの
+有無を実データで再検証するのが妥当な順序と判断する。
 
 #### 内容
 `discover/stonks-silo/src/valuation_fetcher.py`が
