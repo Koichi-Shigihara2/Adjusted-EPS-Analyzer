@@ -2069,6 +2069,11 @@ def update_liquidity_csv(target_date: date, sp500_val: float | None = None) -> N
     # reserve_balance 増加 かつ rrp/tga が neutral → supply（補助判定）
     stealth_sig = "neutral"
     prev_rows = df[df["date"] < date_str].sort_values("date")
+    # [[LIQUIDITY-CSV-FIRST-ROW-UNBOUNDLOCALERROR-1]]: prev_rows空時（05_liquidity.csv
+    # が存在しない・完全に空の状態からの初回実行）でも後続の「ステルス吸収額 vs FED供給額の
+    # 比較」ブロックが分岐外からprev_rrp/prev_tga/prev_rsvを無条件参照するため、
+    # if文の外側で先にNone初期化しておく（_fed_prevと同型のガード）。
+    prev_rrp = prev_tga = prev_rsv = None
     if not prev_rows.empty:
         prev = prev_rows.iloc[-1]
         prev_rrp = float(prev["rrp"]) if prev.get("rrp", "") != "" else None

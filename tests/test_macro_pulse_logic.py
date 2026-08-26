@@ -358,6 +358,26 @@ class TestUpdateLiquidityCsvSp500:
         assert len(df) == 2  # 種の前日行＋対象日1行（対象日は追記ではなく上書き）
         assert df[df["date"] == "2026-01-02"].iloc[0]["sp500"] == "6100.0"
 
+    def test_empty_csv_first_run_does_not_raise(self, tmp_path, monkeypatch):
+        """[[LIQUIDITY-CSV-FIRST-ROW-UNBOUNDLOCALERROR-1]]の回帰テスト。
+        05_liquidity.csvが存在しない状態（完全な初回実行）でprev_rowsが
+        空になり、prev_rrp/prev_tga/prev_rsvが未定義のままステルス吸収額
+        vs FED供給額比較ブロックで参照されUnboundLocalErrorになっていた。
+        """
+        liq_path = tmp_path / "05_liquidity.csv"
+        assert not liq_path.exists()
+        monkeypatch.setattr(main05, "LIQUIDITY_PATH", str(liq_path))
+        monkeypatch.setattr(main05, "BASE_DATA_DIR", str(tmp_path))  # 05_meta.json書き込み隔離
+        self._mock_fred_series(monkeypatch, {
+            "M2SL": 23000.0, "BAMLH0A0HYM2": 2.7, "WALCL": 6700000.0,
+            "WTREGEN": 900000.0, "RRPONTSYD": 0.3, "WRBWFRBL": 2900000.0,
+        })
+        main05.update_liquidity_csv(date(2026, 1, 2), sp500_val=6234.56)
+
+        df = pd.read_csv(liq_path, dtype=str)
+        assert len(df) == 1
+        assert df.iloc[0]["stealth_signal"] == "neutral"
+
 
 if __name__ == "__main__":
     import sys
