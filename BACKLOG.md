@@ -10521,7 +10521,7 @@ AS-IS-026とAS-IS-028は同一の`calculate_moat_score()`戻り値を指す重�
 
 ---
 
-### [TANUKI-VALUATION-MISC-GAPS-1] TANUKI VALUATIONの軽微な構造的ギャップまとめ（PERフォールバック欠如・EV/EBITDA負値格納・net_debt符号エイリアス・v0_adjusted死フィールド・Runway cash算出相違・mature_profit S&M欠落・根拠不明な定数）
+### [TANUKI-VALUATION-MISC-GAPS-1] TANUKI VALUATIONの軽微な構造的ギャップまとめ（PERフォールバック欠如・EV/EBITDA負値格納・net_debt符号エイリアス・v0_adjusted死フィールド・Runway cash算出相違・mature_profit S&M欠落・根拠不明な定数・セグメントKPIテーブル未配線）
 **優先度:** 低
 **分類:** データ品質 / TANUKI VALUATION
 **登録日:** 2026-07-23
@@ -10542,11 +10542,23 @@ AS-IS-026とAS-IS-028は同一の`calculate_moat_score()`戻り値を指す重�
 `selling_and_marketing`がSEC非開示の場合`or 0`で「支出ゼロ」として
 足し戻され、`mature_profit`が実態より低く算出される。⑦`growth_floor
 (15%)`・`growth_cap(50%)`・`market_return(10%)`の根拠がコード内に一切
-記載されていない。
+記載されていない。⑧（2026-08-26発見）`kpi_fetcher.py::
+build_kpi_data()`（セグメント別KPIデータを構築、stock.htmlの
+`renderSegmentKpiTable()`が`d.kpi_data`として参照する想定）が、
+`pipeline.py`を含むどの本番スクリプトからもimport・呼び出しされて
+おらず、自身の`if __name__ == "__main__":`ブロック（テスト実行用）
+からしか実行されない。実測（NVDAの`latest.json`）で`kpi_data`キーが
+1件も存在しないことを確認済み。stock.html側は`if (!kpiData || ...)
+return ''`で安全にフォールバックするためクラッシュはしないが、
+「セグメントKPIテーブル」セクションは本番で恒久的に非表示のまま
+（`[[REPORT-TXT-CAPM-IV-MISSING-1]]`の横断調査で発見）。
 
 #### 対応方針
 各項目とも影響が限定的なため、他の関連タスク（[[RISK-FREE-RATE-
-HARDCODE-1]]等）着手時に合わせて解消することを推奨する。
+HARDCODE-1]]等）着手時に合わせて解消することを推奨する。⑧は
+`pipeline.py`から`build_kpi_data()`を呼び出し`valuation["kpi_data"]`へ
+格納する配線追加が対応の骨子になると見込まれる（対応時は既存の
+`kpi_config.py`のスキーマ定義・呼び出しコストを事前に確認すること）。
 
 #### 着手条件
 なし
@@ -12250,9 +12262,86 @@ stock.htmlのWeb画面では、この値は「β込みWACC」ラベルの下に�
   見直す（今回発見した1件の局所修正にとどめず、report.txtの網羅性を
   横断チェックする課題として扱う）
 
+#### 2026-08-26 対応要否・範囲確認（調査のみ・実装なし）
+
+**前提の再検証**: `core_calculator.py:827-831`で`intrinsic_value_beta`・
+`upside_percent_beta`・`intrinsic_value_rf`が現在も計算・格納されている
+ことを確認。`pipeline.py::_generate_report()`（1165-2344行目、報告書
+生成の唯一の関数）本体を全文抽出し文字列検索した結果、これら4フィールド
+（`intrinsic_value_beta`/`upside_percent_beta`/`intrinsic_value_rf`/
+`upside_percent_rf`）はいずれも一度も参照されていないことを再確認した。
+「算出はしているが出力していないだけ」という登録時の切り分けは今も
+正しい。
+
+**想定対応規模（狭い修正）**: 上記4フィールドは`valuation`dict
+（`_generate_report()`の引数）に既に存在するため、新規計算ロジックは
+不要。report.txt[3]セクションの`WACC_CAPM_Reference`行の直後に
+`valuation.get("intrinsic_value_beta")`等を参照する数行を追加する
+だけで済む、実装規模は小さい（表示追加のみ）。
+
+**横断確認（軽量スキャン、report.txt全体の網羅性）**: stock.htmlが
+`latest.json`から参照するトップレベルフィールド48件を機械的に抽出し、
+`_generate_report()`本体に同名の参照があるかを突き合わせた
+（`grep`ベースの軽量スキャン、全項目の精査ではない）。
+
+- **CAPM-IVと同種の見落とし（計算済み・stock.html表示済みだが
+  report.txt完全欠落）を新たに7件確認**: `dupont`（デュポン分解、
+  `pipeline.py:2610`等）・`sensitivity`（感応度マトリクス、
+  `core_calculator.py:850`）・`maturity_profile`（HypeCoreフェーズ
+  成熟度、`core_calculator.py:857`）・`return_metrics`
+  （`core_calculator.py:837`）・`validation`（品質ゲート結果
+  PASS/WARN/FAIL、`[[QUALITY-GATES-EPIC-1]]`のvalidator.py出力、
+  `pipeline.py:267`）・`alpha_was_capped`（alpha上限到達フラグ、
+  `core_calculator.py:835`）・`fcf_ttm_end`（TTM期末日、
+  `core_calculator.py:896`）。いずれも文字列検索・キーワード検索
+  （日本語訳含む）の両方で`_generate_report()`本体に痕跡なしを確認済み
+- **false positiveとして除外したもの**（別名・別経路で実質的には出力
+  されている、または既存BACKLOG項目でカバー済み）: `growth_options`は
+  `growth_option_pv`という子フィールドが`Growth_Option_PV`として出力
+  済み。`scenario_bear`/`scenario_bull`はstock.html側では
+  `history.json`（時系列チャート用）由来で`latest.json`の
+  `scenario_valuations`（report.txt側で参照済み）とは別経路。
+  `dilution_comment`/`dilution_severity`/`fcf_base`は同名フィールド
+  ではなく`_dilution_severity_info()`等の別ロジックで内容自体は出力
+  済み。`v0`は既存`[[V0-V0RM-CONFUSION-RISK-1]]`が別の切り口
+  （命名・配置の紛らわしさ）で既に追跡中のため新規指摘なし
+
+**新規発見（本調査のスコープ外の別バグ、報告のみ・実装せず）**:
+横断確認の過程で、`kpi_data`（stock.htmlのセグメントKPIテーブル
+`renderSegmentKpiTable()`が参照）が**production環境のlatest.jsonに
+1件も存在しない**ことを発見した（NVDAの`latest.json`で実測確認）。
+生成関数`kpi_fetcher.py::build_kpi_data()`は自身の`if __name__ ==
+"__main__":`ブロックからのみ呼ばれており、`pipeline.py`・他のどの
+本番スクリプトからもimport・呼び出しされていない（テスト実行用に
+実装されたが本番パイプラインへの組み込みが行われないまま放置された
+可能性が高い）。stock.html側は`if (!kpiData || ...) return ''`で
+安全に空文字を返すためクラッシュはしないが、「セグメントKPIテーブル」
+セクションは本番で恒久的に非表示のままになっている。report.txtの
+網羅性問題とは別種（「出力し忘れ」ではなく「計算自体が本番パイプライン
+に組み込まれていない」）のため、CHAT_RULES.md「調査中に発見した別
+バグの実装は別途依頼を待つ」原則に従い、`[[TANUKI-VALUATION-
+MISC-GAPS-1]]`（既存の軽微な構造的ギャップまとめエントリ）へ⑧として
+追記した（新規BACKLOG_ID発行前にBACKLOG.md/BACKLOG_DONE.md双方を
+`kpi_fetcher\|kpi_data\|renderSegmentKpiTable`でgrepし重複なしを
+確認済み）。
+
+**想定対応規模（広い見直し）**: 上記7件＋今回のCAPM-IV本体を合わせた
+計8件は、いずれも計算ロジックの新規実装は不要（既に計算済み）で
+「report.txtへの表示追加」のみだが、report.txtは元々AI向けの簡潔な
+ナラティブ形式であり、全項目を機械的に追加すると冗長化するリスクが
+ある。**どのフィールドをどの粒度で追記するかは設計判断**（report.txtの
+目的・想定読者に対する各項目の重要度の取捨選択）であり、単純作業では
+ない。着手する場合はCAPM-IV本体（狭い修正、小規模）とその他7件
+（広い見直し、設計判断を要する中規模）を分離し、まずCAPM-IV単体で
+着手可否を判断することを推奨する。
+
+**結論**: 着手要否・範囲の判断はKoichiさんに委ねる。本タスクでは実装は
+行っていない。
+
 #### 着手条件
-上記の網羅性見直しの結果を次回セッションでKoichiさんに報告し、対応
-範囲の確認を得てから着手すること。今回は登録のみで実装しない。
+上記の網羅性見直しの結果（2026-08-26調査完了）を踏まえ、Koichiさんに
+対応範囲（狭い修正のみ／広い見直しまで含むか）の確認を得てから着手
+すること。
 
 ---
 
