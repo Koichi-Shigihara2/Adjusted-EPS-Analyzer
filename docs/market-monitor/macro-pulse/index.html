@@ -651,6 +651,14 @@
         <span class="cmp-snap-label" id="cmp-custom-label">日付を選択</span>
       </div>
     </div>
+    <!-- [[RECESSION-SCORE-TRIPLE-CALC-1]]③対応（案B、2026-08-26）:
+         本日のスコアはステップ関数（実測）・比較先の過去日はlerp補間
+         （急変緩和のため、[[MACRO-COMPUTE-DUP-1]]で意図的設計と確定済み）
+         で算出されており計算方式が異なる。差分（±pt）には計算方式の違いに
+         よる分も含まれうることを開示する。 -->
+    <div style="font-family:var(--mono);font-size:9px;color:var(--mut);margin-top:6px;padding:5px 10px;background:rgba(100,116,139,.08);border-left:2px solid var(--bdr)">
+      ※ 「本日」は実測値、比較先の過去日は急変緩和のため補間値です。差分には計算方式の違いによる分も含まれる場合があります。
+    </div>
   </div>
 
   <!-- DESIGN-13: マクロサプライズバナー（週次更新） -->
@@ -1703,6 +1711,13 @@ function renderScoreHistory() {
   let chart = echarts.getInstanceByDom(chartEl);
   if(!chart) chart = echarts.init(chartEl, null, {renderer:'svg'});
 
+  // [[RECESSION-SCORE-TRIPLE-CALC-1]]③対応（案B、2026-08-26）: このチャートは
+  // 本日の1点のみcomputeCurrentScore()（ステップ関数）、それ以外の全過去
+  // ポイントはcomputeScoreAsOf()内のlerp補間（c3eb81572で導入、閾値付近の
+  // 急変緩和が目的）で算出されており、計算方式が混在している
+  // （[[MACRO-COMPUTE-DUP-1]]で意図的設計と確定済み）。この違いを画面上でも
+  // 判別できるよう、tooltipに算出方式の注記を追加する。
+  const todayStr = today.toISOString().slice(0,10);
   chart.setOption({
     backgroundColor: 'transparent',
     grid: {top:24, right:20, bottom:36, left:44},
@@ -1717,8 +1732,13 @@ function renderScoreHistory() {
         const score = p.value[1];
         const ph = phaseLabel(score);
         const col = phaseColor(score);
+        const isToday = p.value[0] === todayStr;
+        const methodNote = isToday
+          ? '本日の実測値'
+          : '過去日は急変緩和のため補間表示（実際の変化より滑らかに見える場合あり）';
         return `<span style="font-family:var(--mono);font-size:9px;color:var(--mut)">${p.value[0]}</span><br>` +
-               `Score: <span style="color:${col};font-weight:700">${score}</span> <span style="color:#64748b">(${ph})</span>`;
+               `Score: <span style="color:${col};font-weight:700">${score}</span> <span style="color:#64748b">(${ph})</span><br>` +
+               `<span style="color:#64748b;font-size:9px">※ ${methodNote}</span>`;
       }
     },
     xAxis: {
