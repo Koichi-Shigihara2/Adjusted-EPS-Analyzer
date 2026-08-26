@@ -10459,23 +10459,27 @@ AS-IS-026とAS-IS-028は同一の`calculate_moat_score()`戻り値を指す重�
 `selling_and_marketing`がSEC非開示の場合`or 0`で「支出ゼロ」として
 足し戻され、`mature_profit`が実態より低く算出される。⑦`growth_floor
 (15%)`・`growth_cap(50%)`・`market_return(10%)`の根拠がコード内に一切
-記載されていない。⑧（2026-08-26発見）`kpi_fetcher.py::
-build_kpi_data()`（セグメント別KPIデータを構築、stock.htmlの
-`renderSegmentKpiTable()`が`d.kpi_data`として参照する想定）が、
-`pipeline.py`を含むどの本番スクリプトからもimport・呼び出しされて
-おらず、自身の`if __name__ == "__main__":`ブロック（テスト実行用）
-からしか実行されない。実測（NVDAの`latest.json`）で`kpi_data`キーが
-1件も存在しないことを確認済み。stock.html側は`if (!kpiData || ...)
-return ''`で安全にフォールバックするためクラッシュはしないが、
-「セグメントKPIテーブル」セクションは本番で恒久的に非表示のまま
-（`[[REPORT-TXT-CAPM-IV-MISSING-1]]`の横断調査で発見）。
+記載されていない。⑧（2026-08-26発見、2026-08-27配線対応済み）
+`kpi_fetcher.py::build_kpi_data()`（セグメント別KPIデータを構築、
+stock.htmlの`renderSegmentKpiTable()`が`d.kpi_data`として参照する
+想定）が、`pipeline.py`を含むどの本番スクリプトからもimport・呼び出し
+されておらず、自身の`if __name__ == "__main__":`ブロック（テスト実行
+用）からしか実行されなかった問題。2026-08-27、`pipeline.py::_load_
+extra_data()`から`build_kpi_data()`を呼び出し`kpi_data`を格納する配線
+を追加した（コミット`0450abe77`）。ただし配線追加後の実測で、
+`build_kpi_data()`自体が要求する2つのデータソース
+（`annual_*.json["segments"]`・`segment_config.py::SEGMENT_
+OVERRIDES`）が両方とも別の理由で陳腐化しており、配線追加だけでは
+`kpi_data`は依然として全銘柄で`None`のままであることが判明した
+（詳細調査・対応方針は`[[KPI-FETCHER-SEGMENT-SOURCE-ORPHANED-1]]`
+として別途新規登録、設計判断が必要なため未着手）。
 
 #### 対応方針
-各項目とも影響が限定的なため、他の関連タスク（[[RISK-FREE-RATE-
-HARDCODE-1]]等）着手時に合わせて解消することを推奨する。⑧は
-`pipeline.py`から`build_kpi_data()`を呼び出し`valuation["kpi_data"]`へ
-格納する配線追加が対応の骨子になると見込まれる（対応時は既存の
-`kpi_config.py`のスキーマ定義・呼び出しコストを事前に確認すること）。
+①〜⑦は影響が限定的なため、他の関連タスク（[[RISK-FREE-RATE-
+HARDCODE-1]]等）着手時に合わせて解消することを推奨する。⑧は配線
+自体は完了したが、真の解消には`[[KPI-FETCHER-SEGMENT-SOURCE-
+ORPHANED-1]]`（データソース陳腐化の解消、設計判断要）への対応が
+別途必要。
 
 #### 着手条件
 なし
@@ -10544,6 +10548,81 @@ snake_case（`"net_income"`・`"revenue"`・`"buyback"`）へ修正するだけ�
 なし。ただし本タスク（report.txt網羅性拡充）のスコープ外の別バグの
 ため、CHAT_RULES.md「調査中に発見した別バグの実装は別途依頼を待つ」
 原則に従い実装は行っていない。
+
+---
+
+### [KPI-FETCHER-SEGMENT-SOURCE-ORPHANED-1] kpi_fetcher.py::build_kpi_data()の2つのデータソースが両方とも陳腐化しており、配線後も全銘柄でNoneを返し続ける
+**優先度:** 中（`[[TANUKI-VALUATION-MISC-GAPS-1]]`⑧の配線自体は完了した
+が、それだけでは「セグメントKPIテーブル」は実際には表示されない。
+修正には設計判断が必要）
+**分類:** バグ / データ品質 / TANUKI VALUATION / 設定ファイル陳腐化
+**登録日:** 2026-08-27
+**発見:** `[[TANUKI-VALUATION-MISC-GAPS-1]]`⑧（pipeline.pyから
+`build_kpi_data()`を呼び出す配線追加）の検証中、実際にAPP（`kpi_
+config.py`にセグメント定義あり）で実行しても`kpi_data`が`None`のまま
+であることに気づき原因調査
+
+#### 内容
+`kpi_fetcher.py::build_kpi_data()`は2つのデータソースを必要とするが、
+**両方とも現在は機能していない**ことを実測で確認した:
+
+1. **`annual_{fy}.json["segments"]`（実績のセグメント別売上・営業利益
+   時系列）**: NVDA/TSLA/PLTR/MSFT/AMZN/AMD/SOFI/RKLB/CELH（`kpi_
+   config.py`にセグメント定義がある9銘柄）全てで`annual_*.json`の
+   最新ファイルを実測したところ、**9/9件で`"segments"`キー自体が
+   存在しない**（`d.get("segments")`が常に`None`）。このキーを
+   実際に書き込む機構は`common/sec_data/segment_fetcher.py`
+   （XBRL Instance Documentからセグメント別売上を抽出する専用
+   スクリプト）と見られるが、同スクリプト冒頭のdocstringに
+   「**GitHub Actionsでは実行しない。ローカル実行→pushの運用**」と
+   明記されており、自動化されたSEC更新パイプライン（`SEC_Data_
+   Update.yml`）には組み込まれていない。手動実行の記録も本セッションの
+   調査範囲では確認できなかった（過去に実行されていても、その後の
+   自動SEC更新でannual_*.jsonが再生成され上書き・消失した可能性も
+   あるが未確認）。
+
+2. **`segment_config.py::SEGMENT_OVERRIDES`（セグメント別weight/growth
+   設定、フォールバック用）**: `kpi_fetcher.py::_load_segment_config()`
+   はこの変数を`getattr(mod, "SEGMENT_OVERRIDES", {})`で参照するが、
+   `segment_config.py`自体のコメントに「ハードコードのSEGMENT_
+   OVERRIDES/GROWTH_OPTIONSを廃止」と明記されており、**同変数は
+   現在のファイルに存在しない**（`getattr`のデフォルト値`{}`が
+   常に返る）。実際に稼働中のセグメント設定は`config/segment_
+   config.json`（JSON形式、`_load_extra_data()`内の別ロジックが
+   これを正しく参照しており、report.txtの「Segment_Breakdown」
+   セクションはこちら経由で正常に機能している）に移行済み。
+
+結果、`build_kpi_data()`内の`has_any_segment`（ソース1由来）と
+`seg_config`（ソース2由来）が両方とも常に空となり、
+`if not has_any_segment and not seg_config: return None`が
+全銘柄で成立し、**配線を追加しても`kpi_data`は常に`None`のまま**
+であることを実測で確認した（APP実測: `_load_segment_config("APP")`
+→ `{}`、`annual_2025.json.get("segments")` → `None`）。
+
+なお`config/segment_config.json`のスキーマ（`{"weight": 1.0, "growth":
+0.45, "note": "..."}`という現在時点の設定のみ）は、`kpi_fetcher.py`が
+本来必要とする多年度の実績時系列（`revenue`/`operating_income`/
+`operating_margin`をFY単位で保持）とは構造が異なり、単純な参照先
+差し替えでは解決しない。
+
+#### 対応方針（未定・設計判断が必要）
+以下のいずれかの方向性が考えられるが、いずれもコスト・トレードオフの
+判断を要する:
+- (a) `segment_fetcher.py`をGitHub Actions定期実行に組み込み、
+  `annual_*.json["segments"]`を継続的に維持する（XBRL Instance
+  Document解析は銘柄によって構造が異なり脆い可能性、
+  `[[TAIL-XBRL-SEGMENT-FETCHER-NONDIMENSIONED-GAP-1]]`と類似の
+  脆弱性を抱える可能性がある）
+- (b) `kpi_fetcher.py`を`config/segment_config.json`ベースの簡易版
+  （現在の重み・成長率のみ、多年度実績時系列は持たない）に再設計する
+  （`_load_extra_data()`の既存「Segment_Breakdown」ロジックと機能が
+  重複する可能性が高い）
+- (c) 現状維持（「セグメントKPIテーブル」機能自体の要否をKoichiさんに
+  確認する）
+
+#### 着手条件
+なし。ただし対応方針の選択はKoichiさんの判断を要するため、着手前に
+確認すること。
 
 ---
 
@@ -12222,159 +12301,8 @@ LAG-1]]`と同じ手順——STONKS SILO対象銘柄の`results.json`側の価�
 
 ---
 
-### [REPORT-TXT-CAPM-IV-MISSING-1] report.txt[3]にCAPMベース割引率でのIV（intrinsic_value_beta）が欠落している
-**優先度:** 中
-**分類:** データ品質 / AI向け出力の網羅性 / TANUKI VALUATION
-**登録日:** 2026-08-23
-**発見:** Koichiさんがチャット側でAPP report.txtとstock.htmlの表示差分を
-検討中に発見
-
-#### 内容
-report.txt[3]（TANUKI VALUATION）には`WACC_CAPM_Reference: 18.55%`と
-いう割引率（%）は表示されるが、その割引率を使って算出したIV（$の値）
-はreport.txt内のどこにも存在しない。一方report.txt自身の[3]定義欄
-（118-128行目付近）には「高β銘柄では市場WACC比でIVが高めに出る...
-市場リスク調整後はWACC_CAPM_ReferenceでのIVを参照（割高/割安の絶対
-判断には両者を併用）」という記述があり、**「WACC_CAPM_Reference
-でのIV」という値の存在を前提とした文章になっているにもかかわらず、
-その値自体はreport.txt中のどこにも出力されていない**（自己言及の
-矛盾）。
-
-stock.htmlのWeb画面では、この値は「β込みWACC」ラベルの下に実際に
-表示されている（例: APP 2026-08-21時点で$648.17）。
-
-#### 実コード確認結果（登録前に実施）
-- 値の出所を特定: `latest.json`の`intrinsic_value_beta`フィールド
-  （APP実測値: 648.17）。
-- 算出元: `core_calculator.py:827`（`"intrinsic_value_beta":
-  round(float(intrinsic_value_per_share_beta), 2)`）で算出され、
-  `pipeline.py`が構築する`valuation`dictに格納される。
-- stock.html側の表示ロジック: `stock.html:751`（`const ivpsBeta =
-  d.intrinsic_value_beta || 0; // 参考①: β込みWACC`）が`latest.json`
-  から直接読み込み、同ファイル1065行目付近の「SENSITIVITY ANALYSIS」
-  ヘッダー内`id="displayIvps"`に`$${fmt(ivpsBeta > 0 ? ivpsBeta :
-  ivps)}`として表示。JS側で独自計算はしておらず、latest.json
-  （バックエンド算出済みの値）をそのまま表示している。
-- report.txt生成ロジック（`pipeline.py::_generate_report()`、
-  1165行目〜）を確認したところ、**同じ`valuation`dict
-  （`intrinsic_value_beta`キーを含む）を引数として受け取っているにも
-  かかわらず、`_generate_report()`内に`valuation.get(
-  "intrinsic_value_beta")`を参照する行が一つも存在しない**。つまり
-  「算出はしているが出力していないだけ」であり、算出自体をしていない
-  ケースではないと切り分けが完了した。
-- 追加発見: `intrinsic_value_beta`と同様に「参考値」として位置づけ
-  られている`intrinsic_value_rf`（`d.intrinsic_value_rf`、
-  `stock.html:752`「参考②: Rf理論上限」、`id="rfValueBlock"`に表示）
-  も同様にreport.txtに一切出力されていないことを確認した。つまり
-  stock.htmlが表示する参考IV2種（β込みWACC・Rf理論上限）がいずれも
-  report.txtから欠落している。
-
-#### 関連する既存BACKLOG項目との重複確認
-- `[[V0-V0RM-CONFUSION-RISK-1]]`（2026-07-23登録、優先度中・未着手）:
-  `v0`（`intrinsic_value_beta`の計算根拠）と、メインIVが実際に使う
-  `v0_rm`（`dcf_components.v0_rm`）の**フィールド命名・配置**が
-  紛らわしく、latest.jsonを直接読む外部AIが取り違えるリスクを指摘する
-  もの。本エントリは「report.txtにCAPMベースIVの値自体が出力されて
-  いない」という別の問題であり、対象ファイル（report.txt vs
-  latest.jsonのフィールド構造）も論点も異なるため重複ではないと
-  判断したが、いずれも`intrinsic_value_beta`まわりのAI向け情報設計の
-  弱さという共通点があるため、対応時は合わせて参照する。
-- `[[MACRO-PULSE-3M-FORECAST-SNAPSHOT-MISMATCH-1]]`（2026-08-22完了、
-  `BACKLOG_DONE.md`参照）: MACRO PULSEのスコア表示不一致に関する別
-  サブシステムの課題であり、対象コード・論点とも無関係と確認した。
-- report.txtの網羅性そのものを扱った既存エントリは`report\.txt.*欠落`
-  等の複数パターンでBACKLOG.md/BACKLOG_DONE.md両方をgrepしたが該当
-  なし。
-
-#### 対応方針（未定）
-- report.txt[3]セクションに`WACC_CAPM_Reference`と対になる形でCAPM
-  ベースIV（`intrinsic_value_beta`）を追記し、stock.htmlとの表示内容の
-  整合性を取る（併せて`intrinsic_value_rf`の追記も検討）
-- これを機に、report.txt全体がstock.html（および他の関連フロント
-  エンド）で表示されている項目を漏れなく反映できているかを横断的に
-  見直す（今回発見した1件の局所修正にとどめず、report.txtの網羅性を
-  横断チェックする課題として扱う）
-
-#### 2026-08-26 対応要否・範囲確認（調査のみ・実装なし）
-
-**前提の再検証**: `core_calculator.py:827-831`で`intrinsic_value_beta`・
-`upside_percent_beta`・`intrinsic_value_rf`が現在も計算・格納されている
-ことを確認。`pipeline.py::_generate_report()`（1165-2344行目、報告書
-生成の唯一の関数）本体を全文抽出し文字列検索した結果、これら4フィールド
-（`intrinsic_value_beta`/`upside_percent_beta`/`intrinsic_value_rf`/
-`upside_percent_rf`）はいずれも一度も参照されていないことを再確認した。
-「算出はしているが出力していないだけ」という登録時の切り分けは今も
-正しい。
-
-**想定対応規模（狭い修正）**: 上記4フィールドは`valuation`dict
-（`_generate_report()`の引数）に既に存在するため、新規計算ロジックは
-不要。report.txt[3]セクションの`WACC_CAPM_Reference`行の直後に
-`valuation.get("intrinsic_value_beta")`等を参照する数行を追加する
-だけで済む、実装規模は小さい（表示追加のみ）。
-
-**横断確認（軽量スキャン、report.txt全体の網羅性）**: stock.htmlが
-`latest.json`から参照するトップレベルフィールド48件を機械的に抽出し、
-`_generate_report()`本体に同名の参照があるかを突き合わせた
-（`grep`ベースの軽量スキャン、全項目の精査ではない）。
-
-- **CAPM-IVと同種の見落とし（計算済み・stock.html表示済みだが
-  report.txt完全欠落）を新たに7件確認**: `dupont`（デュポン分解、
-  `pipeline.py:2610`等）・`sensitivity`（感応度マトリクス、
-  `core_calculator.py:850`）・`maturity_profile`（HypeCoreフェーズ
-  成熟度、`core_calculator.py:857`）・`return_metrics`
-  （`core_calculator.py:837`）・`validation`（品質ゲート結果
-  PASS/WARN/FAIL、`[[QUALITY-GATES-EPIC-1]]`のvalidator.py出力、
-  `pipeline.py:267`）・`alpha_was_capped`（alpha上限到達フラグ、
-  `core_calculator.py:835`）・`fcf_ttm_end`（TTM期末日、
-  `core_calculator.py:896`）。いずれも文字列検索・キーワード検索
-  （日本語訳含む）の両方で`_generate_report()`本体に痕跡なしを確認済み
-- **false positiveとして除外したもの**（別名・別経路で実質的には出力
-  されている、または既存BACKLOG項目でカバー済み）: `growth_options`は
-  `growth_option_pv`という子フィールドが`Growth_Option_PV`として出力
-  済み。`scenario_bear`/`scenario_bull`はstock.html側では
-  `history.json`（時系列チャート用）由来で`latest.json`の
-  `scenario_valuations`（report.txt側で参照済み）とは別経路。
-  `dilution_comment`/`dilution_severity`/`fcf_base`は同名フィールド
-  ではなく`_dilution_severity_info()`等の別ロジックで内容自体は出力
-  済み。`v0`は既存`[[V0-V0RM-CONFUSION-RISK-1]]`が別の切り口
-  （命名・配置の紛らわしさ）で既に追跡中のため新規指摘なし
-
-**新規発見（本調査のスコープ外の別バグ、報告のみ・実装せず）**:
-横断確認の過程で、`kpi_data`（stock.htmlのセグメントKPIテーブル
-`renderSegmentKpiTable()`が参照）が**production環境のlatest.jsonに
-1件も存在しない**ことを発見した（NVDAの`latest.json`で実測確認）。
-生成関数`kpi_fetcher.py::build_kpi_data()`は自身の`if __name__ ==
-"__main__":`ブロックからのみ呼ばれており、`pipeline.py`・他のどの
-本番スクリプトからもimport・呼び出しされていない（テスト実行用に
-実装されたが本番パイプラインへの組み込みが行われないまま放置された
-可能性が高い）。stock.html側は`if (!kpiData || ...) return ''`で
-安全に空文字を返すためクラッシュはしないが、「セグメントKPIテーブル」
-セクションは本番で恒久的に非表示のままになっている。report.txtの
-網羅性問題とは別種（「出力し忘れ」ではなく「計算自体が本番パイプライン
-に組み込まれていない」）のため、CHAT_RULES.md「調査中に発見した別
-バグの実装は別途依頼を待つ」原則に従い、`[[TANUKI-VALUATION-
-MISC-GAPS-1]]`（既存の軽微な構造的ギャップまとめエントリ）へ⑧として
-追記した（新規BACKLOG_ID発行前にBACKLOG.md/BACKLOG_DONE.md双方を
-`kpi_fetcher\|kpi_data\|renderSegmentKpiTable`でgrepし重複なしを
-確認済み）。
-
-**想定対応規模（広い見直し）**: 上記7件＋今回のCAPM-IV本体を合わせた
-計8件は、いずれも計算ロジックの新規実装は不要（既に計算済み）で
-「report.txtへの表示追加」のみだが、report.txtは元々AI向けの簡潔な
-ナラティブ形式であり、全項目を機械的に追加すると冗長化するリスクが
-ある。**どのフィールドをどの粒度で追記するかは設計判断**（report.txtの
-目的・想定読者に対する各項目の重要度の取捨選択）であり、単純作業では
-ない。着手する場合はCAPM-IV本体（狭い修正、小規模）とその他7件
-（広い見直し、設計判断を要する中規模）を分離し、まずCAPM-IV単体で
-着手可否を判断することを推奨する。
-
-**結論**: 着手要否・範囲の判断はKoichiさんに委ねる。本タスクでは実装は
-行っていない。
-
-#### 着手条件
-上記の網羅性見直しの結果（2026-08-26調査完了）を踏まえ、Koichiさんに
-対応範囲（狭い修正のみ／広い見直しまで含むか）の確認を得てから着手
-すること。
+（[[REPORT-TXT-CAPM-IV-MISSING-1]]は2026-08-27実装完了（8フィールド
+全対応）、BACKLOG_DONE.md「2026-08-27（完了）」参照）
 
 ---
 

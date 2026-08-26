@@ -4,6 +4,66 @@
 
 ## 2026-08-27（完了）
 
+### ✅ [REPORT-TXT-CAPM-IV-MISSING-1] report.txt[3]にCAPMベース割引率でのIVが欠落していた問題を含む網羅性拡充8件を実装完了（2026-08-27）
+
+**優先度:** 中 → 完了
+**分類:** データ品質 / AI向け出力の網羅性 / TANUKI VALUATION
+**登録日:** 2026-08-23
+**発見:** Koichiさんがチャット側でAPP report.txtとstock.htmlの表示差分を
+検討中に発見
+
+#### 内容（登録時点）
+report.txt[3]（TANUKI VALUATION）には`WACC_CAPM_Reference: 18.55%`と
+いう割引率（%）は表示されるが、その割引率を使って算出したIV（$の値）
+はreport.txt内のどこにも存在しなかった（自己言及の矛盾）。2026-08-26の
+横断調査で、同種の見落とし（計算済み・stock.html表示済みだが
+report.txt完全欠落）が他に7件見つかり、対応範囲（狭い修正のみ／広い
+見直しまで含むか）はKoichiさんの判断待ちとしていた。
+
+#### 2026-08-27 実装内容（①〜⑧全対応、Koichiさん承認済み）
+`src/value/tanuki_valuation/pipeline.py::_generate_report()`に以下
+8フィールドを追加。report.txtの「AI向け簡潔なナラティブ」という性質を
+踏まえ、各フィールドの性質に応じて表示粒度を判断した（stock.html側が
+簡潔な数値表示なら1行程度、詳細な表なら要点を数行に要約）:
+
+| # | フィールド | 表示粒度 | 配置 |
+|---|---|---|---|
+| ① | `intrinsic_value_beta`/`upside_percent_beta`/`intrinsic_value_rf`/`upside_percent_rf`（CAPM-IV本体） | 2行（参考①β込みWACC・参考②Rf理論上限） | `WACC_CAPM_Reference`行の直後 |
+| ② | `dupont`（デュポン分解） | 1行（純利益率×資産回転率×財務レバレッジ=ROE）＋信頼性LOW時のみ1行追加 | Next_Earnings_Date行の直後 |
+| ③ | `sensitivity`（感応度マトリクス） | 3×3のタブ区切り表（4行） | DCF Intrinsic_Value算出直後 |
+| ④ | `maturity_profile`（Phase1/Phase2年数・成長率） | 1行 | DCF_FCF_PVの3段階内訳の直後 |
+| ⑤ | `return_metrics`（期待リターン） | 1行（1/3/5年後の要約）＋5年年率換算1行 | Scenariosブロック直後 |
+| ⑥ | `validation`（品質ゲート結果PASS/WARN/FAIL） | 1行 | レポート冒頭（ヘッダー直後） |
+| ⑦ | `alpha_was_capped` | Alpha_Premium行への`[CAPPED]`suffix | 既存Alpha_Premium行 |
+| ⑧ | `fcf_ttm_end` | 1行の技術的注記 | FCF関連ブロック直前 |
+
+代表銘柄APP（CAPM-IVの起点となった銘柄）・ASTS（base_fcf負値のエッジ
+ケース）で`pipeline.py [TICKER] --skip-risk`を実行し再生成、実際の
+report.txt出力を目視確認した。フォーマット崩れ・文字化け・過度な
+冗長化はなし。両銘柄ともDuPontは`extra.get("dupont")`が`None`のため
+正しくスキップされ（後述の副次発見参照）、他7フィールドは意図通り出力
+された。
+
+pytest 926件全パス（report.txt関連テスト`test_contracts.py`・
+`test_pipeline_logic.py`・`test_report_consistency_check.py`・
+`test_report_txt_parser.py`含む）、`report_consistency_check.py
+--fail-on-ng` NG=0（既知WARN範囲内）。
+
+#### 副次発見（本タスクのスコープ外、実装せず新規BACKLOG登録のみ）
+- `[[DUPONT-TTM-FIELD-CASE-MISMATCH-1]]`: DuPont分解が
+  `common/sec_data/ttm/{ticker}_ttm_series.json`のキーをPascalCase
+  （`"NetIncome"`等）で参照しているが実際はsnake_case
+  （`"net_income"`等）のため、全104銘柄で`dupont`フィールドが恒久的に
+  未設定（stock.html・TANUKI SCORE両パネルとも常時空欄）と判明。
+  CHAT_RULES.md「調査中に発見した別バグの実装は別途依頼を待つ」原則に
+  従い実装せず報告のみ
+
+#### コミット
+- `772ff9b17`: 8フィールド追加・APP/ASTSサンプル再生成
+- `27750b104`: `[[DUPONT-TTM-FIELD-CASE-MISMATCH-1]]`新規登録
+
+---
+
 ### ✅ [STONKS-SILO-CLI-TICKERS-SHADOW-1] pipeline.pyの変数名衝突でSTONKS SILO自動更新が2026-07-13以降45日間完全停止していた問題を修正・全25銘柄再生成完了（2026-08-27）
 
 **優先度:** 中 → 高 → 完了
