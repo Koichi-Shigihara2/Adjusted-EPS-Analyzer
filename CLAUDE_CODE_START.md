@@ -1243,14 +1243,14 @@ fact競合等のコードバグを疑う前に、`latest.json`の`calculation_da
 
 ## BACKLOG優先順位の目安
 
-### 今すぐ着手可能（優先度中・難易度低〜中）
-- MP-BIZDAY-1: MARKET PULSE営業日ベース化
-- ARCH-DATA-1: SECデータ正規化レイヤー強化（PARSER-1/BUG-NETDEBT-6/ANNUAL-FY-1が第一〜三歩として完了。
-  次の前倒し対象: 年度判定の共通関数化（parser.py/extract_key_facts.py/aggregate_annualの3箇所を統合））
+（2026-08-26ブラッシュアップ時点で全件再確認: MP-BIZDAY-1・ARCH-DATA-1・
+TSCORE-TRAP-1・SEC-CTRL-1の4件はいずれも2026-06-24〜07-19の間に完了済み
+（BACKLOG_DONE.md参照）だったにもかかわらず本欄が未更新のまま残存して
+いたため削除した。本欄は個々のタスク完了報告のたびに都度更新する
+運用が原則であり〈CHAT_RULES.md「次セッション着手順序」欄の都度更新
+参照〉、この一括削除は都度更新の代替にはしない）
 
 ### 順次着手（優先度中・難易度中〜高）
-- TSCORE-TRAP-1: 投資トラップ検出（10種+逆シグナル）
-- SEC-CTRL-1: 内部統制評価（Item4/9A・実装先はTANUKI TAIL有力）
 - TANUKI-FIN-1: 金融株DDM対応
 
 ### 着手条件あり

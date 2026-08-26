@@ -1,6 +1,41 @@
 # PROJECT_STATUS.md — 新一次データベース構築プロジェクト進捗
 
 作成日: 2026-07-23
+
+---
+
+**セッションサマリー（本ファイルは新DB構築プロジェクト専用の進捗記録だが、
+専用のCHANGELOG.mdが存在しないため`CHAT_RULES.md`の規定によりセッション
+終了時ブラッシュアップのサマリーもここに記録する。新DB構築プロジェクト
+自体とは無関係な話題であることに留意）**
+
+- **2026-08-26**: Market Pulse/MACRO PULSE既知バグ6項目の稼働状況を
+  実コード・実データで再検証し、全項目を解消。`[[MACRO-TRUTHY-ZERO-
+  BUG-1]]`（履歴バックフィルのtruthy判定ゼロ値欠落、ゼロ金利期間
+  10,570行のff_rate等を復元）・`[[HOLLOW-RALLY-DEAD-1]]`（sp500列
+  欠落による恒久不発火、案Xで解消・過去1309行バックフィル）・
+  `[[MARKETPULSE-MINOR-INCONSISTENCIES-1]]`①③④⑤（Hindenburg固定値・
+  CSV列欠落・breadthパススルー漏れ・F&G情報源混同を解消、②は設計意図を
+  コメント明記、⑥は休眠状態確認の上優先度低で据え置き）・
+  `[[FEARGREED-DUPKEY-BUG-1]]`（previous_closeを`fetch()`経由の真の値へ
+  修正）・`[[RECESSION-SCORE-TRIPLE-CALC-1]]`③（ステップ関数/lerp補間の
+  併存を画面上へ開示、実ブラウザ〈Playwright〉で表示確認済み）。加えて
+  `[[LAYER1-GROWTH-HYPEPHASE-DECAY-GAP-1]]`（GROWTH-1のHypePhase加重を
+  DCF成長率計算から削除、固定50:50へ復元・7銘柄再生成）を実装し、
+  受け皿となる新機能epic`[[STOCKHTML-SIGNAL-CONSISTENCY-SECTION-1]]`を
+  登録。`CHAT_RULES.md`へ教訓2件（事例11: フォールバック発火件数の代理
+  指標混同／事例12: 再検証時もBACKLOG_DONE.mdの毎回grepが必要）を追加。
+  セッション終了時ブラッシュアップで、上記7項目に加え過去完了分
+  `[[MACRO-PULSE-ZONE-25-STALE-1]]`（2026-08-21完了）・`[[MACRO-PULSE-
+  3M-FORECAST-SNAPSHOT-MISMATCH-1]]`（2026-08-22完了）の移設漏れも発見し
+  合わせてBACKLOG_DONE.mdへ移設、`CLAUDE_CODE_START.md`の完了済み4項目
+  （MP-BIZDAY-1/ARCH-DATA-1/TSCORE-TRAP-1/SEC-CTRL-1）の陳腐化記載を
+  削除した。詳細はBACKLOG_DONE.md「2026-08-26（完了）」「2026-08-22
+  （完了）」「2026-08-21（完了）」参照。新DB構築プロジェクトのコード・
+  データには変更なし。
+
+---
+
 更新日: 2026-08-15（**フェーズ3「導出データ層の管理方法検討」完了**。
 分類C14件のうち、登録済み5件（`INPUT-C-006/007`〈`[[DISCOVER-CONFIG-
 DUAL-MGMT-1]]`〉・`INPUT-C-008`〈`[[PORTFOLIO-CONFIG-DUP-1]]`〉・

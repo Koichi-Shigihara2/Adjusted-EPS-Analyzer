@@ -2,6 +2,1666 @@
 
 ---
 
+## 2026-08-26（完了）
+
+### ✅ [MACRO-TRUTHY-ZERO-BUG-1] MACRO PULSE履歴バックフィルのtruthy判定によるゼロ値欠落（2026-08-26修正・10,570行復元完了）
+**優先度:** 高 → 完了
+**分類:** バグ / MACRO PULSE
+**登録日:** 2026-07-23
+**発見:** `FIELD_DEFINITIONS.md`フェーズ10（AS-IS-184関連）
+
+#### 背景
+`05_import_history.py:122`の`get_historical_context()`が
+`if ff_hi and ff_lo: ctx["ff_rate"]=...`という真偽値判定を使っており、
+2020-2022年のゼロ金利期間（`ff_lo=0.0`）ではPythonの偽値として扱われ、
+正当なデータがあるにもかかわらず`ff_rate`が欠落する。同じ関数内の
+`yc_10y2y`/`hy_spread`/`vix`も同型の`if yc:`等の真偽値判定を使っており、
+値がちょうど0になった場合は同様に欠落しうる。現行稼働中の`05_main.py`
+本体（`is not None`で正しく判定）ではなく、履歴データバックフィル専用
+スクリプトにのみ存在するバグ。
+
+#### 対応方針
+`if ff_hi and ff_lo:`を`if ff_hi is not None and ff_lo is not None:`に
+修正する（`yc_10y2y`/`hy_spread`/`vix`も同様）。修正後、2020-2022年の
+ゼロ金利期間のデータが正しく再構築されるか実データで確認する。
+
+#### 検証記録
+2026-08-16のBACKLOG棚卸しで`05_import_history.py:121`の
+`if ff_hi and ff_lo:`が現在も未修正であることを確認、現状再現を確認。
+優先度維持が妥当と判定した。
+
+#### 2026-08-26 再検証（実データで影響範囲を初めて定量化）
+`05_import_history.py:121`（行番号不変）の`if ff_hi and ff_lo:`が現在も
+未修正のまま現存することをコードで再確認した。加えて今回、本番の
+`05_events.csv`（34,317行）を実データ走査し、初めて具体的な影響範囲を
+定量化した:
+
+- `release_date`が2020-2022年の行3,529件のうち、`ff_rate`列が空文字の
+  行は**2,356件**
+- 空欄の`release_date`の分布を確認したところ、最も早い日付は
+  **2020-03-16**、最も遅い日付は**2022-03-16**——これはFRBが政策金利を
+  0.00-0.25%へ緊急利下げした日（2020-03-15）から、ゼロ金利解除の
+  最初の利上げ（2022-03-16/17 FOMC）までの期間と完全に一致する
+- 同じ期間の`ff_rate`欠落率は**100%**（2,356/2,356行）。一方
+  `yc_10y2y`/`hy_spread`/`vix`は同じ期間で欠落0件（これらの系列は
+  期間中に文字通り0.0を記録したことがないため、同型のtruthy判定
+  バグを内包しているにもかかわらず顕在化していない）
+
+これにより、本バグは「理論上の潜伏バグ」ではなく、**実際に2年間・
+2,356件の経済イベント行の金融環境コンテキスト（`ff_rate`）が欠損した
+まま本番CSVに存在する、既に発生済みの実害**であることが確定した。
+`ff_rate`は各イベント行の金融環境スナップショットとして
+`05_main.py`のregime分析等で参照される設計であり、優先度「高」は
+これまで以上に妥当と判断する。
+
+#### 2026-08-26② 実装完了
+
+**STEP 1: コード修正**（`src/market/macro_pulse/05_import_history.py`）
+- `get_historical_context()`の`ff_hi`/`ff_lo`は`common.macro_data.reader`
+  経由のFRED系列`DFEDTARU`（Federal Funds Target Range上限）/
+  `DFEDTARL`（下限）から取得されることを確認
+- `if ff_hi and ff_lo:`/`if yc:`/`if hy:`/`if vx:`の4行を、
+  `05_main.py::get_financial_context()`（本番稼働中の正しい実装）と
+  同じ`is not None`パターンへ統一
+- 横断確認（`grep -n`）: 同ファイル・`05_main.py`に他の同型truthy-zero
+  判定は存在しないことを確認（`elif rrp_inc and tga_inc:`はbool型変数
+  同士のand判定で該当なし、false positive）
+
+**STEP 2: 影響範囲の復元（スコープが依頼時想定の4.5倍に拡大、Koichi
+さん承認の上で対応）**
+`DFEDTARL.json`の生データを実測したところ、`value==0.0`の連続期間が
+**2つ**存在することが判明した（依頼時点で定量化済みだったのは②のみ）:
+- ①**2008-12-16〜2015-12-15**（GFC後の量的緩和期、新発見・未定量化
+  だった）: `05_events.csv`該当行**8,214行**、`ff_rate`欠落率100%
+- ②2020-03-16〜2022-03-16（依頼時に定量化済み）: **2,356行**、欠落率100%
+- 合計 **10,570行**（依頼時把握の2,356行の4.5倍）
+
+`import_from_fred(--overwrite)`は`actual`/`consensus`/`surprise`/
+`forecast_source`等の全列を再構築してしまい、事後の予想値解決
+（`resolve_forecast`）等で蓄積した情報が失われるリスクがあるため
+使用せず、`regime`/`ff_rate`/`yc_10y2y`/`hy_spread`/`vix`/
+`cuts_implied`の6列のみを対象に、現在空欄の値だけを埋める新規
+サブコマンド`context`（`backfill_context()`、デフォルトで非破壊）を
+`05_import_history.py`に追加して実行した。
+
+`python 05_import_history.py context --from 2008-12-16 --to 2015-12-15`・
+`--from 2020-03-16 --to 2022-03-16`を実行し、両期間とも対象行数と
+同数（8,214行/2,356行）が更新されたことをログで確認。実データで
+復元値をサンプル確認（例: 2009-01-05・2012-06-15・2020-04-01・
+2021-06-01・2022-02-01のいずれも`ff_rate=0.125`＝`(0.00+0.25)/2`、
+FRB実際の政策金利レンジと一致）。
+
+**diff範囲の確認**: `event_id`集合は前後で完全一致（34,317件、行の
+追加・削除なし）。全34,317行を1件ずつ突合した結果、**変更があった
+のは10,570行（8,214+2,356と完全一致）で、変更された列は`ff_rate`
+のみ**（`yc_10y2y`/`hy_spread`/`vix`/`regime`/`cuts_implied`は元々
+両期間とも正しく埋まっていたため変更なし。`actual`/`consensus`/
+`surprise`/`forecast_source`/`data_source`等、対象外の列は完全に
+不変）であることをPythonで機械的に確認した。対象期間外（2016-2019年
+等）への意図しない変更は皆無。なお1949〜2008-12-15の期間も`ff_rate`
+空欄のままだが、これはDFEDTARU/DFEDTARL系列自体がFRB「目標レンジ」
+方式導入（2008年12月）以前に存在しないためで、本バグとは無関係の
+正当な欠落（修正後も空欄のまま、想定通り）。
+
+**STEP 3: 下流影響の確認（結論: 影響なし、過去スコアの再計算は不要）**
+`05_main.py::_compute_current_score()`（RECESSION RISK SCOREの算出
+関数）の実装を確認した結果、8指標（YC/HY/Philly Fed/CFNAI/Initial
+Claims/Building Permits/Michigan Sentiment/Sahm Rule）はいずれも
+`events`DataFrameの`actual`列のみから算出されており、`ff_rate`/
+`regime`/`yc_10y2y`等の列は一切参照していないことを確認した。
+週次AI解説プロンプト内の「FED政策局面」「FF金利」表示も、
+`events.csv`の per-event 列ではなく`05_fed_context.csv`
+（`get_financial_context()`が生成する別ファイル、常に正しい実装）を
+参照しており無関係。フロントエンド`index.html`にも`COL.ff_rate`等の
+列マッピング定義自体はあるが、実際に参照・表示している箇所は
+コードベース全体で0件（死蔵定義）であることも確認した。
+
+**結論**: `regime`/`ff_rate`/`yc_10y2y`/`hy_spread`/`vix`/
+`cuts_implied`列は、各イベント行作成時点の金融環境を記録する
+**恒久的な履歴スナップショット**として保存されるのみで、現在・過去
+いずれのスコア計算・AI解説生成・フロントエンド表示からも参照されて
+いない（write-onlyなフィールド）。したがって**過去のweekly分析・
+スコア履歴の再計算は不要**（対象外）と判断した。今回の修正は
+「本番CSVの恒久的なデータ完全性の是正」のみが目的であり、既存の
+スコア・分析結果には一切影響しない。
+
+**検証ゲート結果**（全て通過）:
+- `pytest tests/`: **905 passed, 0 failed**
+- `pytest tests/test_macro_pulse_logic.py -v`: 18 passed
+- `python 05_audit.py`（MACRO PULSE専用整合性チェック）: NG=0件/
+  WARN=48件（全件CHECK-1重複疑い、`ff_rate`等の対象列とは無関係の
+  既存WARN。`ff_rate`/`context`/`regime`関連の新規WARNなし）
+- `python common/sec_data/audit.py`: 🟢正常95銘柄/🟡警告5銘柄
+  （既存WARN、MACRO PULSE非対象で無変化）
+- `python common/sec_data/report_consistency_check.py --fail-on-ng`:
+  NG=0件/WARN=96件（既存WARN、MACRO PULSE非対象で無変化）
+
+#### 着手条件
+なし（解消済み）
+
+#### コミット
+- `47659297b`: fix: [[MACRO-TRUTHY-ZERO-BUG-1]] truthy-zero判定バグ修正・ゼロ金利期間10,570行のff_rate等を復元
+
+---
+
+### ✅ [RECESSION-SCORE-TRIPLE-CALC-1] RECESSION RISK SCOREの3計算式併存・フェーズ境界25/30の3箇所不一致（①②③とも2026-08-26までに完了）
+**優先度:** 完了（旧: 中。2026-08-22、高から見直し。理由は下記「訂正記録」参照）
+**分類:** バグ / 設計不整合 / MACRO PULSE
+**登録日:** 2026-07-23
+**状態:** 対応方針①②は解消済み（2026-08-21、`[[MACRO-PULSE-ZONE-
+25-STALE-1]]`の実装により重複解消。詳細は下記「訂正記録」参照）。
+③は未着手のまま残存
+**発見:** `FIELD_DEFINITIONS.md`フェーズ10（AS-IS-215/213/219/230、依頼文名指し）
+
+#### 背景
+現在時点用（`computeCurrentScore()`/`_compute_current_score()`、ステップ
+関数）と過去日付用（`computeScoreAsOf()`、lerp補間）という異なる2方式が
+「現在」と「過去」で使い分けられており、スコア推移チャート・比較バーは
+常に別数式同士の比較になっている（コード自体のコメントは意図的設計と
+明記しているが、この事実は画面表示上どこにも明記されていない）。
+
+加えてフェーズ判定の実閾値（30）に対し、①ゲージバーのゾーン区切り線
+（`left:25%`）②スコア推移チャートの背景色分け（`zoneMarkAreas`）③週次
+AI解説生成のGrokプロンプト自体（"フェーズ: 0-25=拡張"という文言を直接
+指示）の3箇所で「25」が誤用されている。③はAIが誤った境界を前提に景気
+解説文を生成しうるため、単なる表示ズレに留まらずAI生成コンテンツの
+正確性にも影響する。
+
+#### 対応方針
+①25→30への表示閾値修正（ゲージバー・チャート背景の2箇所）②Grokプロンプト
+文言の30への修正③lerp補間版とステップ関数版の関係（意図的な設計である
+ことを画面上にも明示するか、統一するか）を判断してから着手する。
+
+**①②は解消済み**（2026-08-21、`[[MACRO-PULSE-ZONE-25-STALE-1]]`が
+本項目と重複認識のないまま新規登録・実装され、結果的に対応方針①②の
+全箇所を解消した。詳細は下記「訂正記録」参照）。
+
+**③は未着手のまま残存**。lerp補間版とステップ関数版の関係を画面上に
+明示するか統一するかの判断は今回行っていない。
+
+#### 検証記録
+2026-08-16のBACKLOG棚卸しで`index.html:588`の`left:25%`が現在も
+未修正であることを確認、現状再現を確認。Grokプロンプトが誤った境界を
+前提に文章生成しうるという実害は表示ズレを超えAI生成コンテンツの
+正確性に直結するため、優先度維持が妥当と判定した。
+
+#### 訂正記録（2026-08-22）
+2026-08-21に登録・実装された`[[MACRO-PULSE-ZONE-25-STALE-1]]`
+（`index.html`のゲージバー・チャート4箇所＋`05_main.py`のGrok
+プロンプト1箇所、計5箇所の「25」→「30」置換）が、本項目の対応方針
+①②と内容的に完全重複していたことが判明した（新規登録時の重複チェック
+grepが、本項目の識別子`TRIPLE-CALC`や「3計算式併存」という語彙を
+含んでおらず見落とした。教訓は`CHAT_RULES.md`「BACKLOG記載の前提は
+着手時に再検証する」節・事例10として記録済み）。
+
+実コード再確認（2026-08-22）の結果:
+- `index.html:588`の`left:25%`→`left:30%`、`index.html:595`の
+  ゾーン目盛りラベル、`index.html:1670-1671`の`zoneMarkAreas`
+  （`{yAxis:25}`×2）、`index.html:1769-1770`のチャート閾値ライン・
+  ラベルの計4箇所、いずれも「30」に修正済みであることを確認
+- `05_main.py:1611`のGrokプロンプト文言も
+  `"0-30=拡張（好調）、30-52=踊り場..."`に修正済みであることを確認
+- 上記により**対応方針①②は完全に解消**していることを実コードで確認
+
+一方、対応方針③（`computeCurrentScore()`のステップ関数と
+`computeScoreAsOf()`のlerp補間という2方式併存、画面上への非開示）は
+`[[MACRO-PULSE-ZONE-25-STALE-1]]`のスコープに一切含まれておらず、
+実コード再確認（2026-08-22）でも`index.html:1985-1990`のコメント
+「過去日付は引き続きlerp補間する」がそのまま残存し、画面上の開示も
+追加されていないことを確認した。**③は未解決のまま**。
+
+**優先度の見直し**: 当初「高」は①②③を一体として登録した際の判定
+（AI生成コンテンツの正確性に直結する②を主因に高評価）だった。②が
+解消済みとなった今、③単体の実害は「スコア推移チャート・比較バーが
+暗黙に異なる計算式同士を比較している」という設計透明性の問題であり、
+両方式とも意図的設計に基づく正当な出力（lerpは閾値付近の急変緩和が
+目的、c3eb81572で導入）で値そのものが誤りではない点が、事実として
+誤った境界を提示していた②（解消済み）とは性質が異なる。ただし
+「現在」と「過去」の数値を単純比較するとユーザーが誤読しうるという
+表示上の食い違いという実害自体は残っているため、③を「低」まで
+下げず「中」とした。
+
+**関連（2026-08-22追記）**: `[[MACRO-PULSE-3M-FORECAST-SNAPSHOT-
+MISMATCH-1]]`対応で`computeCurrentScore()`自体に変更が入った
+（AIウィークリーコメンタリー生成時のサーバー側スナップショット値を
+優先参照するよう変更、詳細は同エントリ参照）。この変更は`③`が指す
+`computeScoreAsOf()`の過去日付分岐（lerp補間）には影響しない
+（無変更を確認済み）が、`computeCurrentScore()`に着手する際は
+同エントリの実装内容も合わせて確認すること。
+
+#### 2026-08-26 再検証（スコープ重複なしを再確認、状態不変）
+`[[MACRO-PULSE-3M-FORECAST-SNAPSHOT-MISMATCH-1]]`（2026-08-22完了）との
+スコープ重複がないことを実コードで改めて確認した:
+`index.html:2009`のコメント「過去日付は引き続きlerp補間する」・
+`computeScoreAsOf()`（2011行目）の`lerp()`実装（2030行目〜）は現在も
+無変更のまま残存しており、MISMATCH-1が変更したのは
+`computeCurrentScore()`（現在スコアのみ、`WEEKLY_SNAPSHOT`優先化）で
+`computeScoreAsOf()`本体には触れていないことを再確認した。**③は
+未解決のまま現存**、優先度「中」を維持する。他に新規の重複・関連
+BACKLOG項目は見当たらなかった。
+
+#### 2026-08-26② ③の詳細調査（調査のみ・実装なし。`[[MACRO-COMPUTE-
+DUP-1]]`との重複発見を含む）
+
+**1. 2つの計算式の正確な所在・使い分け条件**:
+- ステップ関数: `computeCurrentScore()`（`index.html:1079-1170`）。
+  サーバー側同型実装は`_compute_current_score()`（`05_main.py`、
+  週次AI解説生成時）
+- lerp補間: `computeScoreAsOf(asOf)`内（`index.html:2011〜`）の
+  `calcSignal()`ローカル関数（2028-2081行目）
+- 使い分け条件: `isEffectivelyNow(asOf)`（`index.html:2001-2004`、
+  `asOf >= Date.now()`で判定）が真なら`computeCurrentScore()`
+  （ステップ）へ委譲、偽（真に過去の日付）ならlerp補間
+
+**2. 重要な発見: `[[MACRO-COMPUTE-DUP-1]]`（2026-06-21完了、
+BACKLOG_DONE.md）との重複**。`③`が調査しようとしている「ステップ関数と
+lerp補間の2方式併存」という設計課題自体は、**本エントリ登録
+（2026-07-23）の1ヶ月前に既に調査・対応済み**だった:
+- 当時の実害: `renderPhaseGauge()`（現在値表示）が独自のステップ関数、
+  `computeScoreAsOf(now)`がlerpを使っており、「今」を指定すると
+  ゲージ・`computeScoreAsOf(now)`・`computeScoreAsOf(今日23:59:59)`で
+  異なる3つ目の値が出る「3値問題」があった
+- Koichiさん確認済みの調査結果: lerpはコミット`c3eb81572`
+  （2026-05-22）で意図的に導入された「閾値付近の急変緩和」機能であり
+  バグではないと結論
+- 対応: 全面統一ではなく、`isEffectivelyNow(asOf)`を新設し「今」は
+  `computeCurrentScore()`（ステップ）へ委譲・真に過去の日付は
+  引き続きlerpという設計に変更。Playwrightで4値（ゲージ表示・
+  `computeCurrentScore().score`・`computeScoreAsOf(now)`・
+  `computeScoreAsOf(今日23:59:59)`）の完全一致を検証済み
+- **`RECESSION-SCORE-TRIPLE-CALC-1`③の登録・その後の再検証
+  （2026-08-16・08-22・08-26）は、いずれもこの既存完了エントリを
+  一度も参照していなかった**——`CHAT_RULES.md`事例10
+  （`[[MACRO-PULSE-ZONE-25-STALE-1]]`との重複）と同型の見落とし
+  パターンであり、追加の教訓化を検討する価値がある
+
+ただし、③の主張には**MACRO-COMPUTE-DUP-1が対応していない残存部分が
+正当に存在する**: 同エントリは「3値問題」というバグの解消とコード
+コメントでの設計意図明記までを行ったが、**画面上（ツールチップ・
+注記等）でのユーザー向け開示は一切行っていない**。③の真の残存
+スコープは、この「on-screen開示の有無」に限定される（設計意図の
+是非自体は既に確定済み）。
+
+**3. 実データでの併存の実害確認**: `renderScoreHistory()`の
+`buildScoreTimeSeries()`（`index.html:1619〜`）は全期間ポイントに
+`computeScoreAsOf()`を適用しており、**「本日」の1点のみステップ関数、
+他の全過去ポイントはlerp補間**という構造。これは日次的に発生する
+常時混在であり休眠状態ではない。カスタム比較バー
+`renderCustomCmp()`（`index.html:2154〜`）も、今日のスコア
+（`el('pg-score-num')`＝`WEEKLY_SNAPSHOT`/ステップ由来）と、
+利用者が指定した過去日（`computeScoreAsOf()`＝lerp由来）を並べて
+表示するため、常に異なる数式同士の比較になる。
+
+実測での乖離例（YC 10Y-2Y指標、weight=20、実際の閾値式で計算）:
+- 現在の実測値`yc=0.46%`（0.5%閾値の目前、`common/macro_data/series/
+  T10Y2Y.json`最新値）: step=40、lerp=31（差-9pt、合成スコアへの寄与差
+  約-1.8pt）
+- 閾値境界そのもの付近（`yc=0.00%`）: step=40、lerp=68（**差+28pt**、
+  理論上の最大乖離例）。8指標中最大weight（20）を持つ指標であるため、
+  この乖離だけで合成スコアが最大5.6pt動く計算になる
+
+**4. 画面上未開示による具体的リスク**: 比較バーで「先週比-9pt改善」等と
+表示された場合、閾値付近では計算方式の違いだけで最大28pt相当の差が
+生じうるため、「本当に指標が改善したのか、単に計算方式が違うだけ
+なのか」を画面上から判別できない。逆方向として、真の急変（閾値を
+またぐ変化）がlerpの「急変緩和」機能によりチャート上で滑らかに見えて
+しまい、AIコメンタリー（ステップ基準）とチャート（lerp基準）で
+方向性の異なる印象を与えるリスクもある。
+
+**5. 対応方針の選択肢**:
+- 案A: lerpを廃止しステップ関数に統一。長所: 単一ロジックで完全整合。
+  短所: `c3eb81572`の「急変緩和」機能を喪失、チャートが階段状に戻る。
+  実装規模: 小
+- 案B: 両方式維持＋画面上に注記追加（例:「過去日付は急変緩和のため
+  補間表示」というtooltip formatter/比較バーラベルへの追記）。長所:
+  既存の意図的設計を保持しつつ透明性を確保。短所: 実装箇所が複数
+  （チャートtooltip・比較バーラベル）。実装規模: 小〜中
+- 案C: 現状維持（コードコメントのみ、画面上開示なし）。
+  `[[MARKETPULSE-MINOR-INCONSISTENCIES-1]]`②で採用した案cと同種の
+  アプローチだが、**②は「稀にしか起きない潜在リスク」だったのに対し、
+  本件はチャート表示のたびに常時発生する構造であり、同じ判断根拠を
+  そのまま適用するのは妥当性に欠ける可能性がある**点に注意
+
+暫定的には案Bが妥当と考えるが、最終判断は次回相談する。
+
+#### 2026-08-26③ 案Bの実装完了
+
+Koichiさんの判断により案B（両方式維持＋画面上への開示）を採用。
+案A（lerp廃止）は`c3eb81572`の急変緩和という設計意図自体は正当であり
+撤回すべきでないため不採用、案C（コードコメントのみ）は本件が
+`[[MARKETPULSE-MINOR-INCONSISTENCIES-1]]`②のような稀な潜在リスクでは
+なくチャート・比較バー表示のたびに常時発生する構造であるため不採用。
+
+**実装箇所**（`docs/market-monitor/macro-pulse/index.html`、いずれも
+表示・注記の追加のみでスコア計算ロジック自体は無変更）:
+1. スコア推移チャートのtooltip formatter（`renderScoreHistory()`内、
+   1714-1741行目付近）: ホバー中の日付が本日（`todayStr`と一致）か
+   過去日かを判定し、「本日の実測値」または「過去日は急変緩和のため
+   補間表示（実際の変化より滑らかに見える場合あり）」を注記として
+   スコア値の下に追加表示するよう変更
+2. スコア比較バー（固定4セル＋カスタム比較セル、`compareBar`直下）:
+   静的な注記ブロックを新設し「※「本日」は実測値、比較先の過去日は
+   急変緩和のため補間値です。差分には計算方式の違いによる分も含まれる
+   場合があります。」を表示（既存のAI週次解説セクションの注記ブロック
+   と同一スタイルパターンを踏襲、`background:rgba(100,116,139,.08);
+   border-left:2px solid var(--bdr)`）
+
+**実装後の確認**: ローカルHTTPサーバー（`python -m http.server`）で
+本ファイルを配信し、`curl`で注記テキストが意図通りHTML内に出力されて
+いることを確認した。ブラウザツールが本セッションでは利用できなかった
+ため、実際のJS実行（tooltipのホバー表示等）による目視確認は未実施
+（次回ページ閲覧時の実地確認を推奨）。
+
+#### 2026-08-26④ 実ブラウザでの動作確認完了（問題なし）
+
+上記「未実施」だった実地確認をPlaywright（`[[MACRO-COMPUTE-DUP-1]]`と
+同じ手法）で実施した。`docs/`ディレクトリ全体をローカルHTTPサーバーで
+配信し（サブディレクトリのみ配信すると`../../common/`相対パスの
+アセットが404になる誤検知が生じるため、GitHub Pagesの実配信構造に
+合わせて`docs/`直下をルートとして配信）、Chromiumで`index.html`を
+開いて確認した。
+
+**1. スコア推移チャートのtooltip**: ECharts側`dispatchAction({type:
+'showTip', ...})`で該当データポイントのtooltipを直接発火させ内容を
+検証（マウス座標ホバーはグリッド領域の当たり判定がシビアで不安定
+だったため、より確実な検証手段としてこちらを採用）。
+- 本日（2026-08-26）のポイント: `Score: 22 (拡張) ※ 本日の実測値`
+  — 実装通り表示を確認
+- 過去日（2026-03-29）のポイント: `Score: 31 (踊り場) ※ 過去日は
+  急変緩和のため補間表示（実際の変化より滑らかに見える場合あり）`
+  — 実装通り表示を確認
+- 文言は途切れ・技術的すぎる表現なく可読。問題なし。
+
+**2. カスタム比較バーの静的注記**: `#cmpDateInput`に過去日
+（2026-06-01）を入力しchangeイベントを発火、比較セル
+（スコア35・差分-13・踊り場ラベル）が正しく表示されることを確認。
+直後の静的注記div（`※「本日」は実測値、比較先の過去日は急変緩和の
+ため補間値です。差分には計算方式の違いによる分も含まれる場合が
+あります。`）も実装通りの文言で表示されることを確認。`compareBar`
+本体とのバウンディングボックス重なりチェック（プログラム的に矩形の
+Y座標範囲を比較）は「重なりなし」で、レイアウト崩れは検出されなかった。
+
+**3. 既存表示への影響**: ゲージ（`#pg-score-num`）・AIウィークリー
+コメンタリー（`#aiTimeline`）とも表示崩れなし。コンソールエラー・
+警告とも**0件**（`docs/`全体を正しくルート配信した状態で確認。
+参考: サブディレクトリのみ配信した1回目の予備確認では`../../common/`
+アセット3件が404となりconsoleエラー3件が出たが、これはテストサーバー
+の配信範囲が狭すぎたことによる誤検知であり、GitHub Pages実配信環境
+では再現しない試験環境起因の見かけ上のエラーと判定した）。
+
+**4. `[[MACRO-PULSE-3M-FORECAST-SNAPSHOT-MISMATCH-1]]`の併せ確認**:
+ゲージ`#pg-score-num`＝`22`、AIウィークリーコメンタリー最新カード
+（2026/8/22時点表示、本文中に「2026/8/22時点のものです...上部
+「景気後退リスク複合スコア」の数値・ゲージも同じ値を参照しています」
+の注記あり）のスコア＝`22`で完全一致を確認。WEEKLY_SNAPSHOT優先方式
+（`1d68c7342`）が実ブラウザでも意図通り機能していることを確認した。
+
+**結論**: 表示上の問題は一切見つからず、**修正は不要**と判断した
+（③の実装・案Bはコード修正なしで確認完了）。フルページスクリーン
+ショットも取得し目視レイアウトも異常なしを確認した。
+
+**構造的な整合性確認**: `html.parser`で全タグの開閉バランスを機械
+チェックし、エラー0件・未閉タグなしを確認。`<script>`タグの開始/
+終了数も5/5で一致。波括弧`{`/`}`は953/953で完全一致。丸括弧は
+編集前後で常に-7のオフセットのまま変化なし（`git show HEAD:...`との
+比較で、この-7オフセット自体が本ファイル全体に元々存在する日本語
+文章中の片側括弧由来のものであり、今回の編集による新規の不整合では
+ないことを確認済み）。
+
+**既存表示への影響確認**: 追加した2箇所はいずれも既存要素の直下に
+新規ブロックとして追加したのみで、既存のDOM要素・CSSクラス・IDは
+一切変更していない。レイアウト崩れの理論的リスクは低いと判断する
+（ブラウザでの実地確認は次回推奨）。
+
+**検証ゲート**: 本変更はフロントエンドHTML/JSのみでPythonコードは
+無変更のため、`pytest tests/`: **923 passed, 0 failed**（変化なし、
+想定通り）を確認した。Market Pulse/MACRO PULSE専用のフロントエンド
+自動テストは存在しない（既存確認通り）。
+
+#### 着手条件
+なし（解消済み）
+
+#### コミット
+- `26e2327a2`: docs: [[RECESSION-SCORE-TRIPLE-CALC-1]]③を調査、[[MACRO-COMPUTE-DUP-1]]との重複を発見・対応案を報告
+- `33ff0c6a4`: feat: [[RECESSION-SCORE-TRIPLE-CALC-1]]③ステップ/lerp併存を画面上へ開示(案B)
+- `a0b7d9d2a`: docs(backlog): RECESSION-SCORE-TRIPLE-CALC-1(3)のtooltip/比較バー注記を実ブラウザ(Playwright)で確認、問題なし
+- `976ec7627`: docs: CHAT_RULES.mdに事例12を追加(再検証時もBACKLOG_DONE.mdの毎回grepが必要、本項目の重複発見が契機)
+
+---
+
+### ✅ [HOLLOW-RALLY-DEAD-1] Hollow Rally検知の構造的恒久不発火（2026-08-26案X実装・過去データバックフィル完了）
+**優先度:** 高 → 完了
+**分類:** バグ / MACRO PULSE
+**登録日:** 2026-07-23
+**発見:** `FIELD_DEFINITIONS.md`フェーズ10（AS-IS-204、依頼文名指し）
+
+#### 背景
+判定コードが参照する`r.sp500`列が`05_liquidity.csv`（`LIQUIDITY_COLUMNS`
+定数で列挙される全列）に一切存在しないため、`sp500Rows`は常に空配列となり、
+トリガー条件`sp500Rows.length>=6`が恒久的に成立しない。実装以来一度も
+発火したことがないことが構造的に確定している。
+
+#### 対応方針
+`05_liquidity.csv`にS&P500値を追加するか（`update_liquidity_csv()`側の
+改修）、判定ロジック自体を別データソース（例: 既存の`events.csv`や
+Market Pulseのmarket_data.json）から取得する設計に変更するかを判断して
+から着手する。
+
+#### 検証記録
+2026-08-16のBACKLOG棚卸しで`05_liquidity.csv`のヘッダに`sp500`列が
+現在も存在しないこと、`index.html:2537-2539`の`sp500Rows`が現在も
+恒久的に空配列であることを確認、現状再現を確認した。ただし本項目は
+「誤った情報を表示する」型ではなく「一度も発火しない」型の不具合で
+あり、AVGO/SCENARIO-BEARBULLのような本文中の明示的な自己矛盾（実害
+ゼロの明記）は見当たらない。優先度「高」を維持すべきか、実害の性質
+（機能が使えないだけで誤情報は出していない）を踏まえて引き下げるべき
+かの判断は保留とし、次回以降の個別判断に委ねる。
+
+#### 2026-08-26 再検証
+`LIQUIDITY_COLUMNS`（`05_main.py:1967-1974`）の列挙に`sp500`は現在も
+含まれておらず、`05_liquidity.csv`の実ヘッダ（`date,m2,hy_spread,
+fed_balance,tga,rrp,net_liquidity,reserve_balance,stealth_signal,
+stealth_absorb_weeks,net_liq_decline_weeks,stealth_alert`）にも
+`sp500`列は存在しないことを確認した。`index.html:2574`
+（行番号は登録時からシフト）の
+`rows.filter(r => r.sp500 !== undefined && r.sp500 !== '')`も現存し、
+`sp500Rows`が恒久的に空配列であることに変わりない。**未解消のまま
+現存、恒久不発火の構造も不変**。
+
+対応方針の選択肢②（別データソースから取得）について補足情報を追加:
+Market Pulse側`collect_and_send.py:750`の`structured_data`は既に
+`"S&P500": "^GSPC"`として日次のS&P500データ（`change_percent`含む）を
+保持しており、MACRO PULSE側で参照可能なら実装コストは選択肢①
+（`05_liquidity.csv`へのS&P500列追加、`update_liquidity_csv()`改修）
+より低い可能性がある。ただしMarket PulseとMACRO PULSEは別ワークフロー
+（`Market_Pulse_Update.yml`月〜金21:35 UTC／`MACRO_PULSE_Update.yml`
+毎日22:15 UTC）のため、クロスシステム参照を追加する場合はデータ鮮度・
+取得失敗時のフォールバックを別途設計する必要がある。優先度「高」の
+維持要否は前回同様、次回以降の個別判断に委ねる（実害の性質は「誤情報
+なし・機能不発火のみ」で変化なし）。
+
+**横断点検（MACRO PULSEのcronスケジュール依存関係）**:
+`MACRO_PULSE_Update.yml`は毎日22:15 UTCの通常更新に加え、**毎週土曜
+22:07 UTC（update-schedule）・22:11 UTC+60秒sleep（weekly-analysis）・
+22:15 UTC（通常更新）の3トリガーが約8分の窓に集中**しており、
+TANUKI VALUATIONで過去に発見された`[[TANUKI-VALUATION-PRICE-SCHEDULE-
+LAG-1]]`と同種のワークフロー競合リスクではないかと疑い調査した。
+`.gitattributes`が`docs/market-monitor/macro-pulse/data/*.csv`/
+`*.json`に`merge=ours`を設定しているため、複数ワークフローが同一
+ファイルへ近接して書き込んだ場合、後着のjobの変更が黙って消える
+リスクを懸念した。
+
+実際の直近土曜（2026-08-22）のコミット履歴を確認したところ、22:36:06
+UTC・22:36:08 UTC（2秒差）・22:40:55 UTCの3件のauto-commitが存在した
+（タイミングは酷似）が、それぞれの変更ファイルを確認すると
+weekly-analysisジョブは`05_weekly_analysis.csv`のみ、update-schedule
+ジョブは`05_fed_context.csv`/`05_indicator_schedule.csv`のみ、通常
+更新ジョブは`05_events.csv`/`05_liquidity.csv`/`05_meta.json`のみと
+**完全に排他的**（重複ファイルなし）であることを確認した。実コード
+（`05_main.py::run()`の各モード分岐、`update_liquidity_csv()`の呼び
+出し位置等）でも、モードごとに書き込み先ファイルが分離される設計に
+なっていることを確認した。**結論: 懸念した競合リスクは実際には
+発生しない（各モードの書き込み先が設計上排他的なため）**。新規
+BACKLOG登録は不要と判断する。
+
+#### 2026-08-26② 修正方式の判断材料調査（調査のみ・実装なし）
+
+案X（MACRO PULSE独自パイプライン追加）・案Y（Market Pulseのクロス
+システム参照）のどちらを採用するか判断するため、実コードで詳細調査
+した。
+
+**HOLLOW-RALLY検知が必要とするsp500データの仕様**（`index.html:2570-
+2587`）: `rows`（`05_liquidity.csv`パース結果）に**日次の終値レベル**
+（`parseFloat`対象、%やMAではない）が同居する形で必要。最低6件、
+直近値と6件前の値で5営業日リターンを算出。`05_liquidity.csv`は実データ
+1312行・ほぼ日次カデンスで、`hy_spread`（日次FRED系列）は毎日値が
+変わる列として既に共存しており、`sp500`も同様に日次で値が動く列として
+自然に収まる設計であることを確認した。
+
+**決定的な発見**: MACRO PULSEは**既に**sp500データ取得パイプラインを
+持っていた。`05_main.py:858-862`の`get_sp500(target_date)`関数
+（`fred_latest("SP500")`＝`common.macro_data.reader`経由でFRED
+"SP500"系列を取得、失敗時stooq.comへフォールバック）が、`run()`関数
+内`update_liquidity_csv(target_date)`呼び出しの直前（2217行目）で
+**既に毎日呼ばれている**（`events.csv`の`sp500_t0`列用）。
+`common/macro_data/series/SP500.json`も既に2,521件・2026-08-24まで
+蓄積済みで、`series_meta.json`に登録され`Macro_Data_Update.yml`
+（毎日UTC 10:00、週末含む全日）の通常フェッチ対象に含まれていることを
+確認した。
+
+**Market Pulse `^GSPC`との系統比較**（案Y採用時の懸念点）:
+
+| | MACRO PULSE `get_sp500()` | Market Pulse `^GSPC` |
+|---|---|---|
+| データ層 | `common.macro_data.reader`（FRED） | `common.market_data.reader`（yfinance） |
+| 更新cron | `Macro_Data_Update.yml` UTC 10:00・毎日（週末含む） | `Market_Pulse_Update.yml` UTC 21:35・平日のみ |
+| MACRO PULSE日次処理との時間差 | 約12時間15分前（同日中に完結） | 前営業日21:35〜翌日22:15 UTCまで最大約25時間差、月曜は金曜分のまま |
+
+案Yは平日のみcronに引きずられ月曜朝に金曜終値のまま扱われる鮮度ギャップ、
+および`[[WORKFLOW-SEC-TANUKI-GAP-1]]`と同種の`workflow_run`未活用問題
+（Market Pulse完了を待つ仕組みが存在しない）を新たに持ち込む。案Xは
+既存の同一システム内データ（FRED、週末含む毎日更新）を使うため、この
+種の懸念は発生しない。
+
+**実装規模感**:
+- **案X（推奨）**: 極小規模。`LIQUIDITY_COLUMNS`に`"sp500"`追加（1行）＋
+  `update_liquidity_csv()`内で`get_sp500(target_date)`を呼び
+  `new_row["sp500"]`へ格納（数行、呼び出し元`run()`で既に計算済みの
+  `sp500_t0`を引数で渡す設計にすれば新規フェッチ自体不要）。新規外部
+  依存・新規cron設計は不要
+- 案Y: 小〜中規模。実装コード量は案Xと同等かそれ以下だが、クロス
+  システム依存の鮮度チェック・フォールバック設計が新たに必要で、
+  実質的な設計コストは案Xより高い
+
+**結論**: 案X（MACRO PULSE独自、既存の`get_sp500()`/FRED "SP500"系列を
+横展開）を推奨。既存インフラの再利用のみで新規の依存関係を一切
+発生させない。次回セッションでKoichiさんに最終確認の上、実装に着手
+する。
+
+#### 2026-08-26③ 案Xの実装完了
+
+**修正内容**（`src/market/macro_pulse/05_main.py`）:
+- `LIQUIDITY_COLUMNS`に`"sp500"`を追加
+- `update_liquidity_csv(target_date, sp500_val=None)`へシグネチャ変更。
+  `run()`側で既に取得済みの`sp500_t0`（`get_sp500(target_date)`）を
+  引数で渡す設計とし、本関数内での新規FRED取得は発生させない
+- `new_row`辞書・`update_cols`（既存日付への再実行時の上書き対象列）
+  双方に`sp500`を追加。既存日付の再実行でもsp500が正しく更新される
+  ことをテストで確認済み
+- 呼び出し元`update_liquidity_csv(target_date)` →
+  `update_liquidity_csv(target_date, sp500_t0)`へ変更
+- sp500列はcarry-forwardしない設計とした（他の週次系列とは異なり、
+  5営業日リターン計算に古い価格が紛れ込むことを避けるため意図的な
+  非対称設計。docstringに明記）
+
+**過去データのバックフィル**: 実施し完了。判断根拠:
+`common/macro_data/series/SP500.json`（FRED "SP500"系列）は2016年から
+蓄積済みで、`05_liquidity.csv`の全履歴（2023-01-01〜、1311行）を完全に
+カバーしていることを確認したため、全履歴バックフィルを実施した。
+
+`src/market/macro_pulse/05_import_history.py`に新規サブコマンド
+`liquidity-sp500`（`backfill_liquidity_sp500()`）を追加。
+`backfill_context()`（`[[MACRO-TRUTHY-ZERO-BUG-1]]`対応時）と同じ
+非破壊方針（sp500列のみ対象、既に値がある行は`--overwrite`指定時のみ
+上書き、他列には一切触れない）。`_load_sp500_cache()`/`_lookup_sp500()`
+（`--fill-returns`用に既存だった「日付as-ofの直近値」ルックアップ）を
+再利用し、1回の一括フェッチで全期間を処理（1311行のバックフィルが
+0.1秒程度で完了、`[[MACRO-TRUTHY-ZERO-BUG-1]]`のcontextバックフィル
+〈1行ずつ5系列を個別ルックアップ、8214行で約4.5分〉より大幅に高速）。
+
+`python 05_import_history.py liquidity-sp500`を実行し、**1309/1311行**
+のsp500列を復元した（残り2行は2023-01-01・01-02——バックフィル対象
+期間の起点に一致する米国市場休場日で、キャッシュの起点より前の参照値が
+存在しないための正当な空欄。他の全ての休場日はキャッシュ内の直前
+取引日終値へ`_lookup_sp500()`のas-of方式で自動的にフォワードフィル
+されている）。
+
+**diff確認**: `git show HEAD:...05_liquidity.csv`との全行突合を実施し、
+event_id相当の行数（1311行、行の追加・削除なし）が前後で完全一致、
+**変更があったのはsp500列のみ**（他の11列は1件も変更なし）であることを
+機械的に確認した。
+
+**HOLLOW-RALLY検知ロジックの初回発火時の挙動**（`index.html:2570-2596`）:
+条件（S&P500の5営業日リターン>+1.0% かつ FRB純流動性の前回比<-0.5%）が
+成立すると、`<div class="hollow-rally-badge">`が流動性カードグリッド
+（`#liqGrid`）の直上に挿入される。CSS（289行目）はアンバー色
+（`border`/`background`/`color`とも`--amb`系、`rgba(245,158,11,...)`）の
+横幅いっぱいのバッジバナーとして表示され、本文は「⚠ HOLLOW RALLY 検知
+— 株価上昇（S&P500 5日 +X.X%）に対しFRB純流動性が縮小中（Y.YY% 前週
+比）。流動性に裏付けのない上昇は持続性に疑問。」という日本語文。
+ページ読み込み毎に条件を再評価し、非該当時は既存バッジを`remove()`する
+ため、永続アラートではなく「その時点で条件が成立している間だけ表示
+される」動的バナーである。
+
+**実データでの動作確認**: バックフィル後の`05_liquidity.csv`（sp500Rows
+1309件・nlRows 1308件、いずれも発火に必要な最低6件/2件を大幅に上回る）
+に対しJSロジックをPythonで再現実行した結果、2026-08-26時点では
+`sp5dChg=-1.19%`（S&P500は5営業日で下落）のため条件不成立
+（`trigger=False`）であることを確認した。**本修正の反映直後にバッジが
+突然表示されることはない**（意図しない初回発火の心配なし）。
+
+**副次発見（未修正・報告のみ）**: `update_liquidity_csv()`の
+ステルス流動性シグナル計算部（`prev_rrp`/`prev_tga`/`prev_rsv`が
+`if not prev_rows.empty:`ブロック内でのみ定義される一方、後続の
+ステルス吸収額比較で無条件に参照される）が、`05_liquidity.csv`が
+完全に空の状態から初回実行された場合に`UnboundLocalError`で
+クラッシュする設計であることをテスト作成中に発見した。本番の
+`05_liquidity.csv`は既に1311行の履歴を持つため現在は再現しないが、
+ファイル消失等で再現しうる潜在バグのため、
+`[[LIQUIDITY-CSV-FIRST-ROW-UNBOUNDLOCALERROR-1]]`として新規登録した
+（優先度低、着手条件なし。CHAT_RULES.md「調査中に発見した別バグの
+実装は別途依頼を待つ」原則に従い本タスクでは修正せず）。
+
+**テスト追加**（`tests/test_macro_pulse_logic.py::
+TestUpdateLiquidityCsvSp500`、3件）:
+- `test_sp500_value_is_stored`: sp500列への正しい格納、他列（m2等）・
+  種として与えた前日行への非影響を確認
+- `test_sp500_none_leaves_column_blank`: `sp500_val=None`時に空欄の
+  ままであることを確認
+- `test_rerun_same_date_updates_sp500`: 既存日付への再実行時も
+  `update_cols`経由でsp500が正しく上書きされることを確認（追記される
+  のではなく1行のまま更新されることも確認）
+
+3件とも修正前コード（`git stash`で一時的に戻して実行）に対して
+`TypeError: unexpected keyword argument 'sp500_val'`で失敗することを
+確認済み。**テスト作成中に自己発見・自己修正した副次的な問題**:
+初回実装のテストが`update_liquidity_csv()`内の`05_meta.json`書き込み
+（`BASE_DATA_DIR`直接参照、`LIQUIDITY_PATH`とは独立した書き込み先）を
+monkeypatchし忘れており、テスト実行が実際の本番`05_meta.json`
+（タイムスタンプのみ）を書き換えてしまっていたことにpytest実行後の
+`git status`確認で気づいた。`git checkout --`で復元の上、全テストに
+`BASE_DATA_DIR`のmonkeypatchを追加して再発防止した。
+
+**検証ゲート結果**（全て通過）:
+- `pytest tests/`: **912 passed, 0 failed**（新規3件含む、既存909件
+  無変化）
+- `python 05_audit.py`（MACRO PULSE専用）: NG=0件/WARN=48件（既存WARN
+  と同一件数、sp500関連の新規WARNなし）
+- `python common/sec_data/audit.py`: 🟢正常95銘柄/🟡警告5銘柄（既存
+  WARN、MACRO PULSE非対象で無変化）
+- `python common/sec_data/report_consistency_check.py --fail-on-ng`:
+  NG=0件/WARN=96件（既存WARN、MACRO PULSE非対象で無変化）
+
+#### 着手条件
+なし（解消済み）
+
+#### コミット
+- `0289ae907`: docs: [[HOLLOW-RALLY-DEAD-1]] 案X/Y判断材料を調査、案X推奨で記録(実装なし)
+- `4b440292a`: fix: [[HOLLOW-RALLY-DEAD-1]] sp500列を追加(案X)・過去1309行をバックフィル
+
+---
+
+### ✅ [MARKETPULSE-MINOR-INCONSISTENCIES-1 ①②③④⑤] Market Pulseの軽微な構造的不整合6件中5件を解消（⑥は休眠状態のため優先度低のままBACKLOG.mdに残置）
+**分類:** データ品質 / Market Pulse
+**登録日:** 2026-07-23（本体） / 2026-08-26（対応着手）
+**完了日:** 2026-08-26
+**発見:** `FIELD_DEFINITIONS.md`フェーズ10
+
+#### 背景
+Market Pulseの軽微な構造的不整合6件（①Hindenburg Omen固定値500・
+②credit.stock/bond原資産不一致・③CSV出力フィールド欠落・
+④breadth_summaryパススルー漏れ・⑤F&G情報源混同・⑥Tech Pulse
+バックフィル式相違）のうち、①③④⑤の4件を修正し、②は設計判断を
+要するためコメント追記による意図の明示のみ、⑥は実データで休眠状態
+（実害ゼロ）と確認した上で優先度を低へ引き下げ据え置きとした。
+本体エントリ`[[MARKETPULSE-MINOR-INCONSISTENCIES-1]]`は⑥が残るため
+引き続きBACKLOG.mdに残置し、本エントリは①②③④⑤の完了分をまとめて
+記録するもの（詳細な調査過程・実データ根拠は本体エントリ参照）。
+
+#### ①Hindenburg Omen固定値500の修正
+`collect_and_send.py`の`hindenburg_active`判定が実測`total_stocks`を
+使わず固定値500をハードコードしていた。`breadth_data.json`の実測値を
+参照する`calc_hindenburg_active(breadth)`関数へ切り出して修正。実データ
+（93件）で修正前後を突合した結果、**4件**（2026-04-02・04-23・
+07-20・07-22、いずれも`nl=11`ちょうどの境界事例）で判定が変化し、
+旧ロジックが誤って「シグナル発生」と計上していたことが確定した（実害
+確定・訂正）。
+
+#### ②credit.stock/bond原資産不一致（案c採用、コメント追記のみ）
+`credit_stock`（^GSPC指数）と`credit_bond`（SPY ETF）が異なる原資産を
+参照する件。実データ調査で最大0.673ptの乖離（SPY四半期分配落ち起因）を
+確認したが、両者は目的の異なる独立した計算経路（前者=市場全体の日次
+方向性、後者=資金フロー概念で実売買可能ファンドが必須）であり、統一は
+それぞれ耐障害性低下・概念不整合という代償を伴うと判明。Koichiさんの
+判断により現状維持（案c）を採用し、設計意図・見送り理由・残存リスクを
+コードコメントとして明記した（ロジック変更なし）。
+
+#### ③CSV出力フィールド欠落の修正
+`CSV_COLUMNS`未列挙のため無条件に欠落していたNASDAQ本体・全volume_ratio
+系・NYSE Composite divergence等、計13列を追加。tech_pulse/asset_flow/
+credit/両checklist/fear_greed/comments_historyはネスト構造で単純な列
+追加ができないため対象外とした（JSON側には保存済み）。既存CSVからの
+無損失マイグレーションも確認済み。
+
+#### ④breadth_summaryパススルー漏れの修正
+`compute_sentiment()`内`breadth_summary`辞書のホワイトリストから漏れて
+いた5フィールド（`unchanged`/`ad_ratio_1d`/`total_stocks`/
+`rsp_return_1d`/`spy_return_1d`）を追加。
+
+#### ⑤F&G情報源混同の解消（案A採用）
+`_load_div_history()`のフォールバック（`divergence.value`欠損時の代替
+計算）が、docstringの「CNN F&Gベースで一貫性が保たれる」という主張に
+反しfeargreedchart.com由来の値を参照していた設計不整合。実データ
+シミュレーション（131件）で、このフォールバックが実際に発火した事例は
+**ゼロ件**（前回誤って「発火中」と判定していたのを訂正、
+`CHAT_RULES.md`事例11として記録）と確認した上で、参照先をCNN由来の
+`(entry.get("fear_greed") or {}).get("score")`へ差し替え、docstringも
+実態に一致させた。
+
+#### 検証（①③④⑤共通）
+- テスト追加: `TestCalcHindenburgActive`(4件)・`TestBreadthSummaryFields`
+  (2件)・`TestSaveDataCsvFields`(2件)・`TestLoadDivHistory`(4件)、
+  計12件。うち11件は`git stash`で修正前コードに戻すと実際に失敗する
+  ことを確認済み
+- `pytest tests/`: 909〜923 passed（各修正時点で0 failed、既存分は
+  無変化）
+- `python common/sec_data/audit.py`/`report_consistency_check.py`:
+  Market Pulse非対象の既存WARN以外は変化なし
+
+#### 残課題（本体エントリ側）
+⑥（Tech Pulseバックフィル計算式相違）は`backfill_tech_pulse.py`が
+ワークフロー未登録の手動専用スクリプトであり、現行ライブデータ80件
+すべてが新方式（パーセンタイル方式）で書かれ旧方式の値が1件も存在
+しない「完全休眠状態」であることを実データで確認。実害顕在化は将来
+誰かが同スクリプトを実行した場合に限られるため、Koichiさんの判断で
+優先度「低」のまま据え置き、今回は実装しない。`[[MARKETPULSE-MINOR-
+INCONSISTENCIES-1]]`本体エントリとしてBACKLOG.mdに残置し継続監視する。
+
+#### コミット
+- `7c4bd89cb`: fix: [[MARKETPULSE-MINOR-INCONSISTENCIES-1]] ①③④を修正、②は再確認結果を報告し実装待機
+- `d9132bfa9`: docs: [[MARKETPULSE-MINOR-INCONSISTENCIES-1]]②を案cで対応完了(コメント追記のみ)
+- `e293b0a7f`: docs: [[MARKETPULSE-MINOR-INCONSISTENCIES-1]]⑤F&G情報源混同を追加調査、前回の実害判定を訂正
+- `8b5ac27ad`: docs: CHAT_RULES.mdに事例11を追加(フォールバック発火件数の代理指標混同)
+- `c6974af56`: fix: [[MARKETPULSE-MINOR-INCONSISTENCIES-1]]⑤F&G情報源混同を解消(案A、CNN一本化)
+- `b6c7e7f23`: docs: [[MARKETPULSE-MINOR-INCONSISTENCIES-1]]⑥を再確認、休眠状態と判明し優先度を低へ引き下げ
+
+---
+
+### ✅ [FEARGREED-DUPKEY-BUG-1] fear_greed.previous_close/one_week_agoの重複キーバグ（2026-08-26修正完了）
+**優先度:** 中 → 完了
+**分類:** バグ / Market Pulse
+**登録日:** 2026-07-23
+**発見:** `FIELD_DEFINITIONS.md`フェーズ10（AS-IS-346/347）
+
+#### 内容
+`collect_and_send.py:1458-1459`で`fear_greed.previous_close`と
+`fear_greed.one_week_ago`が両方とも`history.get("1w")`という同一のキーを
+参照しており、常に同じ値になる。「前日終値」を意図しているなら本来
+`history.get("1d")`等の別キーを参照すべきところ、コピペミスの可能性が
+高い。
+
+#### 対応方針
+`previous_close`が本来参照すべきキー（CNN `fear_greed`パッケージの
+`history`辞書の実際のキー構成を確認の上）に修正する。
+
+#### 2026-08-26 再検証（対応方針の前提を訂正・実装規模を確定）
+`collect_and_send.py:1572-1573`（行番号は登録時からシフト）に
+`"previous_close": history.get("1w")`・`"one_week_ago": history.get("1w")`
+が現存し、バグ自体は未解消であることを確認した。一方、**登録時の対応
+方針が前提としていた「`history`辞書内の正しいキー（`1d`等）に差し替える」
+という修正方法は実行不可能**であることが判明した:
+
+- `venv/Lib/site-packages/fear_greed/client.py`（`FearGreedClient.get()`）
+  を確認したところ、`history`辞書が持つキーは`1w`/`1m`/`3m`/`6m`/`1y`の
+  **5種類のみ**で、`1d`（前日）に相当するキーは存在しない
+- 実際にCNNの生API（`FearGreedClient().fetch()`）を呼び出して確認した
+  ところ、`data["fear_and_greed"]`には`previous_close`フィールドが
+  別途存在する（実測値: `previous_close=55.03`、`previous_1_week=55.09`
+  ——現在のコードが誤って`one_week_ago`と同値にしている値とは別物と
+  実データで確認）が、`fear_greed`パッケージの`get()`メソッドは
+  この`previous_close`フィールドを**返り値に含めず握りつぶしている**
+  （`score`/`rating`/`timestamp`/`history`/`indicators`のみ返す）
+- したがって正しい修正には、`fg.get()`ではなく`FearGreedClient().fetch()`
+  （生API呼び出し）を使い`data["fear_and_greed"]["previous_close"]`を
+  直接取得する経路への変更が必要（`history`辞書内でのキー差し替えでは
+  実現できない）。実装規模は小〜中程度（`fetch_cnn_fear_greed()`の
+  実装変更のみだが、生APIレスポンス構造への直接依存が増えるため
+  例外処理の見直しも要検討）
+
+**現在の実害の確認**: `previous_close`/`one_week_ago`フィールドの
+消費先を`grep -rn`で全文検索した結果、`market_data.json`への保存以外に
+参照箇所が存在しない（`index.html`等のフロントエンドで一切表示されて
+いない）ことを確認した。**現時点でユーザーに見える実害はゼロ**
+（値は保存されているが誰も読んでいない）。ただし将来これらの
+フィールドを表示に使う実装が入った場合、値が誤ったまま気づかれずに
+表示される潜在リスクは残る。
+
+優先度は実害ゼロを理由に引き下げず「中」を維持する（対応方針自体の
+前提誤りを訂正した記録的価値が今回の主目的）。
+
+#### 2026-08-26② 実装完了
+
+**STEP 1 再確認**: `collect_and_send.py:1629-1644`の`fetch_cnn_fear_
+greed()`が`fg.get()`を使い、`previous_close`・`one_week_ago`とも
+`history.get("1w")`のまま現存していることを確認。消費先の再確認でも
+`market_data.json`保存以外の参照は0件（実害は引き続きゼロ）。
+
+**STEP 2 修正方針**: `fear_greed`パッケージの`__init__.py`を確認した
+ところ、`fg.get()`とは別に**モジュールレベルの`fg.fetch()`関数が
+既に公開されている**ことを発見した（`_default_client.fetch()`を
+呼ぶだけの薄いラッパー、`get()`が内部で使うのと同一のセッション・
+エラーハンドリングを共有）。ユーザー提案の`FearGreedClient()`を
+新規インスタンス化する方式より単純に、`fg.fetch()`を直接呼べば
+生API応答へアクセスできると判明。`get()`と`fetch()`は別々にHTTP
+リクエストを発生させるため、両方を呼ぶ（`get()`でscore/history、
+`fetch()`でprevious_close）と二重フェッチになる。そこで**`get()`を
+使わず`fetch()`のみで完結させ**、`score`/`rating`/`previous_close`/
+`previous_1_week`/`previous_1_month`を生応答から直接抽出する設計に
+変更した（`get()`が内部でやっているhistory辞書構築・3m/6m用の
+historical point検索は今回使う3フィールドには不要なため省略）。
+
+**修正箇所**（`collect_and_send.py::fetch_cnn_fear_greed()`）:
+`fg.get()`→`fg.fetch()`に変更し、`data["fear_and_greed"]`から
+直接`previous_close`/`previous_1_week`/`previous_1_month`を取得する
+実装へ書き換えた。
+
+**修正前後の値の具体例**（実際にAPIを呼び出して確認、2026-08-26）:
+
+| フィールド | 修正前 | 修正後 |
+|---|---|---|
+| `previous_close` | 57.2（`previous_1_week`由来、誤り） | **58.8**（真の前日終値） |
+| `one_week_ago` | 57.2 | 57.2（変化なし、意味的に正しいまま） |
+| `one_month_ago` | 41.34 | 41.34（変化なし） |
+
+`previous_close`のみが誤った値（57.2）から正しい値（58.8）へ訂正
+された。`one_week_ago`/`one_month_ago`は元々正しいキー（`1w`/`1m`）を
+参照していたため数値は変わらない（取得経路のみ`get()`→`fetch()`へ
+変更）。
+
+**テスト追加**（`tests/test_collect_and_send_market_data_switch.py::
+TestFetchCnnFearGreed`、3件）:
+- `test_previous_close_distinct_from_one_week_ago`:
+  `previous_close`と`previous_1_week`に意図的に異なる値を与え、
+  `previous_close`が`previous_1_week`（旧バグ値）ではなく真の値を
+  返すことを確認
+- `test_missing_previous_close_returns_none`: `previous_close`欠損時に
+  `None`を返すことを確認
+- `test_fetch_exception_returns_none`: `fetch()`が例外を送出した場合
+  `None`を返すことを確認（既存の例外ハンドリングが`fetch()`ベースでも
+  維持されていることの確認）
+
+3件とも`git stash`で修正前コードに一時的に戻して実行した結果、失敗
+することを確認済み。**副次的な発見**: 修正前コードの`fg.get()`は
+モジュールレベルの`fear_greed.fetch`をmonkeypatchしても影響を受けず
+（`_default_client`インスタンスの`self.fetch`メソッドを呼ぶ別経路の
+ため）実際にCNNへ生の通信を行った。これは「`get()`と`fetch()`は独立
+した呼び出し経路」というSTEP 2の分析を、モックが素通りする挙動として
+実地に裏付ける結果となった。
+
+**検証ゲート結果**（全て通過）:
+- `pytest tests/`: **923 passed, 0 failed**（新規3件含む、既存920件
+  無変化）
+- `python common/sec_data/audit.py`: 🟢正常95銘柄/🟡警告5銘柄
+  （既存WARN、Market Pulse非対象で無変化）
+- `python common/sec_data/report_consistency_check.py --fail-on-ng`:
+  NG=0件/WARN=96件（既存WARN、Market Pulse非対象で無変化）
+- Market Pulse専用の検証スクリプトは存在しない（既存確認通り）
+
+#### 着手条件
+なし（解消済み）
+
+#### コミット
+- `76b1f9d41`: fix: [[FEARGREED-DUPKEY-BUG-1]] previous_closeをfetch()経由の真の値へ修正
+
+---
+
+### ✅ [LAYER1-GROWTH-HYPEPHASE-DECAY-GAP-1] GROWTH-1（Layer2 recommended_g）のHypePhase加重をFunda側から削除（案A採用・固定50:50へ復元、2026-08-26完了）
+**優先度:** 中 → 完了
+**分類:** 設計判断要確認 / TANUKI VALUATION / DCF成長率
+**登録日:** 2026-08-23
+**追記日:** 2026-08-26（論点再整理＋調査完了）
+**完了日:** 2026-08-26②（Koichiさんの最終判断を受け、案A〈固定50:50への復元〉を実装。
+下記「2026-08-26② 実装完了」参照。HypePhaseが捉えようとしていた「勢いの
+持続性・剥落」という発想は、Timing側〈HypeCore〉の新機能として
+`[[STOCKHTML-SIGNAL-CONSISTENCY-SECTION-1]]`へ引き取る形で別途登録済み）
+**発見:** Koichiさんがチャット側でAPP report.txtを検討中に発見（2026-08-23）
+
+#### 論点の再整理（2026-08-26、Koichiさんとチャット側で合意済み・議論のみでコード変更なし）
+チャット側でKoichiさんと「HypePhaseは企業成長フェーズの定義ではなく、
+本源価値算出とは関係のない、株価の価格形成に顕著なサイクルパターン
+（技術的・センチメント指標）である」という認識で合意した。根拠は
+report.txt[7]HYPECOREの定義（Phase1-4がいずれも価格とMA200の位置関係・
+モメンタム・RSI・出来高のみで構成され、売上・受注等のファンダメンタ
+ルズ要素を含まない）、および[1]TANUKI SCOREの`Funda_Score`/
+`Timing_Score`分離でHypeCore_Phaseが`Timing_Score`側の構成要素として
+明記されていること。
+
+この認識に基づくと、GROWTH-1（下記、Layer2のrecommended_g計算で
+HypePhaseに応じてTTM成長率と業界ベンチマークの加重比率を変える仕組み）
+は、Funda側の入力（DCF成長率）にTiming側の信号（HypePhase）を混ぜて
+いるという点で、システム自身の設計思想（割引率側はRm=10%固定・Beta
+非考慮でセンチメントを意図的に排除している）と非対称であり、設計矛盾
+ではないか、という結論に至った。
+
+**Koichiさんの判断**: この設計矛盾を見直し、HypePhase依存を削除する
+方向で調査を進める。ただし調査結果次第で最終的な削除の是非・代替方式は
+改めて確認する。
+
+これにより本エントリの論点は、当初の「Layer1にもHypePhase減速を追加
+すべきか」から「Layer2のGROWTH-1がHypePhaseを使っていること自体が
+適切か」へ再整理された（下記「2026-08-26 調査結果」参照）。
+
+#### 元の内容（2026-08-23登録、Layer1起点の発見。背景として保持）
+report.txt[4]「成長率根拠」欄で、Layer 1（セグメント加重モデル、
+`segment_configured=True`銘柄）はセグメント加重成長率がそのままDCFの
+成長率Gとして直接使用される。一方、同[4]の定義欄には「GROWTH-1:
+Decay model weight adjusted by HypeCore phase」というHypePhaseに応じた
+成長率減速モデルの説明があるが、実コード確認の結果、これはLayer 2
+（`segment_configured=False`銘柄向けのrecommended_g自動適用）にのみ
+適用されるロジックであり、Layer 1には適用されていないことを確認した。
+
+実例（APP、2026-08-21生成のreport.txt）: HypePhase=Phase4（期待剥落期）
+にもかかわらず、DCF適用成長率45.0%（セグメント加重平均）は推奨成長率
+24.8%（Layer 2参考値。HypePhase4であれば本来はTTM×35%+業界×65%まで
+減速される想定の値）を+20.2pt上回ったまま、一切の減速調整を受けずに
+そのままDCFへ使用されている。
+
+#### 実コード確認結果（登録前に実施）
+- `src/value/tanuki_valuation/calculator/growth.py::get_segment_growth()`
+  （72-123行目）: segment_config.pyから取得した`weighted_growth`を
+  そのまま`GrowthResult(rate=weighted_growth, source="segment_weighted")`
+  として返すのみで、HypePhase等の減速要素は一切参照していない。
+  `segment_config.py`自体もhype/phase/decay関連の記述なし（grep 0件で
+  確認）。
+- `pipeline.py:772`: `_is_seg_unconfigured = not extra.get(
+  "segment_configured", True)` でLayer1/Layer2を判定。
+- `pipeline.py:782`: `if _is_seg_unconfigured and _recommended_g is not
+  None and financials is not None:` — recommended_g（GROWTH-1のHypePhase
+  減速込み）によるDCF再計算ブロックは、この条件が真の場合（＝Layer2）
+  にしか実行されない。Layer1では`_phase1_growth`（セグメント加重平均
+  そのまま）がDCFのGとして使われ続ける。
+- GROWTH-1導入コミット（`c040075ea`、2026-05-31）のコミットメッセージは
+  「DCF-1の逓減DCF(TTM>50%銘柄)で使用するrecommended_gの計算式を改善」
+  であり、対象を明示的にrecommended_g経路（Layer2/3/4）に限定して設計
+  されている。Layer1への適用を検討した形跡はコミットメッセージ・
+  `BACKLOG_DONE.md`完了記録のいずれにも見当たらない。
+- 関連する既存クローズ済み課題`[[BUG-INTU-GROWTH-1]]`（2026-06-14完了、
+  `BACKLOG_DONE.md`参照）はLayer1銘柄でSection4の表示ラベルがLayer2の
+  ものを流用していた**表示バグ**を修正したものであり、「Layer1のDCF
+  成長率にHypePhase減速を適用すべきか」という設計判断そのものには
+  触れていない（「セグメント加重モデル（Layer 1）」「Layer 2参考値・
+  DCF未適用」という正しい表示ラベルに修正しただけ）。本エントリの論点
+  とは重複しないと判断した。
+
+#### 元の対応方針（2026-08-23登録時点のもの。下記2026-08-26調査結果により
+論点が再整理されたため、参考として保持）
+Layer1にHypePhase減速が適用されない設計が意図的なもの（例: 手動設定
+したセグメント別成長率はアナリストの一次情報に基づく確度の高い値で
+あり、機械的な市場心理減速を上書きすべきでない、という設計思想）か、
+それとも見落とし・未対応なのかを、次回セッションでKoichiさんに確認の
+上、方針を決定する。
+- 意図的設計と判断する場合: その設計思想を本エントリに追記した上で
+  「対応不要」としてクローズする
+- 見落とし・対応すべきと判断する場合: Layer1にも何らかのHypePhase減速
+  （既存のGROWTH-1と同型 or 別方式）を適用する実装方針を検討する
+
+---
+
+#### 2026-08-26 調査結果（実装なし・調査のみ。GROWTH-1のロジック自体は
+一切変更していない）
+
+##### 1. GROWTH-1導入時の実際の意図・実証データの有無
+
+`git show c040075ea`（2026-05-31、コミットメッセージ「feat: GROWTH-1
+逓減モデルの傾きをHypeCoreフェーズで調整」）の実差分を確認した。
+
+- 変更ファイル: `growth_sanity.py`（`check_growth_sanity()`に
+  `hype_phase`引数追加、`_ttm_weight`分岐: Phase1-2=0.65 / Phase3・
+  不明=0.50 / Phase4=0.35）・`pipeline.py`（`_load_hype_phase()`新設、
+  `check_growth_sanity()`へ`hype_phase`を渡す）・
+  `tests/test_pipeline_logic.py`（`TestGrowthDecayModelPhaseWeight`
+  3件追加）
+- **重要**: 追加されたテスト3件はいずれも「与えたhype_phaseに対して
+  加重比率通りの算術結果が返るか」を検証する単体テストであり、
+  「HypePhase加重が予測精度・的中率を改善するか」を検証するバック
+  テストではない。コミットメッセージ本文にも「旧: (TTM+業界平均)/2
+  固定50:50」「新: フェーズ別重み」という**設計の説明**のみが記載され、
+  改善率・検証データへの言及はゼロ。
+- `BACKLOG_DONE.md`の完了記録（`### ✅ [GROWTH-1] 成長逓減モデルの
+  精緻化（2026-05-31 完了）`）も同様にコミットメッセージの内容を要約
+  したのみで、バックテスト結果・改善率データの記載はない。
+- **結論**: GROWTH-1のHypePhase加重は、導入当時から実証データに基づく
+  ものではなく、「Phase1-2は成長継続余地あり」「Phase4は正規化が
+  加速する」という**理論的仮説（机上の設計判断）のみ**で導入された
+  ことを確認した。的中率・予測精度の改善を裏付けるデータは存在しない。
+
+##### 2. 影響範囲の実データ確認（2026-08-26時点の本番データで実測）
+
+**Layer2該当銘柄数**: `get_tanuki_tickers()`（tanuki=true）100銘柄中、
+`latest.json`の`segment_configured=False`銘柄は**64銘柄**。
+
+ただし、GROWTH-1のHypePhase加重が実際に効くのは、この64銘柄のうち
+`growth_sanity.growth_model == "decay"`（TTM Revenue成長率>50%の
+高成長銘柄、DCF-1の5年逓減DCFが適用される銘柄）に該当する場合のみ。
+`growth_model == "median"`（TTM≤50%、候補値の中央値を採用するモデル、
+64銘柄中54銘柄）はhype_phaseを一切参照しない（`growth_sanity.py`の
+分岐構造上、573行目以降のmedianブランチにhype_phase使用箇所なし）。
+**decay modelに該当するのは64銘柄中わずか10銘柄**（ALAB, ASTS, CWAN,
+IONQ, KULR, QBTS, RCAT, RXRX, SITM, S）。
+
+**decay model 10銘柄の実測内訳**（`growth_sanity.growth_model_reason`
+から実際の加重式を抽出し、HypePhase加重を外し固定50:50にした場合の
+recommended_gと比較。IVは現状値、参考として併記。DCF再計算は未実施
+——後述の通り本調査ではpipeline再実行を伴う実装を避けた）:
+
+| 銘柄 | HypePhase | 現在の加重 | 現在のrecommended_g | 固定50:50の場合 | 差分 | 現在のIV |
+|---|---|---|---|---|---|---|
+| ASTS | Phase4 | TTM35%/業界65% | 28.5% | 40.1% | **-11.6pt** | $3.74 |
+| CWAN | Phase2 | TTM65%/業界35% | 55.3% | 47.6% | **+7.8pt** | $44.61 |
+| IONQ | Phase4 | TTM35%/業界65% | 41.2% | 54.8% | **-13.6pt** | $21.98 |
+| KULR | Phase4 | TTM35%/業界65% | 37.7% | 50.1% | **-12.4pt** | $4.53 |
+| QBTS | Phase4 | TTM35%/業界65% | 24.3% | 30.4% | **-6.1pt** | $3.11 |
+| RCAT | Phase4 | TTM35%/業界65% | 41.5% | 55.0% | **-13.5pt** | $6.08 |
+| RXRX | Phase4 | TTM35%/業界65% | 34.5% | 45.0% | **-10.5pt** | $15.49 |
+| ALAB | Phase3 | TTM50%/業界50% | 54.8% | 54.8% | 0pt（差分なし） | $173.12 |
+| SITM | Phase3 | TTM50%/業界50% | 37.4% | 37.4% | 0pt（差分なし） | $84.09 |
+| S | Phase3 | TTM50%/業界50% | 41.2% | 41.2% | 0pt（差分なし） | $22.32 |
+
+**recommended_gは該当銘柄でそのままDCFの成長率Gとして直接上書き
+採用される**（`pipeline.py:782`の`_seg_cfg.set_growth_override(ticker,
+_recommended_g)`）ため、7銘柄で6〜14ptという成長率の変動幅は、5年
+逓減DCFの現在価値計算に対して無視できない規模である。ただし、実際の
+新IV・新TANUKI SCORE分類までの精密な数値は、`calculate_pt()`の再実行
+（DCF-1の逓減終端値`tapering_g_end`・感応度分析等を含むフルパイプ
+ライン計算）が必要であり、本調査ではpipeline.pyの本番再実行を伴う
+検証は行っていない（`CLAUDE_CODE_START.md`の「調査・診断タスクでの
+書き込み系コマンド実行の注意」・本依頼文の「実装はまだ行わない」方針
+に従い、コード変更を伴わない範囲＝上記のrecommended_g段階の比較に
+とどめた）。実装着手時に該当7銘柄で実際にDCF再計算・IV変化を確認する
+必要がある。
+
+**ポートフォリオ保有銘柄・TAILウォッチリストとの重複確認**:
+`docs/portfolio/data/portfolio.json`の保有銘柄9件（ADBE, APP, CELH,
+CRWV, NVDA, PLTR, SOFI, SOUN, TSLA）と、`config/tail_kpi_map.json`の
+TAILウォッチリスト10件（上記9件＋APGE）を、上記Layer2該当64銘柄と
+突合した結果、**いずれも重複0件**（両リストの銘柄は全てLayer1
+＝`segment_configured=True`）。
+
+**つまりGROWTH-1のHypePhase加重は、現状Koichiさんが実際に保有・
+監視している銘柄には一切影響していない。**影響が及ぶのはDiscover
+経由で発掘・登録されたが未保有・未ウォッチのtanuki=true銘柄（実質的な
+影響対象は上記decay model 7銘柄）に限られる。これは「削除しても実害の
+即時発生はない」一方、「削除する緊急性も高くない」ことを意味する
+——設計の非対称性という論点自体は保有・監視銘柄の有無とは独立した
+問題である。
+
+##### 3. 代替方式の選択肢の整理（実装はまだしない）
+
+調査の過程で、`growth_model == "decay"`という条件は二重の役割を
+担っていることが判明した: ①recommended_gの計算式（TTM/業界平均の
+加重比率）を選ぶ役割、②DCF-1の5年逓減DCF（`tapering_g_end`＝
+`industry_benchmark`終端の線形逓減）を発火させる役割。案の検討時は
+この二重性を踏まえ、「recommended_gの加重方式」と「decay/median
+モデル判定自体（TTM>50%というdecay発火条件）」を混同しないよう
+注意する必要がある。
+
+**案A: 固定比率（常にTTM50%/業界50%）に単純化する**
+- 内容: `growth_sanity.py`543-571行目の`_ttm_weight`分岐を削除し、
+  常に`0.50`に戻す（GROWTH-1導入前の式に復元）。`hype_phase`引数・
+  `_load_hype_phase()`/`_load_hype_info()`は残置（他の用途——
+  report.txt表示・`growth_model_reason`文言——で引き続き使われている
+  ため、完全削除は別スコープ）か、あるいはGROWTH-1関連の記述のみ
+  削除するかは要判断。
+- 長所: 実装が最小。DCF成長率（Funda側）からTiming信号を完全に排除
+  でき、設計思想との非対称性を解消する。decay/medianモデルの判定
+  条件（TTM>50%というトリガー自体）には触れないため、DCF-1の逓減
+  DCF発火条件は不変。
+- 短所: HypePhaseが（実証されていないとはいえ）捉えようとしていた
+  「勢いの持続性／剥落」という情報を完全に手放す。
+- 実装規模感: **小規模**（該当関数1箇所の分岐削除＋
+  `TestGrowthDecayModelPhaseWeight`3件の更新or削除＋
+  report.txt/pipeline.py内のGROWTH-1関連説明文の整理、対象7銘柄の
+  再生成・pytest確認）
+
+**案B: ファンダメンタルズ由来の信号（四半期成長率の減速トレンド・
+粗利率トレンド等）で加重比率を決める方式に置き換える**
+- 内容: HypePhaseの代わりに、STONKS/SEC quarterlyデータから算出する
+  「売上成長率の四半期推移が加速/減速しているか」「粗利率トレンド」
+  等の信号で`_ttm_weight`を決める。
+- 長所: 設計思想（Funda_Scoreはファンダメンタルズのみで構成）と整合
+  する。GROWTH-1が本来意図していたと推測される「勢いの持続性評価」を
+  ファンダメンタルズの土俵で再現できる。
+- 短所: 新規の減速検知信号自体を設計・閾値較正する必要があり、
+  GROWTH-1が抱えていた「実証データなしに導入された」という同じ問題を
+  今度は新信号側で繰り返すリスクがある。四半期データの欠損銘柄
+  （TAIL-LAYER3-FORMULA-YOY-UNSUPPORTED-1等、既知のYoY系列比較の
+  機能ギャップ）への対応も必要。
+- 実装規模感: **中〜大規模**（新規信号の設計・実装・閾値較正・
+  バックテストでの効果検証・テスト追加。既存のYoY系列比較機能ギャップ
+  にも影響される可能性）
+
+**案C: 加重を撤廃し、Layer3/4と同様の中央値ロジック（median of
+[rev_cagr_3yr, rev_cagr_5yr, industry_benchmark, g_fundamental]）に
+統一する**
+- 内容: `recommended_g_median`（medianブランチが使う中央値、decay
+  ブランチでも参考値として既に算出済み——ASTS実測で確認: `"recommended_
+  g_median": 0.4012...`）を、decay/median問わず全銘柄でrecommended_g
+  として採用する。
+- 長所: 加重ロジックの二重管理（decay用の重み付け式とmedian用の中央値
+  式）を一本化でき、コードのシンプルさは最も高い。
+- 短所・要注意点: `growth_model`（"decay"/"median"の判定自体、
+  TTM>50%というトリガー条件）とDCF-1の5年逓減DCF発火条件
+  （`_tapering_g_end = industry_benchmark`）は**別の仕組み**である
+  ため、recommended_gの計算式だけをmedianへ統一しても、TTM>50%銘柄
+  向けの5年逓減DCF自体（DCF-1の主目的）は引き続き発火させることが
+  可能。ただし「decay判定は残すがrecommended_g計算はmedian式を使う」
+  という組み合わせは現行コードのブランチ構造にない状態のため、
+  新たに実装する必要がある（単純な「案A同様に固定式へ差し替え」より
+  やや複雑）。
+- 実装規模感: **中規模**（`growth_sanity.py`のdecayブランチ内で
+  `recommended_g_median`を採用するよう分岐変更、DCF-1発火条件の非
+  回帰確認、report.txt文言更新、対象7銘柄の再生成・pytest確認）
+
+上記3案のいずれも、Koichiさんとの最終確認前の設計選択肢の整理段階
+であり、実装はまだ行っていない。
+
+##### 4. Layer1との関係整理の結論
+
+`src/value/tanuki_valuation/calculator/growth.py`・`segment_config.py`
+を再度grep確認した結果、`hype`/`phase`関連の記述は**引き続き0件**
+（2026-08-23登録時点の実コード確認結果と変化なし）。
+
+依頼文にあった理解「Layer2側の結論（削除する/代替方式に変える）が
+固まった場合、Layer1に何かを追加する必要は基本的にはなくなる（Layer1
+は元々HypePhase非依存のままで、その状態がむしろ設計思想と整合して
+いたことになる）」は、**実コードの構造から正しいと確認した**。
+
+理由: 本エントリの論点が「Layer1にHypePhase減速が欠けている」から
+「Layer2のGROWTH-1がHypePhaseを使っていること自体が設計矛盾」へ
+反転した以上、Layer1にHypePhase減速を追加することは、Layer2側で
+これから削除・置換しようとしている**同じ設計矛盾をLayer1にも新規に
+持ち込む**ことを意味し、今回の結論（HypePhase＝Timing信号をFunda計算
+から排除する方向）と正面から矛盾する。したがってLayer1側の対応は
+「現状維持（追加不要）」が唯一の整合的な結論であり、追加調査・追加
+実装は不要と判断する。
+
+##### 次回アクション
+上記調査結果（GROWTH-1に実証データなし・実質影響対象は7銘柄・保有/
+ウォッチ銘柄への影響ゼロ・代替案3種の実装規模感・Layer1追加不要の
+確認）をKoichiさんに報告し、最終方針（案A/B/C いずれか、または現状
+維持）を確定してから着手する。
+
+#### 元の着手条件（2026-08-26①登録時点のもの、下記実装完了により解消）
+上記2026-08-26調査結果をKoichiさんに報告し、最終方針の承認を得てから
+着手すること。今回も調査・記録のみで実装しない（GROWTH-1のロジック
+自体は一切変更していない）。
+
+---
+
+#### 2026-08-26② 実装完了（STEP A、コミットは別途STEP Bと分離）
+
+**Koichiさんの最終判断**: HypePhase加重をDCF成長率計算（Funda側）から
+完全に削除する（上記代替案の**案A**を採用）。HypePhaseが捉えようと
+していた「勢いの持続性・剥落」という発想自体は無駄にせず、行動経済学的
+要素（未実装）と共にHypeCore側（Timing側）の機能として引き取り、
+HypeCoreを「本源価値(IV)と市場価格の関係の分析・将来予測」に特化させる
+方向で再編する。新機能は`[[STOCKHTML-SIGNAL-CONSISTENCY-SECTION-1]]`と
+統合して設計する（詳細は同エントリ2026-08-26②追記を参照）。
+
+**変更箇所**:
+- `growth_sanity.py`（538-571行目付近）: `_ttm_weight`のPhase別分岐
+  （Phase1-2=0.65 / Phase3・不明=0.50 / Phase4=0.35）を削除し、常に
+  `0.50`固定に復元。`growth_model_reason`の文言から「PhaseX(...)に
+  基づき」という加重根拠の記述を削除し、「固定50:50」と明記する形に
+  修正（GROWTH-1導入前の文言に近い形へ復元）
+- `hype_phase`引数・`_load_hype_info()`・`hype_phase_used`/
+  `hype_phase_label`出力フィールドは**残置**: `pipeline.py:954`
+  （score_historyへのhype_phase記録）・`pipeline.py:1982-1994`
+  （report.txt「成長モデル」表示欄のHypePhase情報付記）で、decay
+  weight計算とは独立した表示・記録用途に引き続き使われているため
+  （削除するとTiming側情報がreport.txtから失われる）
+- `pipeline.py:1947-1951`（report.txt[4]成長率根拠の定義欄）: 「GROWTH-1:
+  Decay model weight adjusted by HypeCore phase」という説明を削除し、
+  「固定50% TTM + 50% Industry benchmark。GROWTH-1のフェーズ加重版は
+  2026-08-26に廃止（Funda側にTiming側信号を混ぜる設計矛盾、実証データ
+  なし）」という実態に即した説明に修正
+- 副次発見（未修正・報告のみ）: `pipeline.py:3138`の`_load_hype_phase()`
+  メソッドは、より新しい`_load_hype_info()`への切替後、呼び出し元が
+  既に存在しない**死蔵コード**だったことを判明（GROWTH-1除去とは無関係の
+  既存の軽微な技術的負債）。実害なし・優先度低のため本タスクでは修正せず
+  （CHAT_RULES.md「調査中に発見した別バグの実装は別途依頼を待つ」原則
+  に従う）。新規BACKLOG登録するほどの規模ではないため、本記録のみに
+  とどめる
+
+**テスト更新**: `tests/test_pipeline_logic.py::TestGrowthDecayModelPhaseWeight`
+（フェーズ別加重を検証する3件）を`TestGrowthDecayModelFixedWeight`
+（フェーズによらず固定50:50であることを検証する回帰テスト3件）に
+置き換えた。
+
+**影響対象10銘柄の再生成結果（before/after）**:
+
+| 銘柄 | recommended_g (before→after) | IV (before→after) | IV変化率 | tanuki_score | pre_rounding_score |
+|---|---|---|---|---|---|
+| ALAB | 54.8%→54.8%（Phase3=元々50:50） | $173.12→$173.12 | 0.0% | WATCH→WATCH（不変） | GROWTH_PREMIUM→GROWTH_PREMIUM（不変） |
+| ASTS | 28.5%→40.1% | $3.74→$3.66 | -2.2% | WATCH→WATCH（不変） | TRIM→TRIM（不変） |
+| CWAN | 55.3%→47.6% | $44.61→$37.75 | -15.4% | WATCH→WATCH（不変） | BUY→BUY（不変） |
+| IONQ | 41.2%→54.8% | $21.98→$25.53 | +16.1% | WATCH→WATCH（不変） | GROWTH_PREMIUM→GROWTH_PREMIUM（不変） |
+| KULR | 37.7%→50.1% | $4.53→$5.38 | +18.8% | PASS→PASS（不変） | None→None（不変・funda<25でPASS確定のためpre_rounding未算出） |
+| QBTS | 24.3%→30.4% | $3.11→$3.52 | +13.1% | PASS→PASS（不変） | None→None（不変・同上） |
+| RCAT | 41.5%→55.0% | $6.08→$7.27 | +19.6% | WATCH→WATCH（不変） | **GROWTH_PREMIUM→HOLD（変化）** |
+| RXRX | 34.5%→45.0% | $15.49→$18.95 | +22.3% | WATCH→WATCH（不変） | BUY→BUY（不変） |
+| SITM | 37.4%→37.4%（Phase3=元々50:50） | $84.09→$84.09 | 0.0% | WATCH→WATCH（不変） | TRIM→TRIM（不変） |
+| S | 41.2%→41.2%（Phase3=元々50:50） | $22.32→$22.32 | 0.0% | WATCH→WATCH（不変） | WATCH→WATCH（不変） |
+
+**TANUKI SCORE分類変化の確認（RCAT）**: 最終`tanuki_score`（画面表示値）は
+10銘柄すべてで不変。ただし`pre_rounding_score`（DCF信頼性LOW丸め適用前の
+生分類）はRCATのみGROWTH_PREMIUM→HOLDへ変化した。原因を個別確認:
+- `upside_percent`が-33.2%→-20.2%へ変化（現在株価$9.10は前後で完全に
+  不変、recommended_g上昇によるIV上昇$6.08→$7.27のみが原因）。
+  `pipeline.py`の分類ロジックは`upside < -30% かつ stage>=3`の場合のみ
+  GROWTH_PREMIUM/TRIM判定ブロックに入る設計のため、upsideが-30%ラインを
+  跨いだことでこのブロック自体を通らなくなり、`else: HOLD`へ落ちた
+- beta（1.349）・current_price（$9.10）は前後で完全一致を確認し、
+  recommended_g変化以外の要因（市場データのドリフト等）が混入していない
+  ことを確認済み
+- RCATの最終`tanuki_score`は「DCF信頼性LOW（実績FCF赤字）のためupside
+  依存判定を抑制→WATCH」という別ルールで`pre_rounding_score`によらず
+  WATCHに上書きされるため、画面表示上の実害はゼロ
+
+**検証ゲート結果**（全て通過）:
+- `pytest tests/`: **905 passed, 0 failed**
+- `python common/sec_data/audit.py`: 🟢正常95銘柄/🟡警告5銘柄（CART・
+  CON・JOBY・RCAT・Vの既存WARN、いずれも今回の変更対象外の項目
+  〈OCF/Revenue一部None・株式数フォールバック〉で新規NGなし）
+- `python common/sec_data/report_consistency_check.py --fail-on-ng`:
+  **NG=0件** / WARN=96件（全件、GROWTH-1除去とは無関係の既存SECデータ
+  品質WARN。growth_sanity/recommended_g関連の新規WARNなし）
+- `common/sec_data/fixed_registry.json`: CWAN・RCAT・ASTSにエントリが
+  存在するが差分なし（凍結フィールドへの副作用なし）を確認
+
+**副次確認**: `docs/portfolio/data/portfolio.json`保有9銘柄・
+`config/tail_kpi_map.json`TAILウォッチリスト10銘柄はいずれも今回の
+影響対象10銘柄と重複0件のため、保有・監視中銘柄への影響は引き続き
+ゼロ（2026-08-26①調査結果と同じ）。
+
+#### 2026-08-26③ ASTSの逆方向IV変動に関する追加調査（調査のみ・実装なし）
+
+STEP A（コミット`686706666`）の影響対象7銘柄のうち、ASTS**のみ**
+recommended_gが上昇（28.5%→40.1%、+11.6pt）したにもかかわらずIVが
+下落（$3.74→$3.66、-2.2%）する逆方向の動きを示していたため、Koichiさん
+の指示により追加調査した。結論: **バグではなく、DCFの逓減モデルが
+負のFCFに成長率を複利適用する際の数学的に正しい挙動**。
+
+**1. 他のDCF入力パラメータの不変確認**（`git diff 62305b7d5 686706666
+-- .../ASTS/latest.json`で全項目を突合）:
+- `current_price`: $62.0099983215332（不変）
+- `wacc.beta`: 2.50（不変、ログ`[ASTS] WACC (CAPM): 18.6% (β=2.50)`が
+  変更前後で完全一致）
+- `diluted_shares`: 389,167,494（不変）
+- BS調整額: `pt_shares_consistency.detail`の「BS $+4.15/株」が変更前後で
+  完全一致
+- RPO_PV・Growth_Option_PV: いずれも$0.00B（不変、「RPO補正: スキップ
+  〈適用率0%: Non-SaaS〉」で両者とも未適用）
+- `roe_10yr_avg`: -0.3495788394646131→-0.34957883946461304（浮動小数点の
+  末尾桁のみの表記差、実質同値）
+- 変化していたのはrecommended_gとその下流（DCFキャッシュフロー
+  トラジェクトリ・IV）、および`risk_events`のGrok生成文言（下記参照）
+  のみ
+
+**2. recommended_gとdecay model本体の計算経路の関係**（実コード確認）:
+`recommended_g`は表示専用ではなく、`pipeline.py:782`の
+`_seg_cfg.set_growth_override(ticker, _recommended_g)`経由で実際に
+セグメント成長率として上書きされ、`core_calculator.py`の`high_growth_
+rate`としてDCF計算へ渡る。`core_calculator.py:466-473`:
+```python
+_tapering_result = calculate_tapering_dcf(
+    base_fcf=base_fcf,
+    g_start=high_growth_rate,      # ← recommended_gそのもの
+    g_end=tapering_g_end,          # ← industry_benchmark（hype_phase非依存）
+    wacc=wacc,
+    high_growth_years=_moat_phase1_years,
+    terminal_growth=terminal_growth,
+)
+```
+`calculator/dcf.py::calculate_tapering_dcf()`の実装（308-322行目）:
+```python
+current_fcf = base_fcf
+for t in range(high_growth_years):
+    g_t = g_start + (g_end - g_start) * t / (high_growth_years - 1)
+    current_fcf *= (1 + g_t)          # ← 複利計算
+    ...
+    pv_year = current_fcf / discount_factor
+    pv_high += pv_year
+```
+`g_start`（year1の成長率）は`recommended_g`と厳密に一致することを
+実測確認（ASTS: before year1_growth_rate=0.2852=recommended_g(before)、
+after year1_growth_rate=0.4012=recommended_g(after)）。`g_end`
+（`tapering_g_end`＝`industry_benchmark`）はhype_phaseと無関係の
+Damodaranデータのため変更前後で完全に同一値（0.0144）。**つまり
+recommended_gはDCFの実際のキャッシュフロー計算に直接使われており、
+表示専用の別経路ではない**——ここまでは他の6銘柄と同じ設計。
+
+**3. ASTS固有の要因の特定**: `base_fcf`（上記コードの複利計算の起点）
+が、ASTSに限り**負値**だったことが根本原因。ASTS単独で`pipeline.py
+ASTS`を再実行しログを確認（本調査でのみ実行、生成データはコミット
+対象外として復元済み・下記参照）:
+```
+[ASTS] FCFベース: avg_5yr  5yr=$0.01B  2yr=$-1.16B  → 採用=$0.01B  (CV=データ不足)
+[ASTS] FCF外れ値: latest_negative → 要確認（一過性費用の証拠なし）
+[ASTS] FCF実力推定: フォールバック → 調整済み純利益がマイナス($-295M) → 従来FCFを使用
+[ASTS] R&D資本化: $-0.01B → 調整後FCF=$-0.01B (R&D/Rev=39.6%)
+```
+「採用FCF」段階では$5,673,440（プラス）だが、R&D資本化調整
+（R&D/Rev=39.6%という高いR&D比率のため、この調整が今回はマイナス
+方向に作用）を経て、実際に`calculate_tapering_dcf`へ渡る`base_fcf`は
+約**-$680万（負値）**に転じている（`dcf_components.high_growth_
+detail[0].fcf / (1+g_start)`で逆算し確認: before -8,792,210 /
+1.2852 ≈ -6,841,058、after -9,586,158 / 1.4012 ≈ -6,841,058で完全
+一致——同一の負のbase_fcfに異なるg_startを複利適用した結果と確定）。
+
+`current_fcf *= (1 + g_t)`は`current_fcf`が負の場合、`g_t`が大きい
+ほど**負の方向に絶対値が拡大**する（負債・損失が「速く成長する」＝
+より速く悪化する、という経済的に正しい解釈）。このためASTSでは
+recommended_gの上昇が`pv_high_growth`をより負に（-$27.8M→-$32.3M）、
+連動して`terminal_fcf`・`terminal_value`もより負に
+（-$40.99M→-$49.25M）し、結果としてV0がより負に
+（-$68.8M→-$81.5M）、IV per shareが低下する。
+
+他の6銘柄（IONQ/KULR/QBTS/RCAT/RXRX/CWAN）は実測確認の結果、いずれも
+`high_growth_detail[0].fcf`・`pv_high_growth`が**正値**であり
+（例: IONQ year1_fcf=$348.4M、CWAN year1_fcf=$264.6M）、正の複利計算
+のため「gが上がればIVも上がる」という直感通りの方向になる。ASTSは
+今回の7銘柄中、最終DCF入力`base_fcf`が負値になる**唯一の銘柄**
+だった。
+
+**副次確認（データ品質、実害なし）**: 調査のためASTS単独で
+`pipeline.py`を再実行した際、`calculation_date`と`risk_events`の
+Grok生成文言（例:「Antitrust lawsuit ongoing」⇔「Ongoing antitrust
+lawsuit」）が実行毎に微妙に変化することを確認した。これは既知の
+Grok API非決定性（事実関係は同一、表現のみ変動）であり、STEP Aの
+コード変更とは無関係の既存の挙動。財務数値（IV・recommended_g・
+dcf_components等）は完全に再現し、変化がなかったことも確認済み
+（GROWTH-1除去の計算結果が決定論的であることの追加検証にもなった）。
+この再実行で生じた差分（タイムスタンプ・risk_events文言のみ）は
+調査目的外のためコミット対象から除外し、`git checkout --`で
+STEP A時点の内容へ復元済み。
+
+**最終判断**: ASTSの逆方向の動きは、`calculate_tapering_dcf()`の
+複利計算式（STEP Aで変更していない既存ロジック）を、負のbase_fcfに
+異なるg_startで適用した結果として完全に説明可能であり、数学的・
+経済的に正当な挙動。STEP Aのコード変更・本番反映（コミット
+`686706666`）にバグはなく、**完了として確定してよい**と判断する。
+
+#### コミット
+- `5cfa8d6bb`: docs: [[LAYER1-GROWTH-HYPEPHASE-DECAY-GAP-1]] 論点をLayer2 GROWTH-1のHypePhase加重問題へ再整理し調査結果を追記
+- `686706666`: fix: [[LAYER1-GROWTH-HYPEPHASE-DECAY-GAP-1]] GROWTH-1のHypePhase加重をFunda側から削除、固定50:50へ復元(STEP A)
+- `a7672328a`: docs: [[STOCKHTML-SIGNAL-CONSISTENCY-SECTION-1]] HypeCoreをIVと市場価格の乖離分析epicへ拡張登録(STEP B、GROWTH-1除去分の受け皿)
+- `3a394586a`: docs: [[LAYER1-GROWTH-HYPEPHASE-DECAY-GAP-1]] ASTSの逆方向IV変動を追加調査、STEP Aにバグなしと確認
+
+---
+
+## 2026-08-22（完了）
+
+### ✅ [MACRO-PULSE-3M-FORECAST-SNAPSHOT-MISMATCH-1] 「3ヶ月先のマクロ予測スコア」（ライブ再計算）と「AIウィークリーコメンタリー」（週1回の凍結スナップショット）のスコアが一致しない — パイプライン統合で解消
+
+**優先度:** 中
+**分類:** バグ / データ鮮度 / UI・UX / MACRO PULSE
+**登録日:** 2026-08-22
+**状態:** 完了（2026-08-22。ライブ再計算を廃止し、AIウィークリー
+コメンタリー生成時にサーバー側で算出・保存された週次スナップショット
+（`05_weekly_analysis.csv`）を両表示で共有する1本のパイプラインへ統合。
+詳細は下記「実装内容」参照）
+**発見:** Koichiさんの実データ指摘（「3ヶ月先のマクロ予測スコア」と
+「AIウィークリーコメンタリー」のスコア不一致）
+
+#### 内容
+`docs/market-monitor/macro-pulse/index.html`に以下2つのスコア表示箇所
+がある:
+
+1. **「3ヶ月先のマクロ予測スコア」**: バナー見出し（`3M FORECAST`/
+   `3か月先のマクロ予測`、2799-2801行目、v3 UI再構成時に追加）の直下に
+   ある数値`<span id="pg-score-num">`（600行目）。`renderPhaseGauge()`
+   （1151行目）→`computeCurrentScore()`（1070行目）が算出。**ページ
+   読み込み時に`now=Date.now()`（＝閲覧している「今この瞬間」）を基準に
+   `data/05_events.csv`から毎回ライブ再計算**される。
+2. **「AIウィークリーコメンタリー」**: `renderWeeklyAnalysis()`
+   （2181行目）が`data/05_weekly_analysis.csv`の最新行の`score`列
+   （2231行目）をそのまま表示。このCSVは
+   `src/market/macro_pulse/05_main.py::run_weekly_analysis()`→
+   `_compute_current_score(events, target_date)`（1414行目）が
+   `MACRO_PULSE_Update.yml`の**週1回のみ**（cron`11 22 * * 6`、土曜
+   22:11 UTC＝日曜7:11 JST）実行時に算出し、CSVへ書き込んだまま
+   **二度と再計算されない凍結スナップショット**。
+
+#### 計算経路の確認（既知問題[[RECESSION-SCORE-TRIPLE-CALC-1]]③との関係）
+JS`computeCurrentScore()`とPython`_compute_current_score()`を実コードで
+突合した結果、両者は8指標・ウェイト・スコア閾値・trend3補正（philly/
+claimsの±10pt）まで完全に同一の実装だった（Python側コメント
+「MACRO-BUG-1: philly/claimsのトレンド補正±10ptが欠落していたため
+追加し、JSと完全一致させた」も確認）。**どちらも`computeScoreAsOf()`の
+lerp補間は一切使用していない**（ステップ関数のみ）。よって
+`[[RECESSION-SCORE-TRIPLE-CALC-1]]`③（ステップ関数とlerp補間の併存）
+とは**別の問題**と判定した（③はどちらのスコア表示にも関与していない）。
+
+#### 実データでの数値突合（2026-08-22、実コード実行で確認）
+- `05_weekly_analysis.csv`の最新行: `analysis_date=2026-08-15`、
+  `score=27`（拡張局面）——現在「AIウィークリーコメンタリー」に
+  表示されている値
+- `_compute_current_score(events, date(2026,8,22))`
+  （今日time="now"扱いで再計算、ライブゲージ相当）: **score=22**
+  （拡張局面）
+- `_compute_current_score(events, date(2026,8,15))`
+  （AIコメンタリーと**同じtarget_date**で、**現在の**`05_events.csv`を
+  使って再計算）: **score=22**（27ではない）
+
+3点目が重要な発見: 同じ`target_date`・同じ計算式で再計算しても27には
+戻らず22になる。つまり単に「1週間経って新しいデータが増えた」だけで
+なく、**`05_events.csv`自体が事後的に改訂されている**（速報値
+`forecast_source=actual_as_forecast`のプレースホルダーが、後日発表
+された確定実績値へ遡って置き換わる`resolve_forecast()`/
+`user_retroactive`の仕組みが既存）。`05_weekly_analysis.csv`はこの
+遡及改訂を一切反映せず、生成時点の値を凍結したまま表示し続ける。
+
+daily cron（`15 22 * * *`、無指定モード）が毎日`05_events.csv`を更新
+する一方、`--weekly-analysis`（AIコメンタリーのスコア算出）は土曜のみ
+実行されるため、平日は常に「ライブゲージ」と「AIコメンタリー」が
+乖離しうる構造になっている。
+
+#### 原因の分類
+- (a)（[[RECESSION-SCORE-TRIPLE-CALC-1]]③と同一）: **否定**。両表示とも
+  ステップ関数のみを使用しておりlerp補間は無関係。
+- (b)（タイミング・参照データの違い）: **該当**。ライブゲージは
+  「今この瞬間」を`computeCurrentScore()`で毎回再計算するのに対し、
+  AIコメンタリーは週1回生成した凍結スナップショットを表示し続ける。
+  加えて`05_events.csv`自体が遡及改訂されるため、同一`target_date`の
+  再計算結果すら一致しない。
+- (c)（新規の問題、副次発見）: **該当**。「3ヶ月先のマクロ予測」という
+  バナー文言・見出し（`3M FORECAST`）は、実際には`computeCurrentScore()`
+  の「現在」スコアをそのまま表示しているだけで、**実際に3〜6ヶ月先へ
+  値を時間シフトする計算は一切存在しない**（`leadMonths`・`addMonths`・
+  `forecastPhase`等の予測ロジックをコードベース全体でgrepしたが該当
+  なし）。各指標が個別に持つ「先行N ヶ月」という経済学的性質（YCは
+  景気に約12ヶ月先行する、等）を複数統合しているに過ぎず、スコア自体を
+  未来の日付へ投影してはいない。この文言が「AIコメンタリーとは異なる
+  種類の指標」という誤解を招き、数値不一致の発見をより分かりにくくして
+  いる可能性がある。
+
+#### 副次発見
+`index.html`624-625行目の「? 見方」スコア解説ツールチップに、
+`[[MACRO-PULSE-ZONE-25-STALE-1]]`（2026-08-21解消済みのはずの5箇所
+置換）で修正対象に含まれなかった**6箇所目の残存「25」**
+（`0〜25 拡張局面`・`25〜52 踊り場`）を発見した。本項目の実装と
+まとめて「30」へ修正し、`[[MACRO-PULSE-ZONE-25-STALE-1]]`側のタイトル・
+本文も6箇所へ訂正した。
+
+#### 検討過程（方針転換の経緯）
+初回調査時点（2026-08-22①）では対応方針として案①〜④（注記追加／
+バナー文言修正／AIコメンタリー日次化／現状維持）を提示した。Koichiさんに
+「解説文がスコア数値を直接引用しているか」を追加確認するよう依頼され、
+`05_weekly_analysis.csv`の`summary`列を実データで確認した結果、23行中
+22行（96%）が絶対スコア値を、実質全行が何らかのスコア由来数値
+（差分pt含む）を本文に直接引用していることが判明。この時点で「表示側の
+数値だけをライブ値に差し替える」案は、同一カード内で文章の数値と表示
+数値が食い違う新たな矛盾を生む危険があると判定し却下。日次化（案③）も
+一時提案されたが、Koichiさんの「マクロ環境は日次で計算する必要が
+ない」という明示的な意向により撤回。最終的に、注記や部分的な数値
+差し替えではなく、**「データ→スコア計算（1回）→AIコメント生成」という
+1本のパイプラインに統合し、3ヶ月先ゲージ側もAIコメンタリー生成時に
+計算・保存された同一スコアを参照する」**という根本対応（案②の発展形）
+へ方針転換した。
+
+#### 実装内容（2026-08-22）
+`docs/market-monitor/macro-pulse/index.html`のみ変更（`05_main.py`は
+無変更、週次生成頻度も変更なし）:
+
+1. **集計スコアのパイプライン統合**: `computeCurrentScore()`
+   （旧: `DATA`からのライブ再計算のみ）を変更し、`WEEKLY_SNAPSHOT`
+   （`loadWeeklyAnalysis()`が`05_weekly_analysis.csv`最新行から
+   セットするグローバル変数）が利用可能な場合はその`score`を正として
+   返すようにした。`WEEKLY_SNAPSHOT`未読込時（初回描画タイミング等）は
+   従来通りのライブ計算値へフォールバックする。
+2. **実装前の再確認で判明した波及範囲**（ユーザー指示の再確認手順②で
+   発見）: `computeCurrentScore()`は`renderPhaseGauge()`（3ヶ月先ゲージ）
+   だけでなく、`computeScoreAsOf()`の`isEffectivelyNow()`分岐
+   （履歴推移チャートの「本日」データ点・比較バーが間接的に経由）
+   からも呼ばれていた。`computeCurrentScore()`自体を変更したことで、
+   これら**全ての「現在」スコア表示が自動的に同一のスナップショット値へ
+   統一**される（個別に直す必要がなかった）。一方、各指標ごとの
+   `signals`（8指標の現在地カード・アラート判定に使用、
+   `pg-signals`/`bearCount`等）はAIコメンタリーが表現しない粒度であり
+   `05_weekly_analysis.csv`にも保存されていないため、**意図的にライブ
+   計算のまま維持**した（CSVスキーマ拡張やPythonパイプライン変更を伴う
+   より大きな変更になるため、今回のスコープ外と判断）。
+   `computeScoreAsOf()`本体（過去日付用lerp補間）は無変更
+   （`[[RECESSION-SCORE-TRIPLE-CALC-1]]`③のスコープであり本対応とは
+   無関係、再確認済み）。
+3. **読み込み順序の考慮**: `loadCSVData()`と`loadWeeklyAnalysis()`は
+   `DOMContentLoaded`から並行fetchされるため、`renderWeeklyAnalysis()`
+   側で`WEEKLY_SNAPSHOT`セット後に`DATA.length`があれば
+   `renderPhaseGauge()`を再実行し、どちらが先に完了しても最終的に
+   スナップショット値へ収束するようにした。
+4. **バナー文言の是正**: 「3M FORECAST」「3か月先のマクロ予測」
+   「8つの先行指標...を統合した3〜6か月先の景気フェーズ。」を
+   「COMPOSITE SCORE」「景気後退リスク複合スコア」「8つの先行指標
+   ...を統合したスコア。AIウィークリーコメンタリーと同一の値（週次
+   算出）。」へ変更。`.pv-label::after`の「· 3か月先」も「· 週次算出」へ
+   変更。
+5. **AIコメンタリーカードへの鮮度注記追加**: 最新1件（`idx===0`）の
+   カード本文冒頭に「このスコアは{analysis_date}時点のものです（週次
+   更新、次回は日曜更新後）。上部「景気後退リスク複合スコア」の数値・
+   ゲージも同じ値を参照しています。」を追加。
+6. **`[[MACRO-PULSE-ZONE-25-STALE-1]]`見落とし6箇所目の修正**:
+   スコア解説ツールチップ（624-625行目）の`0〜25`/`25〜52`を
+   `0〜30`/`30〜52`へ修正。同エントリのタイトル・本文も6箇所へ訂正。
+
+#### 検証結果（2026-08-22）
+- 実データ突合: `05_weekly_analysis.csv`最新行（`analysis_date=
+  2026-08-15`、`score=27`）を確認。統合後は「景気後退リスク複合
+  スコア」ゲージ・「AIウィークリーコメンタリー」とも同一ファイルの
+  同一列を直接参照する構造となったため、両者は**構造的に**（実行毎の
+  偶然の一致ではなく）常に同一値27を表示する。
+- `index.html`・`05_main.py`とも「25」の残存なし（grep再確認済み）。
+- 影響範囲の再確認: `computeScoreAsOf()`の過去日付分岐（`!isEffectively
+  Now`側、履歴チャートの過去データ点・L3スライダーの過去位置）は無変更で
+  影響なし。`renderCustomCmp()`は`pg-score-num`のDOM値を直接読むため
+  自動的に新しい値に追従する。
+- `pytest tests/`: 905 passed（既存のSettingWithCopyWarning3件は
+  hypecore.py起因の無関係な既存警告）。
+- `python common/sec_data/audit.py`: 🟢正常95銘柄/🟡警告5銘柄
+  （MACRO PULSE非対象、既存WARN）。
+- `python common/sec_data/report_consistency_check.py --fail-on-ng`:
+  NG=0件/WARN=96件、ゲート通過（既存WARN、MACRO PULSE非対象）。
+- 実際のブラウザでのJS実行確認（GitHub Pages反映後の見た目）は本
+  セッションでは不可のため未実施。次回ページ閲覧時の実地確認を推奨。
+
+#### 2026-08-26 実地確認（コード・データの実態から検証、ブラウザJS実行は引き続き未実施）
+MACRO PULSE稼働状況の横断確認の一環として、本対応が現在も正しく
+機能しているかを実コード・実データで再検証した。
+
+- `index.html:1167`の`const score=WEEKLY_SNAPSHOT?WEEKLY_SNAPSHOT.score
+  :liveScore;`（`computeCurrentScore()`内）が現存し、実装コミット
+  `1d68c7342`以降このファイルへの変更は無いことを`git log`で確認
+  （＝実装内容が退行していないことを確認）
+- `renderWeeklyAnalysis()`（2203行目）が最新行の`score`を
+  `WEEKLY_SNAPSHOT`へセットし（2222-2224行目）、`DATA.length`が
+  既に読み込み済みなら`renderPhaseGauge()`を再実行するロジックパスも
+  現存を確認
+- 本番`05_weekly_analysis.csv`（24行）の最新行を実データで確認:
+  `analysis_date=2026-08-22`・`score=22`・`phase=拡張`。今日
+  （2026-08-26、水曜）時点で4日前の直近土曜スナップショットが
+  正しく保持されており、次回更新（次の日曜）まで凍結される設計通りの
+  状態にあることを確認した
+- 上記より、「景気後退リスク複合スコア」ゲージと「AIウィークリー
+  コメンタリー」が同一の`WEEKLY_SNAPSHOT.score`（現在値22）を参照する
+  構造は、コード・データの両面から見て正常に機能していると判断できる。
+  ブラウザでの実際のJS実行確認（GitHub Pages上の見た目）は本タスクの
+  範囲外のため引き続き未実施のまま
+
+#### 着手条件
+なし（解消済み）
+
+#### コミット
+- `5a80f23b7`: BACKLOG: 3ヶ月先予測スコアとAIウィークリーコメンタリーの不一致を新規登録 [MACRO-PULSE-3M-FORECAST-SNAPSHOT-MISMATCH-1]
+- `1d68c7342`: MACRO PULSE: 3ヶ月先ゲージとAIコメンタリーのスコアをパイプライン統合で一致させる
+- `a0b7d9d2a`: docs(backlog): 実ブラウザ(Playwright)でゲージ/AIウィークリーコメンタリーのスコア一致(22=22)を確認（2026-08-26、[[RECESSION-SCORE-TRIPLE-CALC-1]]③確認のついでに実施）
+
+---
+
+## 2026-08-21（完了）
+
+### ✅ [MACRO-PULSE-ZONE-25-STALE-1] RECESSION RISK SCOREのフェーズ境界表示（ゲージバー・チャート）とAI解説プロンプトが「25」を使用、実閾値「30」と不一致 — 6箇所を30に統一して解消
+
+**状態:** 完了（2026-08-21③で5箇所、2026-08-22に見落とし1箇所を追加
+修正し計6箇所。`docs/market-monitor/macro-pulse/index.html`のゲージ
+バー・ゾーン区切り線とゾーン目盛りラベル、チャート背景
+`zoneMarkAreas`、チャート閾値ライン＋ラベル、スコア解説ツールチップ
+（「?見方」パネル）の計5箇所と、`src/market/macro_pulse/05_main.py`の
+AI解説プロンプト文言1箇所、合計6箇所の境界値「25」を「30」へ置換。
+フェーズ判定ロジック本体（JS `renderPhaseGauge()`等の`score<30`分岐・
+Python`if score < 30:`分岐）は元々正しく、表示・プロンプト文言側が
+未追従だっただけのため、ロジック自体は変更していない）
+**優先度:** 中→解消
+**分類:** バグ / 表示・プロンプト文言の陳腐化 / MACRO PULSE
+**登録日:** 2026-08-21
+**発見:** `[[QUALITY-GATES-EPIC-1]]`Phase 4（ゲート3）棚卸し
+（`FIELD_DEFINITIONS.md` AS-IS-213/214/223/232由来。前回セッションで
+実コード確認済み、本セッションで修正）
+
+#### 内容
+RECESSION RISK SCOREのフェーズ判定は実際には`score<30`で「拡張」
+「踊り場」を切り替えていた（JS・Python共通）が、以下6箇所は境界値
+「25」のまま未追従だった:
+1. ゲージバー・ゾーン区切り線（`index.html:588`、`left:25%`）
+2. ゲージバー・目盛りラベル（`index.html:595`、`<span>25</span>`）
+3. チャート背景`zoneMarkAreas`（`index.html:1670-1671`、
+   `{yAxis:25}`が2箇所）
+4. チャート閾値ライン＋ラベル（`index.html:1769-1770`、`yAxis:25`,
+   `formatter:'25'`）
+5. AI解説プロンプト（`05_main.py:1611`、
+   `"0-25=拡張（好調）、25-52=踊り場"`）
+6. スコア解説ツールチップ（「?見方」パネル、`index.html:624-625`、
+   `0〜25 拡張局面`・`25〜52 踊り場`。2026-08-21③の修正時点では見落とし、
+   `[[MACRO-PULSE-3M-FORECAST-SNAPSHOT-MISMATCH-1]]`対応の実装前grepで
+   2026-08-22に発見・同日修正）
+
+score 25〜30の銘柄では、⑤のプロンプトに渡される実際のフェーズ判定
+結果（正しく「拡張」）と、同一プロンプト内の境界説明文（誤って
+「踊り場」を示唆）が矛盾しており、AIが誤った境界を前提に景気解説文を
+生成しうる状態だった（`FIELD_DEFINITIONS.md`が「最重要」と位置づけて
+いた理由）。
+
+`[[MACRO-THRESHOLD-INCONSISTENCY-1]]`（YC閾値3セット・
+`dedupe_new_rows()`のCFNAI/Sahm無条件適用）とは別問題であり、
+本項目はその混同を避けるため独立IDで登録した。
+
+#### 対応（2026-08-21③）
+上記5箇所すべて「25」→「30」に置換（コミット`f01215940`）。
+フェーズ判定ロジック本体・52/70側の他境界は変更対象外（調査範囲外）。
+Grok APIを呼ぶ実際の週次生成・本番再生成は実施せず、静的な文言修正の
+コードレビュー（`grep -n`での残存確認）とpytest/audit.py/
+report_consistency_check.pyの回帰なし確認で検証を完了した。
+
+#### 追加対応（2026-08-22、見落とし6箇所目を修正）
+`[[MACRO-PULSE-3M-FORECAST-SNAPSHOT-MISMATCH-1]]`実装前のgrep再確認で
+「?見方」スコア解説ツールチップ（`index.html:624-625`）に「25」の
+残存を発見し、同タスクのコミットでまとめて「30」へ修正した（詳細は
+同エントリ参照）。
+
+#### 重複登録の訂正（2026-08-22追記）
+本項目は、2026-07-23に既に登録されていた`[[RECESSION-SCORE-
+TRIPLE-CALC-1]]`の対応方針①②（ゲージバー・チャート背景の25→30修正、
+Grokプロンプト文言の30への修正）と内容が完全重複していたことが
+事後判明した。新規登録時の重複チェックgrepが、既存エントリの識別子
+`TRIPLE-CALC`や「3計算式併存」という語彙を含んでおらず見落としていた
+（教訓は`CHAT_RULES.md`「BACKLOG記載の前提は着手時に再検証する」節・
+事例10として記録済み）。本項目の実装内容自体（5箇所の25→30置換）に
+誤りはなく、結果として`[[RECESSION-SCORE-TRIPLE-CALC-1]]`の対応方針
+①②を解消したことに変わりはない。同エントリの対応方針③（
+`computeCurrentScore()`のステップ関数と`computeScoreAsOf()`のlerp
+補間という2方式併存、画面上への非開示）は本項目のスコープに一切
+含んでおらず、引き続き同エントリ側で未解決のまま残っている。
+
+#### 着手条件
+なし（解消済み。関連: [[RECESSION-SCORE-TRIPLE-CALC-1]]③が未解決の
+まま残存）
+
+#### コミット
+- `f01215940`: fix: MACRO PULSE フェーズ境界の表示25を実閾値30に統一（2026-08-21③、5箇所）
+- `ac79d1804`: docs: MACRO-PULSE-ZONE-25-STALE-1をBACKLOG.mdへ新規登録（解消済み記録）
+- `5be83e2f3`: BACKLOG重複登録を訂正: RECESSION-SCORE-TRIPLE-CALC-1とMACRO-PULSE-ZONE-25-STALE-1（2026-08-22、見落とし6箇所目の修正含む）
+
+---
+
 ## 2026-08-19（完了）
 
 ### ✅ [TAIL-COVERAGE-POLICY-UNDECIDED-1] TAIL RSS監視・四半期レビュー自動生成の対象範囲を全保有ポジション（10銘柄）に拡大 — 方針確定・実装完了・satelliteでの実地検証済み
