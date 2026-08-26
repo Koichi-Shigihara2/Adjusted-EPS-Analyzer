@@ -5016,6 +5016,30 @@ RMBS）・案d（BSY個別対応）は、いずれもゲート条件込みの再
 `if ff_hi and ff_lo:`が現在も未修正であることを確認、現状再現を確認。
 優先度維持が妥当と判定した。
 
+#### 2026-08-26 再検証（実データで影響範囲を初めて定量化）
+`05_import_history.py:121`（行番号不変）の`if ff_hi and ff_lo:`が現在も
+未修正のまま現存することをコードで再確認した。加えて今回、本番の
+`05_events.csv`（34,317行）を実データ走査し、初めて具体的な影響範囲を
+定量化した:
+
+- `release_date`が2020-2022年の行3,529件のうち、`ff_rate`列が空文字の
+  行は**2,356件**
+- 空欄の`release_date`の分布を確認したところ、最も早い日付は
+  **2020-03-16**、最も遅い日付は**2022-03-16**——これはFRBが政策金利を
+  0.00-0.25%へ緊急利下げした日（2020-03-15）から、ゼロ金利解除の
+  最初の利上げ（2022-03-16/17 FOMC）までの期間と完全に一致する
+- 同じ期間の`ff_rate`欠落率は**100%**（2,356/2,356行）。一方
+  `yc_10y2y`/`hy_spread`/`vix`は同じ期間で欠落0件（これらの系列は
+  期間中に文字通り0.0を記録したことがないため、同型のtruthy判定
+  バグを内包しているにもかかわらず顕在化していない）
+
+これにより、本バグは「理論上の潜伏バグ」ではなく、**実際に2年間・
+2,356件の経済イベント行の金融環境コンテキスト（`ff_rate`）が欠損した
+まま本番CSVに存在する、既に発生済みの実害**であることが確定した。
+`ff_rate`は各イベント行の金融環境スナップショットとして
+`05_main.py`のregime分析等で参照される設計であり、優先度「高」は
+これまで以上に妥当と判断する。
+
 #### 着手条件
 なし
 
@@ -5106,6 +5130,17 @@ MISMATCH-1]]`対応で`computeCurrentScore()`自体に変更が入った
 （無変更を確認済み）が、`computeCurrentScore()`に着手する際は
 同エントリの実装内容も合わせて確認すること。
 
+#### 2026-08-26 再検証（スコープ重複なしを再確認、状態不変）
+`[[MACRO-PULSE-3M-FORECAST-SNAPSHOT-MISMATCH-1]]`（2026-08-22完了）との
+スコープ重複がないことを実コードで改めて確認した:
+`index.html:2009`のコメント「過去日付は引き続きlerp補間する」・
+`computeScoreAsOf()`（2011行目）の`lerp()`実装（2030行目〜）は現在も
+無変更のまま残存しており、MISMATCH-1が変更したのは
+`computeCurrentScore()`（現在スコアのみ、`WEEKLY_SNAPSHOT`優先化）で
+`computeScoreAsOf()`本体には触れていないことを再確認した。**③は
+未解決のまま現存**、優先度「中」を維持する。他に新規の重複・関連
+BACKLOG項目は見当たらなかった。
+
 #### 着手条件
 なし（③の対応要否・方法は次回セッションで判断）
 
@@ -5138,6 +5173,53 @@ Market Pulseのmarket_data.json）から取得する設計に変更するかを�
 ゼロの明記）は見当たらない。優先度「高」を維持すべきか、実害の性質
 （機能が使えないだけで誤情報は出していない）を踏まえて引き下げるべき
 かの判断は保留とし、次回以降の個別判断に委ねる。
+
+#### 2026-08-26 再検証
+`LIQUIDITY_COLUMNS`（`05_main.py:1967-1974`）の列挙に`sp500`は現在も
+含まれておらず、`05_liquidity.csv`の実ヘッダ（`date,m2,hy_spread,
+fed_balance,tga,rrp,net_liquidity,reserve_balance,stealth_signal,
+stealth_absorb_weeks,net_liq_decline_weeks,stealth_alert`）にも
+`sp500`列は存在しないことを確認した。`index.html:2574`
+（行番号は登録時からシフト）の
+`rows.filter(r => r.sp500 !== undefined && r.sp500 !== '')`も現存し、
+`sp500Rows`が恒久的に空配列であることに変わりない。**未解消のまま
+現存、恒久不発火の構造も不変**。
+
+対応方針の選択肢②（別データソースから取得）について補足情報を追加:
+Market Pulse側`collect_and_send.py:750`の`structured_data`は既に
+`"S&P500": "^GSPC"`として日次のS&P500データ（`change_percent`含む）を
+保持しており、MACRO PULSE側で参照可能なら実装コストは選択肢①
+（`05_liquidity.csv`へのS&P500列追加、`update_liquidity_csv()`改修）
+より低い可能性がある。ただしMarket PulseとMACRO PULSEは別ワークフロー
+（`Market_Pulse_Update.yml`月〜金21:35 UTC／`MACRO_PULSE_Update.yml`
+毎日22:15 UTC）のため、クロスシステム参照を追加する場合はデータ鮮度・
+取得失敗時のフォールバックを別途設計する必要がある。優先度「高」の
+維持要否は前回同様、次回以降の個別判断に委ねる（実害の性質は「誤情報
+なし・機能不発火のみ」で変化なし）。
+
+**横断点検（MACRO PULSEのcronスケジュール依存関係）**:
+`MACRO_PULSE_Update.yml`は毎日22:15 UTCの通常更新に加え、**毎週土曜
+22:07 UTC（update-schedule）・22:11 UTC+60秒sleep（weekly-analysis）・
+22:15 UTC（通常更新）の3トリガーが約8分の窓に集中**しており、
+TANUKI VALUATIONで過去に発見された`[[TANUKI-VALUATION-PRICE-SCHEDULE-
+LAG-1]]`と同種のワークフロー競合リスクではないかと疑い調査した。
+`.gitattributes`が`docs/market-monitor/macro-pulse/data/*.csv`/
+`*.json`に`merge=ours`を設定しているため、複数ワークフローが同一
+ファイルへ近接して書き込んだ場合、後着のjobの変更が黙って消える
+リスクを懸念した。
+
+実際の直近土曜（2026-08-22）のコミット履歴を確認したところ、22:36:06
+UTC・22:36:08 UTC（2秒差）・22:40:55 UTCの3件のauto-commitが存在した
+（タイミングは酷似）が、それぞれの変更ファイルを確認すると
+weekly-analysisジョブは`05_weekly_analysis.csv`のみ、update-schedule
+ジョブは`05_fed_context.csv`/`05_indicator_schedule.csv`のみ、通常
+更新ジョブは`05_events.csv`/`05_liquidity.csv`/`05_meta.json`のみと
+**完全に排他的**（重複ファイルなし）であることを確認した。実コード
+（`05_main.py::run()`の各モード分岐、`update_liquidity_csv()`の呼び
+出し位置等）でも、モードごとに書き込み先ファイルが分離される設計に
+なっていることを確認した。**結論: 懸念した競合リスクは実際には
+発生しない（各モードの書き込み先が設計上排他的なため）**。新規
+BACKLOG登録は不要と判断する。
 
 #### 着手条件
 なし
@@ -8355,6 +8437,41 @@ generated_at`より1日古い値になりうる。`catalyst.py`の同種の`date
 `previous_close`が本来参照すべきキー（CNN `fear_greed`パッケージの
 `history`辞書の実際のキー構成を確認の上）に修正する。
 
+#### 2026-08-26 再検証（対応方針の前提を訂正・実装規模を確定）
+`collect_and_send.py:1572-1573`（行番号は登録時からシフト）に
+`"previous_close": history.get("1w")`・`"one_week_ago": history.get("1w")`
+が現存し、バグ自体は未解消であることを確認した。一方、**登録時の対応
+方針が前提としていた「`history`辞書内の正しいキー（`1d`等）に差し替える」
+という修正方法は実行不可能**であることが判明した:
+
+- `venv/Lib/site-packages/fear_greed/client.py`（`FearGreedClient.get()`）
+  を確認したところ、`history`辞書が持つキーは`1w`/`1m`/`3m`/`6m`/`1y`の
+  **5種類のみ**で、`1d`（前日）に相当するキーは存在しない
+- 実際にCNNの生API（`FearGreedClient().fetch()`）を呼び出して確認した
+  ところ、`data["fear_and_greed"]`には`previous_close`フィールドが
+  別途存在する（実測値: `previous_close=55.03`、`previous_1_week=55.09`
+  ——現在のコードが誤って`one_week_ago`と同値にしている値とは別物と
+  実データで確認）が、`fear_greed`パッケージの`get()`メソッドは
+  この`previous_close`フィールドを**返り値に含めず握りつぶしている**
+  （`score`/`rating`/`timestamp`/`history`/`indicators`のみ返す）
+- したがって正しい修正には、`fg.get()`ではなく`FearGreedClient().fetch()`
+  （生API呼び出し）を使い`data["fear_and_greed"]["previous_close"]`を
+  直接取得する経路への変更が必要（`history`辞書内でのキー差し替えでは
+  実現できない）。実装規模は小〜中程度（`fetch_cnn_fear_greed()`の
+  実装変更のみだが、生APIレスポンス構造への直接依存が増えるため
+  例外処理の見直しも要検討）
+
+**現在の実害の確認**: `previous_close`/`one_week_ago`フィールドの
+消費先を`grep -rn`で全文検索した結果、`market_data.json`への保存以外に
+参照箇所が存在しない（`index.html`等のフロントエンドで一切表示されて
+いない）ことを確認した。**現時点でユーザーに見える実害はゼロ**
+（値は保存されているが誰も読んでいない）。ただし将来これらの
+フィールドを表示に使う実装が入った場合、値が誤ったまま気づかれずに
+表示される潜在リスクは残る。
+
+優先度は実害ゼロを理由に引き下げず「中」を維持する（対応方針自体の
+前提誤りを訂正した記録的価値が今回の主目的）。
+
 #### 着手条件
 なし
 
@@ -9091,6 +9208,64 @@ pulse.py`のTech Pulseスコア計算式（固定レンジ加算方式）が現�
 ④パススルー対象フィールドを追加⑤2つのF&G情報源を明確に区別する
 ⑥バックフィル済みデータの再計算要否を判断する。優先順位を付けて
 順次対応する。
+
+#### 2026-08-26 再検証（実コード・実データで6件全て再確認、対応方針の実施はまだ）
+BACKLOG記載の前提を着手時に再検証する原則に従い、`collect_and_send.py`
+（実装は`src/market/market_pulse/collect_and_send.py`、登録時から行番号は
+シフトしているが該当箇所は現存）を1件ずつ実コード確認した。**6件とも
+未解消のまま現存**、優先度「中」は妥当と判断した。
+
+- **①Hindenburg固定値500**: `collect_and_send.py:1659`
+  `hindenburg_active = bool(nh >= 500 * 0.022 and nl >= 500 * 0.022)`が
+  現存。一方`breadth_data.json`最新エントリには`"total_stocks": 501`が
+  既に存在しており（`_load_latest_breadth()`で読み込み済み）、実測値を
+  使わず固定値500のままなことを確認
+- **②credit原資産不整合**: `collect_and_send.py:1436`の`credit_stock`は
+  `structured_data.get("S&P500")`（`^GSPC`指数）を参照する一方、
+  `collect_and_send.py:1444`の`credit_bond`判定は
+  `asset_flow_data.get("equity")`（SPY ETF、コメント「SPY(equity)下落」）
+  を参照しており、同一`credit`ブロック内で異なる原資産が現存
+- **③CSV列欠落**: `collect_and_send.py:1535`の
+  `csv.DictWriter(f, fieldnames=CSV_COLUMNS, extrasaction='ignore')`が
+  `row`のうち`CSV_COLUMNS`外のキーを無条件に無視する構造は不変。`row`は
+  `structured_data`＋`sentiment_score`/`label`/`summary`のみから構築され、
+  `tech_pulse_data`/`asset_flow_data`/`credit_data`/両checklist/
+  `fear_greed_data`/`comments_history`はCSV化のロジック自体に一切
+  含まれておらず欠落が現存（JSON`market_data.json`側には保存されている）
+- **④breadthパススルー漏れ**: `collect_and_send.py:323-337`の
+  `breadth_summary`は`breadth`（`breadth_data.json`最新エントリ、実際に
+  `unchanged`/`ad_ratio_1d`/`total_stocks`/`rsp_return_1d`/
+  `spy_return_1d`を含むことを実データで確認済み）から特定フィールドのみ
+  ホワイトリスト方式でコピーしており、この5フィールドは現在も
+  コピー対象に含まれず欠落が現存
+- **⑤F&G情報源混同**: `collect_and_send.py:646-647`の
+  `_load_div_history()`docstring「divergence.value は CNN F&G ベースで
+  保存されているため一貫性が保たれる」に反し、671-675行目の後方互換
+  フォールバック（`divergence.value`未記録の旧エントリ向け）が
+  `tech_pulse.components.fg_score`（feargreedchart.com由来の
+  `fg_score_tech`、CNN由来ではない）で乖離値を代替計算する構造が現存。
+  **実データで実害を定量化**: `market_data.json`全131件のうち直近90日
+  ウィンドウ内で`divergence.value`欠落（＝このフォールバックが実際に
+  発火する）エントリが**10件**（2026-05-28〜2026-06-02等）存在し、
+  `_calc_divergence_zscore()`のZスコア計算に feargreedchart.com由来の
+  値がCNN由来の値と無区別で混入していることを確認した（潜在バグでは
+  なく現在進行形で発火中）
+- **⑥Tech Pulseバックフィル式相違**: `backfill_tech_pulse.py:121-130`
+  の`_calc_score()`（docstring「固定範囲方式 Tech Pulse スコア
+  （バックフィル専用）」、加算方式）と`collect_and_send.py:711-729`の
+  `calc_tech_pulse_score()`（`scipy.stats.percentileofscore`による
+  90日パーセンタイル方式）が別計算式のまま現存を確認。同スクリプトは
+  GitHub Actionsワークフローに未登録（`grep -rln backfill_tech_pulse
+  .github/workflows/`で0件）で手動実行専用のため、既にバックフィル
+  済みの過去データのみに影響が限定される（新規の日次汚染は発生しない）
+
+**横断点検（Market Pulseのcron依存関係）**: `Market_Pulse_Update.yml`は
+単一cron（`35 21 * * 1-5`、月〜金）・単一ジョブ内で
+`breadth_calculator.py`→`collect_and_send.py`を順次実行する構造のため、
+TANUKI VALUATIONで past発見された`[[TANUKI-VALUATION-PRICE-SCHEDULE-
+LAG-1]]`のようなワークフロー間タイミング競合のリスクは構造上存在しない
+ことを確認した（他ワークフローからの`workflow_run`依存もなし、単独で
+完結）。他に構造的な新規問題は発見しなかった。
 
 #### 着手条件
 なし
@@ -13209,6 +13384,29 @@ daily cron（`15 22 * * *`、無指定モード）が毎日`05_events.csv`を更
   NG=0件/WARN=96件、ゲート通過（既存WARN、MACRO PULSE非対象）。
 - 実際のブラウザでのJS実行確認（GitHub Pages反映後の見た目）は本
   セッションでは不可のため未実施。次回ページ閲覧時の実地確認を推奨。
+
+#### 2026-08-26 実地確認（コード・データの実態から検証、ブラウザJS実行は引き続き未実施）
+MACRO PULSE稼働状況の横断確認の一環として、本対応が現在も正しく
+機能しているかを実コード・実データで再検証した。
+
+- `index.html:1167`の`const score=WEEKLY_SNAPSHOT?WEEKLY_SNAPSHOT.score
+  :liveScore;`（`computeCurrentScore()`内）が現存し、実装コミット
+  `1d68c7342`以降このファイルへの変更は無いことを`git log`で確認
+  （＝実装内容が退行していないことを確認）
+- `renderWeeklyAnalysis()`（2203行目）が最新行の`score`を
+  `WEEKLY_SNAPSHOT`へセットし（2222-2224行目）、`DATA.length`が
+  既に読み込み済みなら`renderPhaseGauge()`を再実行するロジックパスも
+  現存を確認
+- 本番`05_weekly_analysis.csv`（24行）の最新行を実データで確認:
+  `analysis_date=2026-08-22`・`score=22`・`phase=拡張`。今日
+  （2026-08-26、水曜）時点で4日前の直近土曜スナップショットが
+  正しく保持されており、次回更新（次の日曜）まで凍結される設計通りの
+  状態にあることを確認した
+- 上記より、「景気後退リスク複合スコア」ゲージと「AIウィークリー
+  コメンタリー」が同一の`WEEKLY_SNAPSHOT.score`（現在値22）を参照する
+  構造は、コード・データの両面から見て正常に機能していると判断できる。
+  ブラウザでの実際のJS実行確認（GitHub Pages上の見た目）は本タスクの
+  範囲外のため引き続き未実施のまま
 
 #### 着手条件
 なし（解消済み）
