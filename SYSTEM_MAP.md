@@ -1489,6 +1489,127 @@ MACRO PULSE   ← FREDデータ / FRBステートメント
 　　リーコメンタリーが全て同一値を参照する（[[MACRO-PULSE-3M-FORECAST-SNAPSHOT-
 　　MISMATCH-1]]）。8指標ごとのsignals（現在地カード・アラート判定）はこの統合対象外で
 　　引き続きブラウザ側ライブ計算のまま。
+## Market Pulse・MACRO PULSE 画面要素→導出関数→生データソース 依存関係マップ（2026-08-26新設）
+
+`CHAT_RULES.md`事例13（層単位横串検証よりフロントエンド起点の縦割り検証を
+優先する）を実践する上で、「画面ごとに検証で通過した依存関係を記録し、
+次の画面検証時に再調査を省略する」ための土台として新設。各画面要素を
+(a)表示コンポーネント（HTMLファイル・JS関数）→(b)導出関数（Pythonモジュール・
+関数）→(c)生データソース（ファイル・カラム名）の順にたどる。次回以降、
+これらの依存先を再検証する際は、まずこのマップで「既に検証済みか」を
+確認してから着手すること。
+
+### ① MACRO PULSEゲージ（`#pg-score-num`、RECESSION RISK SCORE現在値）
+- **(a)** `docs/market-monitor/macro-pulse/index.html`
+  `renderPhaseGauge()`（1180行目）が`el('pg-score-num')`（603行目）へ描画。
+  `computeCurrentScore()`（JS、1087行目）がライブ計算のステップ関数を
+  提供するが、`WEEKLY_SNAPSHOT`（771行目、AI週次解説生成時にサーバー側で
+  算出された値を読み込むグローバル変数、2237-2244行目）が非nullの間は
+  そちらを正として表示（1175行目）——ライブ計算はWEEKLY_SNAPSHOT未読込時の
+  フォールバックのみ（`[[MACRO-PULSE-3M-FORECAST-SNAPSHOT-MISMATCH-1]]`
+  で統合済み）
+- **(b)** `src/market/macro_pulse/05_main.py::_compute_current_score()`
+  （1414行目）——`computeCurrentScore()`とスコア計算式を1対1で同期させた
+  Python版。8指標（yc/hy/philly/cfnai/claims/cbcc2/cbcc/sahm）の加重平均。
+  週次AI解説生成時（`--weekly-analysis`）にのみ実行され、結果が
+  `05_weekly_analysis.csv`へ保存される
+- **(c)** `docs/market-monitor/macro-pulse/data/05_events.csv`の`indicator`/
+  `actual`/`release_date`列（8指標分のみ、`indicator_keys`で列挙）。
+  `regime`/`ff_rate`/`yc_10y2y`/`hy_spread`/`vix`/`cuts_implied`列は
+  スコア計算に一切使われない（下記STEP 3-2参照）
+
+### ② MACRO PULSE AIウィークリーコメンタリー
+- **(a)** `docs/market-monitor/macro-pulse/index.html`内、週次解説表示部
+  （`WEEKLY_SNAPSHOT`経由で①のゲージと同一値を共有）
+- **(b)** `05_main.py::generate_weekly_analysis_with_grok()`（1556行目）。
+  xAI Grok APIへ①のスコア・直近1週間の指標発表・FED政策局面等を
+  プロンプトとして渡し生成。`regime`/`ff_current`/`cuts_implied`
+  （プロンプト文言、1601-1603行目）は`fed_context`辞書（1727-1732行目、
+  `05_fed_context.csv`の最終行）から取得——**events.csv側の同名列とは
+  別ソース**（下記STEP 3-2参照）
+- **(c)** `05_events.csv`（8指標のactual値・直近イベント）＋
+  `05_fed_context.csv`（`regime`/`ff_current`/`cuts_implied`等のFED
+  政策局面）。出力先: `05_weekly_analysis.csv`
+
+### ③ MACRO PULSEスコア推移チャート・tooltip
+- **(a)** `renderScoreHistory()`（1660行目）。ECharts。tooltip
+  formatter（1729-1741行目）が「本日=実測値」「過去日=lerp補間表示」の
+  算出方式注記を表示（`[[RECESSION-SCORE-TRIPLE-CALC-1]]`③対応、
+  `[[MACRO-COMPUTE-DUP-1]]`で意図的設計と確定済み）
+- **(b)** 本日1点は`computeCurrentScore()`（①と同一のステップ関数）、
+  過去日は`computeScoreAsOf()`（JS、lerp補間、`c3eb81572`で導入）
+- **(c)** `05_events.csv`の8指標（①と同一）
+
+### ④ Hindenburg omen関連表示
+- **(a)** `docs/market-monitor/market-pulse/index.html`
+  `renderTakeProfit()`（948行目）・`renderBuyChecklist()`（997行目）が
+  `CHECK_KEYS.hindenburg`（979行目）経由でチェック結果を表示
+- **(b)** `src/market/market_pulse/collect_and_send.py::
+  calc_hindenburg_active()`（1307行目）。新高値・新安値がともに
+  `total_stocks×2.2%`を超えるかを判定（`[[MARKETPULSE-MINOR-
+  INCONSISTENCIES-1]]`①で固定値500→実測`total_stocks`へ修正済み）。
+  結果は`calc_take_profit_checklist()`（1329行目）・
+  `calc_buy_checklist()`（1393行目）へ渡される
+- **(c)** `docs/market-monitor/market-pulse/data/breadth_data.json`の
+  `new_highs_52w`/`new_lows_52w`/`total_stocks`（⑦のbreadth_summaryと
+  同一の生成元）
+
+### ⑤ Hollow Rally関連表示
+- **(a)** `docs/market-monitor/macro-pulse/index.html`内インライン
+  （2590-2607行目、専用関数化されていない）。`#liqGrid`直上に
+  `.hollow-rally-badge`を挿入（2609-2616行目）
+- **(b)** 導出ロジック自体がフロントエンドJS内に直書き（S&P500の
+  5営業日リターン>+1.0% かつ FRB純流動性の前回行比<-0.5%）。バックエンド
+  側の対応する導出関数は存在せず、`05_main.py::get_sp500()`（858行目、
+  FRED "SP500"系列・失敗時stooq.comフォールバック）と
+  `update_liquidity_csv()`（1977行目）が生データを`05_liquidity.csv`へ
+  書き込むところまでを担当
+- **(c)** `docs/market-monitor/macro-pulse/data/05_liquidity.csv`の
+  `sp500`列（`[[HOLLOW-RALLY-DEAD-1]]`案Xで新設・過去1309/1311行
+  バックフィル済み）・`net_liquidity`列
+
+### ⑥ Fear & Greed関連表示
+- **(a)** `docs/market-monitor/market-pulse/index.html`
+  `renderGauge()`（696-777行目、F&Gゲージ本体）・`renderTimeline()`
+  （582行目、`d.fear_greed`参照）・`renderTakeProfit()`/
+  `renderBuyChecklist()`（F&G≥75/≤25判定）
+- **(b)** `collect_and_send.py::fetch_cnn_fear_greed()`（1629行目）。
+  `fear_greed`パッケージの`fg.fetch()`（生API直接呼び出し、`get()`は
+  使わない——`[[FEARGREED-DUPKEY-BUG-1]]`で`previous_close`誤値を修正
+  済み）。**Market Pulseがこのシステム内で唯一のCNN F&G取得経路**——
+  TANUKI VALUATION（`pipeline.py:390`）・TANUKI SCORE
+  （`daily_pick.py:330`）はいずれも独自取得せず`market_data.json`の
+  `fear_greed.score`を読むのみであることを確認済み（重複実装なし）
+- **(c)** CNN Fear & Greed Index API（`fear_greed`パッケージ経由）。
+  出力先: `docs/market-monitor/market-pulse/data/market_data.json`の
+  `fear_greed`フィールド
+
+### ⑦ breadth_summary関連表示
+- **(a)** `renderGauge()`内（748-758行目、`const b=s.breadth`）。
+  ADV/DEC比・NH-NL差・McClellan Oscillator・pct_above_50ma等の
+  警戒バッジを表示
+- **(b)** `breadth_calculator.py::compute_breadth()`（141行目）が
+  S&P500構成銘柄の日次価格からadvances/declines/new_highs_52w/
+  new_lows_52w/total_stocks等を算出し`breadth_data.json`へ保存。
+  `collect_and_send.py::calc_sentiment_score()`内で`breadth_summary`
+  辞書（325-348行目）を構築し`market_data.json`の`sentiment.breadth`
+  へ格納（`[[MARKETPULSE-MINOR-INCONSISTENCIES-1]]`④で欠落5フィールド
+  追加済み）
+- **(c)** `docs/market-monitor/market-pulse/data/sp500_tickers.json`
+  （銘柄リスト、`get_sp500_tickers()`で取得・`common.market_data`経由
+  への統合対象外と明記〈39行目コメント〉）＋各銘柄の日次価格
+  （`common.market_data.reader`経由）→`breadth_data.json`
+
+### 作成中に見つけた注記事項（新規BACKLOG登録は不要と判断）
+- Fear & Greedは上記の通りMarket Pulseへの一本化を確認済み（重複なし）。
+  TANUKI VALUATION/TANUKI SCOREはいずれも`market_data.json`経由の
+  参照のみで、独自にCNN APIを叩く経路は存在しない
+- Hindenburg omenの判定ロジックは`collect_and_send.py`に1箇所のみ存在し、
+  他システムでの重複実装は確認されなかった
+- RECESSION RISK SCOREのJS/Python二重実装（`computeCurrentScore()`と
+  `_compute_current_score()`）は既知・意図的設計として
+  `[[MACRO-COMPUTE-DUP-1]]`で確定済みのため再登録しない
+
 DISCOVER      ← Grok Web検索 / NewsAPI
 　　ニュース収集・分類: src/discover/collect.py → docs/discover/data/daily_report.json（日次）
 　　ニュース履歴: docs/discover/data/news_history_YYYY_MM.json（月別蓄積・翌日騰落率付き）
