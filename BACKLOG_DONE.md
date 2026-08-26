@@ -4,6 +4,139 @@
 
 ## 2026-08-26（完了）
 
+### ✅ [TANUKI-VALUATION-PRICE-SCHEDULE-LAG-1] TANUKI_VALUATION_Updateの実行時刻がMarket_Data_Daily_Updateより早く、`current_price`が常に1営業日遅れる（2026-08-26実地確認完了）
+
+**優先度:** 中 → 完了
+**分類:** アーキテクチャ / GitHub Actions / データ鮮度
+**登録日:** 2026-08-22
+**状態:** 実装完了・実地確認完了（2026-08-26）
+**発見:** PORTFOLIOページの時価が古く見えるというユーザー指摘の実データ調査
+
+#### 内容
+PORTFOLIOページ（`docs/portfolio/index.html`）が表示する「時価」は
+`docs/value-monitor/tanuki_valuation/data/{TICKER}/latest.json`の
+`components.current_price`を参照している（`portfolio.json`の
+`last_updated`はポートフォリオ構成の編集日であり時価の鮮度とは無関係）。
+この`current_price`自体は`data_fetcher.py`が`common.market_data.reader`
+経由で`common/market_data/daily/{SYMBOL}.json`（yfinance統合層）から
+正しく取得しており、参照先データソース自体に誤りはない。
+
+しかし実データ調査（2026-08-22、保有9銘柄 ADBE/APP/CELH/CRWV/NVDA/
+PLTR/SOFI/SOUN/TSLA全件で確認）で、`daily/`自体は最新営業日
+（2026-08-21・金）のクローズまで正しく保存済みにもかかわらず、
+`latest.json`の`current_price`は全銘柄例外なく**1営業日前**
+（2026-08-20・木）のクローズと完全一致していることを確認した。
+`latest.json`の`calculation_date`自体は直近（2026-08-21 23:5X JST）で
+パイプラインは正常稼働している＝ワークフロー障害ではない。
+
+原因はcronスケジュールの実行順序不備：
+- `Market_Data_Daily_Update.yml`: `40 21 * * 1-5`（UTC21:40=JST翌6:40）
+- `TANUKI_VALUATION_Update.yml`: `5 14 * * 1-5`（UTC14:05=JST23:05）
+
+`TANUKI_VALUATION_Update`（JST23:05）は同日分の米国市場クローズが
+`Market_Data_Daily_Update`（JST翌6:40）でまだ`daily/`に反映される前に
+実行されるため、常に「前日の前営業日」のクローズしか参照できない
+構造的な恒常ラグが平日毎回発生する。土日は両ワークフローとも
+`1-5`（平日のみ）で停止するため、金曜夜〜月曜のPORTFOLIO閲覧では
+木曜クローズが暦日換算で最大4〜5日分「古く」見える（実質1営業日遅れが
+週末を挟んで見た目に拡大する）。次回`TANUKI_VALUATION_Update`
+（月曜23:05 JST）も月曜分のクローズはまだ`daily/`未反映のため金曜
+クローズしか反映できず、火曜早朝の`Market_Data_Daily_Update`後、
+月曜夜のパイプライン実行分（火曜0時台）でようやく金曜クローズが
+反映される見込み。
+
+`config/workflow_dependencies.json`にはこの2ワークフロー間の依存関係が
+論理的にも一切定義されていない（`SEC_Data_Update`↔`TANUKI_VALUATION_Update`
+間の同種ギャップである[[WORKFLOW-SEC-TANUKI-GAP-1]]とは異なるペアであり
+重複ではないが、同じ「cronスケジュールが独立していて実行順序を
+保証する仕組みがない」という構造的パターンの別インスタンス）。
+
+#### 切り分け結果
+ユーザー提示の(a)〜(d)のいずれにも単純には一致しない。両ワークフロー
+とも障害・停止なし（(b)否定）、参照先データソース自体も`daily/`で
+正しい（(c)否定）、GitHub Pagesキャッシュの問題でもない（(d)否定）。
+単純な「前日終値ラグ」（(a)）として片付けるには、週末を挟むと見た目の
+遅延が暦日換算で最大4〜5日に拡大する点で許容範囲を超えていると判断。
+実質は「ワークフロー実行順序の設計不備」というカテゴリ。
+
+#### 対応方針（案②を採用）
+- 案①: `TANUKI_VALUATION_Update.yml`の実行時刻を`Market_Data_Daily_Update.yml`
+  完了後（JST翌6:40以降）に変更する
+- 案②: `Market_Data_Daily_Update`完了後に`TANUKI_VALUATION_Update`を
+  `workflow_run`トリガーで自動連鎖させる（[[WORKFLOW-SEC-TANUKI-GAP-1]]の
+  案①と同種のアプローチ）
+- 案③: 許容運用として現状維持し、UI側に「前営業日終値」であることを
+  明示するのみに留める
+
+#### 実装内容（2026-08-22、案②を採用、[[WORKFLOW-SEC-TANUKI-GAP-1]]と
+まとめて構造的に解消）
+- `config/workflow_dependencies.json`に`Market_Data_Daily_Update`を
+  新規ノード（`depends_on: []`）として追加し、`TANUKI_VALUATION_Update`の
+  `depends_on`に`Market_Data_Daily_Update`を追加（実装前の再確認で、
+  この依存関係が論理的にも一切定義されていなかったことを確認済み）。
+- `TANUKI_VALUATION_Update.yml`の`on:`を独立cron（平日14:05 UTC）から
+  `workflow_run`（`Market Data Daily Update`・`HypeCore Update`・
+  `Adjusted_EPS_Data_Update`・`Stonks Silo Update`の4本いずれかの
+  完了で発火、`types: [completed]`）に変更。ジョブに
+  `if: github.event_name != 'workflow_run' || github.event.workflow_run.
+  conclusion == 'success'`を設定し、前提ワークフロー失敗時は連鎖しない。
+  旧cronは削除し、chainが発火しなかった場合の安全網として金曜22:30 UTC
+  （`Market_Data_Daily_Update`金曜分21:40 UTC完了より確実に後）の週1回
+  フォールバックcronのみ残した。`workflow_dispatch`（admin.htmlの手動
+  一括更新ボタン用）はそのまま維持。
+- `TANUKI_Score_Update.yml`が既に同型パターン（workflow_run +
+  conclusionチェック + 独立cronフォールバック）で稼働中の実例だった
+  ため、これに倣った。
+- 詳細な依存グラフ再確認結果・他3ワークフロー（HypeCore_Update・
+  Adjusted_EPS_Update・Stonks_Silo_Update）側の対応は
+  [[WORKFLOW-SEC-TANUKI-GAP-1]]エントリ参照（まとめて1回の作業で実施）。
+- **新たに判明した同型の未対応ギャップ（今回のスコープ外・報告のみ）**:
+  `Stonks_Silo_Update.yml`（cron 15:05 UTC）も自身の
+  `valuation_fetcher.py`経由で`common/market_data/daily/`の日次終値に
+  依存しているが、`Market_Data_Daily_Update`（21:40 UTC完了）より先に
+  発火するため同種の構造的ラグを抱えている可能性が高い。今回は
+  `TANUKI_VALUATION_Update`用の連鎖のみ対応し、`Stonks_Silo_Update`側の
+  同種対応は意図的にスコープ外とした。
+  `[[STONKS-SILO-PRICE-SCHEDULE-LAG-SUSPECT-1]]`として新規登録。
+
+#### 2026-08-26 実地確認結果（確認完了・クローズ）
+`gh`CLI・GitHub Actions APIとも本セッションで利用不可のため、
+コミット履歴のタイムスタンプ突合で代替検証した。
+
+**chainの発火確認**: `Market_Data_Daily_Update`→`TANUKI_VALUATION_Update`の
+`workflow_run`連鎖が、修正後最初の2営業日（2026-08-25・26）で連続して
+確認できた:
+- 2026-08-25: 「Update Market Data Daily - 2026-08-25」07:00:38 JST →
+  「Update TANUKI VALUATION - 2026-08-25 07:16 JST」（**16分後**）
+- 2026-08-26: 「Update Market Data Daily - 2026-08-26」06:59:53 JST →
+  「Update TANUKI VALUATION - 2026-08-26 07:16 JST」（**16分後**）
+
+いずれも旧cron（平日23:05 JST）の時刻ではなく、`Market_Data_Daily_Update`
+完了直後（16分ラグで一致、2日連続で再現）に実行されている——旧独立
+cronが削除され、workflow_runチェーンに完全に置き換わったことを確認した。
+（HypeCore/Adjusted_EPS_Data_Update側からの連鎖も2026-08-24に確認済み。
+詳細は`[[WORKFLOW-SEC-TANUKI-GAP-1]]`参照。同エントリのSEC_Data_Update
+起点チェーンは別途未確定のため引き続きオープン）
+
+**current_price鮮度の確認**: NVDAの`latest.json`
+（`calculation_date=2026-08-26T07:07:59+09:00`）の`current_price=
+213.0500030517578`が、`common/market_data/daily/NVDA.json`の最新レコード
+（`2026-08-25`終値`213.0500030517578`）と完全一致することを確認した。
+2026-08-26朝時点でまだ2026-08-26の米国市場クローズは存在しないため、
+「直近の実際に確定している最新営業日終値」を正しく参照できている。
+修正前は1営業日遅れた終値を参照していたため、鮮度ラグは解消されたと
+判断する。ADBE・TSLAでも同様に`calculation_date`と`current_price`の
+整合を確認済み。
+
+**結論**: 案②の実装が意図通り機能しており、`current_price`の1営業日
+遅れは解消済みと確認。クローズする。
+
+#### コミット
+- `ca925ffa2`: workflow_run連鎖でTANUKI-VALUATION-PRICE-SCHEDULE-LAG-1・
+  WORKFLOW-SEC-TANUKI-GAP-1を構造的に解消（実装）
+
+---
+
 ### ✅ [MACRO-TRUTHY-ZERO-BUG-1] MACRO PULSE履歴バックフィルのtruthy判定によるゼロ値欠落（2026-08-26修正・10,570行復元完了）
 **優先度:** 高 → 完了
 **分類:** バグ / MACRO PULSE
