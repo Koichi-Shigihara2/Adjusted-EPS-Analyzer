@@ -1610,6 +1610,14 @@ MACRO PULSE   ← FREDデータ / FRBステートメント
   `_compute_current_score()`）は既知・意図的設計として
   `[[MACRO-COMPUTE-DUP-1]]`で確定済みのため再登録しない
 
+### 実ブラウザ確認スクリプト（2026-08-26新設）
+上記7要素それぞれについて、生データから独立に計算した期待値と実ブラウザ
+描画値を突き合わせる再利用可能なPlaywrightスクリプトを`browser_checks/
+check_dependency_map.py`に整備した（詳細は同ディレクトリのREADME.md
+参照）。CI組み込みはスコープ外・手動実行のみ。2026-08-26初回実行では
+7要素全て一致、consoleエラー0件を確認済み。次回以降、このマップの
+依存先を変更した際は本スクリプトで再確認すること。
+
 DISCOVER      ← Grok Web検索 / NewsAPI
 　　ニュース収集・分類: src/discover/collect.py → docs/discover/data/daily_report.json（日次）
 　　ニュース履歴: docs/discover/data/news_history_YYYY_MM.json（月別蓄積・翌日騰落率付き）
