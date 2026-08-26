@@ -1,6 +1,7 @@
 APP INTEGRATED INVESTMENT REPORT
-Generated: 2026-08-26T07:03:00+09:00
+Generated: 2026-08-27T08:24:34+09:00
 Price: $310.54
+Validation_Status: PASS (品質ゲート: 全チェック通過)
 
 [1. TANUKI SCORE]
 Classification: WATCH
@@ -64,11 +65,15 @@ Scenarios:
 BEAR: Growth=31.5%, IV=$1,024.79, Deviation=+230.0%
 BASE: Growth=45.0%, IV=$2,368.16, Deviation=+662.6%
 BULL: Growth=54.0%, IV=$3,996.76, Deviation=+1187.0%
+Return_Outlook(BASE): 1年後: $3,433.83 (+1005.8%) / 3年後: $7,219.63 (+2224.9%) / 5年後: $15,179.28 (+4788.0%)
+  5yr_Annualized_Return: +117.7%/yr
 Growth_Rate_Rec: 24.8% (recommended  ⚠️ +20.2pt above recommended)
 TTM_YoY_Growth: 85.4%
 (DCF Base vs TTM actual: -40.4pt discount)
 Discount_Rate_Primary: 10.00% (DCF discount rate used)
 WACC_CAPM_Reference: 18.55%
+  参考①β込みWACC_IV: $650.66 (Deviation: +109.5%)
+  参考②Rf理論上限_IV: $27,461.38 (Deviation: +8743.1%)
 Terminal_Growth_Rate: 3.5%
 Beta: 2.5
 FCF_Conversion_Rate: 0.7 (Industry: Advertising Agencies)
@@ -85,14 +90,20 @@ DCF_Reliability: LOW ⚠️ (FCF_Conversion_Rate方式: 要注意フラグ検出
    大幅乖離（eps_invalid）のため、IVは参考値扱い。]
    [DCF-REL-SYNC-1: FCF実績が5年平均から151%乖離]
 DCF_FCF_PV: $252.23B (Ph1=$120.00B + Ph2=$132.23B, 9yr, pre-alpha, Rm=10%)
+Maturity_Profile: Phase1=4yr@0.0%, Phase2=4yr@12.0%
 DCF_TV_PV:  $540.68B (terminal value present value, pre-alpha, Rm=10%)
 DCF_v0:     $792.91B (= FCF_PV + TV_PV, Rm=10% enterprise value)
-Alpha_Premium: 1.0000 (HypeCore expectation premium; Rm basis)
+Alpha_Premium: 1.0000 (HypeCore expectation premium; Rm basis) [CAPPED: セクター別上限到達]
 RPO_PV: $0 (RPO/Revenue=0.01 < 0.3, not applied)
 Growth_Option_PV: $0.355B (optional segment premium)
 Equity_Value: $792.51B (= v0 + RPO_PV + GO_PV + Net_Cash $-0.76B)
 Shares_Used: 334.7M (source: yf_implied)
 → Intrinsic_Value: $2368.16 (= Equity_Value ÷ Shares_Used)
+Sensitivity_Matrix (WACC×成長期間 → IV/share):
+  WACC\Years  5yr  9yr  13yr
+  9.0%       $925.75  $2,969.09  $9,368.01
+  10.0%       $761.78  $2,368.16  $7,218.24
+  11.0%       $642.50  $1,937.27  $5,707.53
 Financial_Health:
   Net_Debt: $+0.76B (negative=net cash)
   Total_Debt: $3.51B  Cash: $2.76B
@@ -149,10 +160,11 @@ For manually configured segments: used directly as DCF growth rate G
 For unconfigured segments: TTM Revenue Growth is auto-applied,
 then adjusted via recommended_g (median of historical CAGR,
 industry benchmark, RR×ROIC)
-GROWTH-1: Decay model weight adjusted by HypeCore phase:
-  Phase1-2 (early): TTM×65% + Industry×35% (growth has room)
-  Phase3 (euphoria): TTM×50% + Industry×50% (balanced)
-  Phase4 (deflation): TTM×35% + Industry×65% (normalization accelerated)
+Decay model (TTM/CAGR>50%): fixed 50% TTM + 50% Industry benchmark.
+(GROWTH-1's HypeCore-phase-weighted variant was removed
+2026-08-26; mixing a Timing-side signal into Funda-side
+growth was a design inconsistency with no backtest evidence
+of improved accuracy. See [[LAYER1-GROWTH-HYPEPHASE-DECAY-GAP-1]])
 Next_Earnings_Date: Next quarterly earnings release
 Valuation_Gap_Analysis: Reverse DCF calculation showing
 what FCF growth rate the current market price implies.

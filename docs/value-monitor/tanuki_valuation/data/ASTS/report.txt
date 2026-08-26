@@ -1,6 +1,7 @@
 ASTS INTEGRATED INVESTMENT REPORT
-Generated: 2026-08-26T08:05:54+09:00
+Generated: 2026-08-27T08:24:44+09:00
 Price: $62.01
+Validation_Status: PASS (品質ゲート: 全チェック通過)
 
 [1. TANUKI SCORE]
 Classification: WATCH
@@ -66,12 +67,17 @@ Scenarios:
 BEAR: Growth=28.1%, IV=$3.74 （推奨値ベース）
 BASE: Growth=40.1%, IV=$3.66 （推奨値ベース）
 BULL: Growth=48.1%, IV=$3.60 （推奨値ベース）
+Return_Outlook(BASE): 1年後: $5.13 (-91.7%) / 3年後: $10.07 (-83.8%) / 5年後: $14.60 (-76.5%)
+  5yr_Annualized_Return: -25.1%/yr
 TTM_YoY_Growth: 1511.8%
 (DCF Base vs TTM actual: -1471.7pt discount)
 Discount_Rate_Primary: 10.00% (DCF discount rate used)
 WACC_CAPM_Reference: 18.55%
+  参考①β込みWACC_IV: $3.94 (Deviation: -93.6%)
+  参考②Rf理論上限_IV: $0.06 (Deviation: -99.9%)
 Terminal_Growth_Rate: 3.5%
 Beta: 2.5
+FCF_TTM_End: 2026-06-30 (FCF/RICE算出に用いたTTM期末日)
 FCF_Base: $-6.84M (4yr平均 + R&D補正) [実績avg: $-700.1M]
 DCF_Reliability: LOW ⚠️ (FCF実績マイナス: revenue_floor適用, IV参考値)
   [Policy A: LOW時はBUY/TRIM/HOLD/WATCHをWATCHへ丸め。SELL/PASSは維持。
@@ -85,6 +91,11 @@ Growth_Option_PV: $0
 Equity_Value: $1.42B (= v0 + RPO_PV + GO_PV + Net_Cash $1.62B)
 Shares_Used: 389.2M (source: yf_implied)
 → Intrinsic_Value: $3.66 (= Equity_Value ÷ Shares_Used)
+Sensitivity_Matrix (WACC×成長期間 → IV/share):
+  WACC\Years  2yr  4yr  6yr
+  9.0%       $3.55  $3.11  $2.38
+  10.0%       $3.65  $3.28  $2.69
+  11.0%       $3.72  $3.41  $2.91
 Financial_Health:
   Net_Debt: $-1.62B (negative=net cash)
   Total_Debt: $2.97B  Cash: $2.29B  ST_Invest: $2.30B

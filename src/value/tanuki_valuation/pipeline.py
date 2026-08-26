@@ -1177,6 +1177,9 @@ class TanukiValuationPipeline:
         _recommended_g = extra.get("recommended_g")
         _bear_mult_applied = extra.get("fcf_margin_bear_mult_applied", False)
         _fcf_margin_note   = extra.get("fcf_margin_note")
+        # [[REPORT-TXT-CAPM-IV-MISSING-1]]: stock.html表示済みだがreport.txt
+        # 未出力だったフィールド群（dupontはextra、他はvaluation由来）
+        _dupont = extra.get("dupont")
 
         now = valuation.get("calculation_date", datetime.now().strftime("%Y-%m-%d"))
         comps = valuation.get("components", {})
@@ -1368,6 +1371,16 @@ class TanukiValuationPipeline:
         L.append(f"{ticker} INTEGRATED INVESTMENT REPORT")
         L.append(f"Generated: {now}")
         L.append(f"Price: ${current_price:,.2f}" if current_price else "Price: N/A")
+        # [[REPORT-TXT-CAPM-IV-MISSING-1]]⑥: 品質ゲート結果(PASS/WARN/FAIL)は
+        # 分析の信頼性に関わるため冒頭で開示する（validator.pyのrun_basic_checks
+        # 結果、pipeline.py本体でvaluation["validation"]へ格納済み）
+        _validation = valuation.get("validation") or {}
+        _val_overall = _validation.get("overall")
+        if _val_overall == "PASS":
+            L.append("Validation_Status: PASS (品質ゲート: 全チェック通過)")
+        elif _val_overall in ("WARN", "FAIL"):
+            _val_failed = self._get_warn_details(_validation)
+            L.append(f"Validation_Status: {_val_overall} ⚠️ (要注意チェック: {_val_failed})")
         L.append("")
         if ticker in CIK_DISCONTINUITY_TICKERS:
             L.append(f"⚠️ CIK断絶(構造的境界): {CIK_DISCONTINUITY_TICKERS[ticker]}")
@@ -1499,6 +1512,23 @@ class TanukiValuationPipeline:
             L.append(f"BEAR: Growth={bear_g:.1f}%, IV=${bear_iv:,.2f}, Deviation={dev(bear_iv):+.1f}%")
             L.append(f"BASE: Growth={base_g:.1f}%, IV=${base_iv:,.2f}, Deviation={dev(base_iv):+.1f}%")
             L.append(f"BULL: Growth={bull_g:.1f}%, IV=${bull_iv:,.2f}, Deviation={dev(bull_iv):+.1f}%")
+        # [[REPORT-TXT-CAPM-IV-MISSING-1]]⑤: return_metrics（BASEシナリオの
+        # 期待リターン、future_valuesベース）を要約表示。stock.htmlの
+        # future-tableは全年度・全シナリオを表形式で出すが、report.txtでは
+        # BASEシナリオの主要年（1/3/5年後）＋5年年率換算のみに要約する。
+        _return_metrics = valuation.get("return_metrics")
+        if _return_metrics and current_price:
+            _ro_parts = []
+            for _yr_key in ("1年後", "3年後", "5年後"):
+                _rm = _return_metrics.get(_yr_key)
+                if _rm:
+                    _ro_parts.append(f"{_yr_key}: ${_rm['future_value']:,.2f} ({_rm['expected_return_pct']:+.1f}%)")
+            if _ro_parts:
+                L.append(f"Return_Outlook(BASE): {' / '.join(_ro_parts)}")
+            _rm5 = _return_metrics.get("5年後")
+            if _rm5 and _rm5.get("future_value"):
+                _ann_rate = (( _rm5["future_value"] / current_price) ** (1/5) - 1) * 100
+                L.append(f"  5yr_Annualized_Return: {_ann_rate:+.1f}%/yr")
         # TANUKI-DCF-1②: segment_configured銘柄でrecommended_gと乖離がある場合に警告表示
         if not _phase1_auto_adjusted and _recommended_g is not None and _phase1_growth_original is not None:
             _g_diff = (_phase1_growth_original - _recommended_g) * 100
@@ -1536,6 +1566,21 @@ class TanukiValuationPipeline:
             L.append(f"WACC_CAPM_Reference: {wacc_pct:.2f}%{_wacc_suffix}")
         else:
             L.append("WACC_CAPM_Reference: N/A")
+        # [[REPORT-TXT-CAPM-IV-MISSING-1]]①: WACC_CAPM_Referenceで実際に
+        # 割り引いたIV（参考①β込みWACC・参考②Rf理論上限）を直後に併記する。
+        # 本セクション末尾の定義文が「WACC_CAPM_ReferenceでのIVを参照」と
+        # 既に言及していたにもかかわらず、その値自体が出力されていなかった
+        # 自己言及の矛盾を解消する。
+        _ivps_beta = valuation.get("intrinsic_value_beta")
+        _upside_beta = valuation.get("upside_percent_beta")
+        if _ivps_beta:
+            L.append(f"  参考①β込みWACC_IV: ${_ivps_beta:,.2f} (Deviation: {_upside_beta:+.1f}%)"
+                      if _upside_beta is not None else f"  参考①β込みWACC_IV: ${_ivps_beta:,.2f}")
+        _ivps_rf = valuation.get("intrinsic_value_rf")
+        _upside_rf = valuation.get("upside_percent_rf")
+        if _ivps_rf:
+            L.append(f"  参考②Rf理論上限_IV: ${_ivps_rf:,.2f} (Deviation: {_upside_rf:+.1f}%)"
+                      if _upside_rf is not None else f"  参考②Rf理論上限_IV: ${_ivps_rf:,.2f}")
         terminal_g_used = comps.get("terminal_growth_used")
         terminal_g_pct = terminal_g_used * 100 if isinstance(terminal_g_used, (int, float)) else None
         L.append(f"Terminal_Growth_Rate: {terminal_g_pct:.1f}%" if terminal_g_pct is not None else "Terminal_Growth_Rate: N/A")
@@ -1562,6 +1607,11 @@ class TanukiValuationPipeline:
                     L.append(f"  Required_Growth:  {_gap_rg*100:.0f}%/yr (現在FCFから必要成長率を逆算)")
                 else:
                     L.append("  Required_Growth:  N/A")
+        # [[REPORT-TXT-CAPM-IV-MISSING-1]]⑧: FCF/RICE算出に使ったTTM期末日
+        # （技術的な注記のため1行のみ）
+        _fcf_ttm_end = valuation.get("fcf_ttm_end")
+        if _fcf_ttm_end:
+            L.append(f"FCF_TTM_End: {_fcf_ttm_end} (FCF/RICE算出に用いたTTM期末日)")
         if not fcf_est.get("applied", True):
             # raw_fcf フォールバック: 実際のFCFベース値を表示
             _fcf_base_used = comps.get("fcf_base_used", 0)
@@ -1737,6 +1787,19 @@ class TanukiValuationPipeline:
             if _pv_fcf_capm:
                 L.append(f"DCF_FCF_PV: ${_pv_fcf_capm/1e9:.2f}B ({_hg_yrs_r6}yr discounted FCF sum, pre-alpha)")
 
+        # [[REPORT-TXT-CAPM-IV-MISSING-1]]④: maturity_profile（Phase1/Phase2の
+        # 年数・成長率、3段階DCFの内訳。DCF_FCF_PVのPh1/Ph2金額と対になる
+        # 「年数×成長率」の前提を明示する）
+        _maturity_profile = valuation.get("maturity_profile")
+        if _maturity_profile:
+            _mp_p1 = _maturity_profile.get("phase1") or {}
+            _mp_p2 = _maturity_profile.get("phase2") or {}
+            if _mp_p1.get("years") and _mp_p2.get("years"):
+                L.append(
+                    f"Maturity_Profile: Phase1={_mp_p1['years']}yr@{(_mp_p1.get('growth') or 0)*100:.1f}%, "
+                    f"Phase2={_mp_p2['years']}yr@{(_mp_p2.get('growth') or 0)*100:.1f}%"
+                )
+
         # TV_PV 行
         _pv_tv_show = _pv_tv_rm if _pv_tv_rm is not None else (_dcf_comps_r6.get("pv_terminal") or comps.get("pv_terminal") or 0)
         if _pv_tv_show:
@@ -1749,7 +1812,10 @@ class TanukiValuationPipeline:
             L.append(f"DCF_v0:     ${_v0_rm/1e9:.2f}B (= FCF_PV + TV_PV, Rm=10% enterprise value)")
 
         # Alpha
-        L.append(f"Alpha_Premium: {_alpha_r6:.4f} (HypeCore expectation premium; Rm basis)")
+        # [[REPORT-TXT-CAPM-IV-MISSING-1]]⑦: alpha_was_capped（セクター別上限
+        # 到達フラグ）を1行注記として付記
+        _alpha_capped_suffix = " [CAPPED: セクター別上限到達]" if valuation.get("alpha_was_capped") else ""
+        L.append(f"Alpha_Premium: {_alpha_r6:.4f} (HypeCore expectation premium; Rm basis){_alpha_capped_suffix}")
 
         # RPO_PV
         _rpo_excl = (valuation.get("rpo_adjustment") or {}).get("exclusion_reason", "")
@@ -1779,6 +1845,23 @@ class TanukiValuationPipeline:
         iv_r6 = valuation.get("intrinsic_value_per_share")
         if iv_r6 is not None:
             L.append(f"→ Intrinsic_Value: ${iv_r6:.2f} (= Equity_Value ÷ Shares_Used)")
+
+        # [[REPORT-TXT-CAPM-IV-MISSING-1]]③: sensitivity（WACC±1% × 高成長期間
+        # 3パターンの3×3感応度マトリクス）。stock.htmlは全9セルを表として
+        # 表示するが、report.txtでは同じ3×3を簡潔なタブ区切り表で要約する
+        _sensitivity = valuation.get("sensitivity")
+        if _sensitivity and _sensitivity.get("matrix"):
+            _sn_wacc = _sensitivity.get("wacc_values") or []
+            _sn_years = _sensitivity.get("growth_years") or []
+            _sn_matrix = _sensitivity.get("matrix") or []
+            if _sn_wacc and _sn_years and _sn_matrix:
+                L.append("Sensitivity_Matrix (WACC×成長期間 → IV/share):")
+                _sn_header = "  WACC\\Years  " + "  ".join(f"{y}yr" for y in _sn_years)
+                L.append(_sn_header)
+                for _sn_i, _sn_w in enumerate(_sn_wacc):
+                    _sn_row = _sn_matrix[_sn_i] if _sn_i < len(_sn_matrix) else []
+                    _sn_vals = "  ".join(f"${v:,.2f}" for v in _sn_row)
+                    L.append(f"  {_sn_w*100:.1f}%       {_sn_vals}")
 
         # FCF外れ値詳細（既存）
         _fcf_outlier_r6 = valuation.get("fcf_outlier", {})
@@ -1852,6 +1935,23 @@ class TanukiValuationPipeline:
         else:
             L.append("  Dilution_3yr_Annual: N/A")
         L.append(f"  Next_Earnings_Date: {next_earnings}")
+        # [[REPORT-TXT-CAPM-IV-MISSING-1]]②: DuPont分解（純利益率×資産回転率×
+        # 財務レバレッジ=ROE）。stock.htmlは4カードの詳細表示だが、report.txtでは
+        # 分解式1行＋信頼性フラグのみに要約する
+        if _dupont and not _dupont.get("excluded"):
+            _du_nm = _dupont.get("net_margin")
+            _du_at = _dupont.get("asset_turnover")
+            _du_fl = _dupont.get("financial_leverage")
+            _du_roe = _dupont.get("roe_decomposed")
+            if None not in (_du_nm, _du_at, _du_fl, _du_roe):
+                L.append(
+                    f"  DuPont_ROE: 純利益率{_du_nm*100:.1f}% × 資産回転率{_du_at:.2f}x × "
+                    f"財務レバレッジ{_du_fl:.2f}x = ROE{_du_roe*100:.1f}%"
+                )
+                if _dupont.get("reliability") == "LOW":
+                    L.append(f"    ⚠️ DuPont_Reliability: LOW ({_dupont.get('reliability_reason', '')})")
+        elif _dupont and _dupont.get("excluded"):
+            L.append("  DuPont_ROE: N/A (TTM売上僅少のため比率指標が無意味化・除外)")
         L.append("FCF_History:")
         if fcf_history:
             for fh in fcf_history:
