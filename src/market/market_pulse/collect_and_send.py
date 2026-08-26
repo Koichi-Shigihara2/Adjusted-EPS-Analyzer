@@ -88,17 +88,21 @@ if not HAS_MACRO_DATA:
 # CSVのカラム定義（必要に応じて拡張）
 CSV_COLUMNS = [
     "date", "judgment",
-    "VIX指数_value", "VIX指数_change", "VIX指数_change_percent",
+    "VIX指数_value", "VIX指数_change", "VIX指数_change_percent", "VIX指数_volume_ratio",
     "VIX9D（短期VIX）_value", "VIX9D（短期VIX）_change_percent", "VIX9D対VIX比_value", "VIX9D対VIX比_contango",
     "日経平均_value", "日経平均_change", "日経平均_change_percent",
-    "ドル円_value", "ドル円_change", "ドル円_change_percent",
-    "米10年債_value", "米10年債_change", "米10年債_change_percent",
-    "S&P500_value", "S&P500_change", "S&P500_change_percent",
-    "WTI原油_value", "WTI原油_change", "WTI原油_change_percent",
-    "金（GOLD）_value", "金（GOLD）_change", "金（GOLD）_change_percent",
-    "HYG（ハイイールド債ETF）_value", "HYG（ハイイールド債ETF）_change", "HYG（ハイイールド債ETF）_change_percent",
-    "LQD（投資適格債ETF）_value", "LQD（投資適格債ETF）_change", "LQD（投資適格債ETF）_change_percent",
-    "NYSE Composite_value", "NYSE Composite_change_percent", "NYSE Composite_volume_ratio",
+    "ドル円_value", "ドル円_change", "ドル円_change_percent", "ドル円_volume_ratio",
+    "米10年債_value", "米10年債_change", "米10年債_change_percent", "米10年債_volume_ratio",
+    "S&P500_value", "S&P500_change", "S&P500_change_percent", "S&P500_volume_ratio",
+    # [[MARKETPULSE-MINOR-INCONSISTENCIES-1]]③対応: NASDAQ本体（main_tickersで
+    # 取得・structured_dataには存在するがCSV_COLUMNS未登録のため無条件に
+    # 欠落していた）
+    "NASDAQ_value", "NASDAQ_change", "NASDAQ_change_percent", "NASDAQ_volume_ratio",
+    "WTI原油_value", "WTI原油_change", "WTI原油_change_percent", "WTI原油_volume_ratio",
+    "金（GOLD）_value", "金（GOLD）_change", "金（GOLD）_change_percent", "金（GOLD）_volume_ratio",
+    "HYG（ハイイールド債ETF）_value", "HYG（ハイイールド債ETF）_change", "HYG（ハイイールド債ETF）_change_percent", "HYG（ハイイールド債ETF）_volume_ratio",
+    "LQD（投資適格債ETF）_value", "LQD（投資適格債ETF）_change", "LQD（投資適格債ETF）_change_percent", "LQD（投資適格債ETF）_volume_ratio",
+    "NYSE Composite_value", "NYSE Composite_change_percent", "NYSE Composite_volume_ratio", "NYSE Composite_divergence_vs_sp",
     "S&P500グロース(IVW)_value", "S&P500グロース(IVW)_change_percent",
     "S&P500バリュー(IVE)_value", "S&P500バリュー(IVE)_change_percent",
     "Russell2000小型(RUT)_value", "Russell2000小型(RUT)_change_percent",
@@ -323,12 +327,19 @@ def compute_sentiment(structured_data):
         breadth_summary = {
             "advances": breadth.get("advances"),
             "declines": breadth.get("declines"),
+            # [[MARKETPULSE-MINOR-INCONSISTENCIES-1]]④対応: breadth_data.json
+            # には存在するがパススルー対象から漏れていた5フィールドを追加
+            "unchanged": breadth.get("unchanged"),
+            "ad_ratio_1d": breadth.get("ad_ratio_1d"),
             "ad_ratio_5d": breadth.get("ad_ratio_5d"),
             "new_highs_52w": breadth.get("new_highs_52w"),
             "new_lows_52w": breadth.get("new_lows_52w"),
             "nh_nl_diff": breadth.get("nh_nl_diff"),
+            "total_stocks": breadth.get("total_stocks"),
             "pct_above_50ma": breadth.get("pct_above_50ma"),
             "pct_above_200ma": breadth.get("pct_above_200ma"),
+            "rsp_return_1d": breadth.get("rsp_return_1d"),
+            "spy_return_1d": breadth.get("spy_return_1d"),
             "rsp_spy_divergence_1d": breadth.get("rsp_spy_divergence_1d"),
             "rsp_spy_divergence_20d_avg": breadth.get("rsp_spy_divergence_20d_avg"),
             "ad_line": breadth.get("ad_line"),
@@ -1293,6 +1304,28 @@ def collect_asset_flow():
             result[a["key"]] = None
     return result
 
+def calc_hindenburg_active(breadth):
+    """ヒンデンブルグ・オーメン判定（新高値・新安値が同時にNH/NL基準
+    〈全銘柄数の2.2%〉を超えて出現）。
+
+    [[MARKETPULSE-MINOR-INCONSISTENCIES-1]]①対応: 固定値500ではなく
+    breadth_data.jsonの実測total_stocksを使う（S&P500の実際の構成銘柄数
+    は501〜503のように変動するため）。取得できない場合のみ一般的な500へ
+    フォールバックする。
+
+    Args:
+        breadth: _load_latest_breadth()が返す辞書、またはNone
+    Returns:
+        bool（判定結果）、breadthがNone/空ならNone
+    """
+    if not breadth:
+        return None
+    nh = breadth.get("new_highs_52w") or 0
+    nl = breadth.get("new_lows_52w") or 0
+    total_stocks = breadth.get("total_stocks") or 500
+    return bool(nh >= total_stocks * 0.022 and nl >= total_stocks * 0.022)
+
+
 def calc_take_profit_checklist(fg_score, above_ma200, ma200_slope, hy_is_expanding, hindenburg_active):
     """TAKE PROFITチェックリスト（F&G>=75で発動）
     3チェック項目、1点ずつ採点: 2点→PARTIAL、3点→TAKE PROFIT
@@ -1659,12 +1692,7 @@ if __name__ == "__main__":
     hy_spread_data = fetch_hy_spread_from_fred()
     hy_is_expanding = (hy_spread_data or {}).get("is_expanding")
     breadth_tp = _load_latest_breadth()
-    if breadth_tp:
-        nh = breadth_tp.get("new_highs_52w") or 0
-        nl = breadth_tp.get("new_lows_52w") or 0
-        hindenburg_active = bool(nh >= 500 * 0.022 and nl >= 500 * 0.022)
-    else:
-        hindenburg_active = None
+    hindenburg_active = calc_hindenburg_active(breadth_tp)
     tp_checklist = calc_take_profit_checklist(
         fg_cnn_score, above_ma200, ma200_slope, hy_is_expanding, hindenburg_active
     )

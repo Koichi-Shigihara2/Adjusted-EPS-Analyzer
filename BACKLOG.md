@@ -9473,8 +9473,8 @@ MACRO PULSE・Market Pulse間の統合は`INPUT_DATA_TOBE.md`のyfinance
 
 ---
 
-### [MARKETPULSE-MINOR-INCONSISTENCIES-1] Market Pulseの軽微な構造的不整合まとめ（Hindenburg固定値・credit原資産不整合・CSV列欠落・breadthパススルー漏れ・⑤F&G情報源混同は2026-08-26修正済み・Tech Pulseバックフィル式相違）
-**優先度:** 中（①②③④⑥は未着手のまま残存、⑤のみ2026-08-26完了）
+### [MARKETPULSE-MINOR-INCONSISTENCIES-1] Market Pulseの軽微な構造的不整合まとめ（①③④⑤は2026-08-26修正済み・②は再確認完了・判断待ち・⑥Tech Pulseバックフィル式相違は未着手）
+**優先度:** 中（②⑥は未着手のまま残存、①③④⑤は2026-08-26完了）
 **分類:** データ品質 / Market Pulse
 **登録日:** 2026-07-23
 **発見:** `FIELD_DEFINITIONS.md`フェーズ10
@@ -9670,8 +9670,163 @@ TestLoadDivHistory`、4件）:
 - Market Pulse専用の検証スクリプトは存在しない（`find`で確認済み、
   MACRO PULSEの`05_audit.py`に相当するものはなし）
 
-#### 着手条件
+#### 元の着手条件（2026-08-26①登録時点のもの、下記②で①③④実装完了）
 ①②③④⑥は引き続き未着手（優先順位は次回Koichiさんと相談）
+
+---
+
+#### 2026-08-26② ①③④の実装完了・②の再確認結果（実装待機）
+
+`[[MACRO-TRUTHY-ZERO-BUG-1]]`・`[[HOLLOW-RALLY-DEAD-1]]`対応完了を受け、
+優先度順に①③④⑤の残り4件（⑤は既に完了済み）のうち①③④に着手した。
+②は再確認の結果、原資産の選び方に設計判断が絡むため実装せず報告に
+とどめる（Koichiさんの指示通り）。
+
+##### ①Hindenburg固定値500の修正（実装完了）
+`collect_and_send.py:1665`付近の`hindenburg_active = bool(nh >= 500 *
+0.022 and nl >= 500 * 0.022)`を、`breadth_data.json`の実測
+`total_stocks`を参照する形に修正した。テスト容易化のため、`__main__`
+ブロック内にインラインで書かれていた計算ロジックを`calc_hindenburg_
+active(breadth)`という独立関数へ切り出した（既存の`_get_tp_signal()`
+等と同じ設計パターン）。
+
+**実データでの出力差分確認**: `breadth_data.json`（93件）に対し修正前後
+のロジックを実行して突合した結果、**4件で判定が変化**（いずれも
+`nl=11`ちょうどの境界事例、`total_stocks=503`のため新閾値
+11.066>11となり、旧ロジックの誤った「シグナル発生」判定〈True〉から
+正しい「シグナルなし」〈False〉へ訂正された）: 2026-04-02・
+2026-04-23・2026-07-20・2026-07-22。**旧ロジックはTAKE PROFIT
+チェックリストのヒンデンブルグ・オーメン項目でこれら4日間、誤って
+「シグナル発生」を計上していたことが判明した**（実害の確定）。
+
+##### ③CSV書き出しフィールド欠落の修正（実装完了）
+`CSV_COLUMNS`と実際の`structured_data`の全キー・サブキーを実データ
+（`market_data.json`最新エントリ）で突合し、欠落フィールドを網羅的に
+特定した。当初のBACKLOG記載「NASDAQ本体・全volume_ratio」に加え、
+再確認で`NYSE Composite_divergence_vs_sp`（既存コードで計算済みだが
+CSV_COLUMNS未登録）も同型の欠落として新たに発見し、合わせて追加した:
+`NASDAQ_value`/`_change`/`_change_percent`/`_volume_ratio`、
+`VIX指数_volume_ratio`、`米10年債_volume_ratio`、`ドル円_volume_ratio`、
+`S&P500_volume_ratio`、`WTI原油_volume_ratio`、`金（GOLD）_volume_
+ratio`、`HYG（ハイイールド債ETF）_volume_ratio`、`LQD（投資適格債
+ETF）_volume_ratio`、`NYSE Composite_divergence_vs_sp`（計13列追加）。
+
+**tech_pulse/asset_flow/credit/両checklist/fear_greed/comments_
+historyは今回のスコープから意図的に除外した**: これらはネスト
+した辞書・リスト構造（例: `checks`が複数チェック項目のリスト、
+`comments_history`が無制限に伸びる履歴リスト）であり、フラットな
+CSV列として機械的に単純追加できる性質のものではなく、どのサブ
+フィールドをどう平坦化するかという設計判断が別途必要なため
+（②と同種の「単純な修正で済まない」ケースと判断し、対応不要——
+JSON側〈`market_data.json`〉に完全な形で既に保存されているため、CSVは
+元々フラットな時系列比較用の補助出力という位置づけで割り切ることも
+妥当と考える）。
+
+**実データでの動作確認**: 実際に`save_data_to_json_and_csv()`を
+一時ディレクトリに対して実行し、新規13列が正しく書き込まれること、
+既存列（`VIX指数_value`等）に変化がないこと、および**既存の
+`market_data.csv`（旧ヘッダー）から新ヘッダーへの自動マイグレーション
+機構（`CSVヘッダー整合チェック`）が、既存行のデータを保持したまま
+新列を空欄で追加することを実際に確認した**（本番`market_data.csv`は
+次回実行時に自動的に安全移行される）。
+
+##### ④breadth_summaryホワイトリスト欠落の修正（実装完了）
+`compute_sentiment()`内の`breadth_summary`辞書に、パススルー対象から
+漏れていた5フィールド（`unchanged`/`ad_ratio_1d`/`total_stocks`/
+`rsp_return_1d`/`spy_return_1d`）を追加した。実データを模したダミー
+`breadth`辞書で`compute_sentiment()`を実行し、5フィールド全てが
+正しく`breadth_summary`へ反映されること、既存フィールドに変化が
+ないことを確認した。
+
+##### テスト追加（`tests/test_collect_and_send_market_data_switch.py`、8件）
+- `TestCalcHindenburgActive`（4件）: `None`/空dict入力・`total_stocks`
+  実測値使用時の境界ケース再現（`nl=11`かつ`total_stocks=503`で
+  不発火）・実際に発火するケース・`total_stocks`欠損時の500
+  フォールバックを検証
+- `TestBreadthSummaryFields`（2件）: 5フィールドのパススルー確認・
+  `breadth=None`時の既存挙動（`breadth_summary=None`）の非破壊確認
+- `TestSaveDataCsvFields`（2件）: NASDAQ・volume_ratio系フィールドの
+  CSV書き込み確認・旧ヘッダーCSVからの無損失マイグレーション確認
+
+8件中7件は修正前コード（`git stash`で一時的に戻して実行）に対して
+実際に失敗する（`KeyError`等）ことを確認済み（残り1件
+`test_none_breadth_yields_none_summary`は変更のない既存挙動の確認
+のため、修正前後どちらでもPASSして正しい）。
+
+##### 検証ゲート結果（全て通過）
+- `pytest tests/`: **920 passed, 0 failed**（新規8件含む、既存912件
+  無変化）
+- `python common/sec_data/audit.py`: 🟢正常95銘柄/🟡警告5銘柄
+  （既存WARN、Market Pulse非対象で無変化）
+- `python common/sec_data/report_consistency_check.py --fail-on-ng`:
+  NG=0件/WARN=96件（既存WARN、Market Pulse非対象で無変化）
+- Market Pulse専用の検証スクリプトは存在しない（前回確認済み）
+
+##### ②credit原資産不一致の再確認結果（実装は行わず報告のみ）
+
+**正確な使用箇所の再確認**:
+- `credit_stock`（`collect_and_send.py:1471,1475`）:
+  `structured_data["S&P500"]["change_percent"]`——`get_realtime_data()`
+  の`main_tickers`ループで`^GSPC`（S&P500**指数**そのもの）から取得
+- `credit_bond`（同1479-1487）:
+  `asset_flow_data["equity"]["change_pct"]`——**別関数**
+  `collect_asset_flow()`（SHV/DGS3MO/GLD/TLT/LQD/HYG/SPYの7資産クラス
+  を「安全→リスク」順で並べた「資産クラス間資金フロービジュアライザー」
+  専用のデータ収集）で`SPY`（S&P500**ETF**）から取得。TLT（債券）との
+  「質への逃避」比較に使われる
+
+**問題の性質の切り分け**: 「同一credit カテゴリ内での無区別な混在」
+というより、**目的の異なる2つの独立した計算経路**であることを確認
+した。`credit_stock`は「市場全体の今日の方向性」を測る単純な指標
+（指数の正確な値が適切）、`credit_bond`は「資金が株式から債券へ
+逃避しているか」という**資金フロー**概念（実際に売買可能なETF＝
+SPY/TLTの比較が必須、指数自体には資金は流出入しない）。この観点では
+両者とも個別に見れば合理的な設計選択でありうる。
+
+ただし実データで検証した結果、**単なる理論上の懸念ではなく、実際に
+無視できない乖離が周期的に発生していることを確認した**:
+- 直近90日の日次サンプルで`|^GSPC変化率 - SPY変化率|`の中央値は
+  0.029pt・平均0.068ptと小さいが、**最大0.673pt**（2026-06-27〜29の
+  3日間連続）を観測した
+- この3日間はSPYの`change_pct=-0.723%`に対し`^GSPC`の`change_percent`
+  は`-0.05%`とほぼ横ばい——SPYの四半期分配落ち（ex-dividend、SPYは
+  四半期分配のETFで分配日に価格が理論分配額だけ機械的に下落するが
+  指数自体はこの影響を受けない）が原因と推定される
+- 今回の3日間はTLT側の条件（`>0.3%`）が`0.011%`で不成立だったため
+  `credit_bond`の最終判定自体は変わらなかったが、**この乖離幅
+  （0.673pt）は`credit_bond`が使う閾値`-0.5%`より大きく、TLT側条件が
+  同時に成立する別の局面では、原資産の選択（^GSPC vs SPY）が
+  `credit_bond`の最終判定を実際に左右しうる**ことを確認した
+
+**修正の選択肢**:
+- 案a: `credit_stock`もSPY（`asset_flow_data.equity`）に統一する。
+  長所: `credit_data`内で完全に同一instrument系列に統一され概念的に
+  一貫。短所: `asset_flow_data`は`collect_asset_flow()`という別関数の
+  取得失敗に連動して`credit_stock`まで巻き込まれ判定不能になる
+  （現状は`structured_data`の`S&P500`から独立して取得できるため
+  この結合リスクがない）。四半期分配落ちの影響を毎回受ける。
+  実装規模: 小
+- 案b: `credit_bond`も`^GSPC`（`structured_data.S&P500`）に統一する。
+  長所: 同上の一貫性。短所: 「資金の質への逃避」という資金フロー
+  概念上、指数自体には資金流出入という概念が存在しないため、TLTとの
+  比較対象として指数を使う設計的な妥当性が薄れる（`collect_asset_
+  flow()`の設計意図・7資産クラスの並びとも整合しなくなる）。
+  実装規模: 小
+- 案c（暫定推奨、判断根拠は要相談）: 現状維持（意図的差異として
+  容認）とし、コード上のコメントで設計意図（`credit_stock`=指数の
+  正確な日次方向性、`credit_bond`=資金フロー概念で実際の売買可能
+  ファンドが必須）を明記する。長所: 各指標の目的に応じた合理的な
+  instrument選択を維持でき、独立取得による耐障害性も保たれる。
+  短所: 四半期分配落ち時の乖離（最大0.673pt確認済み）が将来
+  `credit_bond`の判定を左右する潜在リスクは残る（発生頻度は
+  四半期に数日程度と推定、影響はTLT側条件が同時境界に来た場合のみ）。
+  実装規模: 極小（コメント追記のみ）
+
+②についてはKoichiさんのご判断を仰いでから着手する。
+
+#### 着手条件
+②はKoichiさんと修正方針（案a/b/cいずれか）を確定してから着手する。
+⑥は引き続き未着手のまま（優先順位は次回相談）。
 
 ---
 

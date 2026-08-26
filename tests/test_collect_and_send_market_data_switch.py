@@ -259,3 +259,116 @@ class TestLoadDivHistory:
         ]
         path = self._write_json(tmp_path, entries)
         assert cs._load_div_history(path, window=90) == [1.0]
+
+
+class TestCalcHindenburgActive:
+    """[[MARKETPULSE-MINOR-INCONSISTENCIES-1]]①対応: 固定値500ではなく
+    breadthの実測total_stocksを使うことを検証する。
+    """
+
+    def test_none_breadth_returns_none(self):
+        assert cs.calc_hindenburg_active(None) == None  # noqa: E711
+        assert cs.calc_hindenburg_active({}) is None
+
+    def test_uses_actual_total_stocks_not_fixed_500(self):
+        """total_stocks=503のとき、閾値は503*0.022=11.066。
+        nl=11（500基準の閾値11.0なら発火するが、503基準なら11.066>11で不発火）
+        という実データ（2026-04-02等）で確認済みの境界ケースを再現する。"""
+        breadth = {"new_highs_52w": 31, "new_lows_52w": 11, "total_stocks": 503}
+        assert cs.calc_hindenburg_active(breadth) is False
+
+    def test_fires_when_actual_threshold_exceeded(self):
+        breadth = {"new_highs_52w": 12, "new_lows_52w": 12, "total_stocks": 503}
+        assert cs.calc_hindenburg_active(breadth) is True
+
+    def test_missing_total_stocks_falls_back_to_500(self):
+        # total_stocks欠損時は旧来の500基準にフォールバック（閾値11.0）
+        breadth = {"new_highs_52w": 11, "new_lows_52w": 11}
+        assert cs.calc_hindenburg_active(breadth) is True
+
+
+class TestBreadthSummaryFields:
+    """[[MARKETPULSE-MINOR-INCONSISTENCIES-1]]④対応: breadth_summaryの
+    ホワイトリストから漏れていた5フィールドが追加されたことを検証する。
+    """
+
+    def test_previously_missing_fields_now_passed_through(self, monkeypatch):
+        fake_breadth = {
+            "date": "2026-08-25", "advances": 206, "declines": 292, "unchanged": 3,
+            "ad_ratio_1d": 0.71, "ad_ratio_5d": 1.05, "new_highs_52w": 39, "new_lows_52w": 9,
+            "nh_nl_diff": 30, "total_stocks": 501, "pct_above_50ma": 58.3, "pct_above_200ma": 70.9,
+            "rsp_return_1d": -0.072, "spy_return_1d": 0.32, "rsp_spy_divergence_1d": -0.392,
+            "rsp_spy_divergence_20d_avg": -0.075, "ad_line": 1684, "mcclellan_oscillator": -6.9,
+        }
+        monkeypatch.setattr(cs, "_load_latest_breadth", lambda: fake_breadth)
+        result = cs.compute_sentiment({"VIX指数": {"value": 16.0}})
+        bs = result["breadth"]
+        for key in ("unchanged", "ad_ratio_1d", "total_stocks", "rsp_return_1d", "spy_return_1d"):
+            assert bs[key] == fake_breadth[key], f"{key} not passed through"
+
+    def test_none_breadth_yields_none_summary(self, monkeypatch):
+        monkeypatch.setattr(cs, "_load_latest_breadth", lambda: None)
+        result = cs.compute_sentiment({"VIX指数": {"value": 16.0}})
+        assert result["breadth"] is None
+
+
+class TestSaveDataCsvFields:
+    """[[MARKETPULSE-MINOR-INCONSISTENCIES-1]]③対応: CSV_COLUMNS未登録の
+    ため無条件に欠落していたNASDAQ本体・volume_ratio系フィールドが
+    正しくCSVへ書き出されることを検証する。
+    """
+
+    def _patch_paths(self, monkeypatch, tmp_path):
+        monkeypatch.setattr(cs, "DATA_DIR", str(tmp_path))
+        monkeypatch.setattr(cs, "JSON_PATH", str(tmp_path / "market_data.json"))
+        monkeypatch.setattr(cs, "CSV_PATH", str(tmp_path / "market_data.csv"))
+
+    def test_nasdaq_and_volume_ratio_fields_written(self, tmp_path, monkeypatch):
+        import csv as csv_mod
+        self._patch_paths(monkeypatch, tmp_path)
+        structured_data = {
+            "VIX指数": {"value": 16.7, "change": 0.4, "change_percent": 2.6, "volume_ratio": 1.1, "date": "2026-08-25"},
+            "NASDAQ": {"value": 24000.0, "change": 50.0, "change_percent": 0.2, "volume_ratio": 0.95, "date": "2026-08-25"},
+            "S&P500": {"value": 7650.0, "change": -10.0, "change_percent": -0.13, "volume_ratio": 1.02, "date": "2026-08-25"},
+        }
+        cs.save_data_to_json_and_csv("report", structured_data, {"score": 57.3, "label": "NEUTRAL"})
+
+        with open(cs.CSV_PATH, encoding="utf-8") as f:
+            rows = list(csv_mod.DictReader(f))
+        row = rows[-1]
+        assert row["NASDAQ_value"] == "24000.0"
+        assert row["NASDAQ_change"] == "50.0"
+        assert row["NASDAQ_change_percent"] == "0.2"
+        assert row["NASDAQ_volume_ratio"] == "0.95"
+        assert row["VIX指数_volume_ratio"] == "1.1"
+        assert row["S&P500_volume_ratio"] == "1.02"
+        # 既存フィールドが影響を受けていないことも確認
+        assert row["VIX指数_value"] == "16.7"
+        assert list(rows[0].keys()) == cs.CSV_COLUMNS
+
+    def test_existing_csv_header_migrates_without_data_loss(self, tmp_path, monkeypatch):
+        """旧ヘッダー（NASDAQ列なし）の既存CSVに対し保存すると、既存行が
+        保持されたままヘッダーが新CSV_COLUMNSへ自動更新されることを確認する。"""
+        import csv as csv_mod
+        self._patch_paths(monkeypatch, tmp_path)
+        old_columns = ["date", "judgment", "VIX指数_value", "VIX指数_change",
+                       "VIX指数_change_percent", "sentiment_score", "sentiment_label", "summary"]
+        with open(cs.CSV_PATH, "w", newline="", encoding="utf-8") as f:
+            w = csv_mod.DictWriter(f, fieldnames=old_columns)
+            w.writeheader()
+            w.writerow({"date": "2026-08-20T00:00:00+09:00", "judgment": "晴れ",
+                        "VIX指数_value": "15.0", "VIX指数_change": "0.1",
+                        "VIX指数_change_percent": "0.7", "sentiment_score": "60",
+                        "sentiment_label": "NEUTRAL", "summary": "old row"})
+
+        structured_data = {"NASDAQ": {"value": 24000.0, "change": 50.0, "change_percent": 0.2, "volume_ratio": 0.95, "date": "2026-08-25"}}
+        cs.save_data_to_json_and_csv("new report", structured_data, {"score": 57.3, "label": "NEUTRAL"})
+
+        with open(cs.CSV_PATH, encoding="utf-8") as f:
+            rows = list(csv_mod.DictReader(f))
+        assert len(rows) == 2
+        assert list(rows[0].keys()) == cs.CSV_COLUMNS
+        assert rows[0]["VIX指数_value"] == "15.0"  # 旧データが保持されている
+        assert rows[0]["summary"] == "old row"
+        assert rows[0]["NASDAQ_value"] == ""       # 旧行に新列は空欄で追加
+        assert rows[1]["NASDAQ_value"] == "24000.0"
