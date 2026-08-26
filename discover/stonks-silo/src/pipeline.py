@@ -215,5 +215,12 @@ def run(tickers: list[str] | None = None) -> dict:
 # ---------------------------------------------------------------------------
 
 if __name__ == "__main__":
-    tickers = sys.argv[1:] if len(sys.argv) > 1 else None
-    run(tickers)
+    # [[STONKS-SILO-CLI-TICKERS-SHADOW-1]]: この変数名を`tickers`にすると
+    # ファイル冒頭の`from common.sec_data import tickers`（モジュール参照、
+    # stonks_tickers()が`tickers.get_stonks_silo_tickers()`として使う）を
+    # グローバルスコープごと上書きしてしまい、CLI引数あり・なし両方の実行
+    # パスで`AttributeError`になる（2026-07-13以降、Stonks_Silo_Update.ymlの
+    # 自動cronも含め全実行が失敗していた実障害）。モジュール名と衝突しない
+    # 名前にする。
+    cli_tickers = sys.argv[1:] if len(sys.argv) > 1 else None
+    run(cli_tickers)

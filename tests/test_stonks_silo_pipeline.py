@@ -13,6 +13,7 @@ stonks_silo=trueフラグの検証を一切行わず無条件実行していた�
 import importlib.util
 import os
 import sys
+import textwrap
 
 _REPO_ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), ".."))
 _STONKS_SRC = os.path.join(_REPO_ROOT, "discover", "stonks-silo", "src")
@@ -30,6 +31,69 @@ _spec = importlib.util.spec_from_file_location(
 sp = importlib.util.module_from_spec(_spec)
 sys.modules["stonks_silo_pipeline"] = sp
 _spec.loader.exec_module(sp)
+
+
+class TestMainBlockTickersShadow:
+    """[[STONKS-SILO-CLI-TICKERS-SHADOW-1]]の回帰テスト。
+
+    `if __name__ == "__main__":`ブロックが`tickers = sys.argv[...]`という
+    モジュールレベル変数代入を行い、ファイル冒頭`from common.sec_data
+    import tickers`のモジュール参照をグローバルスコープごと上書きして
+    しまうと、`stonks_tickers()`内の`tickers.get_stonks_silo_tickers()`が
+    `AttributeError`になる（2026-07-13〜2026-08-26、Stonks_Silo_Update.yml
+    の自動cronも含め全実行が失敗していた実障害）。
+
+    実ファイルの`__main__`ブロックのソースを抽出してexecすることで、
+    修正対象コードそのものを検証対象にする（手書きの再現コードとの
+    乖離によるテストの形骸化を避けるため）。CLI引数あり・なし
+    （cronが使う経路）の両方を確認する。
+    """
+
+    def _extract_main_block_source(self) -> str:
+        src_path = os.path.join(_STONKS_SRC, "pipeline.py")
+        with open(src_path, encoding="utf-8") as f:
+            lines = f.readlines()
+        marker = 'if __name__ == "__main__":'
+        for i, line in enumerate(lines):
+            if line.strip() == marker:
+                return textwrap.dedent("".join(lines[i + 1:]))
+        raise AssertionError("pipeline.pyに__main__ブロックが見つかりません")
+
+    def _run_main_block(self, monkeypatch, argv):
+        captured = {}
+        monkeypatch.setattr(sp, "run", lambda t: captured.update(cli_tickers=t))
+        monkeypatch.setattr(sp.sys, "argv", argv)
+        original_tickers_module = sp.tickers
+        body_src = self._extract_main_block_source()
+        exec(compile(body_src, "<main-block>", "exec"), sp.__dict__)
+        return captured, original_tickers_module
+
+    def test_no_cli_args_path_does_not_shadow_tickers_module(self, monkeypatch):
+        """引数なし実行（`python pipeline.py`、Stonks_Silo_Update.ymlの
+        自動cronが実際に使う経路）で、モジュールtickers参照が
+        上書きされないことを確認する。修正前のコードでは、この経路でも
+        後段のstonks_tickers()呼び出し時にAttributeErrorになっていた。
+        """
+        captured, original_tickers_module = self._run_main_block(monkeypatch, ["pipeline.py"])
+        assert captured["cli_tickers"] is None
+        # モジュールtickers参照がCLI引数（None）に上書きされていないこと
+        assert sp.tickers is original_tickers_module
+        # stonks_tickers()がtickers.get_stonks_silo_tickers()を正常に呼べること
+        result = sp.stonks_tickers()
+        assert isinstance(result, list)
+
+    def test_cli_args_path_does_not_shadow_tickers_module(self, monkeypatch):
+        """CLI引数あり実行（`python pipeline.py SOUN BBAI`）でも同様に
+        モジュールtickers参照が上書きされないことを確認する。
+        """
+        captured, original_tickers_module = self._run_main_block(
+            monkeypatch, ["pipeline.py", "SOUN", "BBAI"]
+        )
+        assert captured["cli_tickers"] == ["SOUN", "BBAI"]
+        # モジュールtickers参照がCLI引数リストに上書きされていないこと
+        assert sp.tickers is original_tickers_module
+        result = sp.stonks_tickers()
+        assert isinstance(result, list)
 
 
 class TestFilterStonksSiloTickers:
