@@ -5303,8 +5303,63 @@ weekly-analysisジョブは`05_weekly_analysis.csv`のみ、update-schedule
 発生しない（各モードの書き込み先が設計上排他的なため）**。新規
 BACKLOG登録は不要と判断する。
 
+#### 2026-08-26② 修正方式の判断材料調査（調査のみ・実装なし）
+
+案X（MACRO PULSE独自パイプライン追加）・案Y（Market Pulseのクロス
+システム参照）のどちらを採用するか判断するため、実コードで詳細調査
+した。
+
+**HOLLOW-RALLY検知が必要とするsp500データの仕様**（`index.html:2570-
+2587`）: `rows`（`05_liquidity.csv`パース結果）に**日次の終値レベル**
+（`parseFloat`対象、%やMAではない）が同居する形で必要。最低6件、
+直近値と6件前の値で5営業日リターンを算出。`05_liquidity.csv`は実データ
+1312行・ほぼ日次カデンスで、`hy_spread`（日次FRED系列）は毎日値が
+変わる列として既に共存しており、`sp500`も同様に日次で値が動く列として
+自然に収まる設計であることを確認した。
+
+**決定的な発見**: MACRO PULSEは**既に**sp500データ取得パイプラインを
+持っていた。`05_main.py:858-862`の`get_sp500(target_date)`関数
+（`fred_latest("SP500")`＝`common.macro_data.reader`経由でFRED
+"SP500"系列を取得、失敗時stooq.comへフォールバック）が、`run()`関数
+内`update_liquidity_csv(target_date)`呼び出しの直前（2217行目）で
+**既に毎日呼ばれている**（`events.csv`の`sp500_t0`列用）。
+`common/macro_data/series/SP500.json`も既に2,521件・2026-08-24まで
+蓄積済みで、`series_meta.json`に登録され`Macro_Data_Update.yml`
+（毎日UTC 10:00、週末含む全日）の通常フェッチ対象に含まれていることを
+確認した。
+
+**Market Pulse `^GSPC`との系統比較**（案Y採用時の懸念点）:
+
+| | MACRO PULSE `get_sp500()` | Market Pulse `^GSPC` |
+|---|---|---|
+| データ層 | `common.macro_data.reader`（FRED） | `common.market_data.reader`（yfinance） |
+| 更新cron | `Macro_Data_Update.yml` UTC 10:00・毎日（週末含む） | `Market_Pulse_Update.yml` UTC 21:35・平日のみ |
+| MACRO PULSE日次処理との時間差 | 約12時間15分前（同日中に完結） | 前営業日21:35〜翌日22:15 UTCまで最大約25時間差、月曜は金曜分のまま |
+
+案Yは平日のみcronに引きずられ月曜朝に金曜終値のまま扱われる鮮度ギャップ、
+および`[[WORKFLOW-SEC-TANUKI-GAP-1]]`と同種の`workflow_run`未活用問題
+（Market Pulse完了を待つ仕組みが存在しない）を新たに持ち込む。案Xは
+既存の同一システム内データ（FRED、週末含む毎日更新）を使うため、この
+種の懸念は発生しない。
+
+**実装規模感**:
+- **案X（推奨）**: 極小規模。`LIQUIDITY_COLUMNS`に`"sp500"`追加（1行）＋
+  `update_liquidity_csv()`内で`get_sp500(target_date)`を呼び
+  `new_row["sp500"]`へ格納（数行、呼び出し元`run()`で既に計算済みの
+  `sp500_t0`を引数で渡す設計にすれば新規フェッチ自体不要）。新規外部
+  依存・新規cron設計は不要
+- 案Y: 小〜中規模。実装コード量は案Xと同等かそれ以下だが、クロス
+  システム依存の鮮度チェック・フォールバック設計が新たに必要で、
+  実質的な設計コストは案Xより高い
+
+**結論**: 案X（MACRO PULSE独自、既存の`get_sp500()`/FRED "SP500"系列を
+横展開）を推奨。既存インフラの再利用のみで新規の依存関係を一切
+発生させない。次回セッションでKoichiさんに最終確認の上、実装に着手
+する。
+
 #### 着手条件
-なし
+案X/案YいずれかをKoichiさんと確定してから着手する。今回は調査・記録
+のみで実装しない。
 
 ---
 
