@@ -1,6 +1,7 @@
 NVDA INTEGRATED INVESTMENT REPORT
-Generated: 2026-08-26T07:07:59+09:00
+Generated: 2026-08-27T10:08:21+09:00
 Price: $213.05
+Validation_Status: PASS (品質ゲート: 全チェック通過)
 
 [1. TANUKI SCORE]
 Classification: BUY
@@ -63,13 +64,18 @@ Scenarios:
 BEAR: Growth=22.7%, IV=$342.40, Deviation=+60.7%
 BASE: Growth=32.5%, IV=$651.37, Deviation=+205.7%
 BULL: Growth=39.0%, IV=$981.74, Deviation=+360.8%
+Return_Outlook(BASE): 1年後: $863.07 (+305.1%) / 3年後: $1,515.22 (+611.2%) / 5年後: $2,660.16 (+1148.6%)
+  5yr_Annualized_Return: +65.7%/yr
 Growth_Rate_Rec: 55.0% (recommended)
 TTM_YoY_Growth: 70.7%
 (DCF Base vs TTM actual: -38.2pt discount)
 Discount_Rate_Primary: 10.00% (DCF discount rate used)
 WACC_CAPM_Reference: 16.93%
+  参考①β込みWACC_IV: $219.79 (Deviation: +3.2%)
+  参考②Rf理論上限_IV: $7,636.67 (Deviation: +3484.4%)
 Terminal_Growth_Rate: 3.5%
 Beta: 2.215
+FCF_TTM_End: 2026-04-26 (FCF/RICE算出に用いたTTM期末日)
 FCF_Conversion_Rate: 0.7 (Industry: Semiconductors)
   [FCF_Conv: Adj_NI × rate = estimated FCF. Conservative conversion from
    adjusted net income; differs from OCF→FCF conversion rate.]
@@ -80,14 +86,20 @@ DCF_FCF_Base: $87,903M (= Adj_NI $125,576M × FCF_Conv 0.7)
     BACKLOG_DONE.md [[FCF-EST-DIRECTION-GUARD-1]]参照。]
 DCF_Reliability: NORMAL  (FCF_Conversion_Rate方式: 通常判定適用)
 DCF_FCF_PV: $5428.87B (Ph1=$2471.98B + Ph2=$2956.90B, 9yr, pre-alpha, Rm=10%)
+Maturity_Profile: Phase1=5yr@0.0%, Phase2=5yr@15.0%
 DCF_TV_PV:  $10271.78B (terminal value present value, pre-alpha, Rm=10%)
 DCF_v0:     $15700.65B (= FCF_PV + TV_PV, Rm=10% enterprise value)
-Alpha_Premium: 1.0000 (HypeCore expectation premium; Rm basis)
+Alpha_Premium: 1.0000 (HypeCore expectation premium; Rm basis) [CAPPED: セクター別上限到達]
 RPO_PV: $0
 Growth_Option_PV: $1.860B (optional segment premium)
 Equity_Value: $15776.75B (= v0 + RPO_PV + GO_PV + Net_Cash $74.24B)
 Shares_Used: 24221.0M (source: yf_implied)
 → Intrinsic_Value: $651.37 (= Equity_Value ÷ Shares_Used)
+Sensitivity_Matrix (WACC×成長期間 → IV/share):
+  WACC\Years  5yr  9yr  13yr
+  9.0%       $363.68  $817.05  $1,806.98
+  10.0%       $298.71  $651.37  $1,393.78
+  11.0%       $251.57  $532.91  $1,104.12
 Financial_Health:
   Net_Debt: $-74.24B (negative=net cash)
   Total_Debt: $8.47B  Cash: $13.24B  ST_Invest: $69.47B
@@ -96,6 +108,7 @@ Financial_Health:
   Dilution_3yr_Annual: -0.74%/yr  自社株買いによる株主還元 ✅
   Dilution_Comment: 株式数が減少し1株あたり価値が向上している。
   Next_Earnings_Date: 2026-08-27
+  DuPont_ROE: 純利益率63.0% × 資産回転率0.98x × 財務レバレッジ1.33x = ROE81.7%
 FCF_History:
   2022: $8.13B (FCF_Margin: 30.2%)
   2023: $3.81B (FCF_Margin: 14.1%)
@@ -144,10 +157,11 @@ For manually configured segments: used directly as DCF growth rate G
 For unconfigured segments: TTM Revenue Growth is auto-applied,
 then adjusted via recommended_g (median of historical CAGR,
 industry benchmark, RR×ROIC)
-GROWTH-1: Decay model weight adjusted by HypeCore phase:
-  Phase1-2 (early): TTM×65% + Industry×35% (growth has room)
-  Phase3 (euphoria): TTM×50% + Industry×50% (balanced)
-  Phase4 (deflation): TTM×35% + Industry×65% (normalization accelerated)
+Decay model (TTM/CAGR>50%): fixed 50% TTM + 50% Industry benchmark.
+(GROWTH-1's HypeCore-phase-weighted variant was removed
+2026-08-26; mixing a Timing-side signal into Funda-side
+growth was a design inconsistency with no backtest evidence
+of improved accuracy. See [[LAYER1-GROWTH-HYPEPHASE-DECAY-GAP-1]])
 Next_Earnings_Date: Next quarterly earnings release
 Valuation_Gap_Analysis: Reverse DCF calculation showing
 what FCF growth rate the current market price implies.

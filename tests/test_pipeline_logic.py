@@ -2140,6 +2140,50 @@ class TestLoadExtraDataNextEarningsDate:
         assert "next_earnings_date" not in result
 
 
+class TestSegmentTtmRevenueFallbackKeyCaseFix:
+    """[[DUPONT-TTM-FIELD-CASE-MISMATCH-1]]の回帰テスト（同根バグの2件目）。
+
+    Segment_Weighted_Growthの「General fallback」（非12月期決算銘柄の
+    TTM売上陳腐化対策）も同じPascalCase/snake_caseキー不一致で、
+    `_ttm_rev_for_seg`が常に年次売上のままフォールバックし続けていた。
+    """
+
+    def test_newer_ttm_revenue_overrides_stale_annual_revenue(self, tmp_path):
+        """TTM売上が年次売上より新しい（大きい）場合、snake_caseキー経由で
+        正しく上書きされることを確認する（修正前はPascalCase参照のため
+        常にNoneになり、年次売上のまま変化しなかった）"""
+        pipe = _make_pipe(tmp_path)
+        config_dir = tmp_path / "config"
+        config_dir.mkdir(parents=True, exist_ok=True)
+        (config_dir / "segment_config.json").write_text(
+            json.dumps({"SEGTICK": {"segments": {"General": {"weight": 1.0, "growth": 0.1}}}}),
+            encoding="utf-8",
+        )
+        ttm_dir = tmp_path / "common" / "sec_data" / "ttm"
+        ttm_dir.mkdir(parents=True, exist_ok=True)
+        (ttm_dir / "SEGTICK_ttm_series.json").write_text(
+            json.dumps({
+                "series": [{
+                    "ttm_end": "2026-06-30",
+                    "flow": {"revenue": {"val": 115_299_000, "quarters_used": 4, "missing": 0}},
+                }],
+            }),
+            encoding="utf-8",
+        )
+        # latest_revenue（年次売上、陳腐化した値）はTTM売上より小さい
+        valuation = {"components": {"latest_revenue": 70_918_000, "diluted_shares": 0, "current_price": 0}}
+
+        result = pipe._load_extra_data("SEGTICK", valuation)
+
+        segs = result.get("segments") or []
+        assert len(segs) == 1
+        # weight=1.0のためestimated_revenueはTTM売上そのものになるはず
+        assert segs[0]["estimated_revenue"] == pytest.approx(115_299_000.0), (
+            "TTM売上が年次売上より新しい場合に上書きされていない"
+            "（旧バグ: PascalCase参照のためrevenueが常にNoneになり年次売上のまま）"
+        )
+
+
 class TestMatrix2ROEDefinitionDynamicYear:
     """Fix3 回帰防止: Matrix② 定義文の ROE 年数が roe_years_used から動的に生成されること"""
 
@@ -2798,13 +2842,18 @@ def _write_dupont_ttm(tmp_path, ticker: str, ni_ttm: float, revenue_ttm: float,
     """common/sec_data/ttm/{ticker}_ttm_series.json を作成する"""
     ttm_dir = tmp_path / "common" / "sec_data" / "ttm"
     ttm_dir.mkdir(parents=True, exist_ok=True)
+    # [[DUPONT-TTM-FIELD-CASE-MISMATCH-1]]: ttm_calculator.py::FLOW_FIELDSが
+    # 実際に生成するキーはsnake_case。旧版のこのヘルパーはPascalCase
+    # （"NetIncome"/"Revenue"）で書き出しており、当時のpipeline.py側の
+    # バグ（同じくPascalCase参照）と偶然自己整合してしまっていたため、
+    # 本来検知すべきキー名不一致を長期間見逃す一因になっていた。
     data = {
         "ticker": ticker,
         "series": [{
             "ttm_end": ttm_end,
             "flow": {
-                "NetIncome": {"val": ni_ttm, "quarters_used": quarters_used, "missing": 0},
-                "Revenue": {"val": revenue_ttm, "quarters_used": quarters_used, "missing": 0},
+                "net_income": {"val": ni_ttm, "quarters_used": quarters_used, "missing": 0},
+                "revenue": {"val": revenue_ttm, "quarters_used": quarters_used, "missing": 0},
             },
         }],
     }

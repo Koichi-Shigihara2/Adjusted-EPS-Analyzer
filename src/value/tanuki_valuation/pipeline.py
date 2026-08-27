@@ -2676,10 +2676,14 @@ class TanukiValuationPipeline:
                     _ttm_s_du = json.load(_tf_du)
                 _ttm_entry_du = (_ttm_s_du.get("series") or [None])[0]
                 if _ttm_entry_du:
+                    # [[DUPONT-TTM-FIELD-CASE-MISMATCH-1]]: ttm_calculator.py::
+                    # FLOW_FIELDSはsnake_case（"net_income"/"revenue"/"buyback"）
+                    # で辞書を構築するが、ここは以前PascalCase（"NetIncome"等）を
+                    # 参照しており常にNoneになっていた（全104銘柄でdupont未設定）。
                     _flow_du = _ttm_entry_du.get("flow") or {}
-                    _ni_ttm_du = _flow_du.get("NetIncome", {}).get("val")
-                    _rev_ttm_du = _flow_du.get("Revenue", {}).get("val")
-                    _buyback_ttm_du = _flow_du.get("Buyback", {}).get("val")
+                    _ni_ttm_du = _flow_du.get("net_income", {}).get("val")
+                    _rev_ttm_du = _flow_du.get("revenue", {}).get("val")
+                    _buyback_ttm_du = _flow_du.get("buyback", {}).get("val")
                     # buyback_ttmをfinancial_healthに追記（キャッシュトラップ検出用）
                     if _buyback_ttm_du is not None and "financial_health" in result:
                         result["financial_health"]["buyback_ttm"] = abs(_buyback_ttm_du)
@@ -2735,7 +2739,7 @@ class TanukiValuationPipeline:
                 # 分母は Layer3 store から再構成した直近4四半期合計を使う（ttm_calculator側の
                 # implied-Q4二重計上の影響を受けないよう、TTM seriesのni_ttmは分母に使わない）
                 try:
-                    _ni_q_count_du = _flow_du.get("NetIncome", {}).get("quarters_used")
+                    _ni_q_count_du = _flow_du.get("net_income", {}).get("quarters_used")
                     if _ni_q_count_du == 4 and _ttm_entry_du is not None:
                         # フェーズD Step2-1: normalized/からLayer3へ切替。
                         # フィルタは既存動作を維持（is_annualのみ除外、
@@ -2762,8 +2766,13 @@ class TanukiValuationPipeline:
                                     result["dupont"]["reliability_reason"] = "単四半期NI集中（一過性要因の可能性）"
                 except Exception:
                     pass
-        except Exception:
-            pass
+        except Exception as _e_du:
+            # [[DUPONT-TTM-FIELD-CASE-MISMATCH-1]]: 今回のキー名不一致自体は
+            # 例外を投げず条件不成立で沈黙していたため本except自体は無関係
+            # だったが、今後同種の異常（ファイル破損等）が沈黙しないよう
+            # ログ出力を追加する（挙動は変更せず、DuPont分解のみスキップして
+            # 処理を続行する）
+            print(f"   [{ticker}] DuPont分解エラー: {_e_du}")
 
         # --- next_earnings_date from common.market_data.reader.get_calendar() ---
         # [[MARKETDATA-LAYER-CONSTRUCTION-1]]着手順序4-4: yfinance直接呼び出し
@@ -2859,11 +2868,16 @@ class TanukiValuationPipeline:
                                         _ttm_s = json.load(_tf)
                                     _ttm_entry = (_ttm_s.get("series") or [None])[0]
                                     if _ttm_entry:
-                                        _rv = (_ttm_entry.get("flow") or {}).get("Revenue", {}).get("val")
+                                        # [[DUPONT-TTM-FIELD-CASE-MISMATCH-1]]:
+                                        # 同根のキー不一致（下記DuPont分解と同様）
+                                        _rv = (_ttm_entry.get("flow") or {}).get("revenue", {}).get("val")
                                         if _rv and float(_rv) > latest_revenue:
                                             _ttm_rev_for_seg = float(_rv)
-                                except Exception:
-                                    pass
+                                except Exception as _e_seg:
+                                    # [[DUPONT-TTM-FIELD-CASE-MISMATCH-1]]: 今回の
+                                    # キー名不一致自体は例外を投げず沈黙していたが、
+                                    # 今後同種の異常が沈黙しないようログ出力を追加
+                                    print(f"   [{ticker}] Segment TTM売上フォールバックエラー: {_e_seg}")
                             est_rev = _ttm_rev_for_seg * w
                         else:
                             est_rev = latest_revenue * w
