@@ -10438,7 +10438,7 @@ AS-IS-026とAS-IS-028は同一の`calculate_moat_score()`戻り値を指す重�
 
 ---
 
-### [TANUKI-VALUATION-MISC-GAPS-1] TANUKI VALUATIONの軽微な構造的ギャップまとめ（PERフォールバック欠如・EV/EBITDA負値格納・net_debt符号エイリアス・v0_adjusted死フィールド・Runway cash算出相違・mature_profit S&M欠落・根拠不明な定数・セグメントKPIテーブル未配線）
+### [TANUKI-VALUATION-MISC-GAPS-1] TANUKI VALUATIONの軽微な構造的ギャップまとめ（PERフォールバック欠如・EV/EBITDA負値格納・net_debt符号エイリアス・v0_adjusted死フィールド・Runway cash算出相違・mature_profit S&M欠落・根拠不明な定数・セグメントKPIテーブル機能撤去済み）
 **優先度:** 低
 **分類:** データ品質 / TANUKI VALUATION
 **登録日:** 2026-07-23
@@ -10459,30 +10459,75 @@ AS-IS-026とAS-IS-028は同一の`calculate_moat_score()`戻り値を指す重�
 `selling_and_marketing`がSEC非開示の場合`or 0`で「支出ゼロ」として
 足し戻され、`mature_profit`が実態より低く算出される。⑦`growth_floor
 (15%)`・`growth_cap(50%)`・`market_return(10%)`の根拠がコード内に一切
-記載されていない。⑧（2026-08-26発見、2026-08-27配線対応済み）
+記載されていない。⑧（2026-08-26発見、2026-08-27機能撤去済み）
 `kpi_fetcher.py::build_kpi_data()`（セグメント別KPIデータを構築、
 stock.htmlの`renderSegmentKpiTable()`が`d.kpi_data`として参照する
-想定）が、`pipeline.py`を含むどの本番スクリプトからもimport・呼び出し
-されておらず、自身の`if __name__ == "__main__":`ブロック（テスト実行
-用）からしか実行されなかった問題。2026-08-27、`pipeline.py::_load_
-extra_data()`から`build_kpi_data()`を呼び出し`kpi_data`を格納する配線
-を追加した（コミット`0450abe77`）。ただし配線追加後の実測で、
-`build_kpi_data()`自体が要求する2つのデータソース
-（`annual_*.json["segments"]`・`segment_config.py::SEGMENT_
-OVERRIDES`）が両方とも別の理由で陳腐化しており、配線追加だけでは
-`kpi_data`は依然として全銘柄で`None`のままであることが判明した
-（詳細調査・対応方針は`[[KPI-FETCHER-SEGMENT-SOURCE-ORPHANED-1]]`
-として別途新規登録、設計判断が必要なため未着手）。
+想定）が本番パイプラインから呼び出されておらず「セグメントKPI
+テーブル」が恒久的に非表示だった問題。2026-08-27に配線を追加した
+ところ（コミット`0450abe77`）、配線後も全銘柄で`kpi_data=None`のまま
+であることが判明し（`[[KPI-FETCHER-SEGMENT-SOURCE-ORPHANED-1]]`調査）、
+さらにKoichiさんとの対話で**機能の前提自体が誤りだった**ことが判明した
+——当初「KPI＝XBRLの正式な会計セグメントデータ」を前提に設計されて
+いたが、本来のKPIイメージ（例: SOFIの総会員数・クロスバイ率・NIM等）は
+決算資料の文章に企業ごと個別の形式で開示される経営指標であり、XBRLの
+会計セグメントとは全く別物だった。Koichiさんの判断により、この機能は
+一から作り直す前提で誤った実装（残骸）を撤去した（`kpi_fetcher.py`・
+`kpi_config.py`・`common/sec_data/segment_fetcher.py`削除、
+`pipeline.py`の配線削除、`stock.html`の表示コード削除。新機能の着手は
+見送り中、詳細は`[[KPI-FETCHER-SEGMENT-SOURCE-ORPHANED-1]]`
+〈BACKLOG_DONE.md〉・`[[SEGMENT-KPI-NARRATIVE-EXTRACTION-FUTURE-
+IDEA-1]]`参照）。
 
 #### 対応方針
 ①〜⑦は影響が限定的なため、他の関連タスク（[[RISK-FREE-RATE-
-HARDCODE-1]]等）着手時に合わせて解消することを推奨する。⑧は配線
-自体は完了したが、真の解消には`[[KPI-FETCHER-SEGMENT-SOURCE-
-ORPHANED-1]]`（データソース陳腐化の解消、設計判断要）への対応が
-別途必要。
+HARDCODE-1]]等）着手時に合わせて解消することを推奨する。⑧は誤った
+前提の実装を撤去済み。再設計する場合は`[[SEGMENT-KPI-NARRATIVE-
+EXTRACTION-FUTURE-IDEA-1]]`を起点に、着手タイミングをKoichiさんが
+判断する。
 
 #### 着手条件
 なし
+
+---
+
+### [SEGMENT-KPI-NARRATIVE-EXTRACTION-FUTURE-IDEA-1] 決算資料の文章から企業固有の経営指標をAIが抽出する新機能（構想メモ、着手見送り中）
+**優先度:** 保留 / 将来検討（今すぐ着手する項目ではない）
+**分類:** 新機能構想 / TANUKI VALUATION
+**登録日:** 2026-08-27
+**発見:** `[[TANUKI-VALUATION-MISC-GAPS-1]]`⑧・`[[KPI-FETCHER-SEGMENT-
+SOURCE-ORPHANED-1]]`対応中、Koichiさんとの対話で「セグメントKPI
+テーブル」機能が誤った前提で設計されていたと判明した際の議論から
+
+#### 内容（再定義後の構想）
+旧実装（`kpi_fetcher.py`・`kpi_config.py`・`common/sec_data/
+segment_fetcher.py`、2026-08-27に撤去済み）は「KPI＝XBRLの正式な
+会計セグメントデータ（構造化された財務諸表タクソノミ上のセグメント別
+売上・利益）」を前提に設計されていた。しかしKoichiさんが提示した
+実例（SOFIの「総会員数」「クロスバイ率」「ローン実行額」「純金利
+マージン」「調整後EBITDAマージン」等）により、本来求められるKPIは
+**決算プレスリリース・株主レター・MD&A等の文章の中に企業ごとに
+個別の形式で開示される経営指標**であり、XBRLの正式な会計セグメント
+データとは全く別物であることが分かった。
+
+再定義後の構想: 決算資料の文章をAIが読み解き、企業固有の経営指標
+（例のような数値）を抽出・時系列で記録する機能。旧実装（XBRL会計
+セグメントデータ前提）とは前提・実装方式とも別物であり、ゼロから
+設計し直す必要がある。
+
+#### 対応方針（未定・構想メモのみ）
+- どの銘柄から対象にするか（SOFI等、既にKPI開示が定型化している企業
+  から着手する等）
+- 決算資料の取得元（プレスリリースPDF・株主レター・10-K MD&A等の
+  どれを一次ソースとするか）
+- AI抽出の方式（毎四半期の決算発表後にGrok/Claude等へ抽出依頼する
+  運用フローの設計）
+- 抽出結果の検証方法（誤抽出・単位間違い等をどう検知するか）
+
+いずれも設計判断・投資対効果の検討が必要であり、今回は構想の記録
+のみに留める。
+
+#### 着手条件
+なし（Koichiさんが着手タイミングを判断する。現時点では見送り中）
 
 ---
 
@@ -10551,78 +10596,9 @@ snake_case（`"net_income"`・`"revenue"`・`"buyback"`）へ修正するだけ�
 
 ---
 
-### [KPI-FETCHER-SEGMENT-SOURCE-ORPHANED-1] kpi_fetcher.py::build_kpi_data()の2つのデータソースが両方とも陳腐化しており、配線後も全銘柄でNoneを返し続ける
-**優先度:** 中（`[[TANUKI-VALUATION-MISC-GAPS-1]]`⑧の配線自体は完了した
-が、それだけでは「セグメントKPIテーブル」は実際には表示されない。
-修正には設計判断が必要）
-**分類:** バグ / データ品質 / TANUKI VALUATION / 設定ファイル陳腐化
-**登録日:** 2026-08-27
-**発見:** `[[TANUKI-VALUATION-MISC-GAPS-1]]`⑧（pipeline.pyから
-`build_kpi_data()`を呼び出す配線追加）の検証中、実際にAPP（`kpi_
-config.py`にセグメント定義あり）で実行しても`kpi_data`が`None`のまま
-であることに気づき原因調査
-
-#### 内容
-`kpi_fetcher.py::build_kpi_data()`は2つのデータソースを必要とするが、
-**両方とも現在は機能していない**ことを実測で確認した:
-
-1. **`annual_{fy}.json["segments"]`（実績のセグメント別売上・営業利益
-   時系列）**: NVDA/TSLA/PLTR/MSFT/AMZN/AMD/SOFI/RKLB/CELH（`kpi_
-   config.py`にセグメント定義がある9銘柄）全てで`annual_*.json`の
-   最新ファイルを実測したところ、**9/9件で`"segments"`キー自体が
-   存在しない**（`d.get("segments")`が常に`None`）。このキーを
-   実際に書き込む機構は`common/sec_data/segment_fetcher.py`
-   （XBRL Instance Documentからセグメント別売上を抽出する専用
-   スクリプト）と見られるが、同スクリプト冒頭のdocstringに
-   「**GitHub Actionsでは実行しない。ローカル実行→pushの運用**」と
-   明記されており、自動化されたSEC更新パイプライン（`SEC_Data_
-   Update.yml`）には組み込まれていない。手動実行の記録も本セッションの
-   調査範囲では確認できなかった（過去に実行されていても、その後の
-   自動SEC更新でannual_*.jsonが再生成され上書き・消失した可能性も
-   あるが未確認）。
-
-2. **`segment_config.py::SEGMENT_OVERRIDES`（セグメント別weight/growth
-   設定、フォールバック用）**: `kpi_fetcher.py::_load_segment_config()`
-   はこの変数を`getattr(mod, "SEGMENT_OVERRIDES", {})`で参照するが、
-   `segment_config.py`自体のコメントに「ハードコードのSEGMENT_
-   OVERRIDES/GROWTH_OPTIONSを廃止」と明記されており、**同変数は
-   現在のファイルに存在しない**（`getattr`のデフォルト値`{}`が
-   常に返る）。実際に稼働中のセグメント設定は`config/segment_
-   config.json`（JSON形式、`_load_extra_data()`内の別ロジックが
-   これを正しく参照しており、report.txtの「Segment_Breakdown」
-   セクションはこちら経由で正常に機能している）に移行済み。
-
-結果、`build_kpi_data()`内の`has_any_segment`（ソース1由来）と
-`seg_config`（ソース2由来）が両方とも常に空となり、
-`if not has_any_segment and not seg_config: return None`が
-全銘柄で成立し、**配線を追加しても`kpi_data`は常に`None`のまま**
-であることを実測で確認した（APP実測: `_load_segment_config("APP")`
-→ `{}`、`annual_2025.json.get("segments")` → `None`）。
-
-なお`config/segment_config.json`のスキーマ（`{"weight": 1.0, "growth":
-0.45, "note": "..."}`という現在時点の設定のみ）は、`kpi_fetcher.py`が
-本来必要とする多年度の実績時系列（`revenue`/`operating_income`/
-`operating_margin`をFY単位で保持）とは構造が異なり、単純な参照先
-差し替えでは解決しない。
-
-#### 対応方針（未定・設計判断が必要）
-以下のいずれかの方向性が考えられるが、いずれもコスト・トレードオフの
-判断を要する:
-- (a) `segment_fetcher.py`をGitHub Actions定期実行に組み込み、
-  `annual_*.json["segments"]`を継続的に維持する（XBRL Instance
-  Document解析は銘柄によって構造が異なり脆い可能性、
-  `[[TAIL-XBRL-SEGMENT-FETCHER-NONDIMENSIONED-GAP-1]]`と類似の
-  脆弱性を抱える可能性がある）
-- (b) `kpi_fetcher.py`を`config/segment_config.json`ベースの簡易版
-  （現在の重み・成長率のみ、多年度実績時系列は持たない）に再設計する
-  （`_load_extra_data()`の既存「Segment_Breakdown」ロジックと機能が
-  重複する可能性が高い）
-- (c) 現状維持（「セグメントKPIテーブル」機能自体の要否をKoichiさんに
-  確認する）
-
-#### 着手条件
-なし。ただし対応方針の選択はKoichiさんの判断を要するため、着手前に
-確認すること。
+（[[KPI-FETCHER-SEGMENT-SOURCE-ORPHANED-1]]は2026-08-27、誤った前提
+〈XBRL会計セグメントデータ〉で設計された機能と判明したため残骸を撤去、
+BACKLOG_DONE.md「2026-08-27（完了）」参照）
 
 ---
 

@@ -4,6 +4,91 @@
 
 ## 2026-08-27（完了）
 
+### ✅ [KPI-FETCHER-SEGMENT-SOURCE-ORPHANED-1] セグメントKPIテーブル機能は前提が根本的に誤っていたと判明、残骸を撤去（新機能としての再設計は見送り中）
+
+**優先度:** 中 → 完了（撤去のみ、再設計は別途`[[SEGMENT-KPI-NARRATIVE-
+EXTRACTION-FUTURE-IDEA-1]]`で構想を記録）
+**分類:** バグ / データ品質 / TANUKI VALUATION / 設計前提の誤り
+**登録日:** 2026-08-27
+**発見:** `[[TANUKI-VALUATION-MISC-GAPS-1]]`⑧（pipeline.pyから
+`build_kpi_data()`を呼び出す配線追加）の検証中、実際にAPP（`kpi_
+config.py`にセグメント定義あり）で実行しても`kpi_data`が`None`のまま
+であることに気づき原因調査
+
+#### 内容（登録時点、技術的な原因分析）
+`kpi_fetcher.py::build_kpi_data()`は2つのデータソース（`annual_
+{fy}.json["segments"]`・`segment_config.py::SEGMENT_OVERRIDES`）を
+必要とするが、両方とも別々の理由で陳腐化しており（前者は
+`segment_fetcher.py`がGitHub Actions未組み込みのローカル専用ツールの
+ため実行されていない、後者は`config/segment_config.json`への設定
+移行に伴い変数自体が削除済み）、配線を追加しても`kpi_data`は全銘柄で
+`None`のままだった。対応方針として(a)XBRL自動抽出のActions化・
+(b)`config/segment_config.json`ベースへの再設計・(c)現状維持の3案を
+提示し、Koichiさんの判断を仰ぐ形で登録した。
+
+#### 2026-08-27 Koichiさんとの対話で判明した根本的な前提の誤り
+上記3案を検討する対話の中で、Koichiさんが実例（SOFIの「総会員数」
+「クロスバイ率」「ローン実行額」「純金利マージン」「調整後EBITDA
+マージン」等）を提示したことで、**本機能が最初から誤った前提で設計
+されていた**ことが判明した。
+
+当初の実装（`kpi_fetcher.py`・`kpi_config.py`・`common/sec_data/
+segment_fetcher.py`）は「KPI＝XBRLの正式な会計セグメントデータ
+（構造化された財務諸表タクソノミ上のセグメント別売上・利益）」を
+前提にしていたが、本来のKPIイメージは、決算プレスリリース・株主
+レター・MD&A等の**文章の中に企業ごとに個別の形式で開示される経営
+指標**であり、XBRLの正式な会計セグメントデータとは全く別物だった。
+つまり(a)(b)(c)いずれの対応方針も「誤った前提の実装を延命・再設計する」
+という点で的外れであり、正しい対応は「一から作り直す」だった。
+
+**Koichiさんの判断**:
+- この機能は一から作り直してよい（現行実装は前提から誤っていた）
+- ただし「AIが決算資料の文章を読んでKPIを抽出する」という新機能の
+  着手は今のタイミングではない（見送り）
+- 今回対応すべきは、誤った前提で作られた既存実装（残骸）の撤去
+
+#### 実施内容（残骸撤去、新機能の実装は一切含まない）
+削除前に依存関係を洗い出し、以下を確認した:
+- `kpi_fetcher.py`・`kpi_config.py`は`pipeline.py`以外から参照されて
+  いない（テストも0件）
+- `common/sec_data/segment_fetcher.py`はどこからもimportされていない
+  （`src/tail/xbrl_segment_fetcher.py`はTANUKI TAIL用の完全に別の
+  ファイルであり無関係と確認済み）
+- **重要な区別**: `src/value/tanuki_valuation/segment_config.py`
+  （Pythonモジュール）は削除対象と紛らわしいが、`pipeline.py`から
+  `_seg_cfg`として9箇所で現役使用されている中核モジュール（`config/
+  segment_config.json`を正しく読み込む現行実装、「Segment_
+  Breakdown」表示機能が依存）であり**削除対象外**と確認した。
+  `config/segment_config.json`（JSONファイル）も当然削除対象外
+- フロントエンド`stock.html`の`renderSegmentKpiTable()`は`if
+  (!kpiData || ...) return ''`という防御的ガードがあり、呼び出し
+  箇所も1箇所のみで密結合なし。専用CSS（`.kpi-*`/`.seg-meta`/
+  `.seg-growth`、約72行）も他箇所で再利用されていないことを確認し、
+  関数本体（約225行）・CSS・呼び出し箇所とも削除した
+
+削除したファイル・コード:
+- `src/value/tanuki_valuation/kpi_fetcher.py`（削除）
+- `src/value/tanuki_valuation/kpi_config.py`（削除）
+- `common/sec_data/segment_fetcher.py`（削除）
+- `pipeline.py`: `build_kpi_data`/`get_fiscal_year_latest`のimport・
+  `_load_extra_data()`内の`kpi_data`構築コード（削除）
+- `stock.html`: `renderSegmentKpiTable()`関数本体・呼び出し箇所・
+  専用CSSブロック（削除）
+
+代表銘柄APP・ASTSで`pipeline.py [TICKER] --skip-risk`を実行し、
+`kpi_data`関連のエラーなく正常完走、`latest.json`から`kpi_data`
+キーが正しく除去されたことを確認した。pytest 926件全パス、
+`report_consistency_check.py --fail-on-ng` NG=0。
+
+再設計の構想は`[[SEGMENT-KPI-NARRATIVE-EXTRACTION-FUTURE-IDEA-1]]`
+として別途記録した（着手は見送り中）。
+
+#### コミット
+- `0091fa09c`: 残骸撤去一式（コード削除・stock.html削除・APP/ASTS
+  再生成）
+
+---
+
 ### ✅ [REPORT-TXT-CAPM-IV-MISSING-1] report.txt[3]にCAPMベース割引率でのIVが欠落していた問題を含む網羅性拡充8件を実装完了（2026-08-27）
 
 **優先度:** 中 → 完了
