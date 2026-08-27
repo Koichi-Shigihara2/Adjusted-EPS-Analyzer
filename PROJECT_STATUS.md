@@ -65,6 +65,68 @@
   詳細はBACKLOG_DONE.md「2026-08-26（完了）」参照。新DB構築プロジェクトの
   コード・データには変更なし。
 
+- **2026-08-27**（指示書5件を順次実施、**実害のあった重大インシデント
+  〈STONKS SILO 45日間本番停止〉の復旧を含む**）:
+  1. **バックログ再分析＋精度改善2件**: `[[LIQUIDITY-CSV-FIRST-ROW-
+     UNBOUNDLOCALERROR-1]]`（`update_liquidity_csv()`が空CSV初回実行時
+     UnboundLocalError、`prev_rrp`等のNone初期化漏れ）を修正
+     （コミット`823ad7404`）。`[[STONKS-SILO-PRICE-SCHEDULE-LAG-
+     SUSPECT-1]]`（cron実行順序ラグの疑い）を調査する過程で、
+     **`results.json`が2026-08-13から更新されていないことに気づき、
+     STONKS SILOが2026-07-13以降45日間・約30回連続でGitHub Actions
+     自動更新に失敗し続けていた実障害を新規発見**（真因は既存登録
+     `[[STONKS-SILO-CLI-TICKERS-SHADOW-1]]`、`pipeline.py`の
+     `__main__`ブロックが`tickers`変数でモジュール参照を上書きする
+     衝突。2026-08-11登録時点で「cronは無事のはず」という未検証の
+     想定を優先度「中」のまま16日間放置していたことが実害拡大の
+     一因、`CHAT_RULES.md`事例14として教訓化）
+  2. **STONKS SILO 45日間停止の緊急復旧**（Koichiさん承認済み）:
+     `pipeline.py`の変数名を`cli_tickers`へリネーム、CLI引数あり/なし
+     両経路の回帰テスト追加、全25銘柄を実際に再生成し45日ぶりの
+     正常完走を確認（判定・スコアは全銘柄不変、価格のみ市場変動を
+     反映）（コミット`ff59e7b13`・`c649741ca`）
+  3. **report.txt網羅性拡充8件＋セグメントKPIテーブル配線修正**:
+     CAPM-IV・DuPont・sensitivity・maturity_profile・return_metrics・
+     validation・alpha_was_capped・fcf_ttm_endをreport.txtへ追加
+     （各フィールドの性質に応じた粒度で、`[[REPORT-TXT-CAPM-IV-
+     MISSING-1]]`8件全対応、コミット`772ff9b17`）。`pipeline.py`から
+     `kpi_fetcher.build_kpi_data()`を呼び出す配線を追加したところ
+     （コミット`0450abe77`）、配線後も`kpi_data`が全銘柄で`None`の
+     ままと判明し、依存データソース2種（`annual_*.json["segments"]`・
+     `segment_config.py::SEGMENT_OVERRIDES`）が両方とも陳腐化して
+     いることを新規発見（`[[KPI-FETCHER-SEGMENT-SOURCE-ORPHANED-1]]`）。
+     さらにDuPont分解が`ttm_series.json`のキーをPascalCaseで参照して
+     おり全104銘柄で恒久的に未発火だったことも新規発見
+     （`[[DUPONT-TTM-FIELD-CASE-MISMATCH-1]]`）
+  4. **セグメントKPIテーブル機能の残骸撤去**: `[[KPI-FETCHER-SEGMENT-
+     SOURCE-ORPHANED-1]]`の対応方針をKoichiさんと検討する対話の中で、
+     **機能の設計前提自体が根本的に誤っていた**ことが判明した——
+     当初「KPI＝XBRLの正式な会計セグメントデータ」を前提に設計されて
+     いたが、Koichiさんが提示した実例（SOFIの総会員数・クロスバイ率・
+     NIM等）により、本来のKPIは決算資料の文章に企業ごと個別の形式で
+     開示される経営指標であり全く別物と判明。Koichiさんの判断
+     （一から作り直してよいが新機能の着手は見送り、今回は誤った前提の
+     既存実装の撤去のみ）に従い、`kpi_fetcher.py`・`kpi_config.py`・
+     `common/sec_data/segment_fetcher.py`・`pipeline.py`の配線・
+     `stock.html`の表示コード（関数・専用CSS計約300行）を撤去。
+     削除前に`src/value/tanuki_valuation/segment_config.py`
+     （Pythonモジュール）が削除対象と紛らわしいが実際は現役の中核
+     モジュールであることを確認し誤削除を回避（コミット`0091fa09c`）。
+     再設計の構想は`[[SEGMENT-KPI-NARRATIVE-EXTRACTION-FUTURE-
+     IDEA-1]]`に記録（着手は見送り中）
+  5. **DuPont分解のキー不一致修正**: `ttm_calculator.py::FLOW_FIELDS`
+     はsnake_caseと再確認した上で`pipeline.py`側5箇所をsnake_caseへ
+     修正、bare exceptにログ追加。**既存の回帰テスト5クラスのモック
+     ヘルパーが、当時のバグと同じPascalCaseで自己整合的にモックして
+     おり、本番不具合を長期間検知できていなかったことを発見**、
+     ヘルパーをsnake_caseへ是正（`CHAT_RULES.md`事例15として教訓化、
+     Koichiさんからの提案）。APP/ASTS/NVDAで実データ検証しDuPont値が
+     正しく算出されることを確認（コミット`5ce4a592c7`）
+  詳細はBACKLOG_DONE.md「2026-08-27（完了）」参照。新DB構築プロジェクトの
+  コード・データには変更なし。全銘柄への反映は次回の通常パイプライン
+  実行サイクルに委ねる（今回はAPP/ASTS/NVDA・STONKS SILO全25銘柄のみ
+  再生成）。
+
 ---
 
 更新日: 2026-08-15（**フェーズ3「導出データ層の管理方法検討」完了**。

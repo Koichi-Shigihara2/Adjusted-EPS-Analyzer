@@ -1,5 +1,52 @@
 # Claude Code 作業開始テンプレート
 
+最終更新: 2026-08-27（**セッション終了時ブラッシュアップ・本日
+セッションサマリー**。指示書5件を順次実施した（全てpush済み）:
+
+1. バックログ再分析＋精度改善2件（`[[LIQUIDITY-CSV-FIRST-ROW-
+   UNBOUNDLOCALERROR-1]]`修正）— この過程でSTONKS SILOの
+   `results.json`が2026-08-13から更新されていないことに気づき、
+   **STONKS SILOが2026-07-13以降45日間・約30回連続でGitHub Actions
+   自動更新に失敗し続けていた実障害**（`[[STONKS-SILO-CLI-TICKERS-
+   SHADOW-1]]`、pipeline.pyの変数名衝突）を新規発見
+2. STONKS SILO 45日間停止の緊急復旧（Koichiさん承認済み）: 修正・
+   全25銘柄再生成、45日ぶりの正常完走を確認
+3. report.txt網羅性拡充8件（CAPM-IV/DuPont/sensitivity/
+   maturity_profile/return_metrics/validation/alpha_was_capped/
+   fcf_ttm_end）＋セグメントKPIテーブル配線修正 — 配線修正の過程で
+   `[[KPI-FETCHER-SEGMENT-SOURCE-ORPHANED-1]]`・`[[DUPONT-TTM-
+   FIELD-CASE-MISMATCH-1]]`（DuPont分解が全104銘柄で恒久的に
+   未発火）を新規発見
+4. セグメントKPIテーブル機能の残骸撤去: Koichiさんとの対話で
+   「KPI＝XBRL会計セグメントデータ」という設計前提自体が誤りだったと
+   判明（本来のKPIは決算資料の文章に開示される企業固有の経営指標）。
+   一から作り直す前提で既存実装（`kpi_fetcher.py`・`kpi_config.py`・
+   `common/sec_data/segment_fetcher.py`・stock.html表示コード）を
+   撤去。新機能の着手は見送り、構想は`[[SEGMENT-KPI-NARRATIVE-
+   EXTRACTION-FUTURE-IDEA-1]]`に記録
+5. DuPont分解のPascalCase/snake_caseキー不一致修正: 既存回帰テストの
+   モックデータが同じ誤りを自己整合的に再現していたため本番不具合を
+   検知できていなかったと判明（`CHAT_RULES.md`事例15、Koichiさんの
+   提案で追加）
+
+本日の特徴（記録として重要）: 当日の緊急復旧タスク（2）は、想定外の
+実害（45日間の本番停止）を無断で拡大せず一旦報告してからKoichiさんの
+承認を得て対応した事例。タスク3〜5は「配線・呼び出しは実装したが、
+呼び出し先の内部データソースが別の理由で陳腐化していて結局動かない」
+という構造が連続して見つかった（`[[KPI-FETCHER-SEGMENT-SOURCE-
+ORPHANED-1]]`・`[[DUPONT-TTM-FIELD-CASE-MISMATCH-1]]`）。
+
+詳細はPROJECT_STATUS.md「2026-08-27」・BACKLOG_DONE.md「2026-08-27
+（完了）」参照。**次の本線は未定**。次セッションの着手候補:
+- `[[DUPONT-TTM-FIELD-CASE-MISMATCH-1]]`修正の全銘柄反映確認
+  （tanuki_score DuPontパネル・one-time-gain-trap検知の実発火確認）
+- `[[STONKS-SILO-PRICE-SCHEDULE-LAG-SUSPECT-1]]`の再検証（cron正常化
+  により実データ検証が可能になった、次回平日の自動実行後に着手）
+- `[[WORKFLOW-SEC-TANUKI-GAP-1]]`のSEC_Data_Update起点チェーン再確認
+  （2026-08-30サイクル後に着手可能）
+- `[[SEGMENT-KPI-NARRATIVE-EXTRACTION-FUTURE-IDEA-1]]`（優先度保留、
+  Koichiさんの着手判断待ち）
+
 最終更新: 2026-08-26（**セッション終了時ブラッシュアップ・本日
 セッションサマリー**。当日午前のMarket Pulse/MACRO PULSE既知バグ6項目
 再検証に続き、以下4件の指示書を順次実施した:
