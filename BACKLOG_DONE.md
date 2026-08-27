@@ -4,6 +4,105 @@
 
 ## 2026-08-27（完了）
 
+### ✅ [DUPONT-TTM-FIELD-CASE-MISMATCH-1] pipeline.pyのDuPont分解/Segment TTM売上フォールバックのPascalCase/snake_caseキー不一致を修正（2026-08-27）
+
+**優先度:** 高 → 完了
+**分類:** バグ / データ品質 / TANUKI VALUATION / キー命名不一致
+**登録日:** 2026-08-27
+**発見:** `[[REPORT-TXT-CAPM-IV-MISSING-1]]`⑧番目のCAPM-IV含む網羅性拡充
+実装時、サンプル銘柄APP/ASTSの`latest.json`に追加したreport.txt出力を
+確認する過程で、`dupont`キー自体が両銘柄とも存在しないことに気づき調査
+
+#### 内容（登録時点）
+`pipeline.py::_load_extra_data()`のDuPont分解ブロックが、TTMデータの
+`flow`辞書キーをPascalCase（`"NetIncome"`・`"Revenue"`・`"Buyback"`）で
+参照していたが、`ttm_calculator.py::FLOW_FIELDS`が実際に生成する
+`{ticker}_ttm_series.json`の`flow`辞書キーはsnake_case
+（`"net_income"`・`"revenue"`・`"buyback"`）だった。結果、
+`result["dupont"]`が全104銘柄で一切設定されず、同一の根本原因が
+Segment_Weighted_Growthの「General fallback」（非12月期決算銘柄の
+TTM売上陳腐化対策）にも独立して波及していた。
+
+#### 2026-08-27 再検証結果
+- `ttm_calculator.py::FLOW_FIELDS`が全17フィールドともsnake_case
+  （`"revenue"`・`"net_income"`・`"buyback"`等）であることをコードで
+  再確認。`flow[field_name] = {...}`で実際にこの名前で辞書構築される
+  ことも確認済み
+- `pipeline.py`の該当5箇所（2680・2681・2682・2738・2862行目、行番号は
+  直前のKPI機能撤去タスクでも偶然変化なし）が依然としてPascalCaseの
+  ままであることを再確認
+- 全104銘柄中0件が`dupont`を持つことを再実測確認
+- `pipeline.py`内で他にsnake_case以外のTTM flowキー参照が無いことを
+  横断確認（該当5箇所以外に不一致なし、修正方向は「pipeline.py側を
+  snake_caseに合わせる」で確定、`ttm_calculator.py`側の変更は不要）
+- Segment_Weighted_Growth fallbackも実データで確認: ASTSのTTM売上
+  （$115.3M、2026-06-30時点）が年次売上（$70.9M）より新しいにも
+  かかわらず、fallbackが機能せず年次売上のまま使われ続けていたことを
+  実測確認
+
+#### 実装内容
+`pipeline.py`の5箇所（DuPont分解3箇所＋単四半期集中チェック1箇所＋
+Segment TTM売上フォールバック1箇所）のPascalCaseキーをsnake_caseへ
+修正。加えて、原因調査の妨げにならないよう2箇所のbare except
+（DuPont分解の外側try/except、Segment TTM売上フォールバックのtry/
+except）にログ出力を追加した（挙動は変更せず、異常時にticker名と
+例外内容を出力するのみ）。
+
+**副次発見**: 既存のDuPont回帰テスト（`TestDuPontNormalCalculation`等
+5クラス、`test_pipeline_logic.py`）のヘルパー関数`_write_dupont_ttm()`
+が、当時のバグと同じPascalCase（`"NetIncome"`・`"Revenue"`）で
+自己整合的にモックデータを書き出しており、本来検知すべきキー名不一致を
+テスト側も見逃していたことが判明した。ヘルパーをsnake_caseへ修正し、
+既存テスト（DuPont計算ロジック自体は正しく検証済みだった5クラス）が
+実スキーマに対する正しい回帰テストとして機能するようにした。新規追加
+予定だった重複テストクラスは、この既存テスト群で十分カバーされるため
+作成を見送り、Segment TTM売上フォールバック用の新規テストクラス
+（`TestSegmentTtmRevenueFallbackKeyCaseFix`、既存カバレッジなし）のみ
+追加した。
+
+**回帰確認**: 修正前のコードに一時的に戻し、既存DuPontテスト5クラス
+（7件）・新規Segmentテスト1件の計8件が実際に失敗することを確認した上で、
+修正版に戻して全8件のPASSを確認した。
+
+#### サンプル銘柄での検証結果
+APP・ASTS・NVDAで`pipeline.py [TICKER] --skip-risk`を実行し、3銘柄とも
+`dupont`が正しく算出されることを確認:
+
+| 銘柄 | net_margin | asset_turnover | financial_leverage | roe_decomposed |
+|---|---|---|---|---|
+| APP | 64.3% | 0.80x | 3.26x | 167.7% |
+| ASTS | -536.7% | 0.02x | 2.44x | -25.8%（赤字企業として妥当） |
+| NVDA | 63.0% | 0.98x | 1.33x | 81.7% |
+
+Segment_Weighted_Growth fallbackもASTSで実際に改善を確認
+（`estimated_revenue`が$70,918,000→$115,299,000へ正しく更新、
+report.txt上は丸め表示のため$0.1Bのまま変化なしだが`latest.json`の
+生値では確認済み）。
+
+3つの実消費箇所の改善状況（データレベルで確認、フロントエンドの
+フィールド参照名が全て一致することをコードで確認済みのため実ブラウザ
+確認は省略）:
+- `stock.html`「DUPONT ANALYSIS」パネル: `d.dupont`が非null化、
+  `dp.net_margin`/`dp.asset_turnover`/`dp.financial_leverage`/
+  `dp.roe_decomposed`いずれも参照名が一致し表示される見込み
+- `tanuki_score/index.html`のDuPontパネル: 各tickerの`latest.json`を
+  直接fetchする設計（`${T_BASE}data/${tk}/latest.json`）のため、
+  再生成済みの3銘柄は`.filter(s => s.dupont != null && !s.dupont.
+  excluded)`を通過するようになった
+- one-time-gain-trapは`s.dupont?.reliability === 'LOW'`判定。
+  単四半期集中パターンの検知ロジック自体はユニットテストで確認済み
+  （実データでLOWになる銘柄は次回全銘柄再生成後に確認可能）
+
+pytest 927件全パス（既存926件＋新規1件）、`report_consistency_check.py
+--fail-on-ng` NG=0。全銘柄への反映は次回の通常パイプライン実行サイクル
+に委ねる（今回はAPP/ASTS/NVDAのみサンプル再生成）。
+
+#### コミット
+- `5ce4a592c7`: キー不一致修正・既存テストヘルパー是正・bare exceptログ
+  追加・APP/ASTS/NVDAサンプル再生成
+
+---
+
 ### ✅ [KPI-FETCHER-SEGMENT-SOURCE-ORPHANED-1] セグメントKPIテーブル機能は前提が根本的に誤っていたと判明、残骸を撤去（新機能としての再設計は見送り中）
 
 **優先度:** 中 → 完了（撤去のみ、再設計は別途`[[SEGMENT-KPI-NARRATIVE-

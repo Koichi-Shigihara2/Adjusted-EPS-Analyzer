@@ -10531,68 +10531,9 @@ segment_fetcher.py`、2026-08-27に撤去済み）は「KPI＝XBRLの正式な
 
 ---
 
-### [DUPONT-TTM-FIELD-CASE-MISMATCH-1] pipeline.py::_load_extra_data()のDuPont分解がPascalCase/snake_caseキー不一致で全銘柄・恒久的に未発火（stock.html・TANUKI SCORE両パネルとも常時空欄）
-**優先度:** 高（TSCORE-DUPONT-1/3で実装されたソート機能付き専用パネルを
-含む複数UI機能が、実装当初からおそらく一度も表示されたことがない可能性）
-**分類:** バグ / データ品質 / TANUKI VALUATION / キー命名不一致
-**登録日:** 2026-08-27
-**発見:** `[[REPORT-TXT-CAPM-IV-MISSING-1]]`⑧番目のCAPM-IV含む網羅性拡充
-実装時、サンプル銘柄APP/ASTSの`latest.json`に追加したreport.txt出力を
-確認する過程で、`dupont`キー自体が両銘柄とも存在しないことに気づき調査
-
-#### 内容
-`pipeline.py::_load_extra_data()`のDuPont分解ブロック（`common/sec_data/
-ttm/{ticker}_ttm_series.json`を読み込みROE=純利益率×資産回転率×財務
-レバレッジを算出）が、TTMデータの`flow`辞書キーを**PascalCase**
-（`"NetIncome"`・`"Revenue"`・`"Buyback"`）で参照している
-（`pipeline.py:2680-2682, 2738`）が、`ttm_calculator.py`が実際に生成する
-`{ticker}_ttm_series.json`の`flow`辞書キーは**snake_case**
-（`"net_income"`・`"revenue"`・`"buyback"`）である。
-
-実測（APP）: `flow.get("NetIncome")` → `None`（キー不在）、
-`flow.get("net_income")` → `{"val": 3962945000, "quarters_used": 4,
-"missing": 0}`（正しい構造で実在）。つまり値の構造自体は想定通りだが、
-参照キー名の大文字小文字が一致していないだけで常に`None`になる。
-
-結果、`_ni_ttm_du`・`_rev_ttm_du`が常に`None`になり、後続の判定
-（`if _rev_ttm_du is not None and _rev_ttm_du < 15_000_000:` /
-`elif _ni_ttm_du is not None and _rev_ttm_du and ...`）がいずれの
-ticker・いずれの分岐でも成立せず、**`result["dupont"]`が一切設定
-されない**（`{"excluded": ...}`にすらならず、キー自体が欠落）。
-
-#### 実測した影響範囲
-`grep -l '"dupont"' docs/value-monitor/tanuki_valuation/data/*/latest.json`
-で全104銘柄中**0件**がヒット（本タスクで新規再生成したAPP/ASTSの2件を
-含む）。`dupont`フィールドを参照する消費者は実測3箇所:
-- `stock.html`「DUPONT ANALYSIS」パネル（`dp = d.dupont; if (!dp) return
-  ''`で常時非表示、クラッシュはしない）
-- `docs/value-monitor/tanuki_score/index.html`「DuPontパネル」
-  （`TSCORE-DUPONT-1`でソート機能実装済みの6列テーブル、
-  `.filter(s => s.dupont != null && !s.dupont.excluded)`で全銘柄が
-  フィルタ除外され**常に0行のテーブル**になっている）
-- ワンタイムゲイントラップ検知（`s.dupont?.reliability === 'LOW'`、
-  同ファイル1059行目付近）も常に非該当
-
-さらに同一の根本原因（PascalCase/snake_caseキー不一致）が、無関係な
-別機能にも1箇所波及していることを発見: `pipeline.py:2862`
-（Segment_Weighted_Growthの「General fallback」時、非12月期決算銘柄の
-TTM売上陳腐化対策として`flow.get("Revenue", {})`を参照する箇所）も
-同型の不一致で常に`_rv=None`となり、意図されたTTM売上上書き
-（`_ttm_rev_for_seg`）が一度も発火せず年次売上のままフォールバックし
-続けている（`except Exception: pass`で握りつぶされ気づけない設計）。
-
-#### 対応方針（未定・技術判断のみで解消可能と見込まれる）
-`pipeline.py`の該当5箇所（2680・2681・2682・2738・2862行目）の
-PascalCaseキー（`"NetIncome"`・`"Revenue"`・`"Buyback"`）を
-snake_case（`"net_income"`・`"revenue"`・`"buyback"`）へ修正するだけで
-解消する見込み。設計判断は不要な技術的修正だが、影響範囲確認のため
-全銘柄再生成後にDuPont値のサンプル検証（既知の財務諸表との突合）を
-行うことを推奨する。
-
-#### 着手条件
-なし。ただし本タスク（report.txt網羅性拡充）のスコープ外の別バグの
-ため、CHAT_RULES.md「調査中に発見した別バグの実装は別途依頼を待つ」
-原則に従い実装は行っていない。
+（[[DUPONT-TTM-FIELD-CASE-MISMATCH-1]]は2026-08-27実装完了(PascalCase→
+snake_caseキー修正、全3実消費箇所で正常化を確認)、BACKLOG_DONE.md
+「2026-08-27（完了）」参照）
 
 ---
 
