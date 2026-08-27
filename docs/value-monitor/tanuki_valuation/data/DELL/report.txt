@@ -1,6 +1,7 @@
 DELL INTEGRATED INVESTMENT REPORT
-Generated: 2026-08-26T07:13:33+09:00
-Price: $451.50
+Generated: 2026-08-27T10:18:07+09:00
+Price: $463.82
+Validation_Status: PASS (品質ゲート: 全チェック通過)
 
 ℹ️ データ期間注記: 2013年LBOによる非公開化(最終自社10-K: FY2012, 期末2013-02-01)〜2016年EMC統合完了後の初回自社10-K(FY2017, filed 2017-03-31)まで、自社10-K申告自体が存在しない期間があります。FY2015/FY2016はFY2017 10-Kの比較年度再掲データ（本人データではない）のみ、FY2014は値が完全に欠落します。
 
@@ -9,8 +10,8 @@ Classification: WATCH
 Classification_Pre_Rounding: TRIM
 Funda_Score: 100/100
 Timing_Score (components):
-  Deviation_Rate: -81.8%
-  MA200_Deviation: +88.2%
+  Deviation_Rate: -82.3%
+  MA200_Deviation: +92.0%
   HypeCore_Phase: Phase3 (陶酔期)
   Analyst_Consensus: Buy | Target: $500 median ($360-$700) | 23 analysts | vs IV: +510.0%
 Comment: DCF信頼性LOW(FCF_Conversion_Rate方式・要注意フラグ)のためupside依存判定を抑制→WATCH
@@ -35,7 +36,7 @@ Matrix: ①投資効率系
 Quadrant: 左下
 Label: 割高×中効率
 Key_Metric_Y: RICE = 2.280
-Deviation_Rate: -81.8%
+Deviation_Rate: -82.3%
 Thresholds:
   RICE_Threshold: 3.0/1.0/0 (>=3.0=high, 1.0-3.0=medium, 0-1.0=low, <0=undefined OCF-negative)
   ROE_Threshold: 15% (above=high profitability)
@@ -59,28 +60,33 @@ Positive deviation = undervalued (intrinsic > current)
 
 
 [3. TANUKI VALUATION]
-Current_Price: $451.50
+Current_Price: $463.82
 Intrinsic_Value_BASE: $81.96
-Deviation_BASE: -81.8%
+Deviation_BASE: -82.3%
 Growth_Rate_Original: 50.0% (TTM実績)
 Growth_Rate_Adjusted: 3.7% (推奨値・中央値ベース)
 Scenarios:
 BEAR: Growth=2.6%, IV=$75.99 （推奨値ベース）
 BASE: Growth=3.7%, IV=$81.96 （推奨値ベース）
 BULL: Growth=4.4%, IV=$86.11 （推奨値ベース）
+Return_Outlook(BASE): 1年後: $84.97 (-81.7%) / 3年後: $91.31 (-80.3%) / 5年後: $98.13 (-78.8%)
+  5yr_Annualized_Return: -26.7%/yr
 TTM_YoY_Growth: 38.6%
 (DCF Base vs TTM actual: -34.9pt discount)
 Discount_Rate_Primary: 10.00% (DCF discount rate used)
 WACC_CAPM_Reference: 12.29%
+  参考①β込みWACC_IV: $54.20 (Deviation: -88.3%)
+  参考②Rf理論上限_IV: $576.91 (Deviation: +24.4%)
 Terminal_Growth_Rate: 3.0%
 Beta: 1.401
 Valuation_Gap_Analysis:
   DCF_IV:           $82 (保守的FCFベース・現在実力値)
-  Market_Price:     $452
+  Market_Price:     $464
   Gap:              -82% (市場が将来成長を先取り)
-  Implied_FCF_2030: $21.16B (現在株価を正当化するために必要な5年後FCF)
+  Implied_FCF_2030: $21.70B (現在株価を正当化するために必要な5年後FCF)
   Current_FCF:      $4.77B
   Required_Growth:  35%/yr (現在FCFから必要成長率を逆算)
+FCF_TTM_End: 2026-05-01 (FCF/RICE算出に用いたTTM期末日)
 FCF_Conversion_Rate: 0.7 (Industry: Computer Hardware)
   [FCF_Conv: Adj_NI × rate = estimated FCF. Conservative conversion from
    adjusted net income; differs from OCF→FCF conversion rate.]
@@ -103,6 +109,11 @@ Growth_Option_PV: $0
 Equity_Value: $52.96B (= v0 + RPO_PV + GO_PV + Net_Cash $-19.58B)
 Shares_Used: 646.1M (source: yf_implied)
 → Intrinsic_Value: $81.96 (= Equity_Value ÷ Shares_Used)
+Sensitivity_Matrix (WACC×成長期間 → IV/share):
+  WACC\Years  3yr  6yr  9yr
+  9.0%       $98.75  $100.76  $102.50
+  10.0%       $80.29  $81.96  $83.36
+  11.0%       $66.45  $67.86  $69.01
 Financial_Health:
   Net_Debt: $+19.58B (negative=net cash)
   Total_Debt: $31.16B  Cash: $11.58B  ST_Invest: $0.00B (推定ゼロ、最終確認: FY2019)
@@ -157,10 +168,11 @@ For manually configured segments: used directly as DCF growth rate G
 For unconfigured segments: TTM Revenue Growth is auto-applied,
 then adjusted via recommended_g (median of historical CAGR,
 industry benchmark, RR×ROIC)
-GROWTH-1: Decay model weight adjusted by HypeCore phase:
-  Phase1-2 (early): TTM×65% + Industry×35% (growth has room)
-  Phase3 (euphoria): TTM×50% + Industry×50% (balanced)
-  Phase4 (deflation): TTM×35% + Industry×65% (normalization accelerated)
+Decay model (TTM/CAGR>50%): fixed 50% TTM + 50% Industry benchmark.
+(GROWTH-1's HypeCore-phase-weighted variant was removed
+2026-08-26; mixing a Timing-side signal into Funda-side
+growth was a design inconsistency with no backtest evidence
+of improved accuracy. See [[LAYER1-GROWTH-HYPEPHASE-DECAY-GAP-1]])
 Next_Earnings_Date: Next quarterly earnings release
 Valuation_Gap_Analysis: Reverse DCF calculation showing
 what FCF growth rate the current market price implies.
@@ -261,8 +273,8 @@ Positive surprise historically correlates with
 short-term price appreciation (PEAD effect)
 PER_Comparison:
   Market_PER_GAAP: 902.2x
-  Adjusted_EPS_PER: 32.7x (TTM調整後EPS: $13.8061)
-  Delta: -869.5x (cheaper on adjusted basis)
+  Adjusted_EPS_PER: 33.6x (TTM調整後EPS: $13.8061)
+  Delta: -868.6x (cheaper on adjusted basis)
 Forward_Estimates:
   Next_Earnings_Date: 2026-09-02
   Next_Quarter_EPS: N/A (no analyst estimates in data)
@@ -311,9 +323,9 @@ Higher alpha in Phase1-2, lower in Phase3-4
 HYPE_Signal: Combined judgment of Matrix quadrant
 and HypeCore phase
 ERP (Equity Risk Premium, 参考表示):
-  Forward_Earnings_Yield: 4.95%  (ForwardEPS $22.36 / Price $451.50)
+  Forward_Earnings_Yield: 4.82%  (ForwardEPS $22.36 / Price $463.82)
   Risk_Free_Rate (10Y):  4.30%
-  ERP: 0.65%
+  ERP: 0.52%
   ERP_Signal: 期待やや過熱（成長期待が株価に織り込まれ始めている）
 Valuation_Multiples: Market-provided values (yfinance),
 NOT self-calculated. Distinct from TANUKI IV.
@@ -338,7 +350,7 @@ Short_Report_Target: no
 Short_Interest: 4.3%
 Institutional_Ownership: N/A (not in data source)
 Analyst_Consensus: Buy | Target: $500 median ($360-$700) | 23 analysts | vs IV: +510.0%
-Insider_Activity: Sell優勢 | 買い0件 / 売り1342件 | 直近90日
+Insider_Activity: Sell優勢 | 買い0件 / 売り1343件 | 直近90日
 Runway_Months: N/A (profitable or not in STONKS)
 Revenue_Growth_YoY: 38.6%
 Next_Earnings_Date: 2026-09-02
@@ -361,9 +373,9 @@ based on recent 4Q linear trend. Rough estimate only.
 
 [9. RISK EVENTS]
 Source: Grok web search (直近3ヶ月)
-  [high] litigation: Antitrust lawsuit
-  [high] regulatory: SEC investigation
-  [mid] earnings: Earnings warning amid 2025-2026 competition
+  [high] litigation: Antitrust lawsuit against Dell Technologies
+  [high] regulatory: SEC regulatory investigation
+  [mid] earnings: Earnings warning for 2025 and 2026
 
 ==============================================
 DISCLAIMER: This report is generated automatically

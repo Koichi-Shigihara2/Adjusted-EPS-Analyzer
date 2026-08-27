@@ -1,6 +1,7 @@
 PEP INTEGRATED INVESTMENT REPORT
-Generated: 2026-08-26T07:14:23+09:00
-Price: $142.27
+Generated: 2026-08-27T10:19:05+09:00
+Price: $142.19
+Validation_Status: PASS (品質ゲート: 全チェック通過)
 
 [1. TANUKI SCORE]
 Classification: WATCH
@@ -57,7 +58,7 @@ Positive deviation = undervalued (intrinsic > current)
 
 
 [3. TANUKI VALUATION]
-Current_Price: $142.27
+Current_Price: $142.19
 Intrinsic_Value_BASE: $44.76
 Deviation_BASE: -68.5%
 Growth_Rate_Original: 17.5% (TTM実績)
@@ -66,19 +67,24 @@ Scenarios:
 BEAR: Growth=3.1%, IV=$40.79 （推奨値ベース）
 BASE: Growth=4.4%, IV=$44.76 （推奨値ベース）
 BULL: Growth=5.3%, IV=$47.51 （推奨値ベース）
+Return_Outlook(BASE): 1年後: $46.72 (-67.1%) / 3年後: $50.91 (-64.2%) / 5年後: $55.47 (-61.0%)
+  5yr_Annualized_Return: -17.2%/yr
 TTM_YoY_Growth: 5.6%
 (DCF Base vs TTM actual: -1.2pt discount)
 Discount_Rate_Primary: 10.00% (DCF discount rate used)
 WACC_CAPM_Reference: 6.35%
+  参考①β込みWACC_IV: $124.97 (Deviation: -12.1%)
+  参考②Rf理論上限_IV: $366.95 (Deviation: +158.1%)
 Terminal_Growth_Rate: 3.0%
 Beta: 0.359
 Valuation_Gap_Analysis:
   DCF_IV:           $45 (保守的FCFベース・現在実力値)
   Market_Price:     $142
   Gap:              -68% (市場が将来成長を先取り)
-  Implied_FCF_2030: $15.82B (現在株価を正当化するために必要な5年後FCF)
+  Implied_FCF_2030: $15.81B (現在株価を正当化するために必要な5年後FCF)
   Current_FCF:      $6.38B
   Required_Growth:  20%/yr (現在FCFから必要成長率を逆算)
+FCF_TTM_End: 2026-06-13 (FCF/RICE算出に用いたTTM期末日)
 FCF_Conversion_Rate: 0.75 (Industry: Beverage_Soft)
   [FCF_Conv: Adj_NI × rate = estimated FCF. Conservative conversion from
    adjusted net income; differs from OCF→FCF conversion rate.]
@@ -95,12 +101,17 @@ DCF_Reliability: LOW ⚠️ (FCF_Conversion_Rate方式: 要注意フラグ検出
 DCF_FCF_PV: $27.34B (5yr discounted FCF sum, pre-alpha, Rm=10%)
 DCF_TV_PV:  $72.27B (terminal value present value, pre-alpha, Rm=10%)
 DCF_v0:     $99.61B (= FCF_PV + TV_PV, Rm=10% enterprise value)
-Alpha_Premium: 0.6000 (HypeCore expectation premium; Rm basis)
+Alpha_Premium: 0.6000 (HypeCore expectation premium; Rm basis) [CAPPED: セクター別上限到達]
 RPO_PV: $0
 Growth_Option_PV: $0
 Equity_Value: $61.15B (= v0 + RPO_PV + GO_PV + Net_Cash $-38.47B)
 Shares_Used: 1366.0M (source: yf_implied)
 → Intrinsic_Value: $44.76 (= Equity_Value ÷ Shares_Used)
+Sensitivity_Matrix (WACC×成長期間 → IV/share):
+  WACC\Years  3yr  5yr  7yr
+  9.0%       $55.15  $57.00  $58.70
+  10.0%       $43.22  $44.76  $46.15
+  11.0%       $34.28  $35.59  $36.74
 Financial_Health:
   Net_Debt: $+38.47B (negative=net cash)
   Total_Debt: $49.18B  Cash: $10.25B  ST_Invest: $0.47B
@@ -154,10 +165,11 @@ For manually configured segments: used directly as DCF growth rate G
 For unconfigured segments: TTM Revenue Growth is auto-applied,
 then adjusted via recommended_g (median of historical CAGR,
 industry benchmark, RR×ROIC)
-GROWTH-1: Decay model weight adjusted by HypeCore phase:
-  Phase1-2 (early): TTM×65% + Industry×35% (growth has room)
-  Phase3 (euphoria): TTM×50% + Industry×50% (balanced)
-  Phase4 (deflation): TTM×35% + Industry×65% (normalization accelerated)
+Decay model (TTM/CAGR>50%): fixed 50% TTM + 50% Industry benchmark.
+(GROWTH-1's HypeCore-phase-weighted variant was removed
+2026-08-26; mixing a Timing-side signal into Funda-side
+growth was a design inconsistency with no backtest evidence
+of improved accuracy. See [[LAYER1-GROWTH-HYPEPHASE-DECAY-GAP-1]])
 Next_Earnings_Date: Next quarterly earnings release
 Valuation_Gap_Analysis: Reverse DCF calculation showing
 what FCF growth rate the current market price implies.
@@ -306,7 +318,7 @@ Higher alpha in Phase1-2, lower in Phase3-4
 HYPE_Signal: Combined judgment of Matrix quadrant
 and HypeCore phase
 ERP (Equity Risk Premium, 参考表示):
-  Forward_Earnings_Yield: 6.31%  (ForwardEPS $8.98 / Price $142.27)
+  Forward_Earnings_Yield: 6.31%  (ForwardEPS $8.98 / Price $142.19)
   Risk_Free_Rate (10Y):  4.30%
   ERP: 2.01%
   ERP_Signal: 期待中立〜やや冷却（成長期待は限定的）
@@ -356,9 +368,9 @@ based on recent 4Q linear trend. Rough estimate only.
 
 [9. RISK EVENTS]
 Source: Grok web search (直近3ヶ月)
-  [high] litigation: Ongoing antitrust lawsuit
+  [high] litigation: Antitrust lawsuit against PepsiCo
   [high] regulatory: SEC regulatory investigation
-  [mid] earnings: Earnings warning for 2025-2026 amid competition
+  [mid] earnings: Earnings warning for 2025-2026
 
 ==============================================
 DISCLAIMER: This report is generated automatically

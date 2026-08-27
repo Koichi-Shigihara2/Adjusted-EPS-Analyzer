@@ -1,14 +1,15 @@
 AVGO INTEGRATED INVESTMENT REPORT
-Generated: 2026-08-26T07:10:19+09:00
-Price: $356.74
+Generated: 2026-08-27T10:14:55+09:00
+Price: $355.59
+Validation_Status: PASS (品質ゲート: 全チェック通過)
 
 [1. TANUKI SCORE]
 Classification: WATCH
 Classification_Pre_Rounding: HOLD
 Funda_Score: 100/100
 Timing_Score (components):
-  Deviation_Rate: -48.2%
-  MA200_Deviation: -3.4%
+  Deviation_Rate: -48.0%
+  MA200_Deviation: -3.7%
   HypeCore_Phase: Phase2 (期待拡大期)
   Analyst_Consensus: Strong Buy | Target: $528 median ($216-$675) | 46 analysts | vs IV: +185.4%
 Comment: DCF信頼性LOW(FCF_Conversion_Rate方式・要注意フラグ)のためupside依存判定を抑制→WATCH
@@ -33,7 +34,7 @@ Matrix: ①投資効率系
 Quadrant: 左上
 Label: 割高×高効率
 Key_Metric_Y: RICE = 5.310
-Deviation_Rate: -48.2%
+Deviation_Rate: -48.0%
 Thresholds:
   RICE_Threshold: 3.0/1.0/0 (>=3.0=high, 1.0-3.0=medium, 0-1.0=low, <0=undefined OCF-negative)
   ROE_Threshold: 15% (above=high profitability)
@@ -57,20 +58,25 @@ Positive deviation = undervalued (intrinsic > current)
 
 
 [3. TANUKI VALUATION]
-Current_Price: $356.74
+Current_Price: $355.59
 Intrinsic_Value_BASE: $184.81
-Deviation_BASE: -48.2%
+Deviation_BASE: -48.0%
 Scenarios:
-BEAR: Growth=12.6%, IV=$135.81, Deviation=-61.9%
-BASE: Growth=17.9%, IV=$184.81, Deviation=-48.2%
-BULL: Growth=21.5%, IV=$225.32, Deviation=-36.8%
+BEAR: Growth=12.6%, IV=$135.81, Deviation=-61.8%
+BASE: Growth=17.9%, IV=$184.81, Deviation=-48.0%
+BULL: Growth=21.5%, IV=$225.32, Deviation=-36.6%
+Return_Outlook(BASE): 1年後: $217.98 (-38.7%) / 3年後: $303.26 (-14.7%) / 5年後: $421.91 (+18.7%)
+  5yr_Annualized_Return: +3.5%/yr
 Growth_Rate_Rec: 15.7% (recommended)
 TTM_YoY_Growth: 32.3%
 (DCF Base vs TTM actual: -14.4pt discount)
 Discount_Rate_Primary: 10.00% (DCF discount rate used)
 WACC_CAPM_Reference: 12.70%
+  参考①β込みWACC_IV: $122.17 (Deviation: -65.6%)
+  参考②Rf理論上限_IV: $1,740.28 (Deviation: +389.4%)
 Terminal_Growth_Rate: 3.5%
 Beta: 1.473
+FCF_TTM_End: 2026-05-03 (FCF/RICE算出に用いたTTM期末日)
 FCF_Conversion_Rate: 0.7 (Industry: Semiconductors)
   [FCF_Conv: Adj_NI × rate = estimated FCF. Conservative conversion from
    adjusted net income; differs from OCF→FCF conversion rate.]
@@ -88,12 +94,17 @@ DCF_Reliability: LOW ⚠️ (FCF_Conversion_Rate方式: 要注意フラグ検出
 DCF_FCF_PV: $244.76B (7yr discounted FCF sum, pre-alpha, Rm=10%)
 DCF_TV_PV:  $679.77B (terminal value present value, pre-alpha, Rm=10%)
 DCF_v0:     $924.53B (= FCF_PV + TV_PV, Rm=10% enterprise value)
-Alpha_Premium: 0.8000 (HypeCore expectation premium; Rm basis)
+Alpha_Premium: 0.8000 (HypeCore expectation premium; Rm basis) [CAPPED: セクター別上限到達]
 RPO_PV: $0
 Growth_Option_PV: $0
 Equity_Value: $879.25B (= v0 + RPO_PV + GO_PV + Net_Cash $-45.28B)
 Shares_Used: 4757.6M (source: yf_implied)
 → Intrinsic_Value: $184.81 (= Equity_Value ÷ Shares_Used)
+Sensitivity_Matrix (WACC×成長期間 → IV/share):
+  WACC\Years  4yr  7yr  10yr
+  9.0%       $159.47  $224.00  $305.75
+  10.0%       $132.68  $184.81  $249.08
+  11.0%       $113.05  $156.21  $208.01
 Financial_Health:
   Net_Debt: $+45.28B (negative=net cash)
   Total_Debt: $64.91B  Cash: $19.63B
@@ -150,10 +161,11 @@ For manually configured segments: used directly as DCF growth rate G
 For unconfigured segments: TTM Revenue Growth is auto-applied,
 then adjusted via recommended_g (median of historical CAGR,
 industry benchmark, RR×ROIC)
-GROWTH-1: Decay model weight adjusted by HypeCore phase:
-  Phase1-2 (early): TTM×65% + Industry×35% (growth has room)
-  Phase3 (euphoria): TTM×50% + Industry×50% (balanced)
-  Phase4 (deflation): TTM×35% + Industry×65% (normalization accelerated)
+Decay model (TTM/CAGR>50%): fixed 50% TTM + 50% Industry benchmark.
+(GROWTH-1's HypeCore-phase-weighted variant was removed
+2026-08-26; mixing a Timing-side signal into Funda-side
+growth was a design inconsistency with no backtest evidence
+of improved accuracy. See [[LAYER1-GROWTH-HYPEPHASE-DECAY-GAP-1]])
 Next_Earnings_Date: Next quarterly earnings release
 Valuation_Gap_Analysis: Reverse DCF calculation showing
 what FCF growth rate the current market price implies.
@@ -254,8 +266,8 @@ Positive surprise historically correlates with
 short-term price appreciation (PEAD effect)
 PER_Comparison:
   Market_PER_GAAP: 61.3x
-  Adjusted_EPS_PER: 38.4x (TTM調整後EPS: $9.2891)
-  Delta: -22.9x (cheaper on adjusted basis)
+  Adjusted_EPS_PER: 38.3x (TTM調整後EPS: $9.2891)
+  Delta: -23.0x (cheaper on adjusted basis)
 Forward_Estimates:
   Next_Earnings_Date: 2026-09-03
   Next_Quarter_EPS: N/A (no analyst estimates in data)
@@ -304,9 +316,9 @@ Higher alpha in Phase1-2, lower in Phase3-4
 HYPE_Signal: Combined judgment of Matrix quadrant
 and HypeCore phase
 ERP (Equity Risk Premium, 参考表示):
-  Forward_Earnings_Yield: 5.47%  (ForwardEPS $19.50 / Price $356.74)
+  Forward_Earnings_Yield: 5.49%  (ForwardEPS $19.50 / Price $355.59)
   Risk_Free_Rate (10Y):  4.30%
-  ERP: 1.17%
+  ERP: 1.19%
   ERP_Signal: 期待やや過熱（成長期待が株価に織り込まれ始めている）
 Valuation_Multiples: Market-provided values (yfinance),
 NOT self-calculated. Distinct from TANUKI IV.
@@ -354,9 +366,9 @@ based on recent 4Q linear trend. Rough estimate only.
 
 [9. RISK EVENTS]
 Source: Grok web search (直近3ヶ月)
-  [high] litigation: Antitrust lawsuit against Broadcom Inc.
-  [high] regulatory: Ongoing SEC regulatory investigation
-  [mid] earnings: Earnings warning amid 2025-2026 competition risks
+  [high] litigation: Antitrust lawsuit against Broadcom
+  [high] regulatory: Ongoing SEC investigation
+  [mid] earnings: Earnings warning amid competition in 2025-2026
 
 ==============================================
 DISCLAIMER: This report is generated automatically

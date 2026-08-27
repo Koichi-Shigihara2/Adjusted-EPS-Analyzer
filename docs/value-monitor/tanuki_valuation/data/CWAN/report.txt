@@ -1,6 +1,7 @@
 CWAN INTEGRATED INVESTMENT REPORT
-Generated: 2026-08-26T08:06:06+09:00
+Generated: 2026-08-27T10:09:35+09:00
 Price: $24.56
+Validation_Status: PASS (品質ゲート: 全チェック通過)
 
 [1. TANUKI SCORE]
 Classification: WATCH
@@ -66,12 +67,17 @@ Scenarios:
 BEAR: Growth=33.3%, IV=$27.19 （推奨値ベース）
 BASE: Growth=47.6%, IV=$37.75 （推奨値ベース）
 BULL: Growth=57.1%, IV=$46.26 （推奨値ベース）
+Return_Outlook(BASE): 1年後: $55.70 (+126.8%) / 3年後: $121.29 (+393.9%) / 5年後: $264.10 (+975.3%)
+  5yr_Annualized_Return: +60.8%/yr
 TTM_YoY_Growth: 61.9%
 (DCF Base vs TTM actual: -14.3pt discount)
 Discount_Rate_Primary: 10.00% (DCF discount rate used)
 WACC_CAPM_Reference: 7.74%
+  参考①β込みWACC_IV: $61.78 (Deviation: +151.5%)
+  参考②Rf理論上限_IV: $362.37 (Deviation: +1375.4%)
 Terminal_Growth_Rate: 3.5%
 Beta: 0.604
+FCF_TTM_End: 2026-03-31 (FCF/RICE算出に用いたTTM期末日)
 FCF_Conversion_Rate: 1.61 (Industry: Software_System_SaaS)
   [FCF_Conv: Adj_NI × rate = estimated FCF. Conservative conversion from
    adjusted net income; differs from OCF→FCF conversion rate.]
@@ -95,6 +101,11 @@ Growth_Option_PV: $0
 Equity_Value: $11.27B (= v0 + RPO_PV + GO_PV + Net_Cash $-0.72B)
 Shares_Used: 298.5M (source: yf_implied)
 → Intrinsic_Value: $37.75 (= Equity_Value ÷ Shares_Used)
+Sensitivity_Matrix (WACC×成長期間 → IV/share):
+  WACC\Years  3yr  6yr  9yr
+  9.0%       $29.02  $79.00  $203.00
+  10.0%       $24.00  $64.70  $162.95
+  11.0%       $20.32  $54.28  $134.06
 Financial_Health:
   Net_Debt: $+0.72B (negative=net cash)
   Total_Debt: $0.81B  Cash: $0.08B
@@ -349,9 +360,9 @@ based on recent 4Q linear trend. Rough estimate only.
 
 [9. RISK EVENTS]
 Source: Grok web search (直近3ヶ月)
-  [high] litigation: Antitrust lawsuit against Clearwater Analytics
-  [high] regulatory: Ongoing SEC regulatory investigation
-  [mid] earnings: Earnings warning amid competition risks for 2025-2026
+  [high] litigation: antitrust lawsuit against Clearwater Analytics
+  [high] regulatory: ongoing SEC investigation into company practices
+  [mid] earnings: earnings warning and competitive threats for 2025-2026
 
 ==============================================
 DISCLAIMER: This report is generated automatically

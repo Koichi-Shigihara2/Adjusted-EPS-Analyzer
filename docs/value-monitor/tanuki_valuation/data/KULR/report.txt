@@ -1,16 +1,17 @@
 KULR INTEGRATED INVESTMENT REPORT
-Generated: 2026-08-26T08:06:25+09:00
-Price: $2.72
+Generated: 2026-08-27T10:16:01+09:00
+Price: $2.67
+Validation_Status: PASS (品質ゲート: 全チェック通過)
 
 [1. TANUKI SCORE]
 Classification: PASS
 Funda_Score: 20/100
 Timing_Score (components):
-  Deviation_Rate: +97.9%
-  MA200_Deviation: -13.4%
+  Deviation_Rate: +101.6%
+  MA200_Deviation: -14.9%
   HypeCore_Phase: Phase4 (期待剥落期)
   Analyst_Consensus: None | Target: $8 median ($8-$8) | 1 analysts | vs IV: +48.6%
-Comment: 割安圏(98%)で買い余地大、FCFマイナス（投資フェーズ）、売上成長加速
+Comment: 割安圏(102%)で買い余地大、FCFマイナス（投資フェーズ）、売上成長加速
 Definition:
 
 Funda_Score: Composite score of financial health,
@@ -32,7 +33,7 @@ Matrix: ④キャッシュ創出力系
 Quadrant: 右下
 Label: 割安×低FCF
 Key_Metric_Y: FCF_Margin = -289.9%
-Deviation_Rate: +97.9%
+Deviation_Rate: +101.6%
 Thresholds:
   RICE_Threshold: 3.0/1.0/0 (>=3.0=high, 1.0-3.0=medium, 0-1.0=low, <0=undefined OCF-negative)
   ROE_Threshold: 15% (above=high profitability)
@@ -56,19 +57,23 @@ Positive deviation = undervalued (intrinsic > current)
 
 
 [3. TANUKI VALUATION]
-Current_Price: $2.72
+Current_Price: $2.67
 Intrinsic_Value_BASE: $5.38
-Deviation_BASE: +97.8%
+Deviation_BASE: +101.5%
 Growth_Rate_Original: 25.0% (TTM実績)
 Growth_Rate_Adjusted: 50.1% (推奨値・逓減モデル)
 Scenarios:
 BEAR: Growth=35.1%, IV=$4.37 （推奨値ベース）
 BASE: Growth=50.1%, IV=$5.38 （推奨値ベース）
 BULL: Growth=60.2%, IV=$6.14 （推奨値ベース）
+Return_Outlook(BASE): 1年後: $8.08 (+202.6%) / 3年後: $18.21 (+582.0%) / 5年後: $28.15 (+954.3%)
+  5yr_Annualized_Return: +60.2%/yr
 TTM_YoY_Growth: 50.6%
 (DCF Base vs TTM actual: -0.5pt discount)
 Discount_Rate_Primary: 10.00% (DCF discount rate used)
 WACC_CAPM_Reference: 17.55%
+  参考①β込みWACC_IV: $2.58 (Deviation: -3.3%)
+  参考②Rf理論上限_IV: $29.19 (Deviation: +993.2%)
 Terminal_Growth_Rate: 3.0%
 Beta: 2.324
 FCF_Base: $7.08M (5yr平均 + R&D補正) [実績avg: $-20.9M]
@@ -84,6 +89,11 @@ Growth_Option_PV: $0
 Equity_Value: $0.25B (= v0 + RPO_PV + GO_PV + Net_Cash $0.01B)
 Shares_Used: 46.3M (source: yf_implied)
 → Intrinsic_Value: $5.38 (= Equity_Value ÷ Shares_Used)
+Sensitivity_Matrix (WACC×成長期間 → IV/share):
+  WACC\Years  2yr  4yr  6yr
+  9.0%       $5.65  $11.07  $21.35
+  10.0%       $4.85  $9.39  $17.84
+  11.0%       $4.25  $8.13  $15.23
 DCF_FCF_Base_Detail: $7.1M (外れ値$-47M/FY2025除外後4点平均)
 DCF_FCF_Base_Excluded: FY2025=$-47M (outlier: >60% deviation from 4yr series)
 Financial_Health:
@@ -289,7 +299,7 @@ Higher alpha in Phase1-2, lower in Phase3-4
 HYPE_Signal: Combined judgment of Matrix quadrant
 and HypeCore phase
 ERP (Equity Risk Premium, 参考表示):
-  Forward_Earnings_Yield: 0.00%  (ForwardEPS $0.00 / Price $2.72)
+  Forward_Earnings_Yield: 0.00%  (ForwardEPS $0.00 / Price $2.67)
   Risk_Free_Rate (10Y):  4.30%
   ERP: -4.30%
   ERP_Signal: 期待過熱圏（市場が将来成長を過度に先取りしている）

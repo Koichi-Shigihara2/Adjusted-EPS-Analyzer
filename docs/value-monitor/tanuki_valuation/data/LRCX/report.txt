@@ -1,14 +1,15 @@
 LRCX INTEGRATED INVESTMENT REPORT
-Generated: 2026-08-26T07:15:54+09:00
-Price: $314.66
+Generated: 2026-08-27T10:20:44+09:00
+Price: $312.88
+Validation_Status: PASS (品質ゲート: 全チェック通過)
 
 [1. TANUKI SCORE]
 Classification: WATCH
 Classification_Pre_Rounding: TRIM
 Funda_Score: 100/100
 Timing_Score (components):
-  Deviation_Rate: -76.2%
-  MA200_Deviation: +23.3%
+  Deviation_Rate: -76.1%
+  MA200_Deviation: +22.3%
   HypeCore_Phase: Phase3 (陶酔期)
   Analyst_Consensus: Strong Buy | Target: $370 median ($290-$500) | 31 analysts | vs IV: +394.9%
 Comment: DCF信頼性LOW(FCF_Conversion_Rate方式・要注意フラグ)のためupside依存判定を抑制→WATCH
@@ -33,7 +34,7 @@ Matrix: ①投資効率系
 Quadrant: 左下
 Label: 割高×低効率
 Key_Metric_Y: RICE = 0.325
-Deviation_Rate: -76.2%
+Deviation_Rate: -76.1%
 Thresholds:
   RICE_Threshold: 3.0/1.0/0 (>=3.0=high, 1.0-3.0=medium, 0-1.0=low, <0=undefined OCF-negative)
   ROE_Threshold: 15% (above=high profitability)
@@ -57,28 +58,33 @@ Positive deviation = undervalued (intrinsic > current)
 
 
 [3. TANUKI VALUATION]
-Current_Price: $314.66
+Current_Price: $312.88
 Intrinsic_Value_BASE: $74.76
-Deviation_BASE: -76.2%
+Deviation_BASE: -76.1%
 Growth_Rate_Original: 15.0% (TTM実績)
 Growth_Rate_Adjusted: 4.7% (推奨値・中央値ベース)
 Scenarios:
 BEAR: Growth=3.3%, IV=$68.56 （推奨値ベース）
 BASE: Growth=4.7%, IV=$74.76 （推奨値ベース）
 BULL: Growth=5.6%, IV=$79.20 （推奨値ベース）
+Return_Outlook(BASE): 1年後: $78.26 (-75.0%) / 3年後: $85.77 (-72.6%) / 5年後: $94.00 (-70.0%)
+  5yr_Annualized_Return: -21.4%/yr
 TTM_YoY_Growth: 26.5%
 (DCF Base vs TTM actual: -21.8pt discount)
 Discount_Rate_Primary: 10.00% (DCF discount rate used)
 WACC_CAPM_Reference: 14.93%
+  参考①β込みWACC_IV: $43.65 (Deviation: -86.1%)
+  参考②Rf理論上限_IV: $406.83 (Deviation: +30.0%)
 Terminal_Growth_Rate: 3.0%
 Beta: 1.865
 Valuation_Gap_Analysis:
   DCF_IV:           $75 (保守的FCFベース・現在実力値)
-  Market_Price:     $315
+  Market_Price:     $313
   Gap:              -76% (市場が将来成長を先取り)
-  Implied_FCF_2030: $26.69B (現在株価を正当化するために必要な5年後FCF)
+  Implied_FCF_2030: $26.54B (現在株価を正当化するために必要な5年後FCF)
   Current_FCF:      $5.66B
   Required_Growth:  36%/yr (現在FCFから必要成長率を逆算)
+FCF_TTM_End: 2026-03-29 (FCF/RICE算出に用いたTTM期末日)
 FCF_Conversion_Rate: 0.7 (Industry: Semiconductor Equipment & Materials)
   [FCF_Conv: Adj_NI × rate = estimated FCF. Conservative conversion from
    adjusted net income; differs from OCF→FCF conversion rate.]
@@ -91,12 +97,17 @@ DCF_Reliability: LOW ⚠️ (FCF_Conversion_Rate方式: 要注意フラグ検出
 DCF_FCF_PV: $36.48B (8yr discounted FCF sum, pre-alpha, Rm=10%)
 DCF_TV_PV:  $56.06B (terminal value present value, pre-alpha, Rm=10%)
 DCF_v0:     $92.53B (= FCF_PV + TV_PV, Rm=10% enterprise value)
-Alpha_Premium: 0.8000 (HypeCore expectation premium; Rm basis)
+Alpha_Premium: 0.8000 (HypeCore expectation premium; Rm basis) [CAPPED: セクター別上限到達]
 RPO_PV: $0
 Growth_Option_PV: $0
 Equity_Value: $93.55B (= v0 + RPO_PV + GO_PV + Net_Cash $1.02B)
 Shares_Used: 1251.3M (source: yf_implied)
 → Intrinsic_Value: $74.76 (= Equity_Value ÷ Shares_Used)
+Sensitivity_Matrix (WACC×成長期間 → IV/share):
+  WACC\Years  4yr  8yr  12yr
+  9.0%       $83.27  $87.35  $90.82
+  10.0%       $71.43  $74.76  $77.49
+  11.0%       $62.56  $65.33  $67.53
 Financial_Health:
   Net_Debt: $-1.02B (negative=net cash)
   Total_Debt: $3.73B  Cash: $4.75B
@@ -150,10 +161,11 @@ For manually configured segments: used directly as DCF growth rate G
 For unconfigured segments: TTM Revenue Growth is auto-applied,
 then adjusted via recommended_g (median of historical CAGR,
 industry benchmark, RR×ROIC)
-GROWTH-1: Decay model weight adjusted by HypeCore phase:
-  Phase1-2 (early): TTM×65% + Industry×35% (growth has room)
-  Phase3 (euphoria): TTM×50% + Industry×50% (balanced)
-  Phase4 (deflation): TTM×35% + Industry×65% (normalization accelerated)
+Decay model (TTM/CAGR>50%): fixed 50% TTM + 50% Industry benchmark.
+(GROWTH-1's HypeCore-phase-weighted variant was removed
+2026-08-26; mixing a Timing-side signal into Funda-side
+growth was a design inconsistency with no backtest evidence
+of improved accuracy. See [[LAYER1-GROWTH-HYPEPHASE-DECAY-GAP-1]])
 Next_Earnings_Date: Next quarterly earnings release
 Valuation_Gap_Analysis: Reverse DCF calculation showing
 what FCF growth rate the current market price implies.
@@ -255,8 +267,8 @@ Positive surprise historically correlates with
 short-term price appreciation (PEAD effect)
 PER_Comparison:
   Market_PER_GAAP: 54.6x
-  Adjusted_EPS_PER: 52.4x (TTM調整後EPS: $6.0094)
-  Delta: -2.2x (cheaper on adjusted basis)
+  Adjusted_EPS_PER: 52.1x (TTM調整後EPS: $6.0094)
+  Delta: -2.5x (cheaper on adjusted basis)
 Forward_Estimates:
   Next_Earnings_Date: 2026-10-22
   Next_Quarter_EPS: N/A (no analyst estimates in data)
@@ -305,9 +317,9 @@ Higher alpha in Phase1-2, lower in Phase3-4
 HYPE_Signal: Combined judgment of Matrix quadrant
 and HypeCore phase
 ERP (Equity Risk Premium, 参考表示):
-  Forward_Earnings_Yield: 3.67%  (ForwardEPS $11.56 / Price $314.66)
+  Forward_Earnings_Yield: 3.69%  (ForwardEPS $11.56 / Price $312.88)
   Risk_Free_Rate (10Y):  4.30%
-  ERP: -0.63%
+  ERP: -0.61%
   ERP_Signal: 期待過熱圏（市場が将来成長を過度に先取りしている）
 Valuation_Multiples: Market-provided values (yfinance),
 NOT self-calculated. Distinct from TANUKI IV.
@@ -355,9 +367,9 @@ based on recent 4Q linear trend. Rough estimate only.
 
 [9. RISK EVENTS]
 Source: Grok web search (直近3ヶ月)
-  [high] litigation: Antitrust lawsuit
-  [high] regulatory: SEC investigation
-  [mid] earnings: Earnings warning amid competition 2025-2026
+  [high] litigation: Antitrust lawsuit ongoing against Lam Research
+  [high] regulatory: SEC regulatory investigation into company practices
+  [mid] earnings: Earnings warning issued for 2025-2026 period
 
 ==============================================
 DISCLAIMER: This report is generated automatically

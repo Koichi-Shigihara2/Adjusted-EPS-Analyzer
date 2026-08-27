@@ -1,14 +1,15 @@
 AAPL INTEGRATED INVESTMENT REPORT
-Generated: 2026-08-26T07:02:15+09:00
-Price: $309.90
+Generated: 2026-08-27T10:06:41+09:00
+Price: $313.45
+Validation_Status: PASS (品質ゲート: 全チェック通過)
 
 [1. TANUKI SCORE]
 Classification: WATCH
 Classification_Pre_Rounding: HOLD
 Funda_Score: 80/100
 Timing_Score (components):
-  Deviation_Rate: -59.3%
-  MA200_Deviation: +9.9%
+  Deviation_Rate: -59.8%
+  MA200_Deviation: +11.1%
   HypeCore_Phase: Phase2 (期待拡大期)
   Analyst_Consensus: Buy | Target: $335 median ($215-$400) | 39 analysts | vs IV: +165.6%
 Comment: DCF信頼性LOW(FCF_Conversion_Rate方式・要注意フラグ)のためupside依存判定を抑制→WATCH
@@ -33,7 +34,7 @@ Matrix: ①投資効率系
 Quadrant: 左下
 Label: 割高×低効率
 Key_Metric_Y: RICE = 0.680
-Deviation_Rate: -59.3%
+Deviation_Rate: -59.8%
 Thresholds:
   RICE_Threshold: 3.0/1.0/0 (>=3.0=high, 1.0-3.0=medium, 0-1.0=low, <0=undefined OCF-negative)
   ROE_Threshold: 15% (above=high profitability)
@@ -57,28 +58,33 @@ Positive deviation = undervalued (intrinsic > current)
 
 
 [3. TANUKI VALUATION]
-Current_Price: $309.90
+Current_Price: $313.45
 Intrinsic_Value_BASE: $126.12
-Deviation_BASE: -59.3%
+Deviation_BASE: -59.8%
 Scenarios:
-BEAR: Growth=4.8%, IV=$106.50, Deviation=-65.6%
-BASE: Growth=7.5%, IV=$126.12, Deviation=-59.3%
-BULL: Growth=9.0%, IV=$138.54, Deviation=-55.3%
+BEAR: Growth=4.8%, IV=$106.50, Deviation=-66.0%
+BASE: Growth=7.5%, IV=$126.12, Deviation=-59.8%
+BULL: Growth=9.0%, IV=$138.54, Deviation=-55.8%
+Return_Outlook(BASE): 1年後: $135.54 (-56.8%) / 3年後: $156.55 (-50.1%) / 5年後: $180.81 (-42.3%)
+  5yr_Annualized_Return: -10.4%/yr
 Growth_Rate_Rec: 5.2% (recommended)
 FCF_Margin_Bear_Adj: FCFマージン悪化(25.8%→23.7%) BEAR補正係数=0.917
 TTM_YoY_Growth: 12.8%
 (DCF Base vs TTM actual: -5.3pt discount)
 Discount_Rate_Primary: 10.00% (DCF discount rate used)
 WACC_CAPM_Reference: 10.49%
+  参考①β込みWACC_IV: $116.82 (Deviation: -62.7%)
+  参考②Rf理論上限_IV: $1,078.58 (Deviation: +244.1%)
 Terminal_Growth_Rate: 3.5%
 Beta: 1.086
 Valuation_Gap_Analysis:
   DCF_IV:           $126 (保守的FCFベース・現在実力値)
-  Market_Price:     $310
-  Gap:              -59% (市場が将来成長を先取り)
-  Implied_FCF_2030: $284.93B (現在株価を正当化するために必要な5年後FCF)
+  Market_Price:     $313
+  Gap:              -60% (市場が将来成長を先取り)
+  Implied_FCF_2030: $288.18B (現在株価を正当化するために必要な5年後FCF)
   Current_FCF:      $90.77B
   Required_Growth:  26%/yr (現在FCFから必要成長率を逆算)
+FCF_TTM_End: 2026-03-28 (FCF/RICE算出に用いたTTM期末日)
 FCF_Conversion_Rate: 0.7 (Industry: Consumer Electronics)
   [FCF_Conv: Adj_NI × rate = estimated FCF. Conservative conversion from
    adjusted net income; differs from OCF→FCF conversion rate.]
@@ -91,12 +97,17 @@ DCF_Reliability: LOW ⚠️ (FCF_Conversion_Rate方式: 要注意フラグ検出
 DCF_FCF_PV: $654.93B (8yr discounted FCF sum, pre-alpha, Rm=10%)
 DCF_TV_PV:  $1199.90B (terminal value present value, pre-alpha, Rm=10%)
 DCF_v0:     $1854.83B (= FCF_PV + TV_PV, Rm=10% enterprise value)
-Alpha_Premium: 1.0000 (HypeCore expectation premium; Rm basis)
+Alpha_Premium: 1.0000 (HypeCore expectation premium; Rm basis) [CAPPED: セクター別上限到達]
 RPO_PV: $0
 Growth_Option_PV: $0
 Equity_Value: $1840.62B (= v0 + RPO_PV + GO_PV + Net_Cash $-14.21B)
 Shares_Used: 14594.2M (source: yf_implied)
 → Intrinsic_Value: $126.12 (= Equity_Value ÷ Shares_Used)
+Sensitivity_Matrix (WACC×成長期間 → IV/share):
+  WACC\Years  4yr  8yr  12yr
+  9.0%       $133.66  $150.27  $165.98
+  10.0%       $112.75  $126.12  $138.31
+  11.0%       $97.42  $108.45  $118.14
 Financial_Health:
   Net_Debt: $+14.21B (negative=net cash)
   Total_Debt: $82.71B  Cash: $45.57B  ST_Invest: $22.93B
@@ -156,10 +167,11 @@ For manually configured segments: used directly as DCF growth rate G
 For unconfigured segments: TTM Revenue Growth is auto-applied,
 then adjusted via recommended_g (median of historical CAGR,
 industry benchmark, RR×ROIC)
-GROWTH-1: Decay model weight adjusted by HypeCore phase:
-  Phase1-2 (early): TTM×65% + Industry×35% (growth has room)
-  Phase3 (euphoria): TTM×50% + Industry×50% (balanced)
-  Phase4 (deflation): TTM×35% + Industry×65% (normalization accelerated)
+Decay model (TTM/CAGR>50%): fixed 50% TTM + 50% Industry benchmark.
+(GROWTH-1's HypeCore-phase-weighted variant was removed
+2026-08-26; mixing a Timing-side signal into Funda-side
+growth was a design inconsistency with no backtest evidence
+of improved accuracy. See [[LAYER1-GROWTH-HYPEPHASE-DECAY-GAP-1]])
 Next_Earnings_Date: Next quarterly earnings release
 Valuation_Gap_Analysis: Reverse DCF calculation showing
 what FCF growth rate the current market price implies.
@@ -260,8 +272,8 @@ Positive surprise historically correlates with
 short-term price appreciation (PEAD effect)
 PER_Comparison:
   Market_PER_GAAP: 35.5x
-  Adjusted_EPS_PER: 32.9x (TTM調整後EPS: $9.4147)
-  Delta: -2.6x (cheaper on adjusted basis)
+  Adjusted_EPS_PER: 33.3x (TTM調整後EPS: $9.4147)
+  Delta: -2.2x (cheaper on adjusted basis)
 Forward_Estimates:
   Next_Earnings_Date: 2026-10-30
   Next_Quarter_EPS: N/A (no analyst estimates in data)
@@ -310,9 +322,9 @@ Higher alpha in Phase1-2, lower in Phase3-4
 HYPE_Signal: Combined judgment of Matrix quadrant
 and HypeCore phase
 ERP (Equity Risk Premium, 参考表示):
-  Forward_Earnings_Yield: 3.08%  (ForwardEPS $9.54 / Price $309.90)
+  Forward_Earnings_Yield: 3.04%  (ForwardEPS $9.54 / Price $313.45)
   Risk_Free_Rate (10Y):  4.30%
-  ERP: -1.22%
+  ERP: -1.26%
   ERP_Signal: 期待過熱圏（市場が将来成長を過度に先取りしている）
 Valuation_Multiples: Market-provided values (yfinance),
 NOT self-calculated. Distinct from TANUKI IV.
@@ -360,9 +372,9 @@ based on recent 4Q linear trend. Rough estimate only.
 
 [9. RISK EVENTS]
 Source: Grok web search (直近3ヶ月)
-  [high] litigation: Ongoing antitrust lawsuit
-  [mid] regulatory: SEC investigation into regulatory matters
-  [mid] earnings: Earnings warning for 2025-2026 period
+  [high] litigation: Ongoing antitrust lawsuit against Apple
+  [high] regulatory: SEC regulatory investigation into company practices
+  [mid] earnings: Earnings warning due to competition pressures in 2025-2026
 
 ==============================================
 DISCLAIMER: This report is generated automatically

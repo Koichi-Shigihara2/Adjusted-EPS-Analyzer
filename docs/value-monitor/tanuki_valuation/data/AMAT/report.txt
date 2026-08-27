@@ -1,13 +1,14 @@
 AMAT INTEGRATED INVESTMENT REPORT
-Generated: 2026-08-26T07:02:33+09:00
-Price: $480.04
+Generated: 2026-08-27T10:06:56+09:00
+Price: $479.76
+Validation_Status: PASS (品質ゲート: 全チェック通過)
 
 [1. TANUKI SCORE]
 Classification: TRIM
 Funda_Score: 80/100
 Timing_Score (components):
   Deviation_Rate: -64.8%
-  MA200_Deviation: +20.6%
+  MA200_Deviation: +20.2%
   HypeCore_Phase: Phase3 (陶酔期)
   Analyst_Consensus: Strong Buy | Target: $650 median ($358-$900) | 35 analysts | vs IV: +284.7%
 Comment: 割高(-65%超)、FCF黒字、売上安定成長
@@ -56,39 +57,49 @@ Positive deviation = undervalued (intrinsic > current)
 
 
 [3. TANUKI VALUATION]
-Current_Price: $480.04
+Current_Price: $479.76
 Intrinsic_Value_BASE: $168.97
 Deviation_BASE: -64.8%
 Scenarios:
 BEAR: Growth=4.1%, IV=$137.68, Deviation=-71.3%
 BASE: Growth=7.4%, IV=$168.97, Deviation=-64.8%
-BULL: Growth=8.8%, IV=$185.01, Deviation=-61.5%
+BULL: Growth=8.8%, IV=$185.01, Deviation=-61.4%
+Return_Outlook(BASE): 1年後: $181.41 (-62.2%) / 3年後: $209.09 (-56.4%) / 5年後: $241.00 (-49.8%)
+  5yr_Annualized_Return: -12.9%/yr
 Growth_Rate_Rec: 9.3% (recommended)
 FCF_Margin_Bear_Adj: FCFマージン悪化(25.6%→20.1%) BEAR補正係数=0.786
 TTM_YoY_Growth: 3.3%
 (DCF Base vs TTM actual: +4.1pt premium)
 Discount_Rate_Primary: 10.00% (DCF discount rate used)
 WACC_CAPM_Reference: 13.52%
+  参考①β込みWACC_IV: $108.08 (Deviation: -77.5%)
+  参考②Rf理論上限_IV: $1,416.77 (Deviation: +195.3%)
 Terminal_Growth_Rate: 3.5%
 Beta: 1.618
 Valuation_Gap_Analysis:
   DCF_IV:           $169 (保守的FCFベース・現在実力値)
   Market_Price:     $480
   Gap:              -65% (市場が将来成長を先取り)
-  Implied_FCF_2030: $23.82B (現在株価を正当化するために必要な5年後FCF)
+  Implied_FCF_2030: $23.81B (現在株価を正当化するために必要な5年後FCF)
   Current_FCF:      $6.52B
   Required_Growth:  30%/yr (現在FCFから必要成長率を逆算)
+FCF_TTM_End: 2026-04-26 (FCF/RICE算出に用いたTTM期末日)
 FCF_Base: $6,522.67M (4yr平均 + R&D補正)
 DCF_Reliability: HIGH  (FCF実績プラス: 通常判定適用)
 DCF_FCF_PV: $46.85B (8yr discounted FCF sum, pre-alpha, Rm=10%)
 DCF_TV_PV:  $85.52B (terminal value present value, pre-alpha, Rm=10%)
 DCF_v0:     $132.37B (= FCF_PV + TV_PV, Rm=10% enterprise value)
-Alpha_Premium: 0.8000 (HypeCore expectation premium; Rm basis)
+Alpha_Premium: 0.8000 (HypeCore expectation premium; Rm basis) [CAPPED: セクター別上限到達]
 RPO_PV: $0
 Growth_Option_PV: $0
 Equity_Value: $134.15B (= v0 + RPO_PV + GO_PV + Net_Cash $1.79B)
 Shares_Used: 794.0M (source: yf_implied)
 → Intrinsic_Value: $168.97 (= Equity_Value ÷ Shares_Used)
+Sensitivity_Matrix (WACC×成長期間 → IV/share):
+  WACC\Years  4yr  8yr  12yr
+  9.0%       $179.40  $200.62  $220.59
+  10.0%       $151.89  $168.97  $184.47
+  11.0%       $131.72  $145.81  $158.14
 Financial_Health:
   Net_Debt: $-1.79B (negative=net cash)
   Total_Debt: $6.46B  Cash: $6.30B  ST_Invest: $1.94B
@@ -146,10 +157,11 @@ For manually configured segments: used directly as DCF growth rate G
 For unconfigured segments: TTM Revenue Growth is auto-applied,
 then adjusted via recommended_g (median of historical CAGR,
 industry benchmark, RR×ROIC)
-GROWTH-1: Decay model weight adjusted by HypeCore phase:
-  Phase1-2 (early): TTM×65% + Industry×35% (growth has room)
-  Phase3 (euphoria): TTM×50% + Industry×50% (balanced)
-  Phase4 (deflation): TTM×35% + Industry×65% (normalization accelerated)
+Decay model (TTM/CAGR>50%): fixed 50% TTM + 50% Industry benchmark.
+(GROWTH-1's HypeCore-phase-weighted variant was removed
+2026-08-26; mixing a Timing-side signal into Funda-side
+growth was a design inconsistency with no backtest evidence
+of improved accuracy. See [[LAYER1-GROWTH-HYPEPHASE-DECAY-GAP-1]])
 Next_Earnings_Date: Next quarterly earnings release
 Valuation_Gap_Analysis: Reverse DCF calculation showing
 what FCF growth rate the current market price implies.
@@ -299,7 +311,7 @@ Higher alpha in Phase1-2, lower in Phase3-4
 HYPE_Signal: Combined judgment of Matrix quadrant
 and HypeCore phase
 ERP (Equity Risk Premium, 参考表示):
-  Forward_Earnings_Yield: 3.82%  (ForwardEPS $18.34 / Price $480.04)
+  Forward_Earnings_Yield: 3.82%  (ForwardEPS $18.34 / Price $479.76)
   Risk_Free_Rate (10Y):  4.30%
   ERP: -0.48%
   ERP_Signal: 期待過熱圏（市場が将来成長を過度に先取りしている）
@@ -326,7 +338,7 @@ Short_Report_Target: no
 Short_Interest: 2.1%
 Institutional_Ownership: N/A (not in data source)
 Analyst_Consensus: Strong Buy | Target: $650 median ($358-$900) | 35 analysts | vs IV: +284.7%
-Insider_Activity: Sell優勢 | 買い0件 / 売り33件 | 直近90日
+Insider_Activity: Sell優勢 | 買い0件 / 売り32件 | 直近90日
 Runway_Months: N/A (profitable or not in STONKS)
 Revenue_Growth_YoY: 3.3%
 Next_Earnings_Date: 2026-11-13
@@ -349,9 +361,9 @@ based on recent 4Q linear trend. Rough estimate only.
 
 [9. RISK EVENTS]
 Source: Grok web search (直近3ヶ月)
-  [high] litigation: Antitrust lawsuit ongoing against Applied Materials
-  [high] regulatory: SEC investigation into regulatory compliance
-  [mid] earnings: Earnings warning amid competition risks for 2025-2026
+  [high] litigation: Antitrust lawsuit
+  [high] regulatory: SEC investigation
+  [mid] earnings: Earnings warning amid 2025-2026 competition
 
 ==============================================
 DISCLAIMER: This report is generated automatically

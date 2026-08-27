@@ -1,14 +1,15 @@
 FCX INTEGRATED INVESTMENT REPORT
-Generated: 2026-08-26T07:11:49+09:00
-Price: $79.91
+Generated: 2026-08-27T10:16:23+09:00
+Price: $79.00
+Validation_Status: PASS (品質ゲート: 全チェック通過)
 
 [1. TANUKI SCORE]
 Classification: WATCH
 Classification_Pre_Rounding: TRIM
 Funda_Score: 55/100
 Timing_Score (components):
-  Deviation_Rate: -85.6%
-  MA200_Deviation: +34.2%
+  Deviation_Rate: -85.4%
+  MA200_Deviation: +32.2%
   HypeCore_Phase: Phase3 (陶酔期)
   Analyst_Consensus: Buy | Target: $75 median ($30-$82) | 22 analysts | vs IV: +552.1%
 Comment: DCF信頼性LOW(FCF_Base方式・外れ値未説明)のためupside依存判定を抑制→WATCH
@@ -33,7 +34,7 @@ Matrix: ①投資効率系
 Quadrant: 左下
 Label: 割高×低効率
 Key_Metric_Y: RICE = 0.687
-Deviation_Rate: -85.6%
+Deviation_Rate: -85.4%
 Thresholds:
   RICE_Threshold: 3.0/1.0/0 (>=3.0=high, 1.0-3.0=medium, 0-1.0=low, <0=undefined OCF-negative)
   ROE_Threshold: 15% (above=high profitability)
@@ -57,27 +58,32 @@ Positive deviation = undervalued (intrinsic > current)
 
 
 [3. TANUKI VALUATION]
-Current_Price: $79.91
+Current_Price: $79.00
 Intrinsic_Value_BASE: $11.50
-Deviation_BASE: -85.6%
+Deviation_BASE: -85.4%
 Scenarios:
-BEAR: Growth=4.5%, IV=$10.31, Deviation=-87.1%
-BASE: Growth=6.4%, IV=$11.50, Deviation=-85.6%
-BULL: Growth=7.6%, IV=$12.34, Deviation=-84.6%
+BEAR: Growth=4.5%, IV=$10.31, Deviation=-86.9%
+BASE: Growth=6.4%, IV=$11.50, Deviation=-85.4%
+BULL: Growth=7.6%, IV=$12.34, Deviation=-84.4%
+Return_Outlook(BASE): 1年後: $12.23 (-84.5%) / 3年後: $13.84 (-82.5%) / 5年後: $15.65 (-80.2%)
+  5yr_Annualized_Return: -27.7%/yr
 Growth_Rate_Rec: 9.0% (recommended)
 TTM_YoY_Growth: 6.3%
 (DCF Base vs TTM actual: +0.1pt premium)
 Discount_Rate_Primary: 10.00% (DCF discount rate used)
 WACC_CAPM_Reference: 12.16%
+  参考①β込みWACC_IV: $7.80 (Deviation: -90.1%)
+  参考②Rf理論上限_IV: $80.49 (Deviation: +1.9%)
 Terminal_Growth_Rate: 3.0%
 Beta: 1.379
 Valuation_Gap_Analysis:
   DCF_IV:           $12 (保守的FCFベース・現在実力値)
-  Market_Price:     $80
-  Gap:              -86% (市場が将来成長を先取り)
-  Implied_FCF_2030: $8.18B (現在株価を正当化するために必要な5年後FCF)
+  Market_Price:     $79
+  Gap:              -85% (市場が将来成長を先取り)
+  Implied_FCF_2030: $8.10B (現在株価を正当化するために必要な5年後FCF)
   Current_FCF:      $1.31B
   Required_Growth:  44%/yr (現在FCFから必要成長率を逆算)
+FCF_TTM_End: 2026-03-31 (FCF/RICE算出に用いたTTM期末日)
 FCF_Base: $1,308.50M (4yr平均)
 DCF_Reliability: LOW ⚠️ (FCF_Base方式: 要注意フラグ検出, IV参考値)
   [Policy B: LOW時はBUY/TRIM/HOLD/WATCHをWATCHへ丸め。SELL/PASSは維持。
@@ -92,6 +98,11 @@ Growth_Option_PV: $0
 Equity_Value: $16.52B (= v0 + RPO_PV + GO_PV + Net_Cash $-5.68B)
 Shares_Used: 1436.0M (source: yf_implied)
 → Intrinsic_Value: $11.50 (= Equity_Value ÷ Shares_Used)
+Sensitivity_Matrix (WACC×成長期間 → IV/share):
+  WACC\Years  3yr  5yr  7yr
+  9.0%       $13.18  $14.12  $15.01
+  10.0%       $10.72  $11.50  $12.23
+  11.0%       $8.88  $9.54  $10.14
 Financial_Health:
   Net_Debt: $+5.68B (negative=net cash)
   Total_Debt: $9.41B  Cash: $3.74B
@@ -149,10 +160,11 @@ For manually configured segments: used directly as DCF growth rate G
 For unconfigured segments: TTM Revenue Growth is auto-applied,
 then adjusted via recommended_g (median of historical CAGR,
 industry benchmark, RR×ROIC)
-GROWTH-1: Decay model weight adjusted by HypeCore phase:
-  Phase1-2 (early): TTM×65% + Industry×35% (growth has room)
-  Phase3 (euphoria): TTM×50% + Industry×50% (balanced)
-  Phase4 (deflation): TTM×35% + Industry×65% (normalization accelerated)
+Decay model (TTM/CAGR>50%): fixed 50% TTM + 50% Industry benchmark.
+(GROWTH-1's HypeCore-phase-weighted variant was removed
+2026-08-26; mixing a Timing-side signal into Funda-side
+growth was a design inconsistency with no backtest evidence
+of improved accuracy. See [[LAYER1-GROWTH-HYPEPHASE-DECAY-GAP-1]])
 Next_Earnings_Date: Next quarterly earnings release
 Valuation_Gap_Analysis: Reverse DCF calculation showing
 what FCF growth rate the current market price implies.
@@ -299,9 +311,9 @@ Higher alpha in Phase1-2, lower in Phase3-4
 HYPE_Signal: Combined judgment of Matrix quadrant
 and HypeCore phase
 ERP (Equity Risk Premium, 参考表示):
-  Forward_Earnings_Yield: 5.16%  (ForwardEPS $4.12 / Price $79.91)
+  Forward_Earnings_Yield: 5.22%  (ForwardEPS $4.12 / Price $79.00)
   Risk_Free_Rate (10Y):  4.30%
-  ERP: 0.86%
+  ERP: 0.92%
   ERP_Signal: 期待やや過熱（成長期待が株価に織り込まれ始めている）
 Valuation_Multiples: Market-provided values (yfinance),
 NOT self-calculated. Distinct from TANUKI IV.
@@ -326,7 +338,7 @@ Short_Report_Target: no
 Short_Interest: 2.0%
 Institutional_Ownership: N/A (not in data source)
 Analyst_Consensus: Buy | Target: $75 median ($30-$82) | 22 analysts | vs IV: +552.1%
-Insider_Activity: Sell優勢 | 買い0件 / 売り3件 | 直近90日
+Insider_Activity: Sell優勢 | 買い0件 / 売り4件 | 直近90日
 Runway_Months: N/A (profitable or not in STONKS)
 Revenue_Growth_YoY: 6.3%
 Next_Earnings_Date: 2026-10-22
@@ -349,9 +361,9 @@ based on recent 4Q linear trend. Rough estimate only.
 
 [9. RISK EVENTS]
 Source: Grok web search (直近3ヶ月)
-  [high] litigation: Antitrust lawsuit against FCX
-  [high] regulatory: Ongoing SEC investigation
-  [mid] earnings: Earnings warning amid 2025-2026 competition
+  [high] litigation: Antitrust lawsuit
+  [high] regulatory: SEC investigation
+  [mid] earnings: Earnings warning amid competition 2025-2026
 
 ==============================================
 DISCLAIMER: This report is generated automatically

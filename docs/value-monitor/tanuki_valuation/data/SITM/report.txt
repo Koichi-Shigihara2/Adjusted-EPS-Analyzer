@@ -1,14 +1,15 @@
 SITM INTEGRATED INVESTMENT REPORT
-Generated: 2026-08-26T08:07:23+09:00
-Price: $594.10
+Generated: 2026-08-27T10:13:54+09:00
+Price: $596.97
+Validation_Status: PASS (品質ゲート: 全チェック通過)
 
 [1. TANUKI SCORE]
 Classification: WATCH
 Classification_Pre_Rounding: TRIM
 Funda_Score: 100/100
 Timing_Score (components):
-  Deviation_Rate: -85.8%
-  MA200_Deviation: +21.5%
+  Deviation_Rate: -85.9%
+  MA200_Deviation: +21.7%
   HypeCore_Phase: Phase3 (陶酔期)
   Analyst_Consensus: Strong Buy | Target: $850 median ($800-$900) | 9 analysts | vs IV: +910.9%
 Comment: DCF信頼性LOW(FCF_Conversion_Rate方式・要注意フラグ)のためupside依存判定を抑制→WATCH
@@ -33,7 +34,7 @@ Matrix: ④キャッシュ創出力系
 Quadrant: 左下
 Label: 割高×低FCF
 Key_Metric_Y: FCF_Margin = 10.8%
-Deviation_Rate: -85.8%
+Deviation_Rate: -85.9%
 Thresholds:
   RICE_Threshold: 3.0/1.0/0 (>=3.0=high, 1.0-3.0=medium, 0-1.0=low, <0=undefined OCF-negative)
   ROE_Threshold: 15% (above=high profitability)
@@ -57,28 +58,33 @@ Positive deviation = undervalued (intrinsic > current)
 
 
 [3. TANUKI VALUATION]
-Current_Price: $594.10
+Current_Price: $596.97
 Intrinsic_Value_BASE: $84.09
-Deviation_BASE: -85.8%
+Deviation_BASE: -85.9%
 Growth_Rate_Original: 65.2% (TTM実績)
 Growth_Rate_Adjusted: 37.4% (推奨値・逓減モデル)
 Scenarios:
 BEAR: Growth=26.2%, IV=$67.93 （推奨値ベース）
 BASE: Growth=37.4%, IV=$84.09 （推奨値ベース）
 BULL: Growth=44.9%, IV=$96.27 （推奨値ベース）
+Return_Outlook(BASE): 1年後: $115.54 (-80.6%) / 3年後: $218.12 (-63.5%) / 5年後: $411.77 (-31.0%)
+  5yr_Annualized_Return: -7.2%/yr
 TTM_YoY_Growth: 61.2%
 (DCF Base vs TTM actual: -23.8pt discount)
 Discount_Rate_Primary: 10.00% (DCF discount rate used)
 WACC_CAPM_Reference: 18.55%
+  参考①β込みWACC_IV: $34.18 (Deviation: -94.3%)
+  参考②Rf理論上限_IV: $716.84 (Deviation: +20.1%)
 Terminal_Growth_Rate: 3.5%
 Beta: 2.5
 Valuation_Gap_Analysis:
   DCF_IV:           $84 (保守的FCFベース・現在実力値)
-  Market_Price:     $594
+  Market_Price:     $597
   Gap:              -86% (市場が将来成長を先取り)
-  Implied_FCF_2030: $1.07B (現在株価を正当化するために必要な5年後FCF)
+  Implied_FCF_2030: $1.08B (現在株価を正当化するために必要な5年後FCF)
   Current_FCF:      $0.07B
-  Required_Growth:  72%/yr (現在FCFから必要成長率を逆算)
+  Required_Growth:  73%/yr (現在FCFから必要成長率を逆算)
+FCF_TTM_End: 2026-03-31 (FCF/RICE算出に用いたTTM期末日)
 FCF_Conversion_Rate: 0.85 (Industry: Semiconductor)
   [FCF_Conv: Adj_NI × rate = estimated FCF. Conservative conversion from
    adjusted net income; differs from OCF→FCF conversion rate.]
@@ -105,6 +111,11 @@ Growth_Option_PV: $0
 Equity_Value: $2.53B (= v0 + RPO_PV + GO_PV)
 Shares_Used: 30.1M (source: yf_implied)
 → Intrinsic_Value: $84.09 (= Equity_Value ÷ Shares_Used)
+Sensitivity_Matrix (WACC×成長期間 → IV/share):
+  WACC\Years  3yr  5yr  7yr
+  9.0%       $99.73  $165.14  $269.08
+  10.0%       $83.89  $137.48  $221.07
+  11.0%       $72.29  $117.26  $186.16
 Financial_Health:
   Net_Debt: $-0.79B (negative=net cash)
   Total_Debt: $0.00B  Cash: $0.00B  ST_Invest: $0.79B
@@ -262,8 +273,8 @@ Positive surprise historically correlates with
 short-term price appreciation (PEAD effect)
 PER_Comparison:
   Market_PER_GAAP: 991.7x
-  Adjusted_EPS_PER: 134.0x (TTM調整後EPS: $4.4332)
-  Delta: -857.7x (cheaper on adjusted basis)
+  Adjusted_EPS_PER: 134.7x (TTM調整後EPS: $4.4332)
+  Delta: -857.0x (cheaper on adjusted basis)
 Forward_Estimates:
   Next_Earnings_Date: 2026-11-05
   Next_Quarter_EPS: N/A (no analyst estimates in data)
@@ -312,9 +323,9 @@ Higher alpha in Phase1-2, lower in Phase3-4
 HYPE_Signal: Combined judgment of Matrix quadrant
 and HypeCore phase
 ERP (Equity Risk Premium, 参考表示):
-  Forward_Earnings_Yield: 2.51%  (ForwardEPS $14.92 / Price $594.10)
+  Forward_Earnings_Yield: 2.50%  (ForwardEPS $14.92 / Price $596.97)
   Risk_Free_Rate (10Y):  4.30%
-  ERP: -1.79%
+  ERP: -1.80%
   ERP_Signal: 期待過熱圏（市場が将来成長を過度に先取りしている）
 Valuation_Multiples: Market-provided values (yfinance),
 NOT self-calculated. Distinct from TANUKI IV.
@@ -362,7 +373,7 @@ based on recent 4Q linear trend. Rough estimate only.
 
 [9. RISK EVENTS]
 Source: Grok web search (直近3ヶ月)
-  [high] litigation: Antitrust lawsuit
+  [high] litigation: Antitrust lawsuit against SITIME Corp
   [high] regulatory: SEC regulatory investigation
   [mid] earnings: Earnings warning for 2025-2026
 

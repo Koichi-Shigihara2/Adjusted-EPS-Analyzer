@@ -1,16 +1,17 @@
 TASK INTEGRATED INVESTMENT REPORT
-Generated: 2026-08-26T07:12:43+09:00
-Price: $7.96
+Generated: 2026-08-27T10:17:21+09:00
+Price: $7.75
+Validation_Status: PASS (品質ゲート: 全チェック通過)
 
 [1. TANUKI SCORE]
 Classification: BUY
 Funda_Score: 55/100
 Timing_Score (components):
-  Deviation_Rate: +72.5%
-  MA200_Deviation: -7.2%
+  Deviation_Rate: +77.2%
+  MA200_Deviation: -9.4%
   HypeCore_Phase: Phase4 (期待剥落期)
   Analyst_Consensus: Hold | Target: $8 median ($7-$12) | 6 analysts | vs IV: -41.7%
-Comment: 割安圏(72%)で買い余地大、FCF黒字、売上安定成長
+Comment: 割安圏(77%)で買い余地大、FCF黒字、売上安定成長
 Definition:
 
 Funda_Score: Composite score of financial health,
@@ -32,7 +33,7 @@ Matrix: ①投資効率系
 Quadrant: 右上
 Label: 割安×高効率
 Key_Metric_Y: RICE = 4.006
-Deviation_Rate: +72.5%
+Deviation_Rate: +77.2%
 Thresholds:
   RICE_Threshold: 3.0/1.0/0 (>=3.0=high, 1.0-3.0=medium, 0-1.0=low, <0=undefined OCF-negative)
   ROE_Threshold: 15% (above=high profitability)
@@ -56,21 +57,26 @@ Positive deviation = undervalued (intrinsic > current)
 
 
 [3. TANUKI VALUATION]
-Current_Price: $7.96
+Current_Price: $7.75
 Intrinsic_Value_BASE: $13.73
-Deviation_BASE: +72.5%
+Deviation_BASE: +77.2%
 Scenarios:
-BEAR: Growth=3.7%, IV=$10.83, Deviation=+36.1%
-BASE: Growth=8.0%, IV=$13.73, Deviation=+72.5%
-BULL: Growth=9.6%, IV=$14.92, Deviation=+87.4%
+BEAR: Growth=3.7%, IV=$10.83, Deviation=+39.7%
+BASE: Growth=8.0%, IV=$13.73, Deviation=+77.2%
+BULL: Growth=9.6%, IV=$14.92, Deviation=+92.5%
+Return_Outlook(BASE): 1年後: $14.83 (+91.4%) / 3年後: $17.30 (+123.2%) / 5年後: $20.17 (+160.3%)
+  5yr_Annualized_Return: +21.1%/yr
 Growth_Rate_Rec: 7.2% (recommended)
 FCF_Margin_Bear_Adj: FCFマージン悪化(9.5%→6.2%) BEAR補正係数=0.655
 TTM_YoY_Growth: 15.9%
 (DCF Base vs TTM actual: -7.9pt discount)
 Discount_Rate_Primary: 10.00% (DCF discount rate used)
 WACC_CAPM_Reference: 14.99%
+  参考①β込みWACC_IV: $6.32 (Deviation: -18.5%)
+  参考②Rf理論上限_IV: $92.18 (Deviation: +1089.4%)
 Terminal_Growth_Rate: 3.0%
 Beta: 1.876
+FCF_TTM_End: 2026-03-31 (FCF/RICE算出に用いたTTM期末日)
 FCF_Base: $88.02M (直近1yr（CAGR減少）)
 DCF_Reliability: HIGH  (FCF実績プラス: 通常判定適用)
 DCF_FCF_PV: $0.42B (5yr discounted FCF sum, pre-alpha, Rm=10%)
@@ -82,6 +88,11 @@ Growth_Option_PV: $0
 Equity_Value: $1.26B (= v0 + RPO_PV + GO_PV + Net_Cash $-0.34B)
 Shares_Used: 91.7M (source: yf_implied)
 → Intrinsic_Value: $13.73 (= Equity_Value ÷ Shares_Used)
+Sensitivity_Matrix (WACC×成長期間 → IV/share):
+  WACC\Years  3yr  5yr  7yr
+  9.0%       $15.16  $16.71  $18.23
+  10.0%       $12.44  $13.73  $14.97
+  11.0%       $10.41  $11.50  $12.53
 Financial_Health:
   Net_Debt: $+0.34B (negative=net cash)
   Total_Debt: $0.49B  Cash: $0.15B
@@ -137,10 +148,11 @@ For manually configured segments: used directly as DCF growth rate G
 For unconfigured segments: TTM Revenue Growth is auto-applied,
 then adjusted via recommended_g (median of historical CAGR,
 industry benchmark, RR×ROIC)
-GROWTH-1: Decay model weight adjusted by HypeCore phase:
-  Phase1-2 (early): TTM×65% + Industry×35% (growth has room)
-  Phase3 (euphoria): TTM×50% + Industry×50% (balanced)
-  Phase4 (deflation): TTM×35% + Industry×65% (normalization accelerated)
+Decay model (TTM/CAGR>50%): fixed 50% TTM + 50% Industry benchmark.
+(GROWTH-1's HypeCore-phase-weighted variant was removed
+2026-08-26; mixing a Timing-side signal into Funda-side
+growth was a design inconsistency with no backtest evidence
+of improved accuracy. See [[LAYER1-GROWTH-HYPEPHASE-DECAY-GAP-1]])
 Next_Earnings_Date: Next quarterly earnings release
 Valuation_Gap_Analysis: Reverse DCF calculation showing
 what FCF growth rate the current market price implies.
@@ -240,8 +252,8 @@ Positive surprise historically correlates with
 short-term price appreciation (PEAD effect)
 PER_Comparison:
   Market_PER_GAAP: 6.9x
-  Adjusted_EPS_PER: 5.3x (TTM調整後EPS: $1.5019)
-  Delta: -1.6x (cheaper on adjusted basis)
+  Adjusted_EPS_PER: 5.2x (TTM調整後EPS: $1.5019)
+  Delta: -1.7x (cheaper on adjusted basis)
 Forward_Estimates:
   Next_Earnings_Date: 2026-11-06
   Next_Quarter_EPS: N/A (no analyst estimates in data)
@@ -289,9 +301,9 @@ Higher alpha in Phase1-2, lower in Phase3-4
 HYPE_Signal: Combined judgment of Matrix quadrant
 and HypeCore phase
 ERP (Equity Risk Premium, 参考表示):
-  Forward_Earnings_Yield: 18.61%  (ForwardEPS $1.48 / Price $7.96)
+  Forward_Earnings_Yield: 19.11%  (ForwardEPS $1.48 / Price $7.75)
   Risk_Free_Rate (10Y):  4.30%
-  ERP: 14.31%
+  ERP: 14.81%
   ERP_Signal: 期待冷却圏（成長期待が市場に織り込まれていない）
 Valuation_Multiples: Market-provided values (yfinance),
 NOT self-calculated. Distinct from TANUKI IV.
@@ -340,8 +352,8 @@ based on recent 4Q linear trend. Rough estimate only.
 [9. RISK EVENTS]
 Source: Grok web search (直近3ヶ月)
   [high] litigation: Antitrust lawsuit against TaskUs Inc.
-  [high] regulatory: Ongoing SEC regulatory investigation
-  [mid] earnings: Earnings warning affecting 2025 and 2026 outlook
+  [high] regulatory: Ongoing SEC investigation into TaskUs Inc.
+  [mid] earnings: Earnings warning amid competition risks for 2025-2026
 
 ==============================================
 DISCLAIMER: This report is generated automatically

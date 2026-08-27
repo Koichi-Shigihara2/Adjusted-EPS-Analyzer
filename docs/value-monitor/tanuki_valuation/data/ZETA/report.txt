@@ -1,13 +1,14 @@
 ZETA INTEGRATED INVESTMENT REPORT
-Generated: 2026-08-26T07:09:57+09:00
-Price: $27.88
+Generated: 2026-08-27T10:14:36+09:00
+Price: $28.23
+Validation_Status: PASS (品質ゲート: 全チェック通過)
 
 [1. TANUKI SCORE]
 Classification: WATCH
 Classification_Pre_Rounding: HOLD
 Funda_Score: 90/100
 Timing_Score (components):
-  Deviation_Rate: -6.2%
+  Deviation_Rate: -7.4%
   MA200_Deviation: N/A
   HypeCore_Phase: Phase3 (陶酔期)
   Analyst_Consensus: 1.53 (Buy)
@@ -33,7 +34,7 @@ Matrix: ④キャッシュ創出力系
 Quadrant: 左下
 Label: 割高×低FCF
 Key_Metric_Y: FCF_Margin = 14.2%
-Deviation_Rate: -6.2%
+Deviation_Rate: -7.4%
 Thresholds:
   RICE_Threshold: 3.0/1.0/0 (>=3.0=high, 1.0-3.0=medium, 0-1.0=low, <0=undefined OCF-negative)
   ROE_Threshold: 15% (above=high profitability)
@@ -57,21 +58,26 @@ Positive deviation = undervalued (intrinsic > current)
 
 
 [3. TANUKI VALUATION]
-Current_Price: $27.88
+Current_Price: $28.23
 Intrinsic_Value_BASE: $26.14
-Deviation_BASE: -6.2%
+Deviation_BASE: -7.4%
 Growth_Rate_Original: 33.6% (TTM実績)
 Growth_Rate_Adjusted: 29.5% (推奨値・中央値ベース)
 Scenarios:
 BEAR: Growth=20.7%, IV=$18.90 （推奨値ベース）
 BASE: Growth=29.5%, IV=$26.14 （推奨値ベース）
 BULL: Growth=35.4%, IV=$32.14 （推奨値ベース）
+Return_Outlook(BASE): 1年後: $33.85 (+19.9%) / 3年後: $56.77 (+101.1%) / 5年後: $95.22 (+237.3%)
+  5yr_Annualized_Return: +27.5%/yr
 TTM_YoY_Growth: 29.7%
 (DCF Base vs TTM actual: -0.2pt discount)
 Discount_Rate_Primary: 10.00% (DCF discount rate used)
 WACC_CAPM_Reference: 12.20%
+  参考①β込みWACC_IV: $19.07 (Deviation: -32.5%)
+  参考②Rf理論上限_IV: $227.85 (Deviation: +707.1%)
 Terminal_Growth_Rate: 3.5%
 Beta: 1.386
+FCF_TTM_End: 2026-03-31 (FCF/RICE算出に用いたTTM期末日)
 FCF_Conversion_Rate: 0.7 (Industry: Software - Infrastructure)
   [FCF_Conv: Adj_NI × rate = estimated FCF. Conservative conversion from
    adjusted net income; differs from OCF→FCF conversion rate.]
@@ -94,6 +100,11 @@ Growth_Option_PV: $0
 Equity_Value: $6.56B (= v0 + RPO_PV + GO_PV + Net_Cash $0.09B)
 Shares_Used: 251.0M (source: yf_implied)
 → Intrinsic_Value: $26.14 (= Equity_Value ÷ Shares_Used)
+Sensitivity_Matrix (WACC×成長期間 → IV/share):
+  WACC\Years  3yr  5yr  7yr
+  9.0%       $21.17  $31.24  $45.46
+  10.0%       $17.89  $26.14  $37.58
+  11.0%       $15.48  $22.40  $31.83
 Financial_Health:
   Net_Debt: $-0.09B (negative=net cash)
   Total_Debt: $0.20B  Cash: $0.29B
@@ -150,10 +161,11 @@ For manually configured segments: used directly as DCF growth rate G
 For unconfigured segments: TTM Revenue Growth is auto-applied,
 then adjusted via recommended_g (median of historical CAGR,
 industry benchmark, RR×ROIC)
-GROWTH-1: Decay model weight adjusted by HypeCore phase:
-  Phase1-2 (early): TTM×65% + Industry×35% (growth has room)
-  Phase3 (euphoria): TTM×50% + Industry×50% (balanced)
-  Phase4 (deflation): TTM×35% + Industry×65% (normalization accelerated)
+Decay model (TTM/CAGR>50%): fixed 50% TTM + 50% Industry benchmark.
+(GROWTH-1's HypeCore-phase-weighted variant was removed
+2026-08-26; mixing a Timing-side signal into Funda-side
+growth was a design inconsistency with no backtest evidence
+of improved accuracy. See [[LAYER1-GROWTH-HYPEPHASE-DECAY-GAP-1]])
 Next_Earnings_Date: Next quarterly earnings release
 Valuation_Gap_Analysis: Reverse DCF calculation showing
 what FCF growth rate the current market price implies.
@@ -250,7 +262,7 @@ Positive surprise historically correlates with
 short-term price appreciation (PEAD effect)
 PER_Comparison:
   Market_PER_GAAP: N/A
-  Adjusted_EPS_PER: 32.1x (TTM調整後EPS: $0.8690)
+  Adjusted_EPS_PER: 32.5x (TTM調整後EPS: $0.8690)
 Forward_Estimates:
   Next_Earnings_Date: 2026-11-04
   Next_Quarter_EPS: N/A (no analyst estimates in data)
@@ -345,8 +357,8 @@ based on recent 4Q linear trend. Rough estimate only.
 [9. RISK EVENTS]
 Source: Grok web search (直近3ヶ月)
   [high] litigation: Antitrust lawsuit
-  [high] regulatory: SEC investigation
-  [mid] earnings: Earnings warning for 2025 2026
+  [high] regulatory: SEC regulatory investigation
+  [mid] earnings: Earnings warning for 2025-2026
 
 ==============================================
 DISCLAIMER: This report is generated automatically

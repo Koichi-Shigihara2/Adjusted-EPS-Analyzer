@@ -1,14 +1,15 @@
 CAKE INTEGRATED INVESTMENT REPORT
-Generated: 2026-08-26T07:03:43+09:00
-Price: $113.49
+Generated: 2026-08-27T10:08:09+09:00
+Price: $115.35
+Validation_Status: PASS (品質ゲート: 全チェック通過)
 
 [1. TANUKI SCORE]
 Classification: WATCH
 Classification_Pre_Rounding: TRIM
 Funda_Score: 65/100
 Timing_Score (components):
-  Deviation_Rate: -74.2%
-  MA200_Deviation: +71.8%
+  Deviation_Rate: -74.6%
+  MA200_Deviation: +73.7%
   HypeCore_Phase: Phase3 (陶酔期)
   Analyst_Consensus: Hold | Target: $92 median ($60-$104) | 15 analysts | vs IV: +214.6%
 Comment: DCF信頼性LOW(FCF_Conversion_Rate方式・要注意フラグ)のためupside依存判定を抑制→WATCH
@@ -33,7 +34,7 @@ Matrix: ②収益性系
 Quadrant: 左下
 Label: 割高×低ROE
 Key_Metric_Y: ROE_avg (10yr) = 14.6% (outlier-adjusted)
-Deviation_Rate: -74.2%
+Deviation_Rate: -74.6%
 Thresholds:
   RICE_Threshold: 3.0/1.0/0 (>=3.0=high, 1.0-3.0=medium, 0-1.0=low, <0=undefined OCF-negative)
   ROE_Threshold: 15% (above=high profitability)
@@ -57,27 +58,32 @@ Positive deviation = undervalued (intrinsic > current)
 
 
 [3. TANUKI VALUATION]
-Current_Price: $113.49
+Current_Price: $115.35
 Intrinsic_Value_BASE: $29.24
-Deviation_BASE: -74.2%
+Deviation_BASE: -74.7%
 Scenarios:
-BEAR: Growth=3.3%, IV=$26.75, Deviation=-76.4%
-BASE: Growth=4.7%, IV=$29.24, Deviation=-74.2%
-BULL: Growth=5.6%, IV=$30.99, Deviation=-72.7%
+BEAR: Growth=3.3%, IV=$26.75, Deviation=-76.8%
+BASE: Growth=4.7%, IV=$29.24, Deviation=-74.7%
+BULL: Growth=5.6%, IV=$30.99, Deviation=-73.1%
+Return_Outlook(BASE): 1年後: $30.61 (-73.5%) / 3年後: $33.56 (-70.9%) / 5年後: $36.79 (-68.1%)
+  5yr_Annualized_Return: -20.4%/yr
 Growth_Rate_Rec: 5.6% (recommended)
 TTM_YoY_Growth: 5.1%
 (DCF Base vs TTM actual: -0.4pt discount)
 Discount_Rate_Primary: 10.00% (DCF discount rate used)
 WACC_CAPM_Reference: 10.04%
+  参考①β込みWACC_IV: $29.04 (Deviation: -74.8%)
+  参考②Rf理論上限_IV: $150.09 (Deviation: +30.1%)
 Terminal_Growth_Rate: 2.5%
 Beta: 1.007
 Valuation_Gap_Analysis:
   DCF_IV:           $29 (保守的FCFベース・現在実力値)
-  Market_Price:     $113
-  Gap:              -74% (市場が将来成長を先取り)
-  Implied_FCF_2030: $0.44B (現在株価を正当化するために必要な5年後FCF)
+  Market_Price:     $115
+  Gap:              -75% (市場が将来成長を先取り)
+  Implied_FCF_2030: $0.45B (現在株価を正当化するために必要な5年後FCF)
   Current_FCF:      $0.12B
   Required_Growth:  30%/yr (現在FCFから必要成長率を逆算)
+FCF_TTM_End: 2026-03-31 (FCF/RICE算出に用いたTTM期末日)
 FCF_Conversion_Rate: 0.7 (Industry: Restaurant_Dining)
   [FCF_Conv: Adj_NI × rate = estimated FCF. Conservative conversion from
    adjusted net income; differs from OCF→FCF conversion rate.]
@@ -93,14 +99,20 @@ DCF_Reliability: LOW ⚠️ (FCF_Conversion_Rate方式: 要注意フラグ検出
    大幅乖離（eps_invalid）のため、IVは参考値扱い。]
    [DCF-REL-SYNC-1: FCF実績が5年平均から61%乖離]
 DCF_FCF_PV: $0.91B (Ph1=$0.61B + Ph2=$0.30B, 6yr, pre-alpha, Rm=10%)
+Maturity_Profile: Phase1=4yr@0.0%, Phase2=4yr@3.0%
 DCF_TV_PV:  $0.94B (terminal value present value, pre-alpha, Rm=10%)
 DCF_v0:     $1.85B (= FCF_PV + TV_PV, Rm=10% enterprise value)
-Alpha_Premium: 0.6000 (HypeCore expectation premium; Rm basis)
+Alpha_Premium: 0.6000 (HypeCore expectation premium; Rm basis) [CAPPED: セクター別上限到達]
 RPO_PV: $0
 Growth_Option_PV: $0
 Equity_Value: $1.46B (= v0 + RPO_PV + GO_PV + Net_Cash $-0.40B)
 Shares_Used: 49.8M (source: yf_implied)
 → Intrinsic_Value: $29.24 (= Equity_Value ÷ Shares_Used)
+Sensitivity_Matrix (WACC×成長期間 → IV/share):
+  WACC\Years  3yr  6yr  9yr
+  9.0%       $33.08  $35.10  $36.88
+  10.0%       $27.57  $29.24  $30.69
+  11.0%       $23.35  $24.77  $25.96
 Financial_Health:
   Net_Debt: $+0.40B (negative=net cash)
   Total_Debt: $0.63B  Cash: $0.24B
@@ -157,10 +169,11 @@ For manually configured segments: used directly as DCF growth rate G
 For unconfigured segments: TTM Revenue Growth is auto-applied,
 then adjusted via recommended_g (median of historical CAGR,
 industry benchmark, RR×ROIC)
-GROWTH-1: Decay model weight adjusted by HypeCore phase:
-  Phase1-2 (early): TTM×65% + Industry×35% (growth has room)
-  Phase3 (euphoria): TTM×50% + Industry×50% (balanced)
-  Phase4 (deflation): TTM×35% + Industry×65% (normalization accelerated)
+Decay model (TTM/CAGR>50%): fixed 50% TTM + 50% Industry benchmark.
+(GROWTH-1's HypeCore-phase-weighted variant was removed
+2026-08-26; mixing a Timing-side signal into Funda-side
+growth was a design inconsistency with no backtest evidence
+of improved accuracy. See [[LAYER1-GROWTH-HYPEPHASE-DECAY-GAP-1]])
 Next_Earnings_Date: Next quarterly earnings release
 Valuation_Gap_Analysis: Reverse DCF calculation showing
 what FCF growth rate the current market price implies.
@@ -257,8 +270,8 @@ Positive surprise historically correlates with
 short-term price appreciation (PEAD effect)
 PER_Comparison:
   Market_PER_GAAP: 30.7x
-  Adjusted_EPS_PER: 27.1x (TTM調整後EPS: $4.1859)
-  Delta: -3.6x (cheaper on adjusted basis)
+  Adjusted_EPS_PER: 27.6x (TTM調整後EPS: $4.1859)
+  Delta: -3.2x (cheaper on adjusted basis)
 Forward_Estimates:
   Next_Earnings_Date: 2026-10-28
   Next_Quarter_EPS: N/A (no analyst estimates in data)
@@ -307,10 +320,10 @@ Higher alpha in Phase1-2, lower in Phase3-4
 HYPE_Signal: Combined judgment of Matrix quadrant
 and HypeCore phase
 ERP (Equity Risk Premium, 参考表示):
-  Forward_Earnings_Yield: 4.35%  (ForwardEPS $4.93 / Price $113.49)
+  Forward_Earnings_Yield: 4.28%  (ForwardEPS $4.93 / Price $115.35)
   Risk_Free_Rate (10Y):  4.30%
-  ERP: 0.05%
-  ERP_Signal: 期待やや過熱（成長期待が株価に織り込まれ始めている）
+  ERP: -0.02%
+  ERP_Signal: 期待過熱圏（市場が将来成長を過度に先取りしている）
 Valuation_Multiples: Market-provided values (yfinance),
 NOT self-calculated. Distinct from TANUKI IV.
 PER: Price / GAAP EPS (trailing)
@@ -359,7 +372,7 @@ based on recent 4Q linear trend. Rough estimate only.
 Source: Grok web search (直近3ヶ月)
   [high] litigation: Antitrust lawsuit against Cheesecake Factory Inc
   [high] regulatory: Ongoing SEC regulatory investigation
-  [mid] earnings: Earnings warning amid competition for 2025-2026
+  [mid] earnings: Earnings warning impacting 2025 and 2026 outlook
 
 ==============================================
 DISCLAIMER: This report is generated automatically

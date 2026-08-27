@@ -1,13 +1,14 @@
 AMD INTEGRATED INVESTMENT REPORT
-Generated: 2026-08-26T07:02:43+09:00
-Price: $479.18
+Generated: 2026-08-27T10:07:07+09:00
+Price: $480.93
+Validation_Status: PASS (品質ゲート: 全チェック通過)
 
 [1. TANUKI SCORE]
 Classification: WATCH
 Classification_Pre_Rounding: TRIM
 Funda_Score: 100/100
 Timing_Score (components):
-  Deviation_Rate: -62.6%
+  Deviation_Rate: -62.7%
   MA200_Deviation: +44.3%
   HypeCore_Phase: Phase3 (陶酔期)
   Analyst_Consensus: Strong Buy | Target: $605 median ($365-$1250) | 48 analysts | vs IV: +237.5%
@@ -33,7 +34,7 @@ Matrix: ①投資効率系
 Quadrant: 左下
 Label: 割高×低効率
 Key_Metric_Y: RICE = 0.816
-Deviation_Rate: -62.6%
+Deviation_Rate: -62.7%
 Thresholds:
   RICE_Threshold: 3.0/1.0/0 (>=3.0=high, 1.0-3.0=medium, 0-1.0=low, <0=undefined OCF-negative)
   ROE_Threshold: 15% (above=high profitability)
@@ -57,27 +58,32 @@ Positive deviation = undervalued (intrinsic > current)
 
 
 [3. TANUKI VALUATION]
-Current_Price: $479.18
+Current_Price: $480.93
 Intrinsic_Value_BASE: $179.25
-Deviation_BASE: -62.6%
+Deviation_BASE: -62.7%
 Scenarios:
-BEAR: Growth=17.2%, IV=$136.11, Deviation=-71.6%
-BASE: Growth=24.6%, IV=$179.25, Deviation=-62.6%
-BULL: Growth=29.5%, IV=$214.06, Deviation=-55.3%
+BEAR: Growth=17.2%, IV=$136.11, Deviation=-71.7%
+BASE: Growth=24.6%, IV=$179.25, Deviation=-62.7%
+BULL: Growth=29.5%, IV=$214.06, Deviation=-55.5%
+Return_Outlook(BASE): 1年後: $223.35 (-53.6%) / 3年後: $346.75 (-27.9%) / 5年後: $538.33 (+11.9%)
+  5yr_Annualized_Return: +2.3%/yr
 Growth_Rate_Rec: 13.6% (recommended  ⚠️ +11.0pt above recommended)
 TTM_YoY_Growth: 35.0%
 (DCF Base vs TTM actual: -10.4pt discount)
 Discount_Rate_Primary: 10.00% (DCF discount rate used)
 WACC_CAPM_Reference: 18.49%
+  参考①β込みWACC_IV: $70.93 (Deviation: -85.3%)
+  参考②Rf理論上限_IV: $1,599.91 (Deviation: +232.7%)
 Terminal_Growth_Rate: 3.5%
 Beta: 2.489
 Valuation_Gap_Analysis:
   DCF_IV:           $179 (保守的FCFベース・現在実力値)
-  Market_Price:     $479
+  Market_Price:     $481
   Gap:              -63% (市場が将来成長を先取り)
-  Implied_FCF_2030: $48.55B (現在株価を正当化するために必要な5年後FCF)
+  Implied_FCF_2030: $48.73B (現在株価を正当化するために必要な5年後FCF)
   Current_FCF:      $6.36B
   Required_Growth:  50%/yr (現在FCFから必要成長率を逆算)
+FCF_TTM_End: 2026-03-28 (FCF/RICE算出に用いたTTM期末日)
 FCF_Conversion_Rate: 0.7 (Industry: Semiconductors)
   [FCF_Conv: Adj_NI × rate = estimated FCF. Conservative conversion from
    adjusted net income; differs from OCF→FCF conversion rate.]
@@ -92,6 +98,7 @@ DCF_Reliability: LOW ⚠️ (FCF_Conversion_Rate方式: 要注意フラグ検出
    大幅乖離（eps_invalid）のため、IVは参考値扱い。]
    [DCF-REL-SYNC-1: FCF実績が5年平均から128%乖離]
 DCF_FCF_PV: $94.33B (Ph1=$46.91B + Ph2=$47.41B, 5yr, pre-alpha, Rm=10%)
+Maturity_Profile: Phase1=4yr@0.0%, Phase2=4yr@10.0%
 DCF_TV_PV:  $188.74B (terminal value present value, pre-alpha, Rm=10%)
 DCF_v0:     $283.07B (= FCF_PV + TV_PV, Rm=10% enterprise value)
 Alpha_Premium: 0.2697 (HypeCore expectation premium; Rm basis)
@@ -100,6 +107,11 @@ Growth_Option_PV: $0.434B (optional segment premium)
 Equity_Value: $292.63B (= v0 + RPO_PV + GO_PV + Net_Cash $9.12B)
 Shares_Used: 1632.5M (source: yf_implied)
 → Intrinsic_Value: $179.25 (= Equity_Value ÷ Shares_Used)
+Sensitivity_Matrix (WACC×成長期間 → IV/share):
+  WACC\Years  3yr  5yr  7yr
+  9.0%       $158.54  $214.91  $288.57
+  10.0%       $133.67  $179.25  $237.74
+  11.0%       $115.48  $153.27  $200.88
 Financial_Health:
   Net_Debt: $-9.12B (negative=net cash)
   Total_Debt: $3.22B  Cash: $5.58B  ST_Invest: $6.76B
@@ -160,10 +172,11 @@ For manually configured segments: used directly as DCF growth rate G
 For unconfigured segments: TTM Revenue Growth is auto-applied,
 then adjusted via recommended_g (median of historical CAGR,
 industry benchmark, RR×ROIC)
-GROWTH-1: Decay model weight adjusted by HypeCore phase:
-  Phase1-2 (early): TTM×65% + Industry×35% (growth has room)
-  Phase3 (euphoria): TTM×50% + Industry×50% (balanced)
-  Phase4 (deflation): TTM×35% + Industry×65% (normalization accelerated)
+Decay model (TTM/CAGR>50%): fixed 50% TTM + 50% Industry benchmark.
+(GROWTH-1's HypeCore-phase-weighted variant was removed
+2026-08-26; mixing a Timing-side signal into Funda-side
+growth was a design inconsistency with no backtest evidence
+of improved accuracy. See [[LAYER1-GROWTH-HYPEPHASE-DECAY-GAP-1]])
 Next_Earnings_Date: Next quarterly earnings release
 Valuation_Gap_Analysis: Reverse DCF calculation showing
 what FCF growth rate the current market price implies.
@@ -264,8 +277,8 @@ Positive surprise historically correlates with
 short-term price appreciation (PEAD effect)
 PER_Comparison:
   Market_PER_GAAP: 120.4x
-  Adjusted_EPS_PER: 85.7x (TTM調整後EPS: $5.5899)
-  Delta: -34.7x (cheaper on adjusted basis)
+  Adjusted_EPS_PER: 86.0x (TTM調整後EPS: $5.5899)
+  Delta: -34.4x (cheaper on adjusted basis)
 Forward_Estimates:
   Next_Earnings_Date: 2026-11-04
   Next_Quarter_EPS: N/A (no analyst estimates in data)
@@ -314,9 +327,9 @@ Higher alpha in Phase1-2, lower in Phase3-4
 HYPE_Signal: Combined judgment of Matrix quadrant
 and HypeCore phase
 ERP (Equity Risk Premium, 参考表示):
-  Forward_Earnings_Yield: 3.23%  (ForwardEPS $15.49 / Price $479.18)
+  Forward_Earnings_Yield: 3.22%  (ForwardEPS $15.49 / Price $480.93)
   Risk_Free_Rate (10Y):  4.30%
-  ERP: -1.07%
+  ERP: -1.08%
   ERP_Signal: 期待過熱圏（市場が将来成長を過度に先取りしている）
 Valuation_Multiples: Market-provided values (yfinance),
 NOT self-calculated. Distinct from TANUKI IV.
@@ -341,7 +354,7 @@ Short_Report_Target: no
 Short_Interest: 2.5%
 Institutional_Ownership: N/A (not in data source)
 Analyst_Consensus: Strong Buy | Target: $605 median ($365-$1250) | 48 analysts | vs IV: +237.5%
-Insider_Activity: Sell優勢 | 買い0件 / 売り56件 | 直近90日
+Insider_Activity: Sell優勢 | 買い0件 / 売り69件 | 直近90日
 Runway_Months: N/A (profitable or not in STONKS)
 Revenue_Growth_YoY: 35.0%
 Next_Earnings_Date: 2026-11-04
@@ -364,8 +377,8 @@ based on recent 4Q linear trend. Rough estimate only.
 
 [9. RISK EVENTS]
 Source: Grok web search (直近3ヶ月)
-  [high] litigation: Antitrust lawsuit ongoing
-  [high] regulatory: SEC regulatory investigation active
+  [high] litigation: Ongoing antitrust lawsuit
+  [high] regulatory: SEC regulatory investigation
   [mid] earnings: Earnings warning amid 2025-2026 competition
 
 ==============================================

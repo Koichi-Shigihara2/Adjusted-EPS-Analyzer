@@ -1,14 +1,15 @@
 NOW INTEGRATED INVESTMENT REPORT
-Generated: 2026-08-26T07:07:51+09:00
-Price: $127.00
+Generated: 2026-08-27T10:12:27+09:00
+Price: $125.80
+Validation_Status: PASS (品質ゲート: 全チェック通過)
 
 [1. TANUKI SCORE]
 Classification: WATCH
 Classification_Pre_Rounding: WATCH
 Funda_Score: 65/100
 Timing_Score (components):
-  Deviation_Rate: +8.9%
-  MA200_Deviation: +6.0%
+  Deviation_Rate: +9.9%
+  MA200_Deviation: +5.2%
   HypeCore_Phase: Phase4 (期待剥落期)
   Analyst_Consensus: Strong Buy | Target: $140 median ($72-$248) | 46 analysts | vs IV: +1.2%
 Comment: DCF信頼性LOW(FCF_Conversion_Rate方式・要注意フラグ)のためupside依存判定を抑制→WATCH
@@ -33,7 +34,7 @@ Matrix: ①投資効率系
 Quadrant: 右下
 Label: 割安×中効率
 Key_Metric_Y: RICE = 1.262
-Deviation_Rate: +8.9%
+Deviation_Rate: +9.9%
 Thresholds:
   RICE_Threshold: 3.0/1.0/0 (>=3.0=high, 1.0-3.0=medium, 0-1.0=low, <0=undefined OCF-negative)
   ROE_Threshold: 15% (above=high profitability)
@@ -57,21 +58,26 @@ Positive deviation = undervalued (intrinsic > current)
 
 
 [3. TANUKI VALUATION]
-Current_Price: $127.00
+Current_Price: $125.80
 Intrinsic_Value_BASE: $138.27
-Deviation_BASE: +8.9%
+Deviation_BASE: +9.9%
 Growth_Rate_Original: 21.7% (TTM実績)
 Growth_Rate_Adjusted: 22.0% (推奨値・中央値ベース)
 Scenarios:
 BEAR: Growth=15.4%, IV=$98.51 （推奨値ベース）
 BASE: Growth=22.0%, IV=$138.27 （推奨値ベース）
 BULL: Growth=26.4%, IV=$172.52 （推奨値ベース）
+Return_Outlook(BASE): 1年後: $168.69 (+34.1%) / 3年後: $251.10 (+99.6%) / 5年後: $373.76 (+197.1%)
+  5yr_Annualized_Return: +24.3%/yr
 TTM_YoY_Growth: 21.7%
 (DCF Base vs TTM actual: +0.3pt premium)
 Discount_Rate_Primary: 10.00% (DCF discount rate used)
 WACC_CAPM_Reference: 9.60%
+  参考①β込みWACC_IV: $148.22 (Deviation: +17.8%)
+  参考②Rf理論上限_IV: $1,240.34 (Deviation: +886.0%)
 Terminal_Growth_Rate: 3.5%
 Beta: 0.93
+FCF_TTM_End: 2026-03-31 (FCF/RICE算出に用いたTTM期末日)
 FCF_Conversion_Rate: 0.7 (Industry: Software - Application)
   [FCF_Conv: Adj_NI × rate = estimated FCF. Conservative conversion from
    adjusted net income; differs from OCF→FCF conversion rate.]
@@ -94,6 +100,11 @@ Growth_Option_PV: $0
 Equity_Value: $142.96B (= v0 + RPO_PV + GO_PV + Net_Cash $3.69B)
 Shares_Used: 1033.9M (source: yf_implied)
 → Intrinsic_Value: $138.27 (= Equity_Value ÷ Shares_Used)
+Sensitivity_Matrix (WACC×成長期間 → IV/share):
+  WACC\Years  4yr  7yr  10yr
+  9.0%       $111.11  $165.97  $242.89
+  10.0%       $93.96  $138.27  $198.74
+  11.0%       $81.40  $118.08  $166.80
 Financial_Health:
   Net_Debt: $-3.69B (negative=net cash)
   Total_Debt: $1.49B  Cash: $2.70B  ST_Invest: $2.48B
@@ -150,10 +161,11 @@ For manually configured segments: used directly as DCF growth rate G
 For unconfigured segments: TTM Revenue Growth is auto-applied,
 then adjusted via recommended_g (median of historical CAGR,
 industry benchmark, RR×ROIC)
-GROWTH-1: Decay model weight adjusted by HypeCore phase:
-  Phase1-2 (early): TTM×65% + Industry×35% (growth has room)
-  Phase3 (euphoria): TTM×50% + Industry×50% (balanced)
-  Phase4 (deflation): TTM×35% + Industry×65% (normalization accelerated)
+Decay model (TTM/CAGR>50%): fixed 50% TTM + 50% Industry benchmark.
+(GROWTH-1's HypeCore-phase-weighted variant was removed
+2026-08-26; mixing a Timing-side signal into Funda-side
+growth was a design inconsistency with no backtest evidence
+of improved accuracy. See [[LAYER1-GROWTH-HYPEPHASE-DECAY-GAP-1]])
 Next_Earnings_Date: Next quarterly earnings release
 Valuation_Gap_Analysis: Reverse DCF calculation showing
 what FCF growth rate the current market price implies.
@@ -256,8 +268,8 @@ Positive surprise historically correlates with
 short-term price appreciation (PEAD effect)
 PER_Comparison:
   Market_PER_GAAP: 79.8x
-  Adjusted_EPS_PER: 43.3x (TTM調整後EPS: $2.9300)
-  Delta: -36.5x (cheaper on adjusted basis)
+  Adjusted_EPS_PER: 42.9x (TTM調整後EPS: $2.9300)
+  Delta: -36.9x (cheaper on adjusted basis)
 Forward_Estimates:
   Next_Earnings_Date: 2026-10-29
   Next_Quarter_EPS: N/A (no analyst estimates in data)
@@ -306,9 +318,9 @@ Higher alpha in Phase1-2, lower in Phase3-4
 HYPE_Signal: Combined judgment of Matrix quadrant
 and HypeCore phase
 ERP (Equity Risk Premium, 参考表示):
-  Forward_Earnings_Yield: 3.94%  (ForwardEPS $5.01 / Price $127.00)
+  Forward_Earnings_Yield: 3.98%  (ForwardEPS $5.01 / Price $125.80)
   Risk_Free_Rate (10Y):  4.30%
-  ERP: -0.36%
+  ERP: -0.32%
   ERP_Signal: 期待過熱圏（市場が将来成長を過度に先取りしている）
 Valuation_Multiples: Market-provided values (yfinance),
 NOT self-calculated. Distinct from TANUKI IV.
@@ -356,9 +368,9 @@ based on recent 4Q linear trend. Rough estimate only.
 
 [9. RISK EVENTS]
 Source: Grok web search (直近3ヶ月)
-  [high] litigation: Ongoing antitrust lawsuit
+  [high] litigation: Ongoing antitrust lawsuit against ServiceNow
   [high] regulatory: Active SEC regulatory investigation
-  [mid] earnings: Earnings warning impacting 2025-2026 outlook
+  [mid] earnings: Earnings warning amid 2025-2026 competition risks
 
 ==============================================
 DISCLAIMER: This report is generated automatically

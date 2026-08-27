@@ -1,14 +1,15 @@
 RBRK INTEGRATED INVESTMENT REPORT
-Generated: 2026-08-26T07:08:30+09:00
-Price: $92.65
+Generated: 2026-08-27T10:13:11+09:00
+Price: $96.13
+Validation_Status: PASS (品質ゲート: 全チェック通過)
 
 [1. TANUKI SCORE]
 Classification: WATCH
 Classification_Pre_Rounding: WATCH
 Funda_Score: 65/100
 Timing_Score (components):
-  Deviation_Rate: +12.1%
-  MA200_Deviation: +36.1%
+  Deviation_Rate: +8.1%
+  MA200_Deviation: +41.0%
   HypeCore_Phase: Phase3 (陶酔期)
   Analyst_Consensus: Strong Buy | Target: $100 median ($85-$135) | 27 analysts | vs IV: -3.7%
 Comment: DCF信頼性LOW(FCF_Base方式・外れ値未説明)のためupside依存判定を抑制→WATCH
@@ -33,7 +34,7 @@ Matrix: ④キャッシュ創出力系
 Quadrant: 右上
 Label: 割安×高FCF
 Key_Metric_Y: FCF_Margin = 19.2%
-Deviation_Rate: +12.1%
+Deviation_Rate: +8.1%
 Thresholds:
   RICE_Threshold: 3.0/1.0/0 (>=3.0=high, 1.0-3.0=medium, 0-1.0=low, <0=undefined OCF-negative)
   ROE_Threshold: 15% (above=high profitability)
@@ -57,19 +58,24 @@ Positive deviation = undervalued (intrinsic > current)
 
 
 [3. TANUKI VALUATION]
-Current_Price: $92.65
+Current_Price: $96.13
 Intrinsic_Value_BASE: $103.89
-Deviation_BASE: +12.1%
+Deviation_BASE: +8.1%
 Scenarios:
-BEAR: Growth=32.0%, IV=$66.19, Deviation=-28.6%
-BASE: Growth=45.7%, IV=$103.89, Deviation=+12.1%
-BULL: Growth=54.9%, IV=$137.97, Deviation=+48.9%
+BEAR: Growth=32.0%, IV=$66.19, Deviation=-31.1%
+BASE: Growth=45.7%, IV=$103.89, Deviation=+8.1%
+BULL: Growth=54.9%, IV=$137.97, Deviation=+43.5%
+Return_Outlook(BASE): 1年後: $151.39 (+57.5%) / 3年後: $321.50 (+234.4%) / 5年後: $682.75 (+610.2%)
+  5yr_Annualized_Return: +48.0%/yr
 TTM_YoY_Growth: 48.5%
 (DCF Base vs TTM actual: -2.8pt discount)
 Discount_Rate_Primary: 10.00% (DCF discount rate used)
 WACC_CAPM_Reference: 10.96%
+  参考①β込みWACC_IV: $89.42 (Deviation: -7.0%)
+  参考②Rf理論上限_IV: $919.05 (Deviation: +856.0%)
 Terminal_Growth_Rate: 3.5%
 Beta: 1.168
+FCF_TTM_End: 2026-04-30 (FCF/RICE算出に用いたTTM期末日)
 FCF_Base: $267.81M (直近2yr平均 + R&D補正)
 DCF_Reliability: LOW ⚠️ (FCF_Base方式: 要注意フラグ検出, IV参考値)
   [Policy B: LOW時はBUY/TRIM/HOLD/WATCHをWATCHへ丸め。SELL/PASSは維持。
@@ -84,6 +90,11 @@ Growth_Option_PV: $0
 Equity_Value: $21.38B (= v0 + RPO_PV + GO_PV + Net_Cash $0.62B)
 Shares_Used: 205.8M (source: yf_implied)
 → Intrinsic_Value: $103.89 (= Equity_Value ÷ Shares_Used)
+Sensitivity_Matrix (WACC×成長期間 → IV/share):
+  WACC\Years  3yr  5yr  7yr
+  9.0%       $68.68  $124.47  $224.18
+  10.0%       $58.20  $103.89  $184.07
+  11.0%       $50.52  $88.86  $154.94
 Financial_Health:
   Net_Debt: $-0.62B (negative=net cash)
   Total_Debt: $1.13B  Cash: $0.43B  ST_Invest: $1.32B
@@ -138,10 +149,11 @@ For manually configured segments: used directly as DCF growth rate G
 For unconfigured segments: TTM Revenue Growth is auto-applied,
 then adjusted via recommended_g (median of historical CAGR,
 industry benchmark, RR×ROIC)
-GROWTH-1: Decay model weight adjusted by HypeCore phase:
-  Phase1-2 (early): TTM×65% + Industry×35% (growth has room)
-  Phase3 (euphoria): TTM×50% + Industry×50% (balanced)
-  Phase4 (deflation): TTM×35% + Industry×65% (normalization accelerated)
+Decay model (TTM/CAGR>50%): fixed 50% TTM + 50% Industry benchmark.
+(GROWTH-1's HypeCore-phase-weighted variant was removed
+2026-08-26; mixing a Timing-side signal into Funda-side
+growth was a design inconsistency with no backtest evidence
+of improved accuracy. See [[LAYER1-GROWTH-HYPEPHASE-DECAY-GAP-1]])
 Next_Earnings_Date: Next quarterly earnings release
 Valuation_Gap_Analysis: Reverse DCF calculation showing
 what FCF growth rate the current market price implies.
@@ -282,9 +294,9 @@ Higher alpha in Phase1-2, lower in Phase3-4
 HYPE_Signal: Combined judgment of Matrix quadrant
 and HypeCore phase
 ERP (Equity Risk Premium, 参考表示):
-  Forward_Earnings_Yield: 0.70%  (ForwardEPS $0.65 / Price $92.65)
+  Forward_Earnings_Yield: 0.68%  (ForwardEPS $0.65 / Price $96.13)
   Risk_Free_Rate (10Y):  4.30%
-  ERP: -3.60%
+  ERP: -3.62%
   ERP_Signal: 期待過熱圏（市場が将来成長を過度に先取りしている）
 Valuation_Multiples: Market-provided values (yfinance),
 NOT self-calculated. Distinct from TANUKI IV.
@@ -333,8 +345,8 @@ based on recent 4Q linear trend. Rough estimate only.
 [9. RISK EVENTS]
 Source: Grok web search (直近3ヶ月)
   [high] litigation: Antitrust lawsuit
-  [high] regulatory: SEC regulatory investigation
-  [mid] earnings: Earnings warning amid competition 2025-2026
+  [high] regulatory: SEC investigation
+  [mid] earnings: Earnings warning for 2025 2026
 
 ==============================================
 DISCLAIMER: This report is generated automatically

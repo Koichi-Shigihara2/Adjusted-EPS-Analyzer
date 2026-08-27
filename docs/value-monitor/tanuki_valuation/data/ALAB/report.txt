@@ -1,14 +1,15 @@
 ALAB INTEGRATED INVESTMENT REPORT
-Generated: 2026-08-26T08:05:35+09:00
-Price: $282.65
+Generated: 2026-08-27T10:06:50+09:00
+Price: $290.30
+Validation_Status: PASS (品質ゲート: 全チェック通過)
 
 [1. TANUKI SCORE]
 Classification: WATCH
 Classification_Pre_Rounding: GROWTH_PREMIUM
 Funda_Score: 75/100
 Timing_Score (components):
-  Deviation_Rate: -38.8%
-  MA200_Deviation: +28.6%
+  Deviation_Rate: -40.4%
+  MA200_Deviation: +31.7%
   HypeCore_Phase: Phase3 (陶酔期)
   Analyst_Consensus: Buy | Target: $425 median ($190-$500) | 23 analysts | vs IV: +145.5%
 Comment: DCF信頼性LOW(FCF_Conversion_Rate方式・要注意フラグ)のためupside依存判定を抑制→WATCH
@@ -33,7 +34,7 @@ Matrix: ①投資効率系
 Quadrant: 左上
 Label: 割高×高効率
 Key_Metric_Y: RICE = 7.795
-Deviation_Rate: -38.8%
+Deviation_Rate: -40.4%
 Thresholds:
   RICE_Threshold: 3.0/1.0/0 (>=3.0=high, 1.0-3.0=medium, 0-1.0=low, <0=undefined OCF-negative)
   ROE_Threshold: 15% (above=high profitability)
@@ -57,21 +58,26 @@ Positive deviation = undervalued (intrinsic > current)
 
 
 [3. TANUKI VALUATION]
-Current_Price: $282.65
+Current_Price: $290.30
 Intrinsic_Value_BASE: $173.12
-Deviation_BASE: -38.8%
+Deviation_BASE: -40.4%
 Growth_Rate_Original: 15.0% (TTM実績)
 Growth_Rate_Adjusted: 54.8% (推奨値・逓減モデル)
 Scenarios:
 BEAR: Growth=38.4%, IV=$124.43 （推奨値ベース）
 BASE: Growth=54.8%, IV=$173.12 （推奨値ベース）
 BULL: Growth=65.8%, IV=$213.36 （推奨値ベース）
+Return_Outlook(BASE): 1年後: $268.00 (-7.7%) / 3年後: $642.23 (+121.2%) / 5年後: $1,539.05 (+430.2%)
+  5yr_Annualized_Return: +39.6%/yr
 TTM_YoY_Growth: 104.2%
 (DCF Base vs TTM actual: -49.4pt discount)
 Discount_Rate_Primary: 10.00% (DCF discount rate used)
 WACC_CAPM_Reference: 18.55%
+  参考①β込みWACC_IV: $71.25 (Deviation: -75.5%)
+  参考②Rf理論上限_IV: $1,478.85 (Deviation: +409.4%)
 Terminal_Growth_Rate: 3.5%
 Beta: 2.5
+FCF_TTM_End: 2026-03-31 (FCF/RICE算出に用いたTTM期末日)
 FCF_Conversion_Rate: 0.85 (Industry: Semiconductor)
   [FCF_Conv: Adj_NI × rate = estimated FCF. Conservative conversion from
    adjusted net income; differs from OCF→FCF conversion rate.]
@@ -90,6 +96,11 @@ Growth_Option_PV: $0
 Equity_Value: $30.03B (= v0 + RPO_PV + GO_PV + Net_Cash $1.18B)
 Shares_Used: 173.5M (source: yf_implied)
 → Intrinsic_Value: $173.12 (= Equity_Value ÷ Shares_Used)
+Sensitivity_Matrix (WACC×成長期間 → IV/share):
+  WACC\Years  3yr  6yr  9yr
+  9.0%       $173.36  $501.31  $1,440.74
+  10.0%       $146.66  $413.65  $1,157.79
+  11.0%       $127.10  $349.82  $953.95
 Financial_Health:
   Net_Debt: $-1.18B (negative=net cash)
   Total_Debt: $0.00B  Cash: $0.15B  ST_Invest: $1.04B
@@ -251,8 +262,8 @@ Positive surprise historically correlates with
 short-term price appreciation (PEAD effect)
 PER_Comparison:
   Market_PER_GAAP: 141.1x
-  Adjusted_EPS_PER: 100.0x (TTM調整後EPS: $2.8253)
-  Delta: -41.0x (cheaper on adjusted basis)
+  Adjusted_EPS_PER: 102.8x (TTM調整後EPS: $2.8253)
+  Delta: -38.3x (cheaper on adjusted basis)
 Forward_Estimates:
   Next_Earnings_Date: 2026-11-04
   Next_Quarter_EPS: N/A (no analyst estimates in data)
@@ -300,9 +311,9 @@ Higher alpha in Phase1-2, lower in Phase3-4
 HYPE_Signal: Combined judgment of Matrix quadrant
 and HypeCore phase
 ERP (Equity Risk Premium, 参考表示):
-  Forward_Earnings_Yield: 2.26%  (ForwardEPS $6.39 / Price $282.65)
+  Forward_Earnings_Yield: 2.20%  (ForwardEPS $6.39 / Price $290.30)
   Risk_Free_Rate (10Y):  4.30%
-  ERP: -2.04%
+  ERP: -2.10%
   ERP_Signal: 期待過熱圏（市場が将来成長を過度に先取りしている）
 Valuation_Multiples: Market-provided values (yfinance),
 NOT self-calculated. Distinct from TANUKI IV.
@@ -350,9 +361,9 @@ based on recent 4Q linear trend. Rough estimate only.
 
 [9. RISK EVENTS]
 Source: Grok web search (直近3ヶ月)
-  [high] litigation: Antitrust lawsuit
-  [high] regulatory: SEC regulatory investigation
-  [mid] earnings: Earnings warning for 2025-2026
+  [high] litigation: Antitrust lawsuit against Astera Labs
+  [high] regulatory: Ongoing SEC investigation
+  [mid] earnings: Earnings warning for 2025-2026 amid competition
 
 ==============================================
 DISCLAIMER: This report is generated automatically

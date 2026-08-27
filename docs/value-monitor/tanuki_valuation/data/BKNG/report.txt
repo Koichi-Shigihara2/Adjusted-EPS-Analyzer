@@ -1,16 +1,17 @@
 BKNG INTEGRATED INVESTMENT REPORT
-Generated: 2026-08-26T07:10:12+09:00
-Price: $213.78
+Generated: 2026-08-27T10:14:50+09:00
+Price: $208.89
+Validation_Status: PASS (品質ゲート: 全チェック通過)
 
 [1. TANUKI SCORE]
 Classification: BUY
 Funda_Score: 55/100
 Timing_Score (components):
-  Deviation_Rate: +53.5%
-  MA200_Deviation: +15.0%
+  Deviation_Rate: +57.1%
+  MA200_Deviation: +12.4%
   HypeCore_Phase: Phase4 (期待剥落期)
   Analyst_Consensus: Buy | Target: $240 median ($188-$301) | 36 analysts | vs IV: -26.9%
-Comment: 割安圏(54%)で買い余地大、FCF黒字、売上安定成長
+Comment: 割安圏(57%)で買い余地大、FCF黒字、売上安定成長
 Definition:
 
 Funda_Score: Composite score of financial health,
@@ -32,7 +33,7 @@ Matrix: ②収益性系
 Quadrant: 右上
 Label: 割安×高ROE
 Key_Metric_Y: ROE_avg (7yr) = 38.3% (outlier-adjusted)
-Deviation_Rate: +53.5%
+Deviation_Rate: +57.1%
 Thresholds:
   RICE_Threshold: 3.0/1.0/0 (>=3.0=high, 1.0-3.0=medium, 0-1.0=low, <0=undefined OCF-negative)
   ROE_Threshold: 15% (above=high profitability)
@@ -56,32 +57,42 @@ Positive deviation = undervalued (intrinsic > current)
 
 
 [3. TANUKI VALUATION]
-Current_Price: $213.78
+Current_Price: $208.89
 Intrinsic_Value_BASE: $328.16
-Deviation_BASE: +53.5%
+Deviation_BASE: +57.1%
 Growth_Rate_Original: 15.0% (TTM実績)
 Growth_Rate_Adjusted: 16.3% (推奨値・中央値ベース)
 Scenarios:
 BEAR: Growth=11.4%, IV=$250.69 （推奨値ベース）
 BASE: Growth=16.3%, IV=$328.16 （推奨値ベース）
 BULL: Growth=19.6%, IV=$391.13 （推奨値ベース）
+Return_Outlook(BASE): 1年後: $381.81 (+82.8%) / 3年後: $516.86 (+147.4%) / 5年後: $699.67 (+234.9%)
+  5yr_Annualized_Return: +27.3%/yr
 TTM_YoY_Growth: 15.0%
 (DCF Base vs TTM actual: +1.3pt premium)
 Discount_Rate_Primary: 10.00% (DCF discount rate used)
 WACC_CAPM_Reference: 10.43%
+  参考①β込みWACC_IV: $305.76 (Deviation: +46.4%)
+  参考②Rf理論上限_IV: $2,953.50 (Deviation: +1313.9%)
 Terminal_Growth_Rate: 3.5%
 Beta: 1.075
+FCF_TTM_End: 2026-03-31 (FCF/RICE算出に用いたTTM期末日)
 FCF_Base: $7,922.00M (4yr平均)
 DCF_Reliability: HIGH  (FCF実績プラス: 通常判定適用)
 DCF_FCF_PV: $69.85B (7yr discounted FCF sum, pre-alpha, Rm=10%)
 DCF_TV_PV:  $186.83B (terminal value present value, pre-alpha, Rm=10%)
 DCF_v0:     $256.67B (= FCF_PV + TV_PV, Rm=10% enterprise value)
-Alpha_Premium: 0.6000 (HypeCore expectation premium; Rm basis)
+Alpha_Premium: 0.6000 (HypeCore expectation premium; Rm basis) [CAPPED: セクター別上限到達]
 RPO_PV: $0
 Growth_Option_PV: $0
 Equity_Value: $254.29B (= v0 + RPO_PV + GO_PV + Net_Cash $-2.39B)
 Shares_Used: 774.9M (source: yf_implied)
 → Intrinsic_Value: $328.16 (= Equity_Value ÷ Shares_Used)
+Sensitivity_Matrix (WACC×成長期間 → IV/share):
+  WACC\Years  4yr  7yr  10yr
+  9.0%       $294.94  $394.37  $515.30
+  10.0%       $247.81  $328.16  $423.24
+  11.0%       $213.29  $279.82  $356.44
 Financial_Health:
   Net_Debt: $+2.39B (negative=net cash)
   Total_Debt: $18.41B  Cash: $16.02B  ST_Invest: $0.00B (推定ゼロ、最終確認: FY2024)
@@ -134,10 +145,11 @@ For manually configured segments: used directly as DCF growth rate G
 For unconfigured segments: TTM Revenue Growth is auto-applied,
 then adjusted via recommended_g (median of historical CAGR,
 industry benchmark, RR×ROIC)
-GROWTH-1: Decay model weight adjusted by HypeCore phase:
-  Phase1-2 (early): TTM×65% + Industry×35% (growth has room)
-  Phase3 (euphoria): TTM×50% + Industry×50% (balanced)
-  Phase4 (deflation): TTM×35% + Industry×65% (normalization accelerated)
+Decay model (TTM/CAGR>50%): fixed 50% TTM + 50% Industry benchmark.
+(GROWTH-1's HypeCore-phase-weighted variant was removed
+2026-08-26; mixing a Timing-side signal into Funda-side
+growth was a design inconsistency with no backtest evidence
+of improved accuracy. See [[LAYER1-GROWTH-HYPEPHASE-DECAY-GAP-1]])
 Next_Earnings_Date: Next quarterly earnings release
 Valuation_Gap_Analysis: Reverse DCF calculation showing
 what FCF growth rate the current market price implies.
@@ -282,9 +294,9 @@ Higher alpha in Phase1-2, lower in Phase3-4
 HYPE_Signal: Combined judgment of Matrix quadrant
 and HypeCore phase
 ERP (Equity Risk Premium, 参考表示):
-  Forward_Earnings_Yield: 5.79%  (ForwardEPS $12.38 / Price $213.78)
+  Forward_Earnings_Yield: 5.92%  (ForwardEPS $12.38 / Price $208.89)
   Risk_Free_Rate (10Y):  4.30%
-  ERP: 1.49%
+  ERP: 1.62%
   ERP_Signal: 期待やや過熱（成長期待が株価に織り込まれ始めている）
 Valuation_Multiples: Market-provided values (yfinance),
 NOT self-calculated. Distinct from TANUKI IV.
@@ -332,9 +344,9 @@ based on recent 4Q linear trend. Rough estimate only.
 
 [9. RISK EVENTS]
 Source: Grok web search (直近3ヶ月)
-  [high] litigation: Ongoing antitrust lawsuit
-  [high] regulatory: Regulatory SEC investigation
-  [mid] earnings: Earnings warning amid 2025-2026 competition
+  [high] litigation: Antitrust lawsuit against Booking Holdings
+  [high] regulatory: Ongoing SEC regulatory investigation
+  [mid] earnings: Earnings warning amid competition 2025-2026
 
 ==============================================
 DISCLAIMER: This report is generated automatically

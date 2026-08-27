@@ -1,14 +1,15 @@
 RXRX INTEGRATED INVESTMENT REPORT
-Generated: 2026-08-26T08:07:05+09:00
-Price: $3.56
+Generated: 2026-08-27T10:13:33+09:00
+Price: $3.49
+Validation_Status: PASS (品質ゲート: 全チェック通過)
 
 [1. TANUKI SCORE]
 Classification: WATCH
 Classification_Pre_Rounding: BUY
 Funda_Score: 50/100
 Timing_Score (components):
-  Deviation_Rate: +432.3%
-  MA200_Deviation: -3.5%
+  Deviation_Rate: +443.0%
+  MA200_Deviation: -5.2%
   HypeCore_Phase: Phase4 (期待剥落期)
   Analyst_Consensus: Buy | Target: $7 median ($4-$10) | 6 analysts | vs IV: -63.1%
 Comment: DCF信頼性LOW(実績FCF赤字)のためupside依存判定を抑制→WATCH
@@ -33,7 +34,7 @@ Matrix: ④キャッシュ創出力系
 Quadrant: 右下
 Label: 割安×低FCF
 Key_Metric_Y: FCF_Margin = -497.9%
-Deviation_Rate: +432.3%
+Deviation_Rate: +443.0%
 Thresholds:
   RICE_Threshold: 3.0/1.0/0 (>=3.0=high, 1.0-3.0=medium, 0-1.0=low, <0=undefined OCF-negative)
   ROE_Threshold: 15% (above=high profitability)
@@ -57,21 +58,26 @@ Positive deviation = undervalued (intrinsic > current)
 
 
 [3. TANUKI VALUATION]
-Current_Price: $3.56
+Current_Price: $3.49
 Intrinsic_Value_BASE: $18.95
-Deviation_BASE: +432.3%
+Deviation_BASE: +443.0%
 Growth_Rate_Original: 11.1% (TTM実績)
 Growth_Rate_Adjusted: 45.0% (推奨値・逓減モデル)
 Scenarios:
 BEAR: Growth=31.5%, IV=$14.60 （推奨値ベース）
 BASE: Growth=45.0%, IV=$18.95 （推奨値ベース）
 BULL: Growth=53.9%, IV=$22.33 （推奨値ベース）
+Return_Outlook(BASE): 1年後: $27.47 (+687.1%) / 3年後: $57.72 (+1553.9%) / 5年後: $61.23 (+1654.4%)
+  5yr_Annualized_Return: +77.3%/yr
 TTM_YoY_Growth: 26.9%
 (DCF Base vs TTM actual: +18.1pt premium)
 Discount_Rate_Primary: 10.00% (DCF discount rate used)
 WACC_CAPM_Reference: 10.31%
+  参考①β込みWACC_IV: $18.17 (Deviation: +420.6%)
+  参考②Rf理論上限_IV: $100.75 (Deviation: +2786.8%)
 Terminal_Growth_Rate: 3.0%
 Beta: 1.054
+FCF_TTM_End: 2026-03-31 (FCF/RICE算出に用いたTTM期末日)
 FCF_Base: $244.13M (4yr平均 + R&D補正) [実績avg: $-328.8M]
 DCF_Reliability: LOW ⚠️ (FCF実績マイナス: revenue_floor適用, IV参考値)
   [Policy A: LOW時はBUY/TRIM/HOLD/WATCHをWATCHへ丸め。SELL/PASSは維持。
@@ -89,6 +95,11 @@ Growth_Option_PV: $0
 Equity_Value: $10.16B (= v0 + RPO_PV + GO_PV + Net_Cash $0.64B)
 Shares_Used: 536.3M (source: yf_implied)
 → Intrinsic_Value: $18.95 (= Equity_Value ÷ Shares_Used)
+Sensitivity_Matrix (WACC×成長期間 → IV/share):
+  WACC\Years  2yr  3yr  4yr
+  9.0%       $16.42  $22.05  $29.54
+  10.0%       $14.21  $18.95  $25.19
+  11.0%       $12.56  $16.63  $21.95
 Financial_Health:
   Net_Debt: $-0.64B (negative=net cash)
   Total_Debt: $0.02B  Cash: $0.65B  ST_Invest: $0.00B (推定ゼロ、最終確認: FY2022)
@@ -292,9 +303,9 @@ Higher alpha in Phase1-2, lower in Phase3-4
 HYPE_Signal: Combined judgment of Matrix quadrant
 and HypeCore phase
 ERP (Equity Risk Premium, 参考表示):
-  Forward_Earnings_Yield: -25.13%  (ForwardEPS $-0.89 / Price $3.56)
+  Forward_Earnings_Yield: -25.64%  (ForwardEPS $-0.89 / Price $3.49)
   Risk_Free_Rate (10Y):  4.30%
-  ERP: -29.43%
+  ERP: -29.94%
   ERP_Signal: 期待過熱圏（市場が将来成長を過度に先取りしている）
 Valuation_Multiples: Market-provided values (yfinance),
 NOT self-calculated. Distinct from TANUKI IV.
@@ -342,9 +353,9 @@ based on recent 4Q linear trend. Rough estimate only.
 
 [9. RISK EVENTS]
 Source: Grok web search (直近3ヶ月)
-  [high] litigation: Antitrust lawsuit
-  [high] regulatory: SEC investigation
-  [mid] earnings: Earnings warning amid competition 2025-2026
+  [high] litigation: Antitrust lawsuit against Recursion Pharmaceuticals
+  [high] regulatory: Ongoing SEC regulatory investigation
+  [mid] earnings: Earnings warning impacting 2025-2026 outlook
 
 ==============================================
 DISCLAIMER: This report is generated automatically

@@ -1,14 +1,15 @@
 CRWV INTEGRATED INVESTMENT REPORT
-Generated: 2026-08-26T07:04:45+09:00
-Price: $88.04
+Generated: 2026-08-27T10:09:18+09:00
+Price: $88.01
+Validation_Status: PASS (品質ゲート: 全チェック通過)
 
 [1. TANUKI SCORE]
 Classification: WATCH
 Classification_Pre_Rounding: HOLD
 Funda_Score: 45/100
 Timing_Score (components):
-  Deviation_Rate: +194.9%
-  MA200_Deviation: -4.0%
+  Deviation_Rate: +195.0%
+  MA200_Deviation: -3.9%
   HypeCore_Phase: Phase2 (期待拡大期)
   Analyst_Consensus: Buy | Target: $150 median ($39-$317) | 35 analysts | vs IV: -42.2%
 Comment: DCF信頼性LOW(実績FCF赤字)のためupside依存判定を抑制→WATCH
@@ -33,7 +34,7 @@ Matrix: ④キャッシュ創出力系
 Quadrant: 右下
 Label: 割安×低FCF
 Key_Metric_Y: FCF_Margin = -140.2%
-Deviation_Rate: +194.9%
+Deviation_Rate: +195.0%
 Thresholds:
   RICE_Threshold: 3.0/1.0/0 (>=3.0=high, 1.0-3.0=medium, 0-1.0=low, <0=undefined OCF-negative)
   ROE_Threshold: 15% (above=high profitability)
@@ -57,18 +58,22 @@ Positive deviation = undervalued (intrinsic > current)
 
 
 [3. TANUKI VALUATION]
-Current_Price: $88.04
+Current_Price: $88.01
 Intrinsic_Value_BASE: $259.59
-Deviation_BASE: +194.9%
+Deviation_BASE: +195.0%
 Scenarios:
-BEAR: Growth=45.5%, IV=$121.85, Deviation=+38.4%
-BASE: Growth=65.0%, IV=$259.59, Deviation=+194.9%
-BULL: Growth=78.0%, IV=$394.93, Deviation=+348.6%
-Growth_Rate_Rec: 59.3% (recommended  ⚠️ +5.7pt above recommended)
+BEAR: Growth=45.5%, IV=$121.85, Deviation=+38.5%
+BASE: Growth=65.0%, IV=$259.59, Deviation=+195.0%
+BULL: Growth=78.0%, IV=$394.93, Deviation=+348.7%
+Return_Outlook(BASE): 1年後: $428.32 (+386.7%) / 3年後: $1,166.11 (+1225.0%) / 5年後: $3,174.74 (+3507.2%)
+  5yr_Annualized_Return: +104.8%/yr
+Growth_Rate_Rec: 56.8% (recommended  ⚠️ +8.2pt above recommended)
 TTM_YoY_Growth: 167.9%
 (DCF Base vs TTM actual: -102.9pt discount)
 Discount_Rate_Primary: 10.00% (DCF discount rate used)
 WACC_CAPM_Reference: 12.00%
+  参考①β込みWACC_IV: $145.68 (Deviation: +65.5%)
+  参考②Rf理論上限_IV: $3,014.02 (Deviation: +3324.6%)
 Terminal_Growth_Rate: 3.5%
 Beta: 1.35
 FCF_Base: $723.98M (3yr平均 + R&D補正) [実績avg: $-4,731.3M]
@@ -80,6 +85,7 @@ DCF_Reliability: LOW ⚠️ (FCF実績マイナス: revenue_floor適用, IV参�
     ガードにより調整済み純利益をそのまま採用しています。詳細は
     BACKLOG_DONE.md [[FCF-EST-DIRECTION-GUARD-1]]参照。]
 DCF_FCF_PV: $41.79B (Ph1=$14.32B + Ph2=$27.46B, 5yr, pre-alpha, Rm=10%)
+Maturity_Profile: Phase1=4yr@0.0%, Phase2=4yr@20.0%
 DCF_TV_PV:  $123.98B (terminal value present value, pre-alpha, Rm=10%)
 DCF_v0:     $165.77B (= FCF_PV + TV_PV, Rm=10% enterprise value)
 Alpha_Premium: 0.0000 (HypeCore expectation premium; Rm basis)
@@ -88,6 +94,11 @@ Growth_Option_PV: $0
 Equity_Value: $143.18B (= v0 + RPO_PV + GO_PV + Net_Cash $-22.59B)
 Shares_Used: 551.5M (source: yf_implied)
 → Intrinsic_Value: $259.59 (= Equity_Value ÷ Shares_Used)
+Sensitivity_Matrix (WACC×成長期間 → IV/share):
+  WACC\Years  3yr  5yr  7yr
+  9.0%       $117.75  $327.72  $808.86
+  10.0%       $90.43  $259.59  $640.22
+  11.0%       $70.51  $210.21  $518.88
 Financial_Health:
   Net_Debt: $+22.59B (negative=net cash)
   Total_Debt: $24.86B  Cash: $2.24B  ST_Invest: $0.02B
@@ -140,10 +151,11 @@ For manually configured segments: used directly as DCF growth rate G
 For unconfigured segments: TTM Revenue Growth is auto-applied,
 then adjusted via recommended_g (median of historical CAGR,
 industry benchmark, RR×ROIC)
-GROWTH-1: Decay model weight adjusted by HypeCore phase:
-  Phase1-2 (early): TTM×65% + Industry×35% (growth has room)
-  Phase3 (euphoria): TTM×50% + Industry×50% (balanced)
-  Phase4 (deflation): TTM×35% + Industry×65% (normalization accelerated)
+Decay model (TTM/CAGR>50%): fixed 50% TTM + 50% Industry benchmark.
+(GROWTH-1's HypeCore-phase-weighted variant was removed
+2026-08-26; mixing a Timing-side signal into Funda-side
+growth was a design inconsistency with no backtest evidence
+of improved accuracy. See [[LAYER1-GROWTH-HYPEPHASE-DECAY-GAP-1]])
 Next_Earnings_Date: Next quarterly earnings release
 Valuation_Gap_Analysis: Reverse DCF calculation showing
 what FCF growth rate the current market price implies.
@@ -155,7 +167,7 @@ market-priced future potential.
 Phase1成長率 : 65.0%
 成長モデル: セグメント加重モデル（Layer 1）  HypePhase=2
 DCF適用値:  65.0%（セグメント加重平均 → DCF G として直接使用）
-推奨成長率: 59.3%（Layer 2 参考値・DCF未適用）
+推奨成長率: 56.8%（Layer 2 参考値・DCF未適用）
 判定         : PLAUSIBLE
 業界ベンチマーク: Software (Internet) / 48.6% (Damodaran 2025)
 signals:
@@ -286,7 +298,7 @@ Higher alpha in Phase1-2, lower in Phase3-4
 HYPE_Signal: Combined judgment of Matrix quadrant
 and HypeCore phase
 ERP (Equity Risk Premium, 参考表示):
-  Forward_Earnings_Yield: -2.12%  (ForwardEPS $-1.87 / Price $88.04)
+  Forward_Earnings_Yield: -2.12%  (ForwardEPS $-1.87 / Price $88.01)
   Risk_Free_Rate (10Y):  4.30%
   ERP: -6.42%
   ERP_Signal: 期待過熱圏（市場が将来成長を過度に先取りしている）
@@ -313,7 +325,7 @@ Short_Report_Target: yes
 Short_Interest: 21.4%
 Institutional_Ownership: N/A (not in data source)
 Analyst_Consensus: Buy | Target: $150 median ($39-$317) | 35 analysts | vs IV: -42.2%
-Insider_Activity: Sell優勢 | 買い0件 / 売り1094件 | 直近90日
+Insider_Activity: Sell優勢 | 買い0件 / 売り1088件 | 直近90日
 Runway_Months: 5.2
 Revenue_Growth_YoY: 167.9%
 Next_Earnings_Date: 2026-11-12
@@ -338,7 +350,7 @@ based on recent 4Q linear trend. Rough estimate only.
 Source: Grok web search (直近3ヶ月)
   [high] litigation: Antitrust lawsuit
   [high] regulatory: SEC investigation
-  [mid] earnings: Earnings warning amid competition in 2025-2026
+  [mid] earnings: Earnings warning amid 2025-2026 competition
 
 ==============================================
 DISCLAIMER: This report is generated automatically
