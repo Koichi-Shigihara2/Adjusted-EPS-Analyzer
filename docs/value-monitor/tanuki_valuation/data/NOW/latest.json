@@ -44,7 +44,7 @@
     }
   },
   "upside_percent": 9.9,
-  "calculation_date": "2026-08-27T10:12:27+09:00",
+  "calculation_date": "2026-08-28T09:25:42+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -381,12 +381,12 @@
     "insider_net_direction": "Sell優勢",
     "insider_latest_date": "2026-08-19",
     "analyst_vs_iv": 1.2,
-    "max_eps": 1.891,
-    "max_eps_per": 66.5,
-    "max_eps_reliability": "MED"
+    "max_eps": 3.5904,
+    "max_eps_per": 35.0,
+    "max_eps_reliability": "HIGH"
   },
   "validation": {
-    "validated_at": "2026-08-27",
+    "validated_at": "2026-08-28",
     "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
@@ -477,16 +477,28 @@
     "shares_yr_now_label": "2025",
     "shares_yr_3ago_label": "2022",
     "split_adjusted": true,
-    "split_factor": 5.0505
+    "split_factor": 5.0505,
+    "buyback_ttm": 3767000000
   },
   "net_current_assets_ratio": -0.0119,
+  "dupont": {
+    "ni_ttm": 1757000000,
+    "revenue_ttm": 13960000000,
+    "total_assets": 24381000000,
+    "equity": 11728000000,
+    "net_margin": 0.1259,
+    "asset_turnover": 0.5726,
+    "financial_leverage": 2.0789,
+    "roe_decomposed": 0.1498,
+    "dupont_bs_period": "2026Q1"
+  },
   "next_earnings_date": "2026-10-29",
   "segments": [
     {
       "name": "General",
       "weight": 1,
       "growth": 0.22003643559980282,
-      "estimated_revenue": 13278000000.0
+      "estimated_revenue": 13960000000.0
     }
   ],
   "segment_configured": false,
@@ -529,17 +541,17 @@
   "risk_events": [
     {
       "type": "litigation",
-      "summary": "Ongoing antitrust lawsuit against ServiceNow",
+      "summary": "Antitrust lawsuit against ServiceNow",
       "impact": "high"
     },
     {
       "type": "regulatory",
-      "summary": "Active SEC regulatory investigation",
+      "summary": "SEC regulatory investigation",
       "impact": "high"
     },
     {
       "type": "earnings",
-      "summary": "Earnings warning amid 2025-2026 competition risks",
+      "summary": "Earnings warning impacting 2025-2026 outlook",
       "impact": "mid"
     }
   ]

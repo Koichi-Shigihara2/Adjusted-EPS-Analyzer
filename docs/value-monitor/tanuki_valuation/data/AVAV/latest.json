@@ -44,7 +44,7 @@
     }
   },
   "upside_percent": -40.8,
-  "calculation_date": "2026-08-27T10:07:45+09:00",
+  "calculation_date": "2026-08-28T09:20:50+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -410,12 +410,12 @@
     "insider_net_direction": "Sell優勢",
     "insider_latest_date": "2026-08-19",
     "analyst_vs_iv": 158.7,
-    "max_eps": 0.7543,
-    "max_eps_per": 194.7,
-    "max_eps_reliability": "MED"
+    "max_eps": null,
+    "max_eps_per": null,
+    "max_eps_reliability": "LOW"
   },
   "validation": {
-    "validated_at": "2026-08-27",
+    "validated_at": "2026-08-28",
     "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
@@ -507,6 +507,19 @@
   },
   "computed_runway_months": 24.679569770411785,
   "net_current_assets_ratio": 0.1869,
+  "dupont": {
+    "ni_ttm": -265122000,
+    "revenue_ttm": 1976845000,
+    "total_assets": 5453636000,
+    "equity": 4272190000,
+    "net_margin": -0.1341,
+    "asset_turnover": 0.3625,
+    "financial_leverage": 1.2765,
+    "roe_decomposed": -0.0621,
+    "dupont_bs_period": "2026Q3",
+    "reliability": "LOW",
+    "reliability_reason": "単四半期NI集中（一過性要因の可能性）"
+  },
   "next_earnings_date": "2026-09-03",
   "segments": [
     {
@@ -566,17 +579,17 @@
   "risk_events": [
     {
       "type": "litigation",
-      "summary": "Antitrust lawsuit against AeroVironment",
+      "summary": "Ongoing antitrust lawsuit",
       "impact": "high"
     },
     {
       "type": "regulatory",
-      "summary": "Ongoing SEC regulatory investigation",
+      "summary": "SEC regulatory investigation",
       "impact": "high"
     },
     {
       "type": "earnings",
-      "summary": "Earnings warning amid competition risks for 2025-2026",
+      "summary": "Earnings warning impacting 2025-2026 outlook",
       "impact": "mid"
     }
   ]

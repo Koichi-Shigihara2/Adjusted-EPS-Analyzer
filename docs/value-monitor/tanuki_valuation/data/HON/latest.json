@@ -44,7 +44,7 @@
     }
   },
   "upside_percent": -40.3,
-  "calculation_date": "2026-08-27T10:15:49+09:00",
+  "calculation_date": "2026-08-28T09:29:23+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -369,12 +369,12 @@
     "insider_net_direction": "Sell優勢",
     "insider_latest_date": "2026-08-04",
     "analyst_vs_iv": 101.3,
-    "max_eps": 0.6184,
-    "max_eps_per": 356.8,
-    "max_eps_reliability": "MED"
+    "max_eps": 26.5318,
+    "max_eps_per": 8.3,
+    "max_eps_reliability": "HIGH"
   },
   "validation": {
-    "validated_at": "2026-08-27",
+    "validated_at": "2026-08-28",
     "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
@@ -462,9 +462,23 @@
     "shares_yr_now": 642800000,
     "shares_yr_3ago": 683100000,
     "shares_yr_now_label": "2025",
-    "shares_yr_3ago_label": "2022"
+    "shares_yr_3ago_label": "2022",
+    "buyback_ttm": 1200000000
   },
   "net_current_assets_ratio": 0.0698,
+  "dupont": {
+    "ni_ttm": 8213000000,
+    "revenue_ttm": 38057000000,
+    "total_assets": 77344000000,
+    "equity": 18537000000,
+    "net_margin": 0.2158,
+    "asset_turnover": 0.492,
+    "financial_leverage": 4.1724,
+    "roe_decomposed": 0.4431,
+    "dupont_bs_period": "2026Q2",
+    "reliability": "LOW",
+    "reliability_reason": "単四半期NI集中（一過性要因の可能性）"
+  },
   "next_earnings_date": "2026-10-22",
   "segments": [
     {
@@ -531,18 +545,18 @@
   "risk_events": [
     {
       "type": "litigation",
-      "summary": "Antitrust lawsuit against Honeywell International",
+      "summary": "Ongoing antitrust lawsuit",
       "impact": "high"
     },
     {
       "type": "regulatory",
-      "summary": "Ongoing SEC regulatory investigation",
-      "impact": "mid"
+      "summary": "Active SEC regulatory investigation",
+      "impact": "high"
     },
     {
       "type": "earnings",
-      "summary": "Earnings warning amid 2025-2026 competition pressures",
-      "impact": "high"
+      "summary": "Earnings warning amid 2025-2026 competition",
+      "impact": "mid"
     }
   ]
 }
