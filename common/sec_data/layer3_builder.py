@@ -1018,6 +1018,127 @@ def _backfill_gross_profit(fields_out: dict) -> None:
         gp_field["entries"] = sorted(gp_entries + backfilled, key=lambda x: x["end"])
 
 
+def _backfill_operating_income(fields_out: dict) -> None:
+    """
+    operating_incomeが欠落している四半期を、GP法（gross_profit -
+    research_and_development - selling_general_and_administrative、
+    統合SGAを報告しない企業はselling_and_marketingで代替）で逆算する。
+    `[[LAYER3-OI-RECONSTRUCTION-FALLBACK-GAP-1]]`対応。
+
+    `common/sec_data/parser.py::_backfill_operating_income()`のGP法部分と
+    同一アルゴリズムだが、以下2点は意図的にスコープを絞った（着手前の
+    実消費者調査により判明した設計判断、詳細はBACKLOG_DONE.md参照）:
+
+    - **四半期粒度が対象**（parser.py版は年次のみ）。Layer3の実消費者
+      `src/tail/tail_dcf_bridge.py`・`quarterly_review_generator.py`は
+      いずれも`get_latest_quarterly()`/`get_quarterly_series()`で
+      四半期粒度のoperating_incomeを参照しており、年次粒度の消費者は
+      現状存在しないため。
+    - **pretax調整法のフォールバックは未実装**。gross_profit自体が
+      構造的に存在しない銘柄（ASTS/XOM等、業態上COGS区分が無い）は
+      本関数では回収できず欠損のまま残る。pretax法はGP法より複雑な
+      非事業性項目ロジックを要し、raw XBRLの四半期/YTD変換という
+      Layer3が既に持つ複雑性を重複実装するリスクがあるため、GP法単独
+      でも対象10銘柄中6銘柄・92四半期を回収できると実測確認した上で
+      今回は見送った（残るASTS/XOMは既知の残課題として記録）。
+    - **RestructuringCharges控除
+      （`[[OI-RECONSTRUCTION-MISSING-OPEX-LINES-1]]`相当）は未実装**。
+      Layer3に`restructuring_charges`フィールド自体が未定義であり、
+      四半期粒度でのYTD→四半期変換を新規実装するコストに見合う改善幅か
+      要検討のため、GP法の基本形（RestructuringCharges控除なし）に
+      とどめた。既存のparser.py側（年次・RestructuringCharges控除あり）
+      と比べてやや粗い精度になる点に注意。
+
+    **GP法入力の整合性ガード**（parser.py同型、案D）: revenue =
+    gross_profit + cost_of_revenueという定義上の関係が成立しない
+    （|gross_profit| > |revenue|）場合はgross_profitを信頼できない
+    測定値とみなし使用しない。
+
+    build_ticker_store()の全フィールドループ完了後、
+    _backfill_gross_profit()の**後**に呼び出すこと（依存するgross_profit
+    の最終値〈backfill済み含む〉を確実に参照するため）。
+
+    fields_outを直接変更する（operating_incomeキーのentriesに追加）。
+    既存operating_incomeエントリのend日付には追加しない（上書きしない）
+    ため_merge_normalized_by_priority()の再実行は不要。出力エントリには
+    "backfilled": True・"backfill_source": "reconstructed_gp"を設定する。
+    """
+    oi_field = fields_out.get("operating_income")
+    gp_field = fields_out.get("gross_profit")
+    rd_field = fields_out.get("research_and_development")
+    sga_field = fields_out.get("selling_general_and_administrative")
+    sm_field = fields_out.get("selling_and_marketing")
+    rev_field = fields_out.get("revenue")
+    if oi_field is None or gp_field is None:
+        return
+
+    oi_entries = oi_field["entries"]
+    gp_entries = gp_field["entries"]
+    if not gp_entries:
+        return
+
+    oi_ends = {e["end"] for e in oi_entries if not e.get("is_annual")}
+    gp_by_end = _index_quarterly_by_end(gp_entries)
+    rd_by_end = _index_quarterly_by_end(rd_field["entries"]) if rd_field else {}
+    sga_by_end = _index_quarterly_by_end(sga_field["entries"]) if sga_field else {}
+    sm_by_end = _index_quarterly_by_end(sm_field["entries"]) if sm_field else {}
+    rev_by_end = _index_quarterly_by_end(rev_field["entries"]) if rev_field else {}
+
+    backfilled: list = []
+    for end_date, gp_entry in gp_by_end.items():
+        if end_date in oi_ends:
+            continue
+        gp_val = gp_entry.get("val")
+        if gp_val is None:
+            continue
+
+        # スケール不一致ガード（着手時の実データ検証で発見、案外の追加分）:
+        # 52/53週決算企業（JNJ等）で、fp="FY"だがis_annual=Falseに分類
+        # された年次スケールの値が"四半期"として紛れ込むケースが確認された
+        # （JNJ実測: gross_profitのみend=2023-01-01/2023-12-31でfp="FY"・
+        # 年次スケール$13.8B/$14.6Bとなる一方、同end日のR&D/SGAは
+        # fp="Q4"・四半期スケール$3-5Bのまま——スケールの異なる値を
+        # 引き算すると意味のない値が生成される。この期間分類自体の不整合は
+        # `[[LAYER3-ANNUAL-CLASSIFICATION-DROPS-DATA-1]]`とは別種の問題
+        # のため新規登録し、本関数側では逆算対象から機械的に除外する
+        # 防御ガードのみ追加する）。
+        if gp_entry.get("fp") == "FY":
+            continue
+
+        # GP法入力の整合性ガード（parser.py同型、案D）
+        rev_entry = rev_by_end.get(end_date)
+        rev_val = rev_entry.get("val") if rev_entry else None
+        if rev_val is not None and abs(gp_val) > abs(rev_val):
+            continue
+
+        rd_entry = rd_by_end.get(end_date)
+        rd_val = rd_entry.get("val") if rd_entry else None
+        if rd_val is None:
+            continue
+
+        sga_entry = sga_by_end.get(end_date)
+        sga_val = sga_entry.get("val") if sga_entry else None
+        if sga_val is None:
+            sm_entry = sm_by_end.get(end_date)
+            sga_val = sm_entry.get("val") if sm_entry else None
+        if sga_val is None:
+            continue
+
+        oi_val = gp_val - rd_val - sga_val
+        backfilled.append({
+            **{k: gp_entry[k] for k in ("end", "start", "fp", "fy", "form", "filed",
+                                         "period_days", "is_ytd", "is_annual")
+               if k in gp_entry},
+            "val": oi_val,
+            "accn": gp_entry.get("accn", ""),
+            "backfilled": True,
+            "backfill_source": "reconstructed_gp",
+        })
+
+    if backfilled:
+        oi_field["entries"] = sorted(oi_entries + backfilled, key=lambda x: x["end"])
+
+
 def build_ticker_store(ticker: str) -> dict | None:
     """
     1銘柄分のLayer3データ（32フィールド）を構築する。
@@ -1146,6 +1267,12 @@ def build_ticker_store(ticker: str) -> dict | None:
     # 最終値を参照する必要があるため、ループ内ではなくここで実行する
     # （理由は_backfill_gross_profit()のdocstring参照）。
     _backfill_gross_profit(fields_out)
+
+    # OperatingIncomeバックフィル（[[LAYER3-OI-RECONSTRUCTION-FALLBACK-
+    # GAP-1]]対応）。gross_profitのbackfill結果に依存するため、必ず
+    # _backfill_gross_profit()の後に実行する（理由は
+    # _backfill_operating_income()のdocstring参照）。
+    _backfill_operating_income(fields_out)
 
     return {
         "ticker": ticker,

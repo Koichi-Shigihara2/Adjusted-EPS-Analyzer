@@ -6074,58 +6074,6 @@ TRUST-SUMMARY-EPIC-1へ統合済み（詳細は同エントリ参照）。
 
 ## 優先度：中（こなれてきたら対応）
 
-### [LAYER3-OI-RECONSTRUCTION-FALLBACK-GAP-1] layer3_builder.py::build_ticker_store()のoperating_incomeにGP法/pretax法相当のフォールバックが存在しない
-**優先度:** 中（影響範囲が12消費ファイルと広いため優先度を保持するが、
-実害〈IV・TANUKI SCORE・MATRIX分類への影響〉は未確認。着手前に設計
-判断が必要）
-**分類:** バグ / データ品質 / SEC EDGAR / Layer3統合スキーマ
-**登録日:** 2026-08-22
-**発見:** `[[OI-RECONSTRUCTION-MISSING-OPEX-LINES-1]]`の実装スコープ
-判断時（parser.py側のGP法対応と切り分け）
-
-#### 内容
-`common/sec_data/layer3_builder.py::build_ticker_store()`は
-`config/sec_concept_definitions.json`の`fields.operating_income.
-candidates`（現状`["OperatingIncomeLoss"]`単独）に基づく候補ベース
-抽出のみで、`common/sec_data/parser.py::_backfill_operating_income()`
-が持つGP法（`gross_profit - R&D - SGA/S&M`〈+`[[OI-RECONSTRUCTION-
-MISSING-OPEX-LINES-1]]`実装後は`RestructuringCharges`控除込み〉）・
-pretax調整法相当のフォールバックロジックが**一切存在しない**。標準
-タグ`OperatingIncomeLoss`が取得できない銘柄・年度では、Layer3側は
-`operating_income`が欠損したままになる。
-
-#### 影響範囲（実測、規模感の把握のみ）
-- **消費者**: `grep`で12ファイル確認（`pipeline.py`・`quarterly_
-  review_generator.py`・`kpi_proposer.py`・`xbrl_segment_fetcher.py`・
-  `tail_dcf_bridge.py`・`hypecore.py`・`financial_trend_calculator.py`
-  〈STONKS SILO〉等、TANUKI VALUATION/TANUKI TAIL/STONKS SILO/
-  HypeCoreの主要4系統全て）
-- **対象銘柄・年度**: parser.py側で現在再構成（GP法/pretax法）が発生
-  している年度は全1,314年度中76年度（5.8%）、対象10銘柄（ASTS/COHR/
-  HON/JNJ/KLAC/LLY/RCAT/SOFI/VRT/XOM）。Layer3側にフォールバックを
-  追加した場合、この10銘柄・76年度分でLayer3のoperating_income欠損が
-  解消される見込み
-- 詳細実装（parser.py側ロジックの移植方法・Layer3側での日付マッチング
-  設計等）は未検討
-
-#### 対応方針（未確定）
-`common/sec_data/parser.py::_backfill_operating_income()`と同型の
-GP法/pretax法フォールバックをLayer3側にも実装する案が考えられるが、
-実装場所（`layer3_builder.py`自体に組み込むか、`build_ticker_store()`
-呼び出し後の後処理として追加するか）・ロジック重複の回避方法
-（parser.py側の実装をそのまま呼び出せるか、Layer3独自の日付/タグ
-マッチング方式との整合）は未設計。
-
-#### 関連
-- `[[OI-RECONSTRUCTION-MISSING-OPEX-LINES-1]]`（parser.py側は解消済み、
-  本項目はそこから切り出したLayer3側の残課題）
-
-#### 着手条件
-なし。ただし本体スコープが広い（12消費ファイル）ため、**着手前に
-実装方針の設計判断をユーザーに確認すること**。
-
----
-
 ### [LAYER3-ANNUAL-CLASSIFICATION-DROPS-DATA-1] Layer3の年次期間分類が実在するデータを取りこぼしている（年次側は調査完了・実質解消／四半期側は限定的な残課題あり）
 **優先度:** 低（2026-08-19②の範囲実測により、当初の仮説は大半が誤りと
 判明。年次側は確認された未解決の欠陥が0件、四半期側も確認された欠陥は
@@ -6307,6 +6255,68 @@ XOM: $41.871B `reconstructed_pretax`）。実装（Layer3側への再構成移�
 
 #### 着手条件
 なし（優先度低のため急ぎ不要）
+
+---
+
+### [LAYER3-FY-SCALE-ANNUAL-MISFLAG-1] Layer3の一部フィールドで、52/53週決算企業のend日にfp="FY"・年次スケールの値がis_annual=Falseのまま四半期として混入する
+
+**優先度:** 低（実害は限定的。本項目発見元の`_backfill_operating_income()`
+側では機械的ガードで回避済みのため計算結果への実害は無いが、他フィールド・
+他消費者〈`get_quarterly_series()`等〉が同型の値をそのまま拾っている
+可能性は未調査）
+**分類:** バグ / データ品質 / SEC EDGAR / Layer3統合スキーマ / 52-53週決算
+**登録日:** 2026-08-29
+**発見:** `[[LAYER3-OI-RECONSTRUCTION-FALLBACK-GAP-1]]`実装中のJNJ実測
+検証（2026-08-29）
+
+#### 内容
+JNJ（52/53週決算企業、`[[FY52WEEK-BUCKET-MISPLACE-1]]`等の既知対象
+銘柄）の`gross_profit`フィールドで、`end=2023-01-01`・`end=2023-12-31`の
+2エントリが`fp="FY"`・年次スケールの値（$13.855B・$14.597B）を持つ
+にもかかわらず`is_annual=False`のまま`entries`に残っている実データを
+確認した。`_index_quarterly_by_end()`は`is_annual`フラグのみで四半期
+判定するため、これらは「四半期」として扱われてしまう。
+
+同一end日の`research_and_development`・`selling_general_and_
+administrative`はいずれも`fp="Q4"`・四半期スケール（$3-5B台）の正常な
+値を持っており、**同一end日でフィールドごとにスケール〈年次/四半期〉が
+食い違う**という組み合わせを実測確認した（`gross_profit`側の期間分類
+のみが誤っている）。
+
+`[[LAYER3-OI-RECONSTRUCTION-FALLBACK-GAP-1]]`実装中に、これらの
+異常エントリを起点にGP法逆算（$13.855B − $3.485B − $3.107B =
+$7.263B）を行ってしまい、意味のない値が生成されることを発見した
+（対応として本関数側では`fp=="FY"`のgross_profitエントリを逆算対象
+から機械的に除外するガードを追加済み、詳細はBACKLOG_DONE.md参照）。
+
+#### 影響範囲（未調査）
+- 発見はJNJの`gross_profit`1フィールドのみ。他の52/53週決算企業
+  （TDY/ADBE/ESTC等、`[[FY52WEEK-BUCKET-MISPLACE-1]]`記載の対象銘柄群）
+  や他フィールドで同型の混入が起きているか未調査
+- `get_quarterly_series()`/`get_latest_quarterly()`を直接呼ぶ既存消費者
+  （`tail_dcf_bridge.py`・`quarterly_review_generator.py`等）がこの
+  異常エントリをそのまま「最新四半期」として拾ってしまうケースが
+  無いか未確認（`_backfill_operating_income()`のガードは新規追加した
+  operating_income側にのみ効き、既存の`gross_profit`エントリ自体は
+  未修正のまま残る）
+
+#### 対応方針（未確定）
+根本対応は`is_annual`の期間分類ロジック（`_classify_period()`または
+関連する正規化処理）側の修正が必要と推測されるが、影響範囲（対象
+銘柄数・対象フィールド数）を`[[LAYER3-ANNUAL-CLASSIFICATION-DROPS-
+DATA-1]]`と同様の全銘柄横断実測で先に確認してから着手すること。
+
+#### 関連
+- `[[LAYER3-OI-RECONSTRUCTION-FALLBACK-GAP-1]]`（BACKLOG_DONE.md、
+  本問題の発見元）
+- `[[LAYER3-ANNUAL-CLASSIFICATION-DROPS-DATA-1]]`（同じくLayer3の期間
+  分類問題だが「取りこぼし」であり本項目「誤混入」とは別種の症状）
+- `[[FY52WEEK-BUCKET-MISPLACE-1]]`（BACKLOG_DONE.md、52/53週決算企業の
+  年度バケツ誤配置。本項目と発生条件が重なる可能性があるが根本原因は
+  未確認）
+
+#### 着手条件
+なし。影響範囲の実測調査から着手すること。
 
 ---
 

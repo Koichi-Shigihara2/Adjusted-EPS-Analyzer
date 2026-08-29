@@ -4,6 +4,115 @@
 
 ## 2026-08-29（完了）
 
+### ✅ [LAYER3-OI-RECONSTRUCTION-FALLBACK-GAP-1] layer3_builder.py::build_ticker_store()のoperating_incomeにGP法フォールバックを実装（pretax法は未実装のまま、GP法で回収可能な範囲は解消）
+
+**優先度:** 中 → 完了（GP法のスコープで解消、pretax法は構造的にGP法が
+使えない銘柄向けの残課題として意図的にスコープ外）
+**分類:** バグ / データ品質 / SEC EDGAR / Layer3統合スキーマ
+**登録日:** 2026-08-22
+**完了日:** 2026-08-29（Koichiさん承認「全部直せ」により、3設計判断
+〈組込み場所・ロジック再利用方法・日付/タグマッチング方式〉を
+ローカルClaude Codeの技術判断で決定の上、実装）
+
+#### 内容（登録時点）
+`common/sec_data/layer3_builder.py::build_ticker_store()`は候補ベース
+抽出のみで、`common/sec_data/parser.py::_backfill_operating_income()`が
+持つGP法・pretax調整法相当のフォールバックロジックが一切存在せず、
+標準タグ`OperatingIncomeLoss`が取得できない銘柄・年度では
+`operating_income`が欠損したままだった。
+
+#### 着手前の実消費者調査で判明した設計判断（3点）
+
+**① 対象粒度は四半期（登録時の想定「年次76年度」から変更）**:
+`grep`でLayer3の実消費者2件（`src/tail/tail_dcf_bridge.py`・
+`quarterly_review_generator.py`）を確認したところ、いずれも
+`get_latest_quarterly()`/`get_quarterly_series()`で**四半期粒度**の
+operating_incomeを参照しており、年次粒度の消費者は存在しなかった。
+登録時のBACKLOG記載「対象10銘柄・76年度」はparser.py側（年次のみ）の
+実測値であり、Layer3の実際の消費パターンとは異なると判明したため、
+四半期粒度を対象とする方針に変更した。
+
+**② 実装場所・ロジック再利用方法**: `layer3_builder.py`内に既存の
+`_backfill_gross_profit()`（`[[LAYER3-GROSSPROFIT-BACKFILL-MISSING-1]]`
+で導入済み、quarterly-onlyのend日ベース逆算パターン）と全く同型の
+後処理関数`_backfill_operating_income(fields_out)`を新設し、
+`build_ticker_store()`の全フィールドループ完了後・
+`_backfill_gross_profit()`の直後に呼び出す設計とした。parser.py側の
+実装を直接importして呼び出す案は、parser.pyがクラスメソッド
+（`self._find_fy_tag_value`等）で実装されており密結合を招くため
+採用せず、`_backfill_gross_profit()`が既に確立している「アルゴリズムを
+docstringで明示的にクロスリファレンスしつつLayer3側で独立実装する」
+という既存パターンを踏襲した。
+
+**③ pretax調整法は実装スコープ外**: GP法単独でも対象10銘柄中6銘柄
+（KLAC/COHR/LLY/JNJ/RCAT/SOFI）・87四半期を回収できると実測確認した
+一方、残るASTS/XOM（業態上gross_profit自体が構造的に存在しない）は
+pretax法でしか回収できない。pretax法はGP法より複雑な非事業性項目
+ロジック（raw XBRLの四半期/YTD変換）を要し、Layer3が既に持つ複雑性を
+重複実装するリスクが大きいため、今回はGP法単独の実装にとどめ、
+ASTS/XOMは既知の残課題として記録するにとどめた（新規BACKLOG登録は
+せず、実装コード内のdocstringに残課題として明記）。
+
+#### 実装内容
+`_backfill_operating_income(fields_out)`（GP法: `gross_profit -
+research_and_development - selling_general_and_administrative`、
+統合SGAを報告しない企業は`selling_and_marketing`で代替）。
+`_backfill_gross_profit()`と同じ「既存エントリのend日には追加しない
+（上書きしない）」設計。GP法入力の整合性ガード
+（`|gross_profit| > |revenue|`なら不採用、parser.py同型・案D）も移植。
+RestructuringCharges控除（`[[OI-RECONSTRUCTION-MISSING-OPEX-LINES-1]]`
+相当）は、Layer3に`restructuring_charges`フィールド自体が未定義であり
+四半期粒度のYTD変換を新規実装するコストに見合わないと判断し見送った
+（GP法の基本形のみ、parser.py側よりやや粗い精度）。
+
+#### 着手中に新規発見した問題への対応
+実装検証中（JNJの実データ検証）で、52/53週決算企業のend日に
+`fp="FY"`・年次スケールの値が`is_annual=False`のまま`gross_profit`に
+混入している既存の期間分類異常を発見した（本項目の対象外の別問題）。
+`_backfill_operating_income()`側では`gp_entry.get("fp")=="FY"`の
+エントリを逆算対象から機械的に除外する防御ガードを追加して対応し、
+根本原因（期間分類ロジック自体）は影響範囲未調査のまま
+`[[LAYER3-FY-SCALE-ANNUAL-MISFLAG-1]]`として新規登録した
+（BACKLOG.md参照）。
+
+#### 実測確認
+- 対象10銘柄で実行し、GP法により**6銘柄・87四半期**が新規に回収
+  されることを確認（KLAC 20・COHR 8・LLY 19・JNJ 14〈スケール
+  ガードにより5四半期は意図的に未回収〉・RCAT 7・SOFI 19）。
+  ASTS・XOMは構造的にGP法で回収不可のまま（想定通り、pretax法が
+  必要）。HON・VRTは既に標準タグで欠損なし（想定通り0件）
+- **KLAC FY2024の四半期合算値がparser.py側の独立した年次再構成値と
+  完全一致することを確認**（Layer3側: $3,635,684,000〈4四半期合算、
+  RestructuringCharges控除前〉= parser.py側:
+  `gp_estimate`（restructuring控除前）$3,635,684,000）。異なる
+  実装同士が独立に同じ値へ収束したことで、GP法アルゴリズムの移植が
+  正しく行われたことを裏付ける強い実測根拠となった
+- `src/tail/tail_dcf_bridge.py::_load_layer1_financials("KLAC")`を
+  実行し、修正前は欠損していた`operating_margin`が実際に`0.4249`
+  （42.5%）として算出されるようになったことを確認（実消費者での
+  end-to-endの改善を確認）
+- 回帰テスト`tests/test_layer3_operating_income_backfill.py`
+  （11件、GP法・S&Mフォールバック・上書き禁止・整合性ガード・
+  スケール不一致ガード・annual除外・フィールド不在時のnoop等を検証）
+  追加
+
+#### 全銘柄への反映
+`build_ticker_store()`はディスクへの永続化を行わず、消費者呼び出し時に
+`company_facts.json`から都度再構築される設計（`build_and_save()`/
+`save_ticker_store()`の呼び出し元が現状存在しないことを確認済み）。
+そのため**全銘柄・全消費者に即座に反映済み**——HypeCoreの`_poc.json`の
+ような移行期間・再生成待ちは発生しない。
+
+#### 関連
+- `[[OI-RECONSTRUCTION-MISSING-OPEX-LINES-1]]`（parser.py側は解消済み、
+  本項目はそこから切り出したLayer3側の残課題）
+- `[[LAYER3-GROSSPROFIT-BACKFILL-MISSING-1]]`（実装パターンの先例、
+  同一ファイル内の既存の後処理関数）
+- `[[LAYER3-FY-SCALE-ANNUAL-MISFLAG-1]]`（本項目の実装検証中に新規
+  発見・登録した別問題、BACKLOG.md参照）
+
+---
+
 ### ✅ [HYPECORE-MISC-NAMING-GAPS-1] HypeCoreの軽微な命名・観測性ギャップまとめ（buy_hold_ratio誤称・fcf_yield誤称・200MA乖離の別ソース並存・ma200_mom未出力・出来高指標の粒度相違・lifecycle基準相違）
 
 **優先度:** 低 → 完了（①〜⑥全項目対応済み）
