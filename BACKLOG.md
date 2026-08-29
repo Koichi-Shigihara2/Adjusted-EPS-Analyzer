@@ -12169,7 +12169,9 @@ LAG-1]]`と同じ手順——STONKS SILO対象銘柄の`results.json`側の価�
 `common/market_data/daily/`（yfinance統合層）の日次終値に依存している
 ことをコードから確認した。一方`Stonks_Silo_Update.yml`のcronは
 `5 15 * * 1-5`（UTC15:05、平日）であり、`Market_Data_Daily_Update.yml`
-の`40 21 * * 1-5`（UTC21:40完了、平日）より**先**に発火する。
+の`25 21 * * 1-5`（UTC21:25完了目安、平日。2026-08-29のPlan A変更で
+旧21:40から前倒し、`[[MARKET-DATA-SCHEDULE-7AM-JST-1]]`参照）より
+**先**に発火する。
 
 これは[[TANUKI-VALUATION-PRICE-SCHEDULE-LAG-1]]で確認・修正した
 `TANUKI_VALUATION_Update`の構造的ラグ（現在の日次終値がまだ`daily/`に

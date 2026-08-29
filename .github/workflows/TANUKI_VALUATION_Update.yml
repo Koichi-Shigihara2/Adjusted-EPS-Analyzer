@@ -10,8 +10,8 @@ name: TANUKI VALUATION Daily Update
 # 前営業日終値になる構造的ラグの原因だったため削除。
 # 安全網として、chainが何らかの理由で発火しなかった場合に備え、
 # 週1回のみ低頻度フォールバックcronを残す（Market_Data_Daily_Updateの
-# 金曜実行〈21:40 UTC〉より確実に後になる時刻に設定し、旧cronと同じ
-# レースを再現しないようにする）。
+# 金曜実行〈2026-08-29時点で21:25 UTC、旧21:40 UTC〉より確実に後になる
+# 時刻に設定し、旧cronと同じレースを再現しないようにする）。
 on:
   workflow_run:
     workflows:

@@ -2,9 +2,16 @@ name: Market Data Daily Update
 
 on:
   schedule:
-    - cron: '40 21 * * 1-5'  # UTC 21:40 (JST 翌6:40) 平日、市場クローズ後。
-                              # Market_Pulse_Update.yml(21:35 UTC)と近接だが
-                              # 完全同時刻は避けてリクエスト集中を分散（設計確定事項8）
+    - cron: '25 21 * * 1-5'  # UTC 21:25 (JST 翌6:25) 平日、市場クローズ後。
+                              # 2026-08-29 Plan A変更（朝7時JST到達目標）: 21:40→21:25へ
+                              # 15分前倒し。冬時間(EST)の市場終了(21:00 UTC)から約25分の
+                              # 安全マージンを確保（夏時間〈EDT、市場終了20:00 UTC〉は
+                              # 約85分と余裕大）。TANUKI_VALUATION_Update.ymlはworkflow_run
+                              # 連鎖のため自動的に追従、cron変更は不要。
+                              # Market_Pulse_Update.yml(21:35 UTC)との間隔は変更前5分→
+                              # 変更後10分に拡大（別ジョブ・別ランナー・別API依存のため
+                              # 実質的な競合はないが、リクエスト集中回避〈設計確定事項8〉
+                              # の趣旨はむしろ強化される）
   workflow_dispatch:
     inputs:
       tickers:
@@ -27,10 +34,11 @@ env:
 # 【新たに判明した同型の未対応ギャップ（今回のスコープ外・報告のみ）】
 # Stonks_Silo_Update.yml（cron 15:05 UTC）も自身のvaluation_fetcher.py
 # 経由でcommon/market_data/daily/の日次終値に依存しているが、本
-# ワークフロー（21:40 UTC完了）より先に発火するため、TANUKI VALUATIONと
-# 同種の「常に前営業日終値を参照する」構造的ラグを抱えている可能性が
-# 高い。今回はTANUKI_VALUATION_Update用のworkflow_run連鎖のみ対応し、
-# Stonks_Silo_Update側への同種対応は意図的にスコープ外とした
+# ワークフロー（2026-08-29時点で21:25 UTC完了目安、旧21:40 UTC）より
+# 先に発火するため、TANUKI VALUATIONと同種の「常に前営業日終値を参照
+# する」構造的ラグを抱えている可能性が高い。今回はTANUKI_VALUATION_
+# Update用のworkflow_run連鎖のみ対応し、Stonks_Silo_Update側への同種
+# 対応は意図的にスコープ外とした
 # （[[STONKS-SILO-PRICE-SCHEDULE-LAG-SUSPECT-1]]として別途登録）。
 # ─────────────────────────────────────────────────────────────────
 

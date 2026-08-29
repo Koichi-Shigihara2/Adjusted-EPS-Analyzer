@@ -4,6 +4,131 @@
 
 ## 2026-08-29（完了）
 
+### ✅ [MARKET-DATA-SCHEDULE-7AM-JST-1] 朝7時JST到達目標での自動更新スケジュール調査＋Plan A実装（Market_Data_Daily_Updateを21:40→21:25 UTCへ前倒し）＋直近3日間の異常遅延の原因調査
+
+**優先度:** 中 → 完了
+**分類:** 運用 / GitHub Actions / データ鮮度
+**登録日:** 2026-08-29（調査タスクとして開始、同日中に実装まで完了）
+**完了日:** 2026-08-29（Koichiさん承認「それでいい」）
+
+#### 背景・依頼内容
+Koichiさんが日本時間の朝7時ころにシステムを見ることが多いため、その
+時点で最新データが揃うよう自動更新スケジュールを見直したいとの要望。
+まず調査専用タスク（本記録の前半）で現状把握・選択肢整理を行い、
+その結果を踏まえてKoichiさんが「Plan A（保守的な15分前倒し）」＋
+「直近の異常遅延の根本原因調査」の組み合わせを承認、後半で原因調査・
+実装まで実施した。
+
+#### 調査結果（実装前）
+- **良好日の実測**: 現行スケジュール（Market_Data_Daily_Update
+  21:40 UTC=JST翌6:40起動）は、通常日はTANUKI_VALUATION_Update完了
+  まで含めて**07:16 JST**に到達しており、目標の朝7時にわずか16分差
+  まで迫っていた
+- **米国市場終了時刻の季節差**: 夏時間(EDT)は20:00 UTC、冬時間(EST)は
+  21:00 UTC終了。現行21:40 UTCは冬時間ベースで約40分マージン
+  （夏時間は約100分と余裕大）
+- **月曜JST朝は構造的に更新されない**: Market_Data_Daily_Updateの
+  cronが平日(UTC月〜金)のみのため、週末休場を挟むJST月曜早朝には
+  新規発火がない（不具合ではなく正常な仕様）
+- **既知の関連課題**: `[[STONKS-SILO-PRICE-SCHEDULE-LAG-SUSPECT-1]]`
+  （Stonks_Silo_Updateのcron順序ラグ、本タスクとは別軸で未解決のまま
+  残置）
+
+#### STEP 1: 直近3日間（2026-08-27/28/29）の異常遅延の根本原因調査
+
+GitHub Actions REST API（`api.github.com/repos/.../actions/workflows/
+{yml}/runs`、パブリックリポジトリのため無認証で取得可能）で
+`Market_Data_Daily_Update`・`Stonks_Silo_Update`・`TANUKI_VALUATION_
+Update`等の直近の実行履歴（`created_at`＝実際の起動時刻、`updated_at`
+＝完了時刻）を取得し、cron指定時刻との差分を実測した。
+
+**実測結果**（Market_Data_Daily_Update、cron 21:40 UTC平日時点):
+
+| 対象日(UTC) | 予定起動 | 実際の起動 | 遅延 | 実行時間 |
+|---|---|---|---|---|
+| 8/26(水) | 21:40 | 翌01:02 | **3h22m** | 2m40s |
+| 8/27(木) | 21:40 | 翌05:35 | **7h55m** | 3m09s |
+| 8/28(金) | 21:40 | 翌03:22 | **5h42m** | 2m30s |
+| 8/18〜8/25（通常日） | 21:40 | 21:54〜21:58 | 14〜18m（正常範囲） | 約3m |
+
+**重要な発見**: 遅延が発生した全ての回で、ジョブ自体の実行時間
+（`created_at`→`updated_at`）は正常時と同じ約3分だった。**遅延は
+100%「起動待ち」（GitHub Actions側のスケジューラのキューイング）で
+発生しており、ワークフロー内の特定ステップが遅いのではない**ことを
+実測で確認した。同時期にStonks_Silo_Update（別cron 15:05 UTC）でも
+同様の8〜9時間規模の起動遅延を確認し、単一ワークフロー固有の問題
+ではなく複数ワークフローに共通する外部要因であることを裏付けた。
+
+**原因特定**: `githubstatus.com`の公式インシデント履歴（無認証で
+取得可能なpublic API）を確認したところ、該当期間に以下の複数の
+GitHub Actions基盤側インシデントが記録されていた:
+- 2026-08-26 15:02〜18:01 UTC「Incident with Actions」（データベース
+  プライマリのフェイルオーバー、Actionsジョブが起動不能〜起動遅延、
+  復旧後も約2時間キューの追いつき遅延が継続）
+- 2026-08-26 22:56〜翌00:26 UTC「Incident with Actions and Pull
+  Requests」（Actions実行の最大25%が遅延）
+- 2026-08-24 13:56〜14:34 UTC「Actions delays in starting runs」
+
+いずれも公式に「投稿・解決済み」と記録されており、こちらのリポジトリ
+固有の設定・コードに起因するものではないと確認できた（githubstatus.
+comのpublic APIは直近50件のインシデントのみ返す仕様のため、8/27〜28
+夜間の遅延に完全一致する個別インシデントは特定できなかったが、直前の
+一連の障害と時期・規模・パターンが一致しており、同根の基盤側問題の
+余波と判断するのが妥当）。
+
+**結論**: リポジトリ側で恒久的に修正可能な原因ではない
+（起動待ち＝GitHub側スケジューラの問題であり、リトライ設定・
+タイムアウト調整等のワークフロー側の対策では解消しない）。監視・
+再発検知の仕組みは`[[DATA-FRESHNESS-MONITORING-FUTURE-IDEA-1]]`
+としてアイデア段階で新規登録した（BACKLOG.md参照、優先度低・
+未着手）。
+
+#### STEP 2: Market_Pulse_Updateとの時間的近接問題への対応
+
+Market_Data_Daily_Updateを21:25 UTCへ変更すると、Market_Pulse_Update
+（21:35 UTC）との間隔は現状5分→変更後10分に**拡大**すると判明した
+（両者は別ジョブ・別ランナーで別々の外部API〈市場データ vs XAI/
+FRED/Gmail〉を呼ぶため実質的なリソース競合もない）。既存コメントの
+「実行時刻分散」という設計意図はむしろ改善される方向のため、
+Market_Pulse_Update側のcron変更は不要と判断した（方針b: 近接自体に
+実害なしと判断し変更しない）。
+
+#### STEP 3: Plan A実装
+`.github/workflows/Market_Data_Daily_Update.yml`のcronを
+`40 21 * * 1-5`（UTC21:40）→`25 21 * * 1-5`（UTC21:25、15分前倒し）に
+変更。冬時間(EST)マージンは40分→約25分に、夏時間(EDT)は約100分→
+約85分になる。`TANUKI_VALUATION_Update.yml`は既存の`workflow_run`
+連鎖トリガーのため、cron自体の変更は行っていない（自動的に前倒しに
+追従する設計）。関連する既存コメント2箇所
+（`Market_Data_Daily_Update.yml`のStonks Silo言及部・
+`TANUKI_VALUATION_Update.yml`のフォールバック根拠部）も新しい時刻に
+合わせて更新した。
+
+**次回起動の見積もり**: 平日UTC（次回は2026-08-31月曜UTC〈JST火曜〉）
+21:25 UTCに起動予定。実際にスケジュール通り起動するかは次回自動実行
+まで待つ必要があり、本タスク内では確認未実施（GitHub Actions側の
+遅延が今回のように再発した場合は、cron変更の効果とは別に遅延が
+発生しうる点に留意）。
+
+#### 実装コミット
+- `.github/workflows/Market_Data_Daily_Update.yml`・
+  `.github/workflows/TANUKI_VALUATION_Update.yml`のcron変更＋
+  コメント更新
+- BACKLOG.md: `[[STONKS-SILO-PRICE-SCHEDULE-LAG-SUSPECT-1]]`の
+  cron時刻参照を更新、`[[DATA-FRESHNESS-MONITORING-FUTURE-IDEA-1]]`
+  新規登録
+
+#### 関連
+- `[[STONKS-SILO-PRICE-SCHEDULE-LAG-SUSPECT-1]]`（BACKLOG.md、
+  Stonks_Silo_Update側の同型のcron順序ラグ、未解決のまま残置。本
+  タスクでは意図的にスコープ外）
+- `[[DATA-FRESHNESS-MONITORING-FUTURE-IDEA-1]]`（BACKLOG.md、
+  今回の調査から派生した監視アイデア、未着手）
+- `[[TANUKI-VALUATION-PRICE-SCHEDULE-LAG-1]]`（2026-08-22、本タスクの
+  前提となったworkflow_run連鎖化の実装元）
+
+---
+
 ### ✅ [LAYER3-OI-RECONSTRUCTION-FALLBACK-GAP-1] layer3_builder.py::build_ticker_store()のoperating_incomeにGP法フォールバックを実装（pretax法は未実装のまま、GP法で回収可能な範囲は解消）
 
 **優先度:** 中 → 完了（GP法のスコープで解消、pretax法は構造的にGP法が
