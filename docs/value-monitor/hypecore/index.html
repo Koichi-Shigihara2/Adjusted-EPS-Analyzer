@@ -147,13 +147,19 @@ const STAGE_CLASS={0:'badge-s0',1:'badge-s1',2:'badge-s2',3:'badge-s3',4:'badge-
 const LC_LABEL={dawn:'黎明期',growth:'成長期',expand:'拡大期',mature:'成熟期'};
 
 function detectLifecycle(data){
+  // [[HYPECORE-MISC-NAMING-GAPS-1]]⑥（2026-08-29）: revenue_growth_yf
+  // （yfinance）が取得できない場合のみrev_yoy（SEC EDGAR TTM%）へ暗黙
+  // フォールバックする。どちらが実際に使われたかをsourceとして返し、
+  // 呼び出し側でツールチップ表示に使う（事後検証できるようにする）。
   const lat=data.monthly[data.monthly.length-1];
-  const g=(lat.revenue_growth!=null)?lat.revenue_growth*100:(lat.rev_yoy??0);
-  if(g>40)return'growth'; if(g>15)return'expand'; if(g>0)return'mature'; return'dawn';
+  const usedYf=lat.revenue_growth_yf!=null;
+  const g=usedYf?lat.revenue_growth_yf*100:(lat.rev_yoy??0);
+  const stage=g>40?'growth':g>15?'expand':g>0?'mature':'dawn';
+  return{stage,g,source:usedYf?'yf':'sec'};
 }
 
 function getRec(d,prev){
-  const ma=d.ma200_dev??0,fp=d.from_peak??0,s=d.stage,ps=prev?.stage??s;
+  const ma=d.ma200_dev_local??0,fp=d.from_peak??0,s=d.stage,ps=prev?.stage??s;
   const real_strong=(d.rev_yoy!=null&&d.rev_yoy>30)&&(d.eps_surprise!=null&&d.eps_surprise>0);
   const ma200_shrinking=(d.ma200_mom??0)>-5;
   if(s===0&&ps===4)return{cat:'buy',text:'強い買い推奨'};
@@ -220,12 +226,14 @@ async function loadAll(){
     const data=results[i].status==='fulfilled'?results[i].value:null;
     if(!data||!data.monthly||data.monthly.length===0)continue;
     const m=data.monthly, lat=m[m.length-1], prev=m[m.length-2];
-    const lc=detectLifecycle(data);
+    const lcInfo=detectLifecycle(data);
+    const lc=lcInfo.stage;
     const rec=getRec(lat,prev);
     if(data.generated_at&&data.generated_at>latestGeneratedAt) latestGeneratedAt=data.generated_at;
     allRows.push({
       ticker:t,
       lc, lcLabel:LC_LABEL[lc]||lc,
+      lcSource:lcInfo.source, lcGrowth:lcInfo.g,
       stage:lat.stage??0,
       phase:lat.substage_phase||'—',
       phaseLabel:lat.substage_label||'',
@@ -234,7 +242,7 @@ async function loadAll(){
       piv:lat.price_iv_ratio??null,
       revyoy:lat.rev_yoy??null,
       rule40:lat.rule40_yoy_netmargin??null,
-      ma200:lat.ma200_dev??null,
+      ma200:lat.ma200_dev_local??null,
       peak:lat.from_peak??null,
     });
   }
@@ -279,7 +287,7 @@ function renderTable(){
     const pivColor=r.piv!=null?(r.piv>2?'num-neg':r.piv<0.7?'num-pos':'num-neu'):'num-neu';
     return `<tr onclick="location.href='detail.html?ticker=${r.ticker}'">
       <td><a class="ticker-link" href="detail.html?ticker=${r.ticker}" onclick="event.stopPropagation()">${r.ticker}</a></td>
-      <td data-priority="low"><span class="badge badge-lc" style="font-size:10px">${r.lcLabel}</span></td>
+      <td data-priority="low"><span class="badge badge-lc" style="font-size:10px" title="成長率${r.lcGrowth!=null?(r.lcGrowth>=0?'+':'')+r.lcGrowth.toFixed(1)+'%':'—'}（${r.lcSource==='yf'?'yfinance revenue_growth_yf':'SEC EDGAR rev_yoy（yf欠測時フォールバック）'}）">${r.lcLabel}</span></td>
       <td><span class="badge ${STAGE_CLASS[r.stage]}">${STAGE_LABEL[r.stage]}</span></td>
       <td><span class="phase-tag" title="${r.phase}${r.phaseLabel?' · '+r.phaseLabel:''}">${r.phase}${r.phaseLabel?' · '+r.phaseLabel:''}</span></td>
       <td class="rec-cell"><span class="${recClass(r.rec.cat)}">${r.rec.text}</span></td>

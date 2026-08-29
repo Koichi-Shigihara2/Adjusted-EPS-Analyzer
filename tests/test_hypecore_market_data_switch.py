@@ -47,9 +47,9 @@ class TestFetchPriceData:
         df = hypecore.fetch_price_data("XYZ")
         assert not df.empty
         assert "ma50_dev" in df.columns
-        assert "ma200_dev" in df.columns
+        assert "ma200_dev_local" in df.columns
         assert "rsi" in df.columns
-        assert "volume_ratio" in df.columns
+        assert "volume_ratio_20d" in df.columns
 
     def test_empty_series_raises_value_error(self, monkeypatch):
         """対象銘柄のデータが完全に存在しない場合のみValueErrorを送出する
@@ -183,7 +183,11 @@ class TestFetchAnalystHistory:
         assert "eps_surprise" in result.columns
         assert result["eps_surprise"].iloc[-1] == pytest.approx(20.0, abs=0.01)
 
-    def test_buy_hold_ratio_from_recommendations_history(self, monkeypatch):
+    def test_buy_ratio_from_recommendations_history(self, monkeypatch):
+        """[[HYPECORE-MISC-NAMING-GAPS-1]]①: fetcher.py側の生データキー名
+        （analyst_history/{SYMBOL}.jsonの蓄積履歴）は引き続きbuy_hold_ratio
+        のままだが、hypecore.py側の出力列名はbuy_ratioへリネームされている
+        （holdが実際の計算式の分子に含まれない誤称の是正）。"""
         from datetime import date
         events = [{"date": "2026-08-01", "firm": "UBS", "to_grade": "Buy",
                    "from_grade": "Hold", "action": "up"}]
@@ -193,10 +197,10 @@ class TestFetchAnalystHistory:
                              "sell": 2, "strong_sell": 2, "buy_hold_ratio": 0.587},
         )
         result = hypecore.fetch_analyst_history("XYZ")
-        assert "buy_hold_ratio" in result.columns
+        assert "buy_ratio" in result.columns
         today_ts = pd.Timestamp(date.today()).to_period("M").to_timestamp()
         if today_ts in result.index:
-            assert result.loc[today_ts, "buy_hold_ratio"] == 0.587
+            assert result.loc[today_ts, "buy_ratio"] == 0.587
 
     def test_all_sources_empty_returns_empty_dataframe(self, monkeypatch):
         self._patch(monkeypatch)
@@ -223,21 +227,21 @@ class TestBuildMonthRecord:
         base = {
             "price": 123.45,
             "stage": 2,
-            "ma200_dev": 12.3,
+            "ma200_dev_local": 12.3,
             "ma200_mom": -4.5,
             "ma50_dev": 5.0,
             "from_peak": -10.0,
             "rsi": 55.0,
-            "volume_ratio": 1.2,
-            "vol_surge": 1.1,
+            "volume_ratio_20d": 1.2,
+            "vol_surge_6m": 1.1,
             "rev_yoy": 20.0,
             "ni_yoy": 15.0,
             "rule40_yoy_netmargin": 30.0,
-            "fcf_yield": 0.02,
+            "ocf_yield_q": 0.02,
             "forward_pe": 25.0,
             "peg_ratio": 1.5,
             "psr": 8.0,
-            "revenue_growth": 0.2,
+            "revenue_growth_yf": 0.2,
             "earnings_growth": 0.15,
             "recommendation_mean": 2.0,
             "short_pct_float": 0.03,
@@ -245,7 +249,7 @@ class TestBuildMonthRecord:
             "analyst_upgrade_rate": 0.4,
             "analyst_downgrade_rate": 0.1,
             "sell_on_good_news": 0,
-            "buy_hold_ratio": 0.6,
+            "buy_ratio": 0.6,
             "substage": {"phase": "mid", "label": "中盤", "watch": "watch", "next": "next"},
             "expectation_score": 0.3,
             "fundamental_score": 0.2,
@@ -276,6 +280,6 @@ class TestBuildMonthRecord:
         record = hypecore._build_month_record(idx, row)
         assert record["month"] == "2026-03"
         assert record["stage_label"] == hypecore.STAGE_LABELS[2]
-        assert record["ma200_dev"] == 12.3
+        assert record["ma200_dev_local"] == 12.3
         assert record["substage_phase"] == "mid"
         assert record["low_base_effect"] is False

@@ -300,15 +300,21 @@ def build_data_package(stock, mkt):
             "momentum_score":         hc.get("momentum_score"),
             "price":                  hc.get("price"),
             "from_peak":              hc.get("from_peak"),
-            "ma200_dev":              hc.get("ma200_dev"),
+            # [[HYPECORE-MISC-NAMING-GAPS-1]]（2026-08-29）: 読み取り元
+            # （poc.json）のキーがma200_dev→ma200_dev_local・
+            # revenue_growth→revenue_growth_yf・buy_hold_ratio→buy_ratioへ
+            # それぞれ改名されたため追従する。本パッケージ自体の出力キーは
+            # [[RULE40-DEFINITION-MISMATCH-1]]と同じ理由（Grokプロンプト用の
+            # 内部ラベル、フロントエンド非消費）により旧名のまま維持する。
+            "ma200_dev":              hc.get("ma200_dev_local"),
             "ma50_dev":               hc.get("ma50_dev"),
             "forward_pe":             hc.get("forward_pe"),
             "psr":                    hc.get("psr"),
-            "revenue_growth":         hc.get("revenue_growth"),
+            "revenue_growth":         hc.get("revenue_growth_yf"),
             "earnings_growth":        hc.get("earnings_growth"),
             "analyst_upgrade_rate":   hc.get("analyst_upgrade_rate"),
             "analyst_downgrade_rate": hc.get("analyst_downgrade_rate"),
-            "buy_hold_ratio":         hc.get("buy_hold_ratio"),
+            "buy_hold_ratio":         hc.get("buy_ratio"),
         },
         "eps_annual": {
             "gaap_eps":             ann.get("gaap_eps"),

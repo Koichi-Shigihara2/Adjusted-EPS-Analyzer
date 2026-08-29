@@ -2,6 +2,110 @@
 
 ---
 
+## 2026-08-29（完了）
+
+### ✅ [HYPECORE-MISC-NAMING-GAPS-1] HypeCoreの軽微な命名・観測性ギャップまとめ（buy_hold_ratio誤称・fcf_yield誤称・200MA乖離の別ソース並存・ma200_mom未出力・出来高指標の粒度相違・lifecycle基準相違）
+
+**優先度:** 低 → 完了（①〜⑥全項目対応済み）
+**分類:** 命名・観測性 / HypeCore
+**登録日:** 2026-07-23
+**完了日:** 2026-08-29（Koichiさん承認「全部直せ」により①②③⑤⑥を
+まとめて実装。④は同日先行実装済み）
+
+#### 内容（登録時点）
+①`buy_hold_ratio`（AS-IS-108）は名称と実体が食い違う。実際の計算式
+`(strongBuy+buy)/(strongBuy+buy+hold+sell+strongSell)`には`hold`が
+分子に含まれておらず、実質的に「Buy比率」である。②`fcf_yield`
+（AS-IS-096）も名称と実体が食い違う。分子はOCF（CapEx控除前）その
+ものでありFCFではなく、年率換算もされていない。③AS-IS-076と
+AS-IS-087は同名「200MA乖離」だが別のデータソース・計算方法。④
+`ma200_mom`はステージ判定の複数の重要分岐で使われるがJSON出力に
+一切含まれず、判定根拠を事後検証できない。⑤`volume_ratio`
+（AS-IS-091、日次20日平均比）と`vol_surge`（AS-IS-092、月次6ヶ月
+移動平均比）は「出来高急増」系指標として並存するが時間窓が異なる。
+⑥ライフサイクル判定のフォールバック元`revenue_growth`（yfinance）と
+`rev_yoy`（SEC EDGAR TTM%）は算出基準が異なる別指標であり、どちらが
+使われるかは単に`revenue_growth`がnullかどうかで暗黙に決まる。
+
+#### 実装内容
+
+**④（2026-08-29午前実装）**: `src/value/hypecore/hypecore.py::
+run_poc()`のJSON保存ループを`_build_month_record()`として抽出し、
+`ma200_mom`を出力に追加。回帰テスト`TestBuildMonthRecord`（3件）追加。
+
+**①buy_hold_ratio→buy_ratio**: HypeCore層（`hypecore.py`の
+`fetch_analyst_history()`のDataFrame列・`_build_month_record()`の
+JSON出力キー）を`buy_ratio`へリネーム。`common/market_data/fetcher.py`
+側の生データキー名（`analyst_history/{SYMBOL}.json`の蓄積履歴）は
+`buy_hold_ratio`のまま維持（layerが違う共有インフラのため）。
+`daily_pick.py`の読み取り側を`hc.get("buy_ratio")`に追従、出力キー
+自体は`[[RULE40-DEFINITION-MISMATCH-1]]`と同じ理由（Grokプロンプト用の
+内部ラベル、フロントエンド非消費）で`buy_hold_ratio`のまま維持。
+
+**②fcf_yield→ocf_yield_q**: 分子がOCF（CapEx控除前）で単一四半期・
+非年率換算という実体に合わせ`ocf_yield_q`へリネーム（`_q`は「単一
+四半期の生値・非年率換算」を表す本コード独自の接尾辞、
+`NAMING_CONVENTIONS.md`規則2の既存4種に該当なしのため拡張）。
+`docs/value-monitor/hypecore/detail.html`の表示ラベル「FCF Yield」も
+「OCF Yield」へ訂正（誤称の是正はUI文言にも適用）。
+
+**③ma200_dev（HypeCore）→ma200_dev_local・ma200_dev（TANUKI
+VALUATION）→ma200_dev_md**: 着手前の実コード再検証で、BACKLOG登録時の
+前提「AS-IS-076はyfinance twoHundredDayAverage基準」が2026-08-11の
+`[[MARKETDATA-LAYER-CONSTRUCTION-1]]`移行により陳腐化していたと判明
+（現在は`common.market_data.reader.get_ma_deviation()`基準、
+`data_fetcher.py`）。この実態に合わせ、HypeCore自前rolling(200)計算を
+`ma200_dev_local`、TANUKI VALUATION側（`common.market_data`経由の
+別実装SMA）を`ma200_dev_md`とした。HypeCore側は`_poc.json`の
+persisted出力キーのため、消費者（`pipeline.py`3箇所・`daily_pick.py`・
+`docs/value-monitor/hypecore/index.html`・`detail.html`）を同一コミットで
+全数追従。`hypecore_history/{TICKER}.json`自体の出力キー・
+`stock.html:559`（`e.ma200_dev`）は`[[RULE40-DEFINITION-MISMATCH-1]]`と
+同型の理由（累積履歴ファイル、フロントエンド直接参照）で変更せず
+維持（読み取り元の`.get()`キーのみ追従）。
+
+**⑤volume_ratio→volume_ratio_20d・vol_surge→vol_surge_6m**: 日次20日
+平均比／月次6ヶ月移動平均比という時間粒度の違いを接尾辞で明示。
+`volume_ratio`はJSON出力のみで内部ロジック未使用のため消費者は
+`_poc.json`のみ、`vol_surge`は`determine_stage()`内部判定にも使用
+されるため`row.get()`キーも追従。
+
+**⑥revenue_growth→revenue_growth_yf**: `rev_yoy`（SEC EDGAR TTM%）との
+データソース区別のため規則1接尾辞`_yf`を付与。加えて
+`detectLifecycle()`（`index.html`・`detail.html`重複実装）が
+`revenue_growth_yf`欠測時に`rev_yoy`へ暗黙フォールバックする構造は
+維持しつつ、実際にどちらが使われたかを`{stage, g, source}`として
+返すよう変更し、呼び出し側で`title`属性のツールチップに表示するよう
+した（事後検証できるようにする、④のma200_mom追加と同じ考え方）。
+
+#### 実測確認
+サンプル銘柄（AAPL）で`run_poc()`を実行し、新フィールド全7件
+（`ma200_dev_local`・`ma200_mom`・`volume_ratio_20d`・`vol_surge_6m`・
+`ocf_yield_q`・`revenue_growth_yf`・`buy_ratio`）が実際に出力され、
+旧フィールド名6件が出力に一切残っていないことを確認済み
+（`src/value/hypecore/data/`、gitignore対象のローカル検証用ディレクトリ
+で実行、本番`docs/value-monitor/hypecore/data/`は変更していない）。
+
+#### 全銘柄への反映
+本番`docs/value-monitor/hypecore/data/*.json`は本コミットでは
+再生成していない（100銘柄と範囲が広いため）。次回のHypeCore Update
+ワークフロー自動実行（SEC Data Update完了後のworkflow_run連鎖、または
+月曜4:00 UTCの週次フォールバック）で自然に新フィールド名へ切り替わる。
+**移行期間中の注意**: 本番`_poc.json`が旧フィールド名のまま残っている間、
+`pipeline.py::_compute_tanuki_score()`の`sell_tech`判定
+（`ma200_dev_local`が読み取れず常にFalse扱いになる）・frontend表示
+（該当欄が「—」表示になる）に一時的な影響があるが、`sell_tech`が
+falseに倒れる方向（見逃しはあっても誤ったSELL判定は出さない）の
+安全側の影響であり、実害は限定的と判断した。
+
+#### 関連
+- `[[RULE40-DEFINITION-MISMATCH-1]]`（同型の「読み取り元は追従・
+  蓄積履歴ファイルの出力キーは維持」という設計判断の先例）
+- `[[DUPONT-TTM-FIELD-CASE-MISMATCH-1]]`（同日、DuPont分解の観測性
+  統一を別途実施、本ファイル本セクション参照）
+
+---
+
 ## 2026-08-27（完了）
 
 ### ✅ [DUPONT-TTM-FIELD-CASE-MISMATCH-1] pipeline.pyのDuPont分解/Segment TTM売上フォールバックのPascalCase/snake_caseキー不一致を修正（2026-08-27）

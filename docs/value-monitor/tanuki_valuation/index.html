@@ -407,8 +407,16 @@ function buildRows(results) {
     const wacc     = d.wacc?.value ?? null;
     const rice     = d.rice?.base?.rice ?? null;
     const rice_per = d.rice?.base?.rice_per_ratio ?? null;
+    // [[HYPECORE-MISC-NAMING-GAPS-1]]③（2026-08-29）: HypeCore側の同名
+    // 「ma200_dev」（pandasのrolling(200).mean()で自前計算、
+    // ma200_dev_localへ改名済み）とは別実装のため区別する。旧BACKLOG記載は
+    // 「yfinance twoHundredDayAverage」としていたが、着手前の実コード
+    // 再検証でdata_fetcher.pyが2026-08-11のMARKETDATA-LAYER-CONSTRUCTION-1
+    // 移行時にcommon.market_data.reader.get_ma_deviation()（daily/層の
+    // 終値からの自前SMA、yfinance事前計算値は不使用）へ切替済みと判明した
+    // ため、_yfではなく_mdを付与する（common.market_data由来を示す）。
     const ma200_raw= d.components?.ma200 ?? null;
-    const ma200_dev= (ma200_raw && price > 0) ? (price - ma200_raw) / ma200_raw : null;
+    const ma200_dev_md= (ma200_raw && price > 0) ? (price - ma200_raw) / ma200_raw : null;
     const q        = d.rice?.q ?? null;
     const cf       = d.rice?.cf_conversion ?? null;
     const date     = d.calculation_date || '—';
@@ -420,10 +428,10 @@ function buildRows(results) {
       ticker: r.ticker,
       _price: price, _ivps: ivps, _ivps_beta: ivps_beta,
       _upside: upside, _rice: rice, _rice_per: rice_per,
-      _ma200: ma200_dev, _growth: growth, _moat: moat,
+      _ma200: ma200_dev_md, _growth: growth, _moat: moat,
       _wacc: wacc, _q: q, _cf: cf, _date: date,
       price, ivps, ivps_beta, upside, growth, moat, moatSource, wacc,
-      rice, rice_per, ma200_dev, ma200_raw, q, cf, date,
+      rice, rice_per, ma200_dev_md, ma200_raw, q, cf, date,
       fcfM, hasGO, hasSeg,
     };
   });
@@ -466,8 +474,8 @@ function renderTable() {
     const upsideTxt   = r.upside != null ? fmtPct(r.upside) : '—';
 
     // 200MA乖離の色分け（プラス=株価が200MA上 / マイナス=200MA下）
-    const ma200Class = r.ma200_dev == null ? '' : r.ma200_dev >= 0 ? 'positive' : 'negative';
-    const ma200Txt   = r.ma200_dev != null ? fmtPct(r.ma200_dev) : '—';
+    const ma200Class = r.ma200_dev_md == null ? '' : r.ma200_dev_md >= 0 ? 'positive' : 'negative';
+    const ma200Txt   = r.ma200_dev_md != null ? fmtPct(r.ma200_dev_md) : '—';
 
     // RICE/PER（正の値のみ表示）
     const ricePERTxt = (r.rice_per != null && r.rice_per > 0) ? r.rice_per.toFixed(2) : '—';

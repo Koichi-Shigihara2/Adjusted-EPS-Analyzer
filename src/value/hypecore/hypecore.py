@@ -162,13 +162,23 @@ def fetch_price_data(ticker: str, start: str = "2021-01-01") -> pd.DataFrame:
     hist["rsi"] = 100 - 100 / (1 + gain / (loss + 1e-9))
 
     hist["ma50_dev"]  = (hist["price"] - hist["ma50"])  / (hist["ma50"]  + 1e-9) * 100
-    hist["ma200_dev"] = (hist["price"] - hist["ma200"]) / (hist["ma200"] + 1e-9) * 100
+    # [[HYPECORE-MISC-NAMING-GAPS-1]]③（2026-08-29）: TANUKI VALUATION
+    # 側（index.html::buildRows()）にも同名「ma200_dev」（現在は
+    # common.market_data.reader.get_ma_deviation()基準、旧BACKLOG記載の
+    # 「yfinance twoHundredDayAverage」は2026-08-11のMARKETDATA-LAYER-
+    # CONSTRUCTION-1移行で陳腐化していたと着手時に判明・訂正済み。
+    # ma200_dev_mdへ改名）が別実装として存在し、規則1（データソース
+    # 接尾辞）の趣旨に基づき自前pandas rolling(200)計算であることを
+    # 示す_localを本フィールドに付与する。
+    hist["ma200_dev_local"] = (hist["price"] - hist["ma200"]) / (hist["ma200"] + 1e-9) * 100
 
-    # 出来高比（日次平均出来高との比較）
+    # 出来高比（日次20日平均比。[[HYPECORE-MISC-NAMING-GAPS-1]]⑤:
+    # 月次6ヶ月平均比のvol_surge_6mとは時間粒度が異なる別指標のため、
+    # 規則2〈期間接尾辞〉に基づき窓幅を明示する）
     hist["vol_20d_avg"] = hist["volume"].rolling(20).mean()
-    hist["volume_ratio"] = hist["volume"] / (hist["vol_20d_avg"] + 1e-9)
+    hist["volume_ratio_20d"] = hist["volume"] / (hist["vol_20d_avg"] + 1e-9)
 
-    tech = hist[["ma50_dev", "ma200_dev", "rsi", "volume_ratio"]].resample("ME").last()
+    tech = hist[["ma50_dev", "ma200_dev_local", "rsi", "volume_ratio_20d"]].resample("ME").last()
     tech.index = tech.index.to_period("M").to_timestamp()
 
     # 月次出来高（月平均）
@@ -334,7 +344,10 @@ def fetch_analyst_history(ticker: str) -> pd.DataFrame:
       analyst_upgrade_rate : 上方修正/(上方+下方) 3ヶ月移動平均
       analyst_downgrade_rate: 下方修正率
       eps_surprise         : EPSサプライズ率% (四半期→月次前方補完)
-      buy_hold_ratio       : (StrongBuy+Buy)/全アナリスト (現時点値のみ)
+      buy_ratio            : (StrongBuy+Buy)/全アナリスト (現時点値のみ)
+                              [[HYPECORE-MISC-NAMING-GAPS-1]]①（2026-08-29）:
+                              旧名buy_hold_ratioは実際の計算式にholdが
+                              含まれない誤称だったためリネーム
       sell_on_good_news    : EPSサプライズ>0 かつ 当月株価変化<-3% (bool→float)
 
     [[MARKETDATA-LAYER-CONSTRUCTION-1]]着手順序4-8: yfinance直接呼び出し
@@ -349,9 +362,13 @@ def fetch_analyst_history(ticker: str) -> pd.DataFrame:
       attributes/{SYMBOL}.jsonのearnings_growthとして保存済みのため
       reader.get_attributes()["earnings_growth"]を直接参照する（fetcher.py
       側でのフォールバック合成はしない設計方針、前回投資調査通り）。
-    - buy_hold_ratio: reader.get_recommendations_history(ticker,
-      latest_only=True)から取得（fetcher.py側で既に計算済みの値を
-      そのまま使う、旧コードの現場計算ロジックはfetcher.py側へ移譲）。
+    - buy_ratio: reader.get_recommendations_history(ticker,
+      latest_only=True)のbuy_hold_ratioキーから取得（fetcher.py側で
+      既に計算済みの値をそのまま使う、旧コードの現場計算ロジックは
+      fetcher.py側へ移譲）。fetcher.py側の生データキー名（analyst_history/
+      {SYMBOL}.jsonの蓄積履歴、market_data層の共有インフラ）は
+      buy_hold_ratioのまま維持し、本関数の出力列名のみbuy_ratioへ
+      リネームする（[[HYPECORE-MISC-NAMING-GAPS-1]]①、2026-08-29）。
     """
     result = pd.DataFrame()
 
@@ -458,11 +475,11 @@ def fetch_analyst_history(ticker: str) -> pd.DataFrame:
         if buy_ratio is not None:
             # 現時点値を全期間に設定（将来は月次記録で上書き、週次バッチが
             # 蓄積するrecommendations_historyが育つにつれ自然に解消される）
-            if "buy_hold_ratio" not in result.columns:
-                result["buy_hold_ratio"] = np.nan
+            if "buy_ratio" not in result.columns:
+                result["buy_ratio"] = np.nan
             today_ts = pd.Timestamp(date.today()).to_period("M").to_timestamp()
             if today_ts in result.index:
-                result.loc[today_ts, "buy_hold_ratio"] = buy_ratio
+                result.loc[today_ts, "buy_ratio"] = buy_ratio
             print(f"  Buy比率: {buy_ratio:.1%}（現時点）")
     except Exception as e:
         print(f"  警告: recommendations取得失敗: {e}")
@@ -509,21 +526,37 @@ def compute_scores(ticker: str) -> pd.DataFrame:
     else:
         df["price_iv_ratio"] = np.nan
 
-    # FCF Yield
+    # OCF Yield（単一四半期のOCF÷時価総額。[[HYPECORE-MISC-NAMING-GAPS-1]]②
+    # 〈2026-08-29〉: 旧名fcf_yieldは実際には分子がOCF〈CapEx控除前〉で
+    # FCFではなく、年率換算もされていない誤称だったためリネーム。
+    # _qは「単一四半期の生値・非年率換算」を表す本コード独自の接尾辞
+    # 〈NAMING_CONVENTIONS.md規則2の既存4種_yoy/_ttm/_fy/_cagrNyには
+    # 該当なし、規則2の趣旨〈期間の明示〉を踏まえた拡張〉）
     shares = info.get("shares")
     if shares and "ocf" in df.columns:
-        df["fcf_yield"] = df["ocf"] / (df["price"] * shares) * 100
+        df["ocf_yield_q"] = df["ocf"] / (df["price"] * shares) * 100
     else:
-        df["fcf_yield"] = np.nan
+        df["ocf_yield_q"] = np.nan
 
     # .info現時点値を最新月にのみセット（将来は月次記録に拡張）
     today_ts = pd.Timestamp(date.today()).to_period("M").to_timestamp()
-    for key in ["forward_pe", "peg_ratio", "revenue_growth", "earnings_growth",
+    for key in ["forward_pe", "peg_ratio", "earnings_growth",
                 "recommendation_mean", "short_pct_float", "volume_vs_avg",
                 "gross_margins", "psr", "ev_ebitda"]:
         df[key] = np.nan
         if today_ts in df.index:
             df.loc[today_ts, key] = info.get(key)
+
+    # revenue_growth（yfinance）: [[HYPECORE-MISC-NAMING-GAPS-1]]⑥
+    # 〈2026-08-29〉。同一概念のrev_yoy（SEC EDGAR TTM%）と算出基準が
+    # 異なるため規則1〈データソース接尾辞〉に基づき_yfを付与する。
+    # detectLifecycle()（index.html/detail.html）がrevenue_growth_yf
+    # null時にrev_yoyへ暗黙フォールバックする構造は変わらないため、
+    # フロントエンド側でどちらが実際に使われたかをtitle属性で明示する
+    # （下記フロントエンド変更参照）。
+    df["revenue_growth_yf"] = np.nan
+    if today_ts in df.index:
+        df.loc[today_ts, "revenue_growth_yf"] = info.get("revenue_growth")
 
     # アナリスト履歴を結合
     if not analyst_df.empty:
@@ -544,12 +577,14 @@ def compute_scores(ticker: str) -> pd.DataFrame:
     df["peak_24m"]    = df["price"].rolling(24, min_periods=6).max()
     df["from_peak"]   = (df["price"] - df["peak_24m"]) / df["peak_24m"] * 100
     df["price_mom3m"] = df["price"].pct_change(3) * 100
-    df["ma200_mom"]   = df["ma200_dev"].diff(3)
+    df["ma200_mom"]   = df["ma200_dev_local"].diff(3)
     df["ma50_cross"]  = (df["ma50_dev"] > 0).astype(int)  # MA50上抜け
 
-    # 出来高急増フラグ（月次平均の1.5倍以上）
+    # 出来高急増フラグ（月次平均の1.5倍以上。[[HYPECORE-MISC-NAMING-GAPS-1]]
+    # ⑤〈2026-08-29〉: 日次20日平均比のvolume_ratio_20dとは時間粒度が
+    # 異なる別指標のため_6mを付与）
     vol_avg = df["volume_monthly"].rolling(6, min_periods=3).mean()
-    df["vol_surge"] = df["volume_monthly"] / (vol_avg + 1e-9)
+    df["vol_surge_6m"] = df["volume_monthly"] / (vol_avg + 1e-9)
 
     # sell_on_good_news: EPSサプライズ>0 かつ 当月株価変化<-3%（S4の核心シグナル）
     df["price_mom1m"] = df["price"].pct_change(1) * 100
@@ -571,7 +606,7 @@ def compute_scores(ticker: str) -> pd.DataFrame:
 
     # 期待スコア（高いほど期待過熱）
     expect_cols = []
-    for col in ["ma200_dev", "ma50_dev"]:
+    for col in ["ma200_dev_local", "ma50_dev"]:
         if col in df.columns:
             expect_cols.append(z_score_series(df[col]))
     if not df["price_iv_ratio"].isna().all():
@@ -583,14 +618,14 @@ def compute_scores(ticker: str) -> pd.DataFrame:
 
     # 実体スコア（高いほど実体良好）
     fund_cols = []
-    for col in ["rev_yoy", "ni_yoy", "rule40_yoy_netmargin", "fcf_yield"]:
+    for col in ["rev_yoy", "ni_yoy", "rule40_yoy_netmargin", "ocf_yield_q"]:
         if col in df.columns and not df[col].isna().all():
             fund_cols.append(z_score_series(df[col]))
     df["fundamental_score"] = pd.concat(fund_cols, axis=1).mean(axis=1) if fund_cols else np.nan
 
     # モメンタムスコア（高いほど上昇トレンド）
     mom_cols = []
-    for col in ["ma50_dev", "ma200_dev", "rsi"]:
+    for col in ["ma50_dev", "ma200_dev_local", "rsi"]:
         if col in df.columns:
             mom_cols.append(z_score_series(df[col]))
     df["momentum_score"] = pd.concat(mom_cols, axis=1).mean(axis=1) if mom_cols else np.nan
@@ -617,23 +652,23 @@ def determine_stage(row: pd.Series, prev_stage: int = 2, s3_streak: int = 0, s4_
       6. S2（期待拡大期）: 期待と実体が噛み合っている
     """
     # テクニカル生値
-    ma200_dev   = row.get("ma200_dev",   0) or 0
+    ma200_dev   = row.get("ma200_dev_local", 0) or 0
     ma200_mom   = row.get("ma200_mom",   0) or 0
     from_peak   = row.get("from_peak",   0) or 0
     price_mom3m = row.get("price_mom3m", 0) or 0
     rsi         = row.get("rsi",        50) or 50
-    vol_surge   = row.get("vol_surge",   1) or 1
+    vol_surge   = row.get("vol_surge_6m", 1) or 1
 
     # アナリスト・EPS指標
     sell_on_good = row.get("sell_on_good_news", 0) or 0  # 良決算でも下落
     eps_surprise = row.get("eps_surprise")               # EPSサプライズ率%
     upgrade_rate = row.get("analyst_upgrade_rate")       # アナリスト上方修正率
-    buy_ratio    = row.get("buy_hold_ratio")             # Buy比率
+    buy_ratio    = row.get("buy_ratio")                  # Buy比率（[[HYPECORE-MISC-NAMING-GAPS-1]]①旧buy_hold_ratio）
 
     # バリュエーション（現時点値・NaNの場合は判定に使わない）
     forward_pe  = row.get("forward_pe")
     peg         = row.get("peg_ratio")
-    rev_growth  = row.get("revenue_growth")   # 小数（YoY）
+    rev_growth  = row.get("revenue_growth_yf")   # 小数（YoY、未使用の内部変数）
     earn_growth = row.get("earnings_growth")  # 小数（YoY）
     short_pct   = row.get("short_pct_float")
     rec_mean    = row.get("recommendation_mean")
@@ -752,7 +787,7 @@ def detect_substage(row: pd.Series, stage: int, stage_months: int) -> dict:
     各ステージの内部フェーズ（入口・中盤・出口）を判定。
     「今のステージはどこにいるか」「次に何が起きるか」を示す。
     """
-    ma200  = row.get("ma200_dev",   0) or 0
+    ma200  = row.get("ma200_dev_local", 0) or 0
     fp     = row.get("from_peak",   0) or 0
     rsi    = row.get("rsi",        50) or 50
     mom3m  = row.get("price_mom3m", 0) or 0
@@ -922,23 +957,26 @@ def _build_month_record(idx, row) -> dict:
         "stage":              int(row["stage"]),
         "stage_label":        STAGE_LABELS[int(row["stage"])],
         # テクニカル
-        "ma200_dev":          safe(row.get("ma200_dev")),
+        # [[HYPECORE-MISC-NAMING-GAPS-1]]（2026-08-29）: ma200_dev_local・
+        # volume_ratio_20d・vol_surge_6m・ocf_yield_q・revenue_growth_yf・
+        # buy_ratioは全て本項目のリネーム対応。詳細はBACKLOG_DONE.md参照。
+        "ma200_dev_local":    safe(row.get("ma200_dev_local")),
         "ma200_mom":          safe(row.get("ma200_mom")),
         "ma50_dev":           safe(row.get("ma50_dev")),
         "from_peak":          safe(row.get("from_peak")),
         "rsi":                safe(row.get("rsi")),
-        "volume_ratio":       safe(row.get("volume_ratio")),
-        "vol_surge":          safe(row.get("vol_surge")),
+        "volume_ratio_20d":   safe(row.get("volume_ratio_20d")),
+        "vol_surge_6m":       safe(row.get("vol_surge_6m")),
         # 財務
         "rev_yoy":            safe(row.get("rev_yoy")),
         "ni_yoy":             safe(row.get("ni_yoy")),
         "rule40_yoy_netmargin": safe(row.get("rule40_yoy_netmargin")),
-        "fcf_yield":          safe(row.get("fcf_yield")),
+        "ocf_yield_q":        safe(row.get("ocf_yield_q")),
         # バリュエーション（現時点値）
         "forward_pe":         safe(row.get("forward_pe")),
         "peg_ratio":          safe(row.get("peg_ratio")),
         "psr":                safe(row.get("psr")),
-        "revenue_growth":     safe(row.get("revenue_growth")),
+        "revenue_growth_yf":  safe(row.get("revenue_growth_yf")),
         "earnings_growth":    safe(row.get("earnings_growth")),
         "recommendation_mean": safe(row.get("recommendation_mean")),
         "short_pct_float":    safe(row.get("short_pct_float")),
@@ -947,7 +985,7 @@ def _build_month_record(idx, row) -> dict:
         "analyst_upgrade_rate": safe(row.get("analyst_upgrade_rate")),
         "analyst_downgrade_rate": safe(row.get("analyst_downgrade_rate")),
         "sell_on_good_news":  safe(row.get("sell_on_good_news")),
-        "buy_hold_ratio":     safe(row.get("buy_hold_ratio")),
+        "buy_ratio":          safe(row.get("buy_ratio")),
         # 内部フェーズ
         "substage_phase":     row["substage"]["phase"] if isinstance(row.get("substage"), dict) else None,
         "substage_label":     row["substage"]["label"] if isinstance(row.get("substage"), dict) else None,
@@ -1025,7 +1063,7 @@ def run_poc(ticker: str = "PLTR") -> dict:
             pred = int(row["stage"])
             g    = gt.get(ym, "-")
             ok   = "✅" if row.get("correct") else "❌"
-            ma   = f"{row['ma200_dev']:+.1f}%" if not pd.isna(row.get("ma200_dev", float("nan"))) else "—"
+            ma   = f"{row['ma200_dev_local']:+.1f}%" if not pd.isna(row.get("ma200_dev_local", float("nan"))) else "—"
             fp   = f"{row['from_peak']:+.1f}%"  if not pd.isna(row.get("from_peak", float("nan"))) else "—"
             rs   = f"{row['rsi']:.0f}"          if not pd.isna(row.get("rsi",       float("nan"))) else "—"
             p    = f"${row['price']:.1f}"

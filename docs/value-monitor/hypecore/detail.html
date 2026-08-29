@@ -287,15 +287,21 @@ const LIFECYCLE={
   mature:{label:'成熟期',color:'#94a3b8',
     headline:'期待の正体は「安定したキャッシュの確実性」',
     body:`市場が「どこまで大きくなるか」ではなく「<strong>このキャッシュはどれだけ確実か</strong>」を問うている局面。<br><br>
-      <strong>FCF Yield</strong>：今の株価に対して実際に手元に残るお金の割合。<strong>5%超</strong>で割安水準。<br><br>
+      <strong>OCF Yield</strong>：今の株価に対して当四半期の営業キャッシュフローの割合（非年率換算）。<strong>5%超</strong>で割安水準。<br><br>
       <strong>PEG</strong>：成長率に対してどれだけ高い期待を払っているか。<strong>2.0超</strong>は「低い成長に高すぎる期待」のサイン。<br><br>
       <strong>自社株買い・配当</strong>：これが止まると期待は一気に崩れる。`},
 };
 
 function detectLifecycle(data){
+  // [[HYPECORE-MISC-NAMING-GAPS-1]]⑥（2026-08-29）: revenue_growth_yf
+  // （yfinance）が取得できない場合のみrev_yoy（SEC EDGAR TTM%）へ暗黙
+  // フォールバックする。どちらが実際に使われたかをsourceとして返し、
+  // 呼び出し側でツールチップ表示に使う（事後検証できるようにする）。
   const lat=data.monthly[data.monthly.length-1];
-  const g=(lat.revenue_growth!=null)?lat.revenue_growth*100:(lat.rev_yoy??0);
-  if(g>40)return'growth'; if(g>15)return'expand'; if(g>0)return'mature'; return'dawn';
+  const usedYf=lat.revenue_growth_yf!=null;
+  const g=usedYf?lat.revenue_growth_yf*100:(lat.rev_yoy??0);
+  const stage=g>40?'growth':g>15?'expand':g>0?'mature':'dawn';
+  return{stage,g,source:usedYf?'yf':'sec'};
 }
 
 let narrativeOpen=false;
@@ -307,10 +313,10 @@ function toggleNarrative(){
 }
 
 function buildVsMetrics(d,lc){
-  const ma=d.ma200_dev??0,rsi=d.rsi??50,fp=d.from_peak??0;
+  const ma=d.ma200_dev_local??0,rsi=d.rsi??50,fp=d.from_peak??0;
   const fwdPe=d.forward_pe,peg=d.peg_ratio,psr=d.psr;
-  const revYoy=d.rev_yoy,rule40=d.rule40_yoy_netmargin,fcfYield=d.fcf_yield;
-  const epsSurp=d.eps_surprise,upRate=d.analyst_upgrade_rate,volSurge=d.vol_surge;
+  const revYoy=d.rev_yoy,rule40=d.rule40_yoy_netmargin,fcfYield=d.ocf_yield_q;
+  const epsSurp=d.eps_surprise,upRate=d.analyst_upgrade_rate,volSurge=d.vol_surge_6m;
   const pivRatio=d.price_iv_ratio;
   const f=(v,dec=1,u='%')=>v!=null?`${v>=0&&u==='%'?'+':''}${v.toFixed(dec)}${u}`:'—';
   const row=(val,col,label,note)=>`<div class="metric-row"><div class="metric-val" style="color:${col||'var(--txt)'}">${val}</div><div class="metric-info"><div class="metric-label">${label}</div>${note?`<div class="metric-note">${note}</div>`:''}</div></div>`;
@@ -338,12 +344,12 @@ function buildVsMetrics(d,lc){
   return{
     e:row(peg!=null?peg.toFixed(2)+'x':'—',peg!=null&&peg>2?'#f43f5e':'var(--txt)','PEG（成長率に対する期待の高さ）','<strong>1.0x</strong>が理論適正。<strong>2.0x超</strong>は低成長に高すぎる期待')
      +row(fwdPe!=null?fwdPe.toFixed(1)+'x':'—','var(--txt)','ForwardPE',''),
-    r:row(fcfYield!=null?fcfYield.toFixed(1)+'%':'—',(fcfYield??0)>5?'#10b981':'var(--txt)','FCF Yield（成熟期の主要な価値の錨）','高いほど割安。<strong>5%超</strong>で割安水準')
+    r:row(fcfYield!=null?fcfYield.toFixed(1)+'%':'—',(fcfYield??0)>5?'#10b981':'var(--txt)','OCF Yield（四半期・成熟期の主要な価値の錨）','高いほど割安。<strong>5%超</strong>で割安水準。単一四半期のOCF基準（非年率換算）')
      +row(f(revYoy),(revYoy??0)>0?'var(--txt)':'var(--red)','売上成長YoY','成熟期は<strong>0-15%</strong>の安定成長が健全')};
 }
 
 function buildRatio(d,lc,stage){
-  const ma=d.ma200_dev??0,fp=d.from_peak??0,rsi=d.rsi??50;
+  const ma=d.ma200_dev_local??0,fp=d.from_peak??0,rsi=d.rsi??50;
   const revYoy=d.rev_yoy,epsSurp=d.eps_surprise,pivRatio=d.price_iv_ratio;
   const items=[];
   if(stage===3){
@@ -362,7 +368,7 @@ function buildRatio(d,lc,stage){
 }
 
 function getRec(d,prev){
-  const ma=d.ma200_dev??0,fp=d.from_peak??0,s=d.stage,ps=prev?.stage??s;
+  const ma=d.ma200_dev_local??0,fp=d.from_peak??0,s=d.stage,ps=prev?.stage??s;
   const real_strong=(d.rev_yoy!=null&&d.rev_yoy>30)&&(d.eps_surprise!=null&&d.eps_surprise>0);
   const ma200_shrinking=(d.ma200_mom??0)>-5;
   if(s===0&&ps===4)return{icon:'▲',title:'強い買い推奨',sub:'底値形成を確認。長期エントリーの好機。',c:sh(0)};
@@ -404,7 +410,7 @@ async function loadTicker(ticker,btn){
 function render(data,ticker,tanukiLatest){
   const m=data.monthly,lat=m[m.length-1],prev=m[m.length-2];
   const stage=lat.stage,s=STAGES[stage];
-  const lc=detectLifecycle(data),lcd=LIFECYCLE[lc];
+  const lcInfo=detectLifecycle(data),lc=lcInfo.stage,lcd=LIFECYCLE[lc];
   const rec=getRec(lat,prev);
   const phase=lat.substage_phase||null;
   const phaseColorMap={'入口':'#06b6d4','中盤':'#f59e0b','中盤A':'#f97316','中盤B':'#f59e0b','出口':'#a855f7'};
@@ -413,6 +419,7 @@ function render(data,ticker,tanukiLatest){
   // HERO BAR
   document.getElementById('lcVal').textContent=lcd.label;
   document.getElementById('lcVal').style.color=lcd.color;
+  document.getElementById('lcVal').title=`成長率${lcInfo.g!=null?(lcInfo.g>=0?'+':'')+lcInfo.g.toFixed(1)+'%':'—'}（${lcInfo.source==='yf'?'yfinance revenue_growth_yf':'SEC EDGAR rev_yoy（yf欠測時フォールバック）'}）`;
   document.getElementById('lcSub').textContent=`期待の正体：${lcd.headline}`;
   document.getElementById('stageVal').textContent=`S${stage} ${s.n}`;
   document.getElementById('stageVal').style.color=s.h;
@@ -481,7 +488,7 @@ function render(data,ticker,tanukiLatest){
   if(eChart)eChart.destroy();
   eChart=new Chart(document.getElementById('expectChart'),{type:'line',plugins:[makeBg(m)],
     data:{labels,datasets:[
-      {data:m.map(d=>d.ma200_dev),label:'MA200乖離%',borderColor:'#f97316',borderWidth:2,pointBackgroundColor:'#f97316',pointRadius:2,fill:false,tension:.3,yAxisID:'y'},
+      {data:m.map(d=>d.ma200_dev_local),label:'MA200乖離%',borderColor:'#f97316',borderWidth:2,pointBackgroundColor:'#f97316',pointRadius:2,fill:false,tension:.3,yAxisID:'y'},
       {data:m.map(d=>d.rsi),label:'RSI',borderColor:'#3b82f6',borderWidth:1.5,borderDash:[4,2],pointBackgroundColor:'#3b82f6',pointRadius:2,fill:false,tension:.3,yAxisID:'y2'},
     ]},
     options:{responsive:true,maintainAspectRatio:false,
@@ -514,7 +521,7 @@ function render(data,ticker,tanukiLatest){
   m.filter(d=>d.month>='2024-01').slice().reverse().forEach((d,i,arr)=>{
     const pD=arr[i+1],rec2=getRec(d,pD||null);
     const sc=sh(d.stage),isNow=d.month===lat.month;
-    const ma=d.ma200_dev??0,fp=d.from_peak??0;
+    const ma=d.ma200_dev_local??0,fp=d.from_peak??0;
     const phC=phaseColorMap[d.substage_phase]||sc;
     const tr=document.createElement('tr');if(isNow)tr.className='now-row';
     tr.innerHTML=`
@@ -522,7 +529,7 @@ function render(data,ticker,tanukiLatest){
       <td><span class="s-badge" style="color:${sc};border-color:${sc};background:${sc}18">S${d.stage} ${STAGES[d.stage]?.n}</span></td>
       <td class="ph-badge" style="color:${phC}">${d.substage_phase||'—'} ${d.substage_label||''}</td>
       <td style="font-family:var(--mono);font-size:13px;color:${rec2.c};font-weight:700;white-space:nowrap">${rec2.icon} ${rec2.title}</td>
-      <td class="mono ${ma>=0?'pos':'neg'}" style="font-size:13px">${d.ma200_dev!=null?(ma>=0?'+':'')+ma.toFixed(1)+'%':'—'}</td>
+      <td class="mono ${ma>=0?'pos':'neg'}" style="font-size:13px">${d.ma200_dev_local!=null?(ma>=0?'+':'')+ma.toFixed(1)+'%':'—'}</td>
       <td class="mono" style="font-size:13px;color:${fp<-15?'var(--red)':'var(--mut)'}">${d.from_peak!=null?(fp>=0?'+':'')+fp.toFixed(1)+'%':'—'}</td>
       <td class="mono" style="font-size:13px">${d.rsi!=null?d.rsi.toFixed(0):'—'}</td>
       <td class="mono" style="font-size:13px;font-weight:700">$${d.price?.toFixed(2)}</td>

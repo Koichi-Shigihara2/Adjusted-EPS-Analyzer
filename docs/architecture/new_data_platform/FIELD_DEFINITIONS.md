@@ -502,6 +502,8 @@ discover_config.json）は、バリデーションなしで直接GitHubにコミ
   ではない。かつ分子が単一四半期値のまま年率換算（×4等）されておらず、
   TANUKIのFCFマージン（年次・TTM前提）やSTONKS SILOのrunway計算
   （年次FCF/12=月次バーン）と単純比較すると期間ベースが食い違う。
+  **2026-08-29対応済み**: `[[HYPECORE-MISC-NAMING-GAPS-1]]`②により
+  `ocf_yield_q`へリネーム（BACKLOG_DONE.md参照）。
 - **AS-IS-267は同一AS-IS内に一次データ相当のパススルーと計算値が混在する**:
   `gaap_eps`/`gaap_net_income`/`diluted_shares_used`はXBRL値のパススルー
   （計算なし）である一方、`adjusted_eps`/`adjusted_net_income`は
@@ -605,12 +607,18 @@ discover_config.json）は、バリデーションなしで直接GitHubにコミ
   除外年がある銘柄では実際より長い期間の変化率を3年複利換算したかのように
   誤表示する。同種のSTONKS SILO側`cagr_3yr`（AS-IS-136）は`years`配列
   自体が連続した年次リスト（フィルタなし）のため、この問題は生じない。
-- **AS-IS-076とAS-IS-087は同名「200MA乖離」だが完全に別のデータソース・
-  計算方法**: AS-IS-087はHypeCoreが独自にyfinance `history()`で取得した
-  日次終値から`rolling(200).mean()`で自前計算するのに対し、AS-IS-076は
-  yfinanceが内部で計算済みの`twoHundredDayAverage`（算出方法・対象期間が
-  非公開のブラックボックス値）をそのまま使う。同じ概念・同じ変数名
-  （`ma200_dev`）でありながら両者が一致する保証はない。
+- **AS-IS-076とAS-IS-087は同名「200MA乖離」だが完全に別の実装**:
+  AS-IS-087はHypeCoreが独自にcommon.market_data由来の日次終値から
+  `rolling(200).mean()`で自前計算する。AS-IS-076は元々yfinanceが内部で
+  計算済みの`twoHundredDayAverage`をそのまま使う設計だったが、
+  2026-08-11のMARKETDATA-LAYER-CONSTRUCTION-1移行で`common.market_data.
+  reader.get_ma_deviation()`（daily/層の終値からの自前SMA、window=200）
+  経由に切り替わっており、本記載は陳腐化していたことが**2026-08-29の
+  `[[HYPECORE-MISC-NAMING-GAPS-1]]`③着手時に判明**した（同じ
+  `common.market_data`層を参照する点は共通だが、算出方法〈rolling窓
+  vs 固定window直接算出〉が独立しており一致する保証はない）。
+  **2026-08-29対応済み**: AS-IS-087を`ma200_dev_local`、AS-IS-076を
+  `ma200_dev_md`へそれぞれリネーム（BACKLOG_DONE.md参照）。
 - **ma200_momがステージ判定の複数の重要分岐で使われるがJSON未出力**:
   `ma200_mom = ma200_dev.diff(3)`は`determine_stage()`のS3→S4遷移判定
   （例: `prev_stage in (3,4) and s3_streak>=2 and from_peak<-28 and
@@ -652,7 +660,9 @@ discover_config.json）は、バリデーションなしで直接GitHubにコミ
   指標として並存するが時間粒度が異なる**: AS-IS-091は日次出来高の20日
   平均比（月末値のみ保持）、AS-IS-092は月次出来高の6ヶ月移動平均比。
   どちらも「出来高の急増」を表す名称・目的だが、算出する時間窓が
-  全く異なる別指標である。
+  全く異なる別指標である。**2026-08-29対応済み**: `[[HYPECORE-MISC-
+  NAMING-GAPS-1]]`⑤によりそれぞれ`volume_ratio_20d`・`vol_surge_6m`へ
+  リネーム（BACKLOG_DONE.md参照）。
 - **AS-IS-135/175/176（financial_vectors）のpercentile・angle・lengthは
   絶対的な変化率ではなく、同時点の全STONKS SILO銘柄集合に対する相対順位**:
   新規銘柄の追加・除外のたびに、対象銘柄自身のデータが変わっていなくても
@@ -664,7 +674,11 @@ discover_config.json）は、バリデーションなしで直接GitHubにコミ
   `revenue_growth`がnullかどうかで決まる。銘柄によって暗黙に異なる基準で
   ライフサイクル判定される。detail.html/index.htmlの重複実装自体は
   完全に同一ロジックのコードコピーであり値の不整合は生じないが、
-  保守時に片方だけ修正されるリスクがある。
+  保守時に片方だけ修正されるリスクがある。**2026-08-29対応済み**:
+  `[[HYPECORE-MISC-NAMING-GAPS-1]]`⑥により`revenue_growth`を
+  `revenue_growth_yf`へリネームし、`detectLifecycle()`が実際にどちらの
+  ソースを使ったかを`title`属性のツールチップで明示するよう変更
+  （BACKLOG_DONE.md参照）。
 - **AS-IS-077/AS-IS-079は既に「削除候補」とマークされた重複カタログ
   エントリであることを実コードで確認した**: 前者はAS-IS-086（stage_label）
   の、後者はAS-IS-152（revenue_growth_pct）の単純な他サブシステム参照
@@ -1034,7 +1048,10 @@ TAIL stage2で確立した記載方法を踏襲）。
   変数名・フィールド名は「buy_HOLD_ratio」だが、実際の計算式
   `(strongBuy+buy)/(strongBuy+buy+hold+sell+strongSell)`には
   `hold`が分子に含まれておらず、実質的に「Buy比率」（Strong Buy+Buy
-  の比率）である。
+  の比率）である。**2026-08-29対応済み**: `[[HYPECORE-MISC-NAMING-
+  GAPS-1]]`①によりHypeCore層の出力列名を`buy_ratio`へリネーム
+  （fetcher.py側の生データキー名`buy_hold_ratio`は蓄積履歴のため維持、
+  BACKLOG_DONE.md参照）。
 - **kpis.{kpi_name}.unit（AS-IS-419）が常に"USD"固定**:
   `xbrl_segment_fetcher.py:fetch_ticker()`は抽出したKPIの`unit`欄に
   無条件で`"USD"`を設定する。同じ関数内で「整数に近い値（USD金額）は

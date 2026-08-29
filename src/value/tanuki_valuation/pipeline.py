@@ -516,6 +516,8 @@ class TanukiValuationPipeline:
 
         # [[RULE40-DEFINITION-MISMATCH-1]]: HypeCore側のpoc.jsonキーが
         # rule40 → rule40_yoy_netmarginへ改名されたことに追従（2026-08-13）。
+        # [[HYPECORE-MISC-NAMING-GAPS-1]]③（2026-08-29）: 同様にma200_dev
+        # → ma200_dev_localへ改名されたことに追従。
         rev_yoy = rule40_yoy_netmargin = stage = ma200_dev = None
         poc_path = os.path.join(
             self.repo_root, "docs", "value-monitor", "hypecore", "data", f"{ticker}_poc.json"
@@ -529,7 +531,7 @@ class TanukiValuationPipeline:
                 rev_yoy   = last.get("rev_yoy")
                 rule40_yoy_netmargin = last.get("rule40_yoy_netmargin")
                 stage     = last.get("stage")
-                ma200_dev = last.get("ma200_dev")
+                ma200_dev = last.get("ma200_dev_local")
             except Exception:
                 pass
 
@@ -3324,24 +3326,26 @@ class TanukiValuationPipeline:
                 "phase": last.get("substage_label"),
                 "recommendation": self._hypecore_recommendation(
                     stage, prev.get("stage") if prev else None,
-                    last.get("ma200_dev"), last.get("from_peak"),
+                    last.get("ma200_dev_local"), last.get("from_peak"),
                 ),
                 "price": last.get("price"),
                 "price_iv_ratio": last.get("price_iv_ratio"),
                 "rev_yoy": last.get("rev_yoy"),
-                # [[RULE40-DEFINITION-MISMATCH-1]]: 読み取り元（poc.json）の
-                # キーはrule40_yoy_netmarginへ改名されたため追従するが、
-                # hypecore_history/{TICKER}.json自体の出力キーは"rule40"の
-                # まま維持する（2026-08-13判断）。理由: 本ファイルは日付単位で
+                # [[RULE40-DEFINITION-MISMATCH-1]]/[[HYPECORE-MISC-NAMING-GAPS-1]]③
+                # : 読み取り元（poc.json）のキーはrule40→rule40_yoy_netmargin
+                # （2026-08-13）・ma200_dev→ma200_dev_local（2026-08-29）へ
+                # それぞれ改名されたため読み取り側は追従するが、
+                # hypecore_history/{TICKER}.json自体の出力キーは"rule40"・
+                # "ma200_dev"のまま維持する。理由: 本ファイルは日付単位で
                 # 追記されていく累積履歴であり、過去に書き込み済みの全エントリを
                 # 遡って改名しない限りキー名が新旧で混在してしまう。かつ
-                # stock.html:632（`e.rule40`）が本ファイルを直接参照しており、
-                # 出力キー改名にはフロントエンド追従修正も必要になる。実害が
-                # ない（TANUKI VALUATION内部の表示専用フィールド、ARCH-DATA-1系
-                # の計算ロジックには使われない）ため、出力キーは変更しない
-                # 選択とした。
+                # stock.html:632（`e.rule40`）・559（`e.ma200_dev`）が本
+                # ファイルを直接参照しており、出力キー改名にはフロントエンド
+                # 追従修正も必要になる。実害がない（TANUKI VALUATION内部の
+                # 表示専用フィールド、ARCH-DATA-1系の計算ロジックには
+                # 使われない）ため、出力キーは変更しない選択とした。
                 "rule40": last.get("rule40_yoy_netmargin"),
-                "ma200_dev": last.get("ma200_dev"),
+                "ma200_dev": last.get("ma200_dev_local"),
                 "from_peak": last.get("from_peak"),
             }
         except Exception:

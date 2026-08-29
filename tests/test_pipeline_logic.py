@@ -711,7 +711,7 @@ def _make_stage4_row(rev_yoy: float, eps_surprise: float) -> pd.Series:
     real_strong=False になるよう rev_yoy を 15% 以下に設定する。
     """
     return pd.Series({
-        "ma200_dev":    -15.0,   # MA200 を下回っている（Stage4 らしい状態）
+        "ma200_dev_local": -15.0,   # MA200 を下回っている（Stage4 らしい状態）
         "from_peak":    -20.0,   # 高値から -20%
         "rsi":           35.0,   # RSI 低下
         "price_mom3m":  -10.0,
@@ -1188,11 +1188,11 @@ from hypecore import determine_stage  # noqa: E402
 def _make_row(**kwargs) -> pd.Series:
     """determine_stage 用の最小 pd.Series を生成する"""
     defaults = dict(
-        ma200_dev=0, ma200_mom=0, from_peak=0, price_mom3m=0,
-        rsi=50, vol_surge=1.0,
+        ma200_dev_local=0, ma200_mom=0, from_peak=0, price_mom3m=0,
+        rsi=50, vol_surge_6m=1.0,
         sell_on_good_news=0, eps_surprise=None, analyst_upgrade_rate=None,
-        buy_hold_ratio=None, forward_pe=None, peg_ratio=None,
-        revenue_growth=None, earnings_growth=None,
+        buy_ratio=None, forward_pe=None, peg_ratio=None,
+        revenue_growth_yf=None, earnings_growth=None,
         short_pct_float=None, recommendation_mean=None,
         expectation_score=0, fundamental_score=0, momentum_score=0,
     )
@@ -1205,22 +1205,22 @@ class TestDetermineStageS0S1Promotion:
 
     def test_deep_s0_weak_rebound_stays_s0(self):
         """深い低迷（MA200=-23%）+ 反発+14% → S0維持（昇格条件 +20% 未達）"""
-        row = _make_row(ma200_dev=-23, price_mom3m=14, rsi=45)
+        row = _make_row(ma200_dev_local=-23, price_mom3m=14, rsi=45)
         assert determine_stage(row, prev_stage=2) == 0
 
     def test_deep_s0_strong_rebound_promotes_to_s1(self):
         """深い低迷（MA200=-23%）+ 強反発+22% → S1昇格"""
-        row = _make_row(ma200_dev=-23, price_mom3m=22, rsi=48)
+        row = _make_row(ma200_dev_local=-23, price_mom3m=22, rsi=48)
         assert determine_stage(row, prev_stage=2) == 1
 
     def test_shallow_s0_moderate_rebound_promotes_to_s1(self):
         """浅い低迷（MA200=-15%, short>8%）+ 反発+12% → S1昇格"""
-        row = _make_row(ma200_dev=-15, price_mom3m=12, short_pct_float=0.10, rsi=47)
+        row = _make_row(ma200_dev_local=-15, price_mom3m=12, short_pct_float=0.10, rsi=47)
         assert determine_stage(row, prev_stage=2) == 1
 
     def test_shallow_s0_insufficient_rebound_stays_s0(self):
         """浅い低迷（MA200=-15%, short>8%）+ 反発+8% → S0維持（+10% 未達）"""
-        row = _make_row(ma200_dev=-15, price_mom3m=8, short_pct_float=0.10, rsi=45)
+        row = _make_row(ma200_dev_local=-15, price_mom3m=8, short_pct_float=0.10, rsi=45)
         assert determine_stage(row, prev_stage=2) == 0
 
 
