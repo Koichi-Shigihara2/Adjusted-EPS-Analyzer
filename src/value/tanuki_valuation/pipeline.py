@@ -1953,7 +1953,20 @@ class TanukiValuationPipeline:
                 if _dupont.get("reliability") == "LOW":
                     L.append(f"    ⚠️ DuPont_Reliability: LOW ({_dupont.get('reliability_reason', '')})")
         elif _dupont and _dupont.get("excluded"):
-            L.append("  DuPont_ROE: N/A (TTM売上僅少のため比率指標が無意味化・除外)")
+            # DuPont観測性統一（2026-08-29）: 従来はrevenue_too_small専用の
+            # 固定文言だった（他の除外理由はdupontキー自体が付与されず
+            # この分岐に到達しなかったため気づかれなかった）。除外理由が
+            # 複数存在するようになったため、実際のreasonに応じた文言を表示する。
+            _du_reason_label = {
+                "revenue_too_small": "TTM売上僅少のため比率指標が無意味化",
+                "negative_equity": "純資産（自己資本）がマイナスのため財務レバレッジが算出不能",
+                "total_assets_unavailable": "総資産データが取得できないため算出不能",
+                "equity_unavailable": "純資産（自己資本）データが取得できないため算出不能",
+                "ni_ttm_unavailable": "TTM純利益が取得できないため算出不能",
+                "revenue_unavailable": "TTM売上が取得できないため算出不能",
+                "insufficient_data": "必要なデータが不足しているため算出不能",
+            }.get(_dupont.get("reason"), f"reason={_dupont.get('reason', '不明')}")
+            L.append(f"  DuPont_ROE: N/A ({_du_reason_label}・除外)")
         L.append("FCF_History:")
         if fcf_history:
             for fh in fcf_history:
@@ -2768,6 +2781,27 @@ class TanukiValuationPipeline:
                                     result["dupont"]["reliability_reason"] = "単四半期NI集中（一過性要因の可能性）"
                 except Exception:
                     pass
+            else:
+                # DuPont観測性統一（2026-08-29）: 従来はrevenue_too_small以外の
+                # 計算不能ケース（特に負の純資産＝自社株買い等でstockholders_
+                # equity<=0になる銘柄。ABBV/BKNG/DELL/FICO/MO/MSCI/PM/RBRKで
+                # 実測確認済み。財務レバレッジ=総資産/純資産が負値・符号逆転して
+                # 意味を成さないため計算不能とする）で"dupont"キー自体が
+                # 無言で欠落し、QBTSのrevenue_too_small除外のような明示理由が
+                # 付与されなかった。全ての計算不能ケースで理由を明示する。
+                if _equity_du is not None and _equity_du <= 0:
+                    _du_reason = "negative_equity"
+                elif _total_assets_du is None or _total_assets_du <= 0:
+                    _du_reason = "total_assets_unavailable"
+                elif _equity_du is None:
+                    _du_reason = "equity_unavailable"
+                elif _ni_ttm_du is None:
+                    _du_reason = "ni_ttm_unavailable"
+                elif not _rev_ttm_du or _rev_ttm_du <= 0:
+                    _du_reason = "revenue_unavailable"
+                else:
+                    _du_reason = "insufficient_data"
+                result["dupont"] = {"excluded": True, "reason": _du_reason}
         except Exception as _e_du:
             # [[DUPONT-TTM-FIELD-CASE-MISMATCH-1]]: 今回のキー名不一致自体は
             # 例外を投げず条件不成立で沈黙していたため本except自体は無関係

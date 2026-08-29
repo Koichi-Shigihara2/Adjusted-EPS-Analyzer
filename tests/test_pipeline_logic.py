@@ -2830,7 +2830,8 @@ class TestAnnualFYConsistency:
 #
 #   BUG-DUPONT-1 / TANUKI-ROE-3 で追加した以下の挙動を検証する:
 #   - 正常計算（NI/Revenue/Assets/Equity 全て正値）
-#   - Equity<=0 銘柄は dupont キー自体が付与されない（除外）
+#   - Equity<=0 銘柄は dupont={"excluded": True, "reason": "negative_equity"}
+#     （2026-08-29 DuPont観測性統一以前は無言でキー自体が欠落していた）
 #   - TTM Revenue < $15M 銘柄は dupont={"excluded": True, "reason": "revenue_too_small"}
 #   - 単四半期NI集中（最大1Q/4Q合計 > 0.6）で reliability="LOW"
 #   - |ROE|>100% となる極端値ケースでも roe_decomposed が正しく計算される
@@ -2937,19 +2938,58 @@ class TestDuPontNormalCalculation:
 
 
 class TestDuPontEquityExclusion:
-    """Equity<=0（債務超過）の銘柄は dupont キー自体が付与されない"""
+    """Equity<=0（債務超過）の銘柄は明示的な除外理由付きでdupontが付与される
 
-    def test_negative_equity_excludes_dupont(self, tmp_path):
+    2026-08-29のDuPont観測性統一（[[DUPONT-TTM-FIELD-CASE-MISMATCH-1]]
+    関連）以前は dupont キー自体が無言で欠落していた（QBTSのrevenue_
+    too_small除外とは非対称な扱い）。以降は{"excluded": True, "reason":
+    "negative_equity"}が明示的に付与される。
+    """
+
+    def test_negative_equity_excludes_dupont_with_explicit_reason(self, tmp_path):
         pipe = _make_pipe(tmp_path)
         _write_dupont_ttm(tmp_path, "DEFICITCO", ni_ttm=50_000_000, revenue_ttm=500_000_000)
         _write_dupont_quarterly_bs(tmp_path, "DEFICITCO", total_assets=1_000_000_000, equity=-100_000_000)
 
         result = pipe._load_extra_data("DEFICITCO", {"components": {}})
 
-        assert result.get("dupont") is None, (
-            "Equity<=0 の銘柄で dupont が付与されている"
-            "（ABBV/BKNG/DELL等の純資産マイナス銘柄は除外される設計）"
+        assert result.get("dupont") == {"excluded": True, "reason": "negative_equity"}, (
+            "Equity<=0 の銘柄（ABBV/BKNG/DELL等の純資産マイナス銘柄）は"
+            "negative_equity理由付きで明示的に除外されるべき"
         )
+
+
+class TestDuPontOtherExclusionReasons:
+    """2026-08-29のDuPont観測性統一で追加した、negative_equity以外の
+    明示的除外理由（データ欠損系）を検証する。
+    """
+
+    def test_total_assets_missing_gives_total_assets_unavailable(self, tmp_path):
+        pipe = _make_pipe(tmp_path)
+        _write_dupont_ttm(tmp_path, "NOASSETCO", ni_ttm=10_000_000, revenue_ttm=500_000_000)
+        _write_dupont_quarterly_bs(tmp_path, "NOASSETCO", total_assets=None, equity=100_000_000)
+
+        result = pipe._load_extra_data("NOASSETCO", {"components": {}})
+
+        assert result.get("dupont") == {"excluded": True, "reason": "total_assets_unavailable"}
+
+    def test_equity_missing_with_valid_assets_gives_equity_unavailable(self, tmp_path):
+        pipe = _make_pipe(tmp_path)
+        _write_dupont_ttm(tmp_path, "NOEQUITYCO", ni_ttm=10_000_000, revenue_ttm=500_000_000)
+        _write_dupont_quarterly_bs(tmp_path, "NOEQUITYCO", total_assets=1_000_000_000, equity=None)
+
+        result = pipe._load_extra_data("NOEQUITYCO", {"components": {}})
+
+        assert result.get("dupont") == {"excluded": True, "reason": "equity_unavailable"}
+
+    def test_ni_ttm_missing_gives_ni_ttm_unavailable(self, tmp_path):
+        pipe = _make_pipe(tmp_path)
+        _write_dupont_ttm(tmp_path, "NOICO", ni_ttm=None, revenue_ttm=500_000_000)
+        _write_dupont_quarterly_bs(tmp_path, "NOICO", total_assets=1_000_000_000, equity=100_000_000)
+
+        result = pipe._load_extra_data("NOICO", {"components": {}})
+
+        assert result.get("dupont") == {"excluded": True, "reason": "ni_ttm_unavailable"}
 
 
 class TestDuPontRevenueThresholdExclusion:
@@ -3043,6 +3083,41 @@ class TestDuPontExtremeRoeCalculation:
             "|ROE|>100% ケースで roe_decomposed が想定通り算出されていない"
             "（index.html の isExtreme バッジ判定 Math.abs(roe_decomposed)>1.0 が依拠する値）"
         )
+
+
+class TestDuPontReportTextReason:
+    """_generate_report()のDuPont_ROE行が、excluded=Trueの実際のreasonに
+    応じた文言を表示することを検証する（2026-08-29のDuPont観測性統一で
+    修正。従来はrevenue_too_small専用の固定文言をどのreasonでも表示して
+    いた——他のreasonはdupontキー自体が付与されずこの分岐に到達しな
+    かったため長らく気づかれなかったバグ）。
+    """
+
+    def test_negative_equity_reason_shown_not_revenue_too_small(self, tmp_path):
+        pipe = _make_pipe(tmp_path)
+        extra = {**_minimal_extra(), "dupont": {"excluded": True, "reason": "negative_equity"}}
+        report = pipe._generate_report(
+            "TEST", _minimal_valuation(), _minimal_score_data(), extra
+        )
+        assert "純資産（自己資本）がマイナス" in report
+        assert "TTM売上僅少" not in report
+
+    def test_revenue_too_small_reason_shown(self, tmp_path):
+        pipe = _make_pipe(tmp_path)
+        extra = {**_minimal_extra(), "dupont": {"excluded": True, "reason": "revenue_too_small"}}
+        report = pipe._generate_report(
+            "TEST", _minimal_valuation(), _minimal_score_data(), extra
+        )
+        assert "TTM売上僅少" in report
+
+    def test_unknown_reason_falls_back_to_raw_reason_string(self, tmp_path):
+        """未知のreason文字列でもクラッシュせず、reasonの生値をそのまま表示する"""
+        pipe = _make_pipe(tmp_path)
+        extra = {**_minimal_extra(), "dupont": {"excluded": True, "reason": "some_future_reason"}}
+        report = pipe._generate_report(
+            "TEST", _minimal_valuation(), _minimal_score_data(), extra
+        )
+        assert "reason=some_future_reason" in report
 
 
 # ─────────────────────────────────────────────

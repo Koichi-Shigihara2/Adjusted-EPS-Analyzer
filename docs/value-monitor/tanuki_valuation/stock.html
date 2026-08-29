@@ -1521,6 +1521,26 @@ function render(d) {
     ${(() => {
       const dp = d.dupont;
       if (!dp) return '';
+      // DuPont観測性統一（2026-08-29）: dp.excluded=trueは計算不能を明示する
+      // データであり、単純な欠損（!dp）とは区別して理由を表示する。
+      // reasonキーはpipeline.py::_compute_valuation()側のexcluded分岐と対応。
+      if (dp.excluded) {
+        const reasonLabel = {
+          revenue_too_small: 'TTM売上が過小（$15M未満）のため比率指標が無意味化',
+          negative_equity: '純資産（自己資本）がマイナスのため財務レバレッジが算出不能',
+          total_assets_unavailable: '総資産データが取得できないため算出不能',
+          equity_unavailable: '純資産（自己資本）データが取得できないため算出不能',
+          ni_ttm_unavailable: 'TTM純利益が取得できないため算出不能',
+          revenue_unavailable: 'TTM売上が取得できないため算出不能',
+          insufficient_data: '必要なデータが不足しているため算出不能',
+        }[dp.reason] || `算出不能（reason: ${dp.reason || '不明'}）`;
+        return `<div class="chart-container" style="margin-top:24px">
+          <h2 class="section-title">DUPONT ANALYSIS</h2>
+          <div style="background:var(--sur);border:1px solid var(--bdr);border-radius:6px;padding:12px;color:var(--mut);font-size:12px">
+            この銘柄はDuPont分解の対象外です（${reasonLabel}）。
+          </div>
+        </div>`;
+      }
       const fmtX = v => v != null ? v.toFixed(2) + 'x' : '—';
       const roeCol = dp.roe_decomposed != null ? (dp.roe_decomposed >= 0.15 ? '#4ade80' : dp.roe_decomposed >= 0 ? '#facc15' : '#f87171') : 'var(--txt)';
       const card = (label, value, sub, col, infoKey) =>

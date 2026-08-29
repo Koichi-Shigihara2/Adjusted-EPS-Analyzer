@@ -306,6 +306,60 @@ report.txt上は丸め表示のため$0.1Bのまま変化なしだが`latest.jso
   単四半期集中パターンの検知ロジック自体はユニットテストで確認済み
   （実データでLOWになる銘柄は次回全銘柄再生成後に確認可能）
 
+#### 追記（2026-08-29）: 全銘柄への反映確認 + DuPont観測性統一
+
+**全銘柄への反映確認**: 通常の自動実行サイクル（TANUKI VALUATION、
+2026-08-27の本修正コミット`5ce4a592c7`以降も土日含め毎日稼働）により
+2026-08-29時点で全100銘柄（active tickers.json基準、当初報告の
+「104銘柄」は`tickers.json`実測で100が正）に反映済みと確認した。
+92/100銘柄でDuPontが実際に計算され、1銘柄（QBTS）は
+`revenue_too_small`で明示除外、残り8銘柄は当時まだ無言でキー自体が
+欠落していた（後述の観測性統一で解消）。one-time-gain-trap検知
+（`reliability==='LOW'`）は20銘柄で実発火することを確認、異常値
+（NaN・極端値）は92件全数走査して0件だった。
+
+**DuPont観測性統一**: 上記8銘柄（ABBV/BKNG/DELL/FICO/MO/MSCI/PM/RBRK）
+は全て純資産（stockholders_equity）がマイナス（自社株買い等による
+債務超過）が理由で、財務レバレッジ＝総資産/純資産が意味を成さず計算
+不能だったが、`revenue_too_small`（QBTS）が`{"excluded": True,
+"reason": ...}`と明示されるのに対し、負の純資産ケースは`dupont`キー
+自体が無言で欠落する非対称な扱いになっていた。`pipeline.py`の
+DuPont分解ロジックに`else`分岐を追加し、計算不能な全ケース
+（`negative_equity`・`total_assets_unavailable`・`equity_unavailable`・
+`ni_ttm_unavailable`・`revenue_unavailable`・`insufficient_data`）で
+明示的な理由を記録するよう修正した。
+
+**波及して発見・修正した副次バグ**: `pipeline.py::_generate_report()`
+のreport.txt出力（`DuPont_ROE: N/A (...)`行）が、`excluded=True`の
+どのreasonであっても`revenue_too_small`専用の固定文言
+「TTM売上僅少のため...」を無条件表示していたことが判明した。修正前は
+`revenue_too_small`以外のreasonで`dupont`キー自体が付与されずこの
+分岐に到達しなかったため長年気づかれなかった。実際のreasonに応じた
+文言を表示するよう修正した（サンプル銘柄ABBVで確認: 修正前は
+誤って「TTM売上僅少のため...」、修正後は正しく「純資産（自己資本）が
+マイナスのため...」と表示）。
+
+`stock.html`のDUPONT ANALYSISパネルも同様の問題（`if (!dp) return
+'';`が`dp.excluded`を考慮せず、除外理由なしに空欄4枚のカードを表示
+していた）を修正し、除外理由を明示するメッセージへ差し替えた。
+`tanuki_score/index.html`は既に`!s.dupont.excluded`でフィルタ済み・
+`?.`オプショナルチェーンで安全なため追加修正不要だった。
+
+サンプル銘柄ABBVで`pipeline.py`を実行し、`dupont`が
+`{"excluded": True, "reason": "negative_equity"}`となること、
+report.txtが正しい理由文言を表示することを実測確認。回帰テスト
+`tests/test_pipeline_logic.py::TestDuPontOtherExclusionReasons`
+（3件）・`TestDuPontReportTextReason`（3件）を追加し、既存の
+`TestDuPontEquityExclusion`（旧「dupontキー自体が付与されない」という
+バグを固定化してしまっていたテスト）を新しい正しい挙動へ更新した。
+
+残る7銘柄（BKNG/DELL/FICO/MO/MSCI/PM/RBRK）の本番`latest.json`は
+本コミットでは再生成していない（TANUKI VALUATIONの通常自動実行サイクル
+に委ねる、既存の運用パターン）。
+
+関連: `[[HYPECORE-MISC-NAMING-GAPS-1]]`（同日、HypeCoreの命名・観測性
+ギャップを別途まとめて解消）
+
 pytest 927件全パス（既存926件＋新規1件）、`report_consistency_check.py
 --fail-on-ng` NG=0。全銘柄への反映は次回の通常パイプライン実行サイクル
 に委ねる（今回はAPP/ASTS/NVDAのみサンプル再生成）。
