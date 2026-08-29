@@ -19665,3 +19665,49 @@ AcquiredInProcessCost`を1位、`ResearchAndDevelopmentExpense`を2位とした�
 `report_consistency_check.py` NG=0/WARN=71（既存と同一）。JNJ/AMD/LLYの
 `common/sec_data/data/`・`raw/`・`normalized/`配下の該当ファイルを実際に
 再生成し、上記3銘柄以外に差分が生じないことを確認済み。
+
+### ✅ [REVENUE-TAG-CONFLICT-SCAN-1] revenue_tag_conflict_check.py全銘柄実行で新規発見した候補タグ競合 — 2026-08-30、陳腐化確認により移設（要対応銘柄は全て委譲先エントリ側で解消済み）
+**状態:** 完了・陳腐化のため移設（2026-08-30、バックログ検証ラウンド2）。
+本エントリ自体は2026-07-15に「調査記録として維持しつつ、今後の作業は
+委譲先2エントリ側で追跡する」と明記した記録専用エントリであり、委譲先の
+対応状況を2026-08-30時点で再確認した結果、両方とも決着済みであることを
+確認したため移設する。
+- 要対応銘柄（AVGO/DELL/CAKE/ELF+RCAT）の委譲先
+  `[[FY52WEEK-BUCKET-MISPLACE-1]]`は既に✅完了としてBACKLOG_DONE.mdに
+  記録済み（本ファイル内で確認済み）。
+- 要対応銘柄（TDY/ASTS）の委譲先`[[REVENUE-TAG-PRIORITY-FRAGILE-1]]`は
+  BACKLOG.md上で🟢有効（現状記載どおり未着手・現状の採用値は処理順で
+  偶然正しく救われているのみという評価に変化なし）として引き続き
+  オープン管理中であることを確認済み。
+- LITE/TER/PMは2026-07-15時点で既に「実害なし・正当な差異」と判定完了
+  しており、本エントリ側に追加で必要な対応はない。
+本エントリが担っていた「進捗追跡」の役割は完全に委譲先2エントリへ移行
+済みのため、本体は記録として本ファイルへ移設しクローズする。
+**優先度:** 未定→クローズ
+**分類:** データ品質 / SECデータ取得層
+**登録日:** 2026-07-15
+**発見:** [[ARCH-DATA-1]]残課題③ `revenue_tag_conflict_check.py`実装時の全100銘柄検証
+
+### ✅ [ALPHA-CAP-HARDCODE-1] validator.pyのalpha_capハードコードとcore_calculator.pyの動的alpha上限の不一致 — 2026-08-30、`[[VALIDATOR-ALPHA-CAP-STALE-1]]`（2026-08-20完了）により同一課題が既に解消済みと確認し移設
+**状態:** 完了・陳腐化のため移設（2026-08-30、バックログ検証ラウンド2）。
+本エントリは2026-07-15登録時点で「validator.pyのalpha_capが常に1.0固定・
+core_calculator.pyは業種別に動的」という不一致を「実害なし・表示バグに
+限定」として優先度「低」で記録していたが、5日後の2026-08-20に登録された
+別エントリ`[[VALIDATOR-ALPHA-CAP-STALE-1]]`が全く同じ根本原因
+（`validator.py::_extract_params`のalpha_cap常時1.0固定 vs
+`core_calculator.py`のセクター別動的alpha_cap）を独立に検出し、
+`core_calculator.py`側に`resolve_alpha_cap()`を切り出してvalidator.py
+から共有importする設計で完全に解消済み（2026-08-20実装・全100銘柄
+再検証で32件の偽陽性解消を確認）。
+2026-08-30時点で`src/value/tanuki_valuation/validator.py`を実コード確認
+した結果、`from core_calculator import resolve_alpha_cap, DEFAULT_ALPHA_CAP`
+・`alpha_cap = resolve_alpha_cap(...)`が現存し、本エントリが指摘していた
+「常に1.0固定」というハードコード自体がコード上に存在しないことを確認
+済み。本エントリが提案していた対応案（`maturity_config.py`への
+`get_alpha_cap()`相当アクセサ追加）は採用されなかったが、
+`resolve_alpha_cap()`一本化という別アプローチで同じ不一致問題自体は
+解消しているため、本エントリの課題認識は完全に解消済みと判定し移設する。
+**優先度:** 低→クローズ
+**分類:** DCF信頼性判定ロジック / データ品質
+**登録日:** 2026-07-15
+**発見:** [[VALIDATOR-IVPS-MISMATCH-1]]対応時のスポットライト銘柄検証（ADBE等）で発見
