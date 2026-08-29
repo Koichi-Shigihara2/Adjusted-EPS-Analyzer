@@ -11291,38 +11291,6 @@ MISMATCH-1）と同種の「候補統合時の概念混在」パターンの可�
 
 ---
 
-### [LAYER3-EPS-UNIT-MISMATCH-1] eps_basic/eps_dilutedのunit指定誤りにより105銘柄全数で完全に空になっている
-**優先度:** 高
-**分類:** バグ
-**登録日:** 2026-07-24
-**発見:** eps_basic/eps_diluted加法性検証（フェーズC前提確認）
-
-#### 内容
-config/sec_concept_definitions.jsonのeps_basic・eps_dilutedが
-"unit": "USD"と誤って指定されている（正しくは"USD/shares"）。
-extract_field_raw_entries()はcompany_facts["facts"]["us-gaap"]
-[concept]["units"][unit]という厳密一致でルックアップするため、
-この不一致により105銘柄全数・完全に空（0エントリ、source_tag:
-None）のまま出力されている。
-
-#### 影響
-フェーズA完了時（105銘柄回帰レポート）でこの欠落が検出されな
-かった。両フィールドは新規追加分（旧データに対応物がない）のため、
-「diffなし」の判定に紛れて見落とされたと考えられる。現状のTTM
-消費者はこの2フィールドを参照していないため実害はないが、config
-自体が機能していない状態のまま「フェーズA完了」としていたことに
-なる。
-
-#### 対応方針
-unit指定を"USD/shares"に修正する。修正後、105銘柄で
-extract_field_raw_entries()が正しくエントリを取得できることを
-確認する。
-
-#### 着手条件
-なし（フェーズC実装前に修正すべき、本作業で対応）
-
----
-
 ### [SEC-BKNG-SHARES-ANOMALY-1] BKNGのWeightedAverageNumberOfDilutedSharesOutstandingがSEC提出データ自体で異常値
 **優先度:** 低〜中
 **分類:** データ品質 / SEC提出データ異常
@@ -11608,35 +11576,6 @@ SGA（selling_general_and_administrative）・SM（selling_and_marketing）
 のいずれかが新機能（投資強度分析の精緻化等）で実消費される計画が
 立った時点、またはreport_consistency_check.pyのSGA整合性チェックを
 強化するタイミングで、選択肢A（新規フィールド化）を再検討する。
-
----
-
-### [ELF-ROE10YR-RECALC-PENDING-1] ELFのROE_avg(10yr)是正が未反映（TANUKI VALUATION側の定期更新待ち）
-**優先度:** 中
-**分類:** データ反映待ち / TANUKI VALUATION
-**登録日:** 2026-08-01
-**発見:** [[ELF-FISCAL-END-MONTH-MISDETECTION-1]]完了時の試験実行（チャット記録）
-
-#### 内容
-[[ELF-FISCAL-END-MONTH-MISDETECTION-1]]（era別fiscal_end_month対応）により
-ELFの2015-2018年度データが是正された結果、TANUKI VALUATIONのROE_avg(10yr)が
-7.0%→9.6%へ、連動してAlpha_Premiumが0.29→0.40へ変化することを試験実行
-（未コミット、出力破棄済み）で確認した。これはバグではなく、是正済みの正しい
-入力データに基づく期待された再計算結果である。TANUKI SCORE分類（WATCH）・
-Matrix Quadrant/Labelは不変であることを確認済み。
-
-#### 影響
-ELF単一銘柄。現時点でTANUKI VALUATION側のannual output（IV・Classification等）
-は未更新のまま古いROE値を参照し続けている。分類自体への影響はないため
-緊急性は低い。
-
-#### 対応方針
-TANUKI VALUATIONの通常の定期更新サイクル（全銘柄再計算）に含めて反映する。
-単独での緊急反映は不要。
-
-#### 着手条件
-なし。次回のTANUKI VALUATION全銘柄再計算時に自然に解消される見込み。
-反映確認後、本エントリをクローズすること。
 
 ---
 

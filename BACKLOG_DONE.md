@@ -4,6 +4,74 @@
 
 ## 2026-08-29（完了）
 
+### ✅ [LAYER3-EPS-UNIT-MISMATCH-1] eps_basic/eps_dilutedのunit指定誤りにより105銘柄全数で完全に空になっている（移設漏れの是正、実装自体は2026-07-25完了済み）
+
+**優先度:** 高 → 完了
+**分類:** バグ
+**登録日:** 2026-07-24
+**完了日:** 2026-07-25（記録の移設は2026-08-29、未着手バックログ棚卸し
+タスク中に発見）
+
+#### 内容（登録時点）
+`config/sec_concept_definitions.json`の`eps_basic`・`eps_diluted`が
+`"unit": "USD"`と誤って指定されていた（正しくは`"USD/shares"`）。
+`extract_field_raw_entries()`は`company_facts["facts"]["us-gaap"]
+[concept]["units"][unit]`という厳密一致でルックアップするため、この
+不一致により105銘柄全数・完全に空（0エントリ、`source_tag: None`）の
+まま出力されていた。
+
+#### 移設漏れの発見経緯
+2026-08-29の未着手バックログ棚卸しタスク中、本項目が優先度「高」の
+まま長期間残っていることに着目し実コードを再確認したところ、
+`config/sec_concept_definitions.json`の`eps_basic`・`eps_diluted`は
+既に`"unit": "USD/shares"`に修正済みであることを確認した。`git log -S`
+で該当修正を検索した結果、コミット`ee1a5479aa`（"fix(sec_data):
+composite (end, is_annual) key in Q4 merge; ship eps unit fix
+(LAYER3-ANNUAL-QUARTERLY-COLLISION-1)"、2026-07-25 12:42 JST）で、
+**別のBACKLOG項目`[[LAYER3-ANNUAL-QUARTERLY-COLLISION-1]]`のコミットに
+副次的に同梱されて修正されていた**ことが判明した。本項目自体は
+BACKLOG_DONE.mdへの移設がされないまま約1ヶ月間BACKLOG.mdに残置されて
+いた。
+
+#### 実測確認（2026-08-29再検証）
+`build_ticker_store()`をAAPL/NVDA/KLACで実行し、`eps_basic`・
+`eps_diluted`とも正常にエントリが取得できていることを確認した
+（各20〜21件、`source_tag`も正しく設定済み）。
+
+#### 関連
+- `[[LAYER3-ANNUAL-QUARTERLY-COLLISION-1]]`（本修正が実際に同梱された
+  コミット元の項目）
+
+---
+
+### ✅ [ELF-ROE10YR-RECALC-PENDING-1] ELFのROE_avg(10yr)是正が未反映（TANUKI VALUATION側の定期更新待ち）— 反映確認・クローズ
+
+**優先度:** 中 → 完了
+**分類:** データ反映待ち / TANUKI VALUATION
+**登録日:** 2026-08-01
+**完了日:** 2026-08-29（未着手バックログ棚卸しタスク中に反映確認）
+
+#### 内容（登録時点）
+`[[ELF-FISCAL-END-MONTH-MISDETECTION-1]]`（era別fiscal_end_month対応）
+によりELFの2015-2018年度データが是正された結果、TANUKI VALUATIONの
+`ROE_avg(10yr)`が7.0%→9.6%へ、連動して`Alpha_Premium`が0.29→0.40へ
+変化することを試験実行で確認していたが、登録時点ではTANUKI VALUATION
+側のannual outputが未更新のまま古いROE値を参照し続けていた。バグでは
+なく、是正済みの正しい入力データに基づく期待された再計算結果であり、
+「次回のTANUKI VALUATION全銘柄再計算時に自然に解消される見込み。
+反映確認後、本エントリをクローズすること」という着手条件だった。
+
+#### 反映確認（2026-08-29）
+本番`docs/value-monitor/tanuki_valuation/data/ELF/latest.json`を確認
+したところ、`components.roe_10yr_avg = 0.09616889...`（9.62%）・
+`alpha = 0.4039...`（0.40）と、登録時点で期待されていた是正後の値に
+既に更新されていることを確認した（`calculation_date`は本タスク実施日
+時点で最新）。TANUKI VALUATIONの通常の定期実行サイクル（登録日
+2026-08-01以降、日次で繰り返し実行）で自然に反映済みであり、登録時の
+着手条件通りクローズする。
+
+---
+
 ### ✅ [MARKET-DATA-SCHEDULE-7AM-JST-1] 朝7時JST到達目標での自動更新スケジュール調査＋Plan A実装（Market_Data_Daily_Updateを21:40→21:25 UTCへ前倒し）＋直近3日間の異常遅延の原因調査
 
 **優先度:** 中 → 完了
