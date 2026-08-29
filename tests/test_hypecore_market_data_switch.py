@@ -207,3 +207,75 @@ class TestFetchAnalystHistory:
         self._patch(monkeypatch, has_market_data=False)
         result = hypecore.fetch_analyst_history("XYZ")
         assert result.empty
+
+
+class TestBuildMonthRecord:
+    """[[HYPECORE-MISC-NAMING-GAPS-1]]④の回帰テスト。
+
+    ma200_momはdetermine_stage()のS3慣性・S4転落判定等で使われる内部値
+    だが、run_poc()のJSON保存ループが従来ma200_momを出力に含めておらず、
+    判定根拠を事後検証できなかった。_build_month_record()（run_poc()の
+    JSON保存ループから抽出した本番の出力構築関数そのもの）が実際に
+    ma200_momを出力に含めることを検証する。
+    """
+
+    def _make_row(self, **overrides):
+        base = {
+            "price": 123.45,
+            "stage": 2,
+            "ma200_dev": 12.3,
+            "ma200_mom": -4.5,
+            "ma50_dev": 5.0,
+            "from_peak": -10.0,
+            "rsi": 55.0,
+            "volume_ratio": 1.2,
+            "vol_surge": 1.1,
+            "rev_yoy": 20.0,
+            "ni_yoy": 15.0,
+            "rule40_yoy_netmargin": 30.0,
+            "fcf_yield": 0.02,
+            "forward_pe": 25.0,
+            "peg_ratio": 1.5,
+            "psr": 8.0,
+            "revenue_growth": 0.2,
+            "earnings_growth": 0.15,
+            "recommendation_mean": 2.0,
+            "short_pct_float": 0.03,
+            "eps_surprise": 5.0,
+            "analyst_upgrade_rate": 0.4,
+            "analyst_downgrade_rate": 0.1,
+            "sell_on_good_news": 0,
+            "buy_hold_ratio": 0.6,
+            "substage": {"phase": "mid", "label": "中盤", "watch": "watch", "next": "next"},
+            "expectation_score": 0.3,
+            "fundamental_score": 0.2,
+            "momentum_score": 0.1,
+            "price_iv_ratio": 1.1,
+            "ev_ebitda": 18.0,
+            "low_base_effect": False,
+        }
+        base.update(overrides)
+        return pd.Series(base)
+
+    def test_ma200_mom_included_in_output(self):
+        idx = pd.Timestamp("2026-03-01")
+        row = self._make_row(ma200_mom=-7.891234)
+        record = hypecore._build_month_record(idx, row)
+        assert "ma200_mom" in record
+        assert record["ma200_mom"] == -7.891
+
+    def test_ma200_mom_nan_becomes_null(self):
+        idx = pd.Timestamp("2026-03-01")
+        row = self._make_row(ma200_mom=float("nan"))
+        record = hypecore._build_month_record(idx, row)
+        assert record["ma200_mom"] is None
+
+    def test_other_fields_unaffected_by_extraction(self):
+        idx = pd.Timestamp("2026-03-01")
+        row = self._make_row()
+        record = hypecore._build_month_record(idx, row)
+        assert record["month"] == "2026-03"
+        assert record["stage_label"] == hypecore.STAGE_LABELS[2]
+        assert record["ma200_dev"] == 12.3
+        assert record["substage_phase"] == "mid"
+        assert record["low_base_effect"] is False

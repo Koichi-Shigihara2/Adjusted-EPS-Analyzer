@@ -10547,6 +10547,7 @@ BACKLOG_DONE.md「2026-08-27（完了）」参照）
 **優先度:** 低
 **分類:** 命名・観測性 / HypeCore
 **登録日:** 2026-07-23
+**更新日:** 2026-08-29（④実装完了、残り①②③⑤⑥は未着手のまま残置）
 **発見:** `FIELD_DEFINITIONS.md`フェーズ5・7
 
 #### 内容
@@ -10557,22 +10558,33 @@ BACKLOG_DONE.md「2026-08-27（完了）」参照）
 ものでありFCFではなく、年率換算もされていない。③AS-IS-076と
 AS-IS-087は同名「200MA乖離」だがAS-IS-087はHypeCore自前計算
 （`rolling(200).mean()`）、AS-IS-076はyfinance内部計算済み値
-（`twoHundredDayAverage`）という別データソース。④`ma200_mom`は
+（`twoHundredDayAverage`）という別データソース。④~~`ma200_mom`は
 ステージ判定の複数の重要分岐で使われるがJSON出力に一切含まれず、
-判定根拠を事後検証できない。⑤`volume_ratio`（AS-IS-091、日次20日平均
-比）と`vol_surge`（AS-IS-092、月次6ヶ月移動平均比）は「出来高急増」系
-指標として並存するが時間窓が全く異なる。⑥ライフサイクル判定の
-フォールバック元`revenue_growth`（yfinance）と`rev_yoy`（SEC EDGAR
-TTM%）は算出基準が異なる別指標であり、どちらが使われるかは単に
-`revenue_growth`がnullかどうかで暗黙に決まる。
+判定根拠を事後検証できない。~~（2026-08-29実装完了、下記参照）
+⑤`volume_ratio`（AS-IS-091、日次20日平均比）と`vol_surge`
+（AS-IS-092、月次6ヶ月移動平均比）は「出来高急増」系指標として並存
+するが時間窓が全く異なる。⑥ライフサイクル判定のフォールバック元
+`revenue_growth`（yfinance）と`rev_yoy`（SEC EDGAR TTM%）は算出基準が
+異なる別指標であり、どちらが使われるかは単に`revenue_growth`が
+nullかどうかで暗黙に決まる。
 
 #### 対応方針
 ①②は`NAMING_CONVENTIONS.md`規則3（誤称の禁止）に基づきリネームを
-検討する。③⑤⑥は接尾辞での区別（規則1・2）を検討する。④はJSON出力に
-`ma200_mom`を追加する。
+検討する。③⑤⑥は接尾辞での区別（規則1・2）を検討する。④は完了
+（下記参照）。
+
+#### ④実装済み（2026-08-29）
+`src/value/hypecore/hypecore.py::run_poc()`のJSON保存ループを
+`_build_month_record()`として抽出し、`ma200_mom`を出力に追加した
+（`_poc.json`の`monthly[].ma200_mom`）。純粋な追加のみで既存フィールド・
+既存消費者（`docs/value-monitor/hypecore/index.html`・`detail.html`）
+への影響なし。回帰テスト`tests/test_hypecore_market_data_switch.py::
+TestBuildMonthRecord`（3件、抽出後の本番関数を直接呼び出して検証）追加。
+①②③⑤⑥はリネーム・命名規則適用の設計判断が必要なため未着手のまま
+残置。
 
 #### 着手条件
-なし
+なし（①②③⑤⑥のみ残存）
 
 ---
 

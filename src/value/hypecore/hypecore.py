@@ -900,6 +900,71 @@ def detect_substage(row: pd.Series, stage: int, stage_months: int) -> dict:
             watch="底値形成中。まだ急いで動かない。",
             next="出来高を伴う株価反発・新しい物語（製品・契約・提携）の出現を待つ。")
 
+def _safe_round(v):
+    """floatに丸めてJSON出力可能な値へ変換（NaN/Inf/Noneはnullにする）"""
+    try:
+        return None if (v is None or (isinstance(v, float) and (np.isnan(v) or np.isinf(v)))) else round(float(v), 3)
+    except Exception:
+        return None
+
+
+def _build_month_record(idx, row) -> dict:
+    """1ヶ月分の月次JSONレコードを構築する（run_poc()のJSON保存ループから抽出）。
+
+    [[HYPECORE-MISC-NAMING-GAPS-1]]④: ma200_momはdetermine_stage()の複数の
+    重要分岐（S3慣性・S4転落判定等）で使われるが、従来JSON出力に含まれて
+    おらず判定根拠を事後検証できなかった。ここで出力に追加する。
+    """
+    safe = _safe_round
+    return {
+        "month":              idx.strftime("%Y-%m"),
+        "price":              safe(row.get("price")),
+        "stage":              int(row["stage"]),
+        "stage_label":        STAGE_LABELS[int(row["stage"])],
+        # テクニカル
+        "ma200_dev":          safe(row.get("ma200_dev")),
+        "ma200_mom":          safe(row.get("ma200_mom")),
+        "ma50_dev":           safe(row.get("ma50_dev")),
+        "from_peak":          safe(row.get("from_peak")),
+        "rsi":                safe(row.get("rsi")),
+        "volume_ratio":       safe(row.get("volume_ratio")),
+        "vol_surge":          safe(row.get("vol_surge")),
+        # 財務
+        "rev_yoy":            safe(row.get("rev_yoy")),
+        "ni_yoy":             safe(row.get("ni_yoy")),
+        "rule40_yoy_netmargin": safe(row.get("rule40_yoy_netmargin")),
+        "fcf_yield":          safe(row.get("fcf_yield")),
+        # バリュエーション（現時点値）
+        "forward_pe":         safe(row.get("forward_pe")),
+        "peg_ratio":          safe(row.get("peg_ratio")),
+        "psr":                safe(row.get("psr")),
+        "revenue_growth":     safe(row.get("revenue_growth")),
+        "earnings_growth":    safe(row.get("earnings_growth")),
+        "recommendation_mean": safe(row.get("recommendation_mean")),
+        "short_pct_float":    safe(row.get("short_pct_float")),
+        # アナリスト・EPS
+        "eps_surprise":       safe(row.get("eps_surprise")),
+        "analyst_upgrade_rate": safe(row.get("analyst_upgrade_rate")),
+        "analyst_downgrade_rate": safe(row.get("analyst_downgrade_rate")),
+        "sell_on_good_news":  safe(row.get("sell_on_good_news")),
+        "buy_hold_ratio":     safe(row.get("buy_hold_ratio")),
+        # 内部フェーズ
+        "substage_phase":     row["substage"]["phase"] if isinstance(row.get("substage"), dict) else None,
+        "substage_label":     row["substage"]["label"] if isinstance(row.get("substage"), dict) else None,
+        "substage_watch":     row["substage"]["watch"] if isinstance(row.get("substage"), dict) else None,
+        "substage_next":      row["substage"]["next"]  if isinstance(row.get("substage"), dict) else None,
+        # スコア
+        "expectation_score":  safe(row.get("expectation_score")),
+        "fundamental_score":  safe(row.get("fundamental_score")),
+        "momentum_score":     safe(row.get("momentum_score")),
+        # IV
+        "price_iv_ratio":     safe(row.get("price_iv_ratio")),
+        "ev_ebitda":          safe(row.get("ev_ebitda")),   # 負値も格納（UIで変換）
+        # 低ベース効果: 前年rev_yoy<-10% かつ 今年rev_yoy>50%
+        "low_base_effect":    bool(row.get("low_base_effect", False)),
+    }
+
+
 def run_poc(ticker: str = "PLTR") -> dict:
     """PoC実行"""
     print(f"\n{'='*55}")
@@ -967,60 +1032,7 @@ def run_poc(ticker: str = "PLTR") -> dict:
             print(f"{ym:10s} {pred!s:5s} {g!s:5s} {ok:5s} {ma:8s} {fp:8s} {rs:5s} {p:8s}")
 
     # JSON保存
-    def safe(v):
-        try:
-            return None if (v is None or (isinstance(v, float) and (np.isnan(v) or np.isinf(v)))) else round(float(v), 3)
-        except Exception:
-            return None
-
-    out = []
-    for idx, row in df_out.iterrows():
-        out.append({
-            "month":              idx.strftime("%Y-%m"),
-            "price":              safe(row.get("price")),
-            "stage":              int(row["stage"]),
-            "stage_label":        STAGE_LABELS[int(row["stage"])],
-            # テクニカル
-            "ma200_dev":          safe(row.get("ma200_dev")),
-            "ma50_dev":           safe(row.get("ma50_dev")),
-            "from_peak":          safe(row.get("from_peak")),
-            "rsi":                safe(row.get("rsi")),
-            "volume_ratio":       safe(row.get("volume_ratio")),
-            "vol_surge":          safe(row.get("vol_surge")),
-            # 財務
-            "rev_yoy":            safe(row.get("rev_yoy")),
-            "ni_yoy":             safe(row.get("ni_yoy")),
-            "rule40_yoy_netmargin": safe(row.get("rule40_yoy_netmargin")),
-            "fcf_yield":          safe(row.get("fcf_yield")),
-            # バリュエーション（現時点値）
-            "forward_pe":         safe(row.get("forward_pe")),
-            "peg_ratio":          safe(row.get("peg_ratio")),
-            "psr":                safe(row.get("psr")),
-            "revenue_growth":     safe(row.get("revenue_growth")),
-            "earnings_growth":    safe(row.get("earnings_growth")),
-            "recommendation_mean": safe(row.get("recommendation_mean")),
-            "short_pct_float":    safe(row.get("short_pct_float")),
-            # アナリスト・EPS
-            "eps_surprise":       safe(row.get("eps_surprise")),
-            "analyst_upgrade_rate": safe(row.get("analyst_upgrade_rate")),
-            "analyst_downgrade_rate": safe(row.get("analyst_downgrade_rate")),
-            "sell_on_good_news":  safe(row.get("sell_on_good_news")),
-            "buy_hold_ratio":     safe(row.get("buy_hold_ratio")),
-            # 内部フェーズ
-            "substage_phase":     row["substage"]["phase"] if isinstance(row.get("substage"), dict) else None,
-            "substage_label":     row["substage"]["label"] if isinstance(row.get("substage"), dict) else None,
-            "substage_watch":     row["substage"]["watch"] if isinstance(row.get("substage"), dict) else None,
-            "substage_next":      row["substage"]["next"]  if isinstance(row.get("substage"), dict) else None,
-            # スコア
-            "expectation_score":  safe(row.get("expectation_score")),
-            "fundamental_score":  safe(row.get("fundamental_score")),
-            "momentum_score":     safe(row.get("momentum_score")),
-            # IV
-            "price_iv_ratio":     safe(row.get("price_iv_ratio")),
-            "ev_ebitda":          safe(row.get("ev_ebitda")),   # 負値も格納（UIで変換）
-            # 低ベース効果: 前年rev_yoy<-10% かつ 今年rev_yoy>50%
-            "low_base_effect":    bool(row.get("low_base_effect", False)),
-        })
+    out = [_build_month_record(idx, row) for idx, row in df_out.iterrows()]
 
     JST = timezone(timedelta(hours=9))
     result = {
