@@ -256,6 +256,92 @@ HTML側ソースパターン検証（旧簡略版の消滅・新フィールド�
 
 ---
 
+### ✅ [PARSER-STOCKHOLDERS-EQUITY-CROSS-YEAR-MISSELECT-1] stockholders_equityが正しいaccnと異なる別年度・別filingの無関係な値を誤って採用するケースが存在する
+
+**優先度:** 高 → 完了
+**分類:** バグ / 確定・CHECK29対象外の独立した抽出バグ
+**登録日:** 2026-08-03
+**完了日:** 2026-08-30（Koichiさん承認・着手）
+
+#### 内容（登録時点）
+CRM(2011)・VRT(2017)で、stockholders_equityの抽出が正しいaccn
+（total_assets/total_liabilitiesと同一のfiling）ではなく、別年度・別
+filingの無関係な値を誤って採用していた。CRM(2011)はFY2011 10-K本人の
+NCI込みタグ（$1,587,360,000）を見つけられず1年前の値
+（$1,276,491,000）にフォールバック、VRT(2017)は正しいaccn自体に
+$23,724が存在するにもかかわらず3年後の10-K/A比較列（-$129,600,000）を
+誤って採用していた。全105銘柄スキャンで、この種のaccn不一致13件中
+真のバグは2件（CRM・VRT）のみと確定済み（詳細は2026-08-03時点の登録
+記録参照）。
+
+#### STEP1: 原因の再現・特定（分岐単位）
+実データで両者とも現在も再現することを確認した上で、`_extract_values_
+best_candidate()`のトレースにより原因を分岐単位で特定した:
+
+- **CRM型（2アンカー競合）**: `_own_override_is_safe()`の既存accnベース
+  短絡判定（既存エントリが自accnの本人データなら上書きしない）が、
+  既存エントリの生fyタグと年度バケツ自体の食い違い（CHECK-23と同種の
+  fyタグ裏取り不一致、`fy_tag_mismatch_log.json`に既に記録されていた）
+  を考慮していなかった。CRM(2011)実例: end=2011-01-31（生fy=2010）が
+  `determine_fiscal_year()`で偶然year=2011バケツに計算され、本来
+  year=2011の真の本人データ（生fy=2011で一致、別タグ・別accn）による
+  上書きを誤ってブロックしていた。
+- **VRT型（0アンカー）**: stockholders_equityの本人データが皆無の年度で、
+  `_extract_single_key()`の10-K/Aタイブレーク（同一end_dateで一方が
+  10-K/Aなら filed日が新しい方を優先）が、無関係な比較列の再表示値
+  （2021年10-K/A、-$129.6M）を誤って採用していた。
+
+#### STEP2〜3: 修正方針・実装
+CRM型・VRT型を別ロジックで個別修正した:
+- CRM型: `_own_override_is_safe()`に`existing_fy_tag`/`own_fy_tag`
+  パラメータを追加し、両者が一致しない場合のみ上書きを許可（省略時は
+  従来通りの挙動を維持、WMT型の保護には影響しない設計）
+- VRT型: 新設`_align_stockholders_equity_to_sibling_accn()`で、
+  total_assets/total_liabilitiesが共通採用したaccnに同一年度バケツの
+  stockholders_equity候補タグのエントリがあれば優先する（欠損穴埋め
+  型）。CWAN(2023)のような「正しいaccnにタグ自体が存在しない」構造的
+  必然パターンは対象外のまま変化しない
+
+既存のWMT/DELL/CDNS/IOT/VZ向けテスト（`tests/test_bs_entity_mixing.py`・
+`tests/test_fy_tag_provenance.py`等、41件）が全て引き続き成功することを
+確認済み。
+
+#### STEP4: 105銘柄フルシミュレーションで発見・対応した副作用
+意図した2銘柄に加え、AVAV(2020, `other.rpo`)でCRM型と同一パターンの
+別バグを検知・修正できることを確認した。一方、AVGO(2017)・ENTG(2010)
+で意図しない値変化を検知し原因を特定: VRT型の新規ステップが「同一
+accn内でのNCI込み/NCI抜きタグ選択」にも誤って介入し、AVGO(2017)は
+TA=TL+SEの恒等式がNCI込み値（$23,186M）でのみ完全一致するため、
+機械的にNCI抜きタグ（$20,285M）へ差し替えると恒等式を$2,901M分
+破壊することが判明した。既存の採用accnがanchor_accnと既に同一の場合は
+対象外とする条件を追加してこの副作用を解消し、再シミュレーションで
+CRM・VRT・AVAVの3銘柄のみに影響が収束することを確認した。
+
+#### 実データでの確認
+`CHECK29`の会計恒等式検証ログ（`bs_identity_violations_log.json`）で、
+VRT(2017)の未解決違反（diff=$129,623,724、`resolved_by_extension:
+false`）が本修正で完全に解消されることを確認した。CRM・AVAVの
+`fy_tag_mismatch_log.json`からも該当年度のfyタグ裏取り不一致エントリが
+自動的に消えている。
+
+#### 回帰テスト
+`tests/test_bs_field_cross_year_misselect.py`（新規14ケース）。CRM型・
+VRT型それぞれの合成データ単体テスト、WMT型保護の非回帰確認、AVGO型
+副作用防止の確認、実データ（CRM/VRT/AVGO/CWAN）でのfail-before/
+pass-after確認。修正前HEADに対しては`git stash`で該当パターンが
+存在しないことを確認済み（10/12ケースが正しく失敗、残る2件は
+「フラグ省略時は従来通り」「CWANは対象外のまま」という意図的に修正
+前後で結果が変わらない設計のテスト）。
+
+#### 対応しなかった事項
+`get_roe_avg_detail()`のROE計算経路への実際の影響度（CRM(2011)は
+現在の10年トレイリング窓外のため実害なし、VRT(2017)は窓内だが
+winsorize仕様により影響は限定的の見込み）は本タスクのスコープ外
+（数値の再現・是正が主目的であり、TANUKI VALUATIONの実出力再計算・
+影響度の定量化は別タスク）。
+
+---
+
 ## 2026-08-29（完了）
 
 ### ✅ [LAYER3-EPS-UNIT-MISMATCH-1] eps_basic/eps_dilutedのunit指定誤りにより105銘柄全数で完全に空になっている（移設漏れの是正、実装自体は2026-07-25完了済み）

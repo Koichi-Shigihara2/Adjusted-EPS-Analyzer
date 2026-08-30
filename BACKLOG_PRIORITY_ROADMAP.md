@@ -31,6 +31,18 @@ OVERLOAD-1]]`・`[[HYPECORE-REALSTRONG-DUAL-IMPL-1]]`・
 ため実装を見送り、BACKLOG.mdに再検証記録を追記した上で据え置き。
 現存総数は**157件**（機械カウント値、`grep -c "^### \["`で確認）。
 
+**更新（2026-08-30、PARSER-STOCKHOLDERS-EQUITY-CROSS-YEAR-MISSELECT-1
+実装完了）**: 一次データ取得層アーキテクチャ調査を経てKoichiさんの承認
+により着手。`[[PARSER-STOCKHOLDERS-EQUITY-CROSS-YEAR-MISSELECT-1]]`の
+CRM型（2アンカー競合）・VRT型（0アンカー）を別ロジックで個別修正し、
+BACKLOG_DONE.mdへ移設。105銘柄フルシミュレーションで副次発見した
+AVAV(2020, rpo)の同型バグも解消。同シミュレーションで検知した
+AVGO(2017)・ENTG(2010)への意図しない副作用は原因を特定し修正範囲を
+絞り込むことで解消済み（詳細はBACKLOG_DONE.md該当項目参照）。
+現存総数は**156件**（機械カウント値）。フェーズ1（10件）は9件完了・
+残る1件（`[[RICE-ADJ-ASYMMETRIC-ZERO-1]]`）のみKoichiさんの設計判断
+待ちで据え置き。
+
 **このドキュメントの位置づけ:** 個別項目の詳細・最新状態は常に
 `BACKLOG.md`が正（このロードマップは2026-08-30時点のスナップショット）。
 新規登録項目や状態変化はBACKLOG.md側にのみ反映され、このロードマップは
@@ -92,13 +104,12 @@ Aが最優先なのは、唯一「Koichiさんの投資判断に使う数値そ�
 
 1. ✅**完了**（2026-08-30、バッチB）~~`[[FCF-CAGR-YEARS-MISMATCH-1]]`~~
    — stock.html CAGR(3yr)誤表示（BACKLOG_DONE.md参照）
-2. `[[PARSER-STOCKHOLDERS-EQUITY-CROSS-YEAR-MISSELECT-1]]` — VRT/CRM
-   のROE実害。バッチBで再検証したが、修正には`_extract_values_
-   best_candidate()`（既に何重にも安全策が組み込まれた複雑な関数）・
-   `_resolve_bs_entity_mixing()`（既存安全原則の変更を伴う）という
-   既存の重要ロジックの大幅書き換えと105銘柄全体シミュレーションが
-   必要と判明したため実装せず、Koichiさんの判断待ちとして据え置き
-   （詳細はBACKLOG.md本項目「再検証記録」参照）
+2. ✅**完了**（2026-08-30、一次データ取得層アーキテクチャ調査後に
+   Koichiさん承認）
+   ~~`[[PARSER-STOCKHOLDERS-EQUITY-CROSS-YEAR-MISSELECT-1]]`~~ —
+   VRT/CRMのROE実害。CRM型・VRT型を別ロジックで修正、105銘柄
+   シミュレーションで副次発見のAVAV(2020, rpo)も解消
+   （BACKLOG_DONE.md参照）
 3. ✅**完了**（2026-08-30、バッチA cluster 2）~~`[[CASH-TAG-MISSING-1]]`~~
    — 複数銘柄でcash_and_equivalents欠落（BACKLOG_DONE.md参照）
 4. ✅**完了**（2026-08-30、バッチB）~~`[[EPS-DISCREPANCY-FLAG-OVERLOAD-1]]`~~
@@ -120,10 +131,11 @@ Aが最優先なのは、唯一「Koichiさんの投資判断に使う数値そ�
     ~~`[[LAYER3-ANNUAL-MISCLASSIFICATION-NOW-RMBS-1]]`~~ — 実証済み修正
     パターンの横展開（BACKLOG_DONE.md参照）
 
-上記10件中8件が完了（バッチA4件・バッチB4件）。残る2件
-（`[[PARSER-STOCKHOLDERS-EQUITY-CROSS-YEAR-MISSELECT-1]]`・
-`[[RICE-ADJ-ASYMMETRIC-ZERO-1]]`）はいずれもKoichiさんの設計判断が
-必要と判明したため実装を見送り、判断待ちとして据え置き。
+上記10件中9件が完了（バッチA4件・バッチB4件・PARSER-STOCKHOLDERS-
+EQUITY-CROSS-YEAR-MISSELECT-1）。残る1件（`[[RICE-ADJ-ASYMMETRIC-
+ZERO-1]]`）はどちらのガード仕様が正しいかが表示数値そのものを左右する
+製品判断であり、Koichiさんの設計判断が必要と判明したため実装を見送り、
+判断待ちとして据え置き。
 
 ---
 
@@ -268,12 +280,13 @@ P1/P4チェック構造的欠陥と同一の根本原因（登録プロセスの
 以下は同一ファイルまたは同一カテゴリを共有するが、実際の修正内容・
 根本原因が異なるため、**無理にクラスタ化せず個別対応候補として残す**:
 
-- **`_resolve_bs_entity_mixing()`周辺の4件**（`[[LAYER3-FETCHER-
+- **`_resolve_bs_entity_mixing()`周辺の残り3件**（`[[LAYER3-FETCHER-
   SELECTION-PHILOSOPHY-MISMATCH-1]]`〈確定済み設計判断、対応不要〉・
-  `[[PARSER-STOCKHOLDERS-EQUITY-CROSS-YEAR-MISSELECT-1]]`・
   `[[SPAC-SHELL-MAINTAINED-FIELDS-FREEZE-CONSIDERATION-1]]`〈将来
   検討〉・`[[TTM-DATA-DRIFT-BEHIND-PIPELINE-1]]`）: 調査時の文脈として
   同じ関数に言及しているだけで、修正対象・修正内容は互いに独立
+  （元4件目の`[[PARSER-STOCKHOLDERS-EQUITY-CROSS-YEAR-MISSELECT-1]]`は
+  2026-08-30実装完了・BACKLOG_DONE.md移設済み）
 - **`_extract_values_best_candidate()`周辺の3件**（`[[ANOMALY-
   PATTERN-CATALOG-1]]`〈カタログ文書、実装対象ではない〉・
   `[[PARSER-MERGED-TAG-MIXING-RISK-1]]`〈別関数`_extract_values_
