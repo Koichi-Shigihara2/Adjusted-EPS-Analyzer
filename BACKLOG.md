@@ -4588,6 +4588,22 @@ annual_2026.jsonまで存在）の外のため実害なし。VRT(2017)は現在�
 #### 着手条件
 なし。優先度高を維持（VRT(2017)は現在進行形の実害可能性があるため）。
 
+#### 再検証記録（2026-08-30、フェーズ1バッチB）
+CRM(2011)・VRT(2017)とも実データで現在も再現することを確認した
+（stockholders_equity/total_assets/total_liabilitiesのprovenance.accnが
+実際に別filingを指しており、2026-08-03時点の診断と完全一致）。
+
+VRT型（0アンカー）向けの「安全な」修正案でさえ、本文が指示する通り
+着手前に全母集団（105銘柄）シミュレーションが必須という前提であり、
+`_extract_values_best_candidate()`はWMT/JNJ/LLY等の過去の個別バグ修正で
+既に何重にも安全策が組み込まれた複雑な関数（本人データの複数タグ横断
+上書き・fyタグ裏取り・境界衝突検知等）である。CRM型（2アンカー競合）
+向けの修正はさらに`_resolve_bs_entity_mixing()`の既存安全原則
+（「本人データaccnが一意に定まらない場合は何もしない」）そのものの
+変更を伴う。いずれも「既存の重要ロジックの大幅書き換え」に該当し、
+今回の指示書が明示する停止・報告条件に合致するため、本ラウンドでは
+コード変更を行わず、診断の再確認のみに留めた。
+
 ---
 
 ### [BS-IDENTITY-LOG-NONDETERMINISTIC-KEY-ORDER-1] bs_identity_violations_log.jsonのキー順序が実行のたびに非決定的に変化する
@@ -4895,38 +4911,6 @@ Pythonの`0`/`0.0`がfalsyであることに起因し、正当なゼロ値を欠
 
 （[[MOAT-SCORE-PARTIAL-NULL-1]]は2026-08-16実装完了、
 BACKLOG_DONE.md「2026-08-16（完了）」参照）
-
----
-
-### [FCF-CAGR-YEARS-MISMATCH-1] FCF CAGR(3yr)のCAGR経過年数未補正
-**優先度:** 高
-**分類:** バグ / TANUKI VALUATION / stock.html
-**登録日:** 2026-07-23
-**発見:** `FIELD_DEFINITIONS.md`フェーズ5（AS-IS-068）
-
-#### 背景
-stock.htmlの`valid = fcf_history.filter(fcf!=null && fcf>0)`はゼロ・
-マイナスFCFの年を除外した**フィルタ後**配列であり、`valid[-4]`と
-`valid[-1]`の間に除外年が挟まっていた場合、実際の経過年数は3年より多く
-なる。にもかかわらず指数は`1/3`に固定されており、経過年数の実測値を
-一切使っていない。表示ラベルは常に「CAGR(3yr)」だが、除外年がある銘柄
-では実際より長い期間の変化率を3年複利換算したかのように誤表示する。
-同種のSTONKS SILO側`cagr_3yr`（AS-IS-136）は`years`配列自体が連続した
-年次リストのため、この問題は生じない。
-
-#### 対応方針
-`valid[-1].year - valid[-4].year`から実際の経過年数を算出し、指数計算
-（`^(1/実経過年数)`）に反映する。表示ラベルも実経過年数を明示する
-（例:「CAGR(4yr)」）よう変更する。
-
-#### 検証記録
-2026-08-16のBACKLOG棚卸しで`stock.html:2110-2112`の指数`1/3`・
-ラベル`CAGR(3yr)`が現在も固定のままであることを確認、現状再現を
-確認した。ユーザーが直接目にする数値ラベルの誤表示であり実害が具体的
-なため、優先度維持が妥当と判定した。
-
-#### 着手条件
-なし
 
 ---
 
@@ -7482,31 +7466,6 @@ DEFINITION-MISMATCH-1]]`の期間接尾辞化（`rule40_yoy_netmargin`・
 
 ---
 
-### [HYPECORE-REALSTRONG-DUAL-IMPL-1] real_strong判定のPython/JS二重実装で条件・閾値が相違
-**優先度:** 中
-**分類:** バグ / 設計不整合 / HypeCore
-**登録日:** 2026-07-23
-**発見:** `FIELD_DEFINITIONS.md`フェーズ5（AS-IS-109〜112）
-
-#### 内容
-`detect_substage()`（サーバー側）の`real_strong`は`(rev_yoy>15 and
-eps_surprise>-5超) or (eps_surprise>0 and rev_yoy>0) or (rev_yoy>30 and
-eps_surprise>-30超)`という複数条件のORで構成されるが、detail.htmlの
-クライアント側`getRec()`関数は`real_strong=(rev_yoy>30)&&(eps_surprise>0)`
-という「ANDのみ・閾値も別」の簡略版を独自に再実装している。同一銘柄・
-同一月でもサーバーの`substage`とクライアントの推奨表示が矛盾する組み合わせ
-が起こり得る。
-
-#### 対応方針
-クライアント側`getRec()`をサーバー側`detect_substage()`と同一ロジックに
-統一するか、JSON出力に`real_strong`の値自体を含めてクライアント側の
-再計算を廃止する。
-
-#### 着手条件
-なし
-
----
-
 ### [SENS-MATRIX-DUAL-IMPL-1] stock.html独自5×5感応度マトリクスとbackend 3×3の並存（一部対応済み）
 **優先度:** 中
 **分類:** 設計不整合 / TANUKI VALUATION
@@ -7560,6 +7519,13 @@ and wacc > 0 else 0.0`と明示的にゼロフロアされるのに対し、直�
 #### 着手条件
 なし
 
+#### 再検証記録（2026-08-30、フェーズ1バッチB）
+`rice.py:438-440`で現在も再現することを実コードで確認した（差異なし）。
+「rice_valに0フロアを追加する」か「rice_adjのガードを外す」かで
+画面に表示される数値そのものが変わる製品判断であり、技術的な実装の
+巧拙ではなくどちらの表示仕様が正しいかというKoichiさんの判断が必要な
+ため、本ラウンドでは実装せず現状維持とした。
+
 ---
 
 
@@ -7607,29 +7573,6 @@ STONKS SILO（AS-IS-162/163）はマージン（OCF or NI÷Revenue）の直近2�
 #### 対応方針
 両者を統一すべきか（判定対象が異なるドメイン=DCF精度 vs 企業財務品質
 のため統一不要の可能性もある）を設計判断してから対応要否を決める。
-
-#### 着手条件
-なし
-
----
-
-### [EPS-DISCREPANCY-FLAG-OVERLOAD-1] 同一フラグ名EPS_DISCREPANCYが意味の異なる2処理で設定される
-**優先度:** 中
-**分類:** データ品質 / EPS Analyzer
-**登録日:** 2026-07-23
-**発見:** `FIELD_DEFINITIONS.md`フェーズ8（AS-IS-272）
-
-#### 内容
-`check_eps_discrepancy()`（XBRL vs Alpha Vantage公式値の20%超乖離＝
-データ品質上の疑義）と`apply_fair_value_detection()`（公正価値変動の
-自動検出・調整が適用されたことの記録）は、意味的に全く異なる状況を
-示すにもかかわらず同一の`special_flags: ["EPS_DISCREPANCY"]`を使う。
-`special_notes`のどちらのサブキーが埋まっているかを確認しない限り原因を
-判別できない。
-
-#### 対応方針
-2つの状況に別のフラグ名（例:`EPS_DISCREPANCY`と`FAIR_VALUE_ADJUSTED`）を
-割り当てる。
 
 #### 着手条件
 なし
@@ -8150,29 +8093,6 @@ importするだけで済むが、90日分×対象日数のループが増える�
 #### 着手条件
 ①②③④⑤は完了。⑥は引き続き未着手のまま、優先度低で据え置き
 （休眠状態のため緊急性なし。着手判断は次回相談）。
-
----
-
-### [TVGROWTH-EXPLICIT-DEFAULT-AMBIGUOUS-1] terminal_growth 3.0%の明示設定と未設定を区別できない
-**優先度:** 中
-**分類:** バグ / TANUKI VALUATION
-**登録日:** 2026-07-23
-**発見:** `FIELD_DEFINITIONS.md`フェーズ6（AS-IS-059）
-
-#### 内容
-`get_terminal_growth()`は`abs(ticker_tv_g - 0.03) > 1e-5`という差分
-チェックの設計上、管理者が意図的に「このtickerのTVは3.0%にする」と
-`maturity_config.json`へ明示設定しても、デフォルト値と一致するため
-「未設定」とみなされ、セクター別Damodaranテーブルの値がもし異なれば
-そちらが優先されてしまう。3.0%を明示指定したい場合の抜け道が存在
-しない。
-
-#### 対応方針
-「明示設定」と「未設定」を区別するフラグ（例: `maturity_config.json`
-側に`terminal_growth_explicit: true`等）を追加する。
-
-#### 着手条件
-なし
 
 ---
 

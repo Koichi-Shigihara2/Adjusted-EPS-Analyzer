@@ -20,6 +20,17 @@ PY-OMITTED-1]]`）。現存総数は**162件**（168−8完了−2移設+4疑義
 カテゴリの類似性」ではなく「実際のコード上の隣接性」基準で再分析した
 （バッチAの教訓を踏まえた対応、5B節参照）。
 
+**更新（2026-08-30、データ鮮度監視実装＋フェーズ1バッチB完了後）**:
+`[[DATA-FRESHNESS-MONITORING-FUTURE-IDEA-1]]`をKoichiさん判断で優先度
+引き上げの上実装完了・BACKLOG_DONE.mdへ移設。フェーズ1バッチB6件のうち
+4件（`[[FCF-CAGR-YEARS-MISMATCH-1]]`・`[[EPS-DISCREPANCY-FLAG-
+OVERLOAD-1]]`・`[[HYPECORE-REALSTRONG-DUAL-IMPL-1]]`・
+`[[TVGROWTH-EXPLICIT-DEFAULT-AMBIGUOUS-1]]`）を実装完了・BACKLOG_DONE.md
+へ移設。残る2件（`[[PARSER-STOCKHOLDERS-EQUITY-CROSS-YEAR-MISSELECT-1]]`・
+`[[RICE-ADJ-ASYMMETRIC-ZERO-1]]`）はKoichiさんの設計判断が必要と判明した
+ため実装を見送り、BACKLOG.mdに再検証記録を追記した上で据え置き。
+現存総数は**157件**（機械カウント値、`grep -c "^### \["`で確認）。
+
 **このドキュメントの位置づけ:** 個別項目の詳細・最新状態は常に
 `BACKLOG.md`が正（このロードマップは2026-08-30時点のスナップショット）。
 新規登録項目や状態変化はBACKLOG.md側にのみ反映され、このロードマップは
@@ -79,31 +90,40 @@ Aが最優先なのは、唯一「Koichiさんの投資判断に使う数値そ�
 「実害大×是正コスト低」の基準で抽出。いずれも局所的な修正で完結する
 見込み。
 
-1. `[[FCF-CAGR-YEARS-MISMATCH-1]]` — stock.html CAGR(3yr)誤表示
+1. ✅**完了**（2026-08-30、バッチB）~~`[[FCF-CAGR-YEARS-MISMATCH-1]]`~~
+   — stock.html CAGR(3yr)誤表示（BACKLOG_DONE.md参照）
 2. `[[PARSER-STOCKHOLDERS-EQUITY-CROSS-YEAR-MISSELECT-1]]` — VRT/CRM
-   のROE実害
+   のROE実害。バッチBで再検証したが、修正には`_extract_values_
+   best_candidate()`（既に何重にも安全策が組み込まれた複雑な関数）・
+   `_resolve_bs_entity_mixing()`（既存安全原則の変更を伴う）という
+   既存の重要ロジックの大幅書き換えと105銘柄全体シミュレーションが
+   必要と判明したため実装せず、Koichiさんの判断待ちとして据え置き
+   （詳細はBACKLOG.md本項目「再検証記録」参照）
 3. ✅**完了**（2026-08-30、バッチA cluster 2）~~`[[CASH-TAG-MISSING-1]]`~~
    — 複数銘柄でcash_and_equivalents欠落（BACKLOG_DONE.md参照）
-4. `[[EPS-DISCREPANCY-FLAG-OVERLOAD-1]]` — フラグ名の意味重複
-5. `[[RICE-ADJ-ASYMMETRIC-ZERO-1]]` — 非対称0フロア設計
-6. `[[HYPECORE-REALSTRONG-DUAL-IMPL-1]]` — Python/JS二重実装の矛盾
-   リスク
+4. ✅**完了**（2026-08-30、バッチB）~~`[[EPS-DISCREPANCY-FLAG-OVERLOAD-1]]`~~
+   — フラグ名の意味重複（BACKLOG_DONE.md参照）
+5. `[[RICE-ADJ-ASYMMETRIC-ZERO-1]]` — 非対称0フロア設計。バッチBで
+   再検証したが、どちらのガード仕様が正しいかは表示数値そのものが
+   変わる製品判断でありKoichiさんの設計判断が必要なため実装せず据え置き
+   （詳細はBACKLOG.md本項目「再検証記録」参照）
+6. ✅**完了**（2026-08-30、バッチB）~~`[[HYPECORE-REALSTRONG-DUAL-IMPL-1]]`~~
+   — Python/JS二重実装の矛盾リスク（BACKLOG_DONE.md参照）
 7. ✅**完了**（2026-08-30、バッチA cluster 1）
    ~~`[[QUARTERLY-CLASSIFY-PERIOD-NO-UPPER-BOUND-1]]`~~ — is_annual判定に
    上限なし（BACKLOG_DONE.md参照）
 8. ✅**完了**（2026-08-30、バッチA cluster 3）~~`[[V0-V0RM-CONFUSION-RISK-1]]`~~
    — v0/v0_rm取り違えリスク（BACKLOG_DONE.md参照）
-9. `[[TVGROWTH-EXPLICIT-DEFAULT-AMBIGUOUS-1]]` — terminal_growth明示/
-   未設定の区別不能
+9. ✅**完了**（2026-08-30、バッチB）~~`[[TVGROWTH-EXPLICIT-DEFAULT-AMBIGUOUS-1]]`~~
+   — terminal_growth明示/未設定の区別不能（BACKLOG_DONE.md参照）
 10. ✅**完了**（2026-08-30、バッチA cluster 1）
     ~~`[[LAYER3-ANNUAL-MISCLASSIFICATION-NOW-RMBS-1]]`~~ — 実証済み修正
     パターンの横展開（BACKLOG_DONE.md参照）
 
-上記10件中4件がバッチA（2026-08-30）で完了。残る6件
-（FCF-CAGR-YEARS-MISMATCH-1・PARSER-STOCKHOLDERS-EQUITY-CROSS-YEAR-
-MISSELECT-1・EPS-DISCREPANCY-FLAG-OVERLOAD-1・RICE-ADJ-ASYMMETRIC-ZERO-1・
-HYPECORE-REALSTRONG-DUAL-IMPL-1・TVGROWTH-EXPLICIT-DEFAULT-AMBIGUOUS-1）
-は将来の「バッチB」着手候補として据え置き。
+上記10件中8件が完了（バッチA4件・バッチB4件）。残る2件
+（`[[PARSER-STOCKHOLDERS-EQUITY-CROSS-YEAR-MISSELECT-1]]`・
+`[[RICE-ADJ-ASYMMETRIC-ZERO-1]]`）はいずれもKoichiさんの設計判断が
+必要と判明したため実装を見送り、判断待ちとして据え置き。
 
 ---
 

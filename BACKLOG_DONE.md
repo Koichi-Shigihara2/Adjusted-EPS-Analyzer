@@ -94,6 +94,168 @@ SEC_Data_Updateの出力は対象外だった。今回追加したcheck Jは
 
 ---
 
+### ✅ [FCF-CAGR-YEARS-MISMATCH-1] FCF CAGR(3yr)のCAGR経過年数未補正
+
+**優先度:** 高 → 完了
+**分類:** バグ / TANUKI VALUATION / stock.html
+**登録日:** 2026-07-23
+**完了日:** 2026-08-30（フェーズ1バッチB）
+
+#### 内容（登録時点）
+`docs/value-monitor/tanuki_valuation/stock.html`のFCF CAGR表示は
+`valid = fcf_history.filter(fcf!=null && fcf>0)`というフィルタ後配列を
+使うため、`valid[-4]`〜`valid[-1]`間にゼロ/マイナスFCF年（除外年）が
+挟まっていた場合、実際の経過年数は3年より多くなる。にもかかわらず
+指数は`1/3`に固定されており、ラベルも常に「CAGR(3yr)」だった。
+
+#### 実装内容
+`valid[-4]`・`valid[-1]`の`.year`フィールドの差分から実経過年数を算出し、
+`**(1/years)`に反映。ラベルも`CAGR(${years}yr)`と動的化した。
+`src/value/tanuki_valuation/pipeline.py`のreport.txt生成側
+（`FCF_CAGR_{span}yr`）に既に同じ考え方の実装があり、それと整合させる
+形で修正した。
+
+#### 影響銘柄確認（2026-08-30実データ）
+現行の`docs/value-monitor/tanuki_valuation/data/*/latest.json`を実際に
+スキャンし、5銘柄（CSGP・ENTG・FLYW・FRSH・VRT）が実際に4年スパンを
+持ちながら「CAGR(3yr)」と誤表示されていたことを確認した。
+
+#### 回帰テスト
+`tests/test_stock_html_fcf_cagr_years.py`（新規8ケース）。HTML内JSは
+Node.js等の実行環境がないため直接実行できず、(1)ソースパターン検証
+（修正前バグパターンの不在・修正後パターンの存在）と(2)同一算術式を
+Pythonへ忠実に移植した数値検証の2段階で確認した。修正前HEAD
+（コミット`c95017d823`）に対して同テストを適用すると
+`**(1/3)`固定パターンが検出されソースパターン検証が失敗することを
+`git show`で確認済み。
+
+---
+
+### ✅ [EPS-DISCREPANCY-FLAG-OVERLOAD-1] 同一フラグ名EPS_DISCREPANCYが意味の異なる2処理で設定される
+
+**優先度:** 中 → 完了
+**分類:** データ品質 / EPS Analyzer
+**登録日:** 2026-07-23
+**完了日:** 2026-08-30（フェーズ1バッチB）
+
+#### 内容（登録時点）
+`check_eps_discrepancy()`（XBRL vs Alpha Vantage公式値の20%超乖離）と
+`apply_fair_value_detection()`（公正価値変動の自動検出・調整）が、
+意味の異なる状況に同一の`special_flags: ["EPS_DISCREPANCY"]`を使っていた。
+
+#### 実装内容
+`apply_fair_value_detection()`側のフラグを`FAIR_VALUE_ADJUSTED`に改名
+（`special_notes.fair_value_auto_detect.flag`も同様）。
+`check_eps_discrepancy()`側は変更なし（引き続き`EPS_DISCREPANCY`）。
+
+#### 影響銘柄確認
+`docs/value-monitor/adjusted_eps_analyzer/data/*/quarterly.json`を
+全件スキャンし、`fair_value_auto_detect`サブキーを持つファイルが
+0件であることを確認した（＝この重複は本番データでは一度も実際に
+発火しておらず、今回の修正による既存データへの実害はない、将来の
+発火に備えた予防的修正）。
+
+#### 回帰テスト
+`tests/test_eps_discrepancy_flag_overload.py`（新規5ケース）。
+`apply_fair_value_detection()`を実際に発火させる条件1+2+3成立ケースで
+`FAIR_VALUE_ADJUSTED`フラグが立つこと・`EPS_DISCREPANCY`が立たないこと、
+`check_eps_discrepancy()`側は変更されていないことをソース上で確認。
+修正前HEADには`"EPS_DISCREPANCY"`が3箇所残っていることを`git show`で
+確認済み。
+
+---
+
+### ✅ [HYPECORE-REALSTRONG-DUAL-IMPL-1] real_strong判定のPython/JS二重実装で条件・閾値が相違
+
+**優先度:** 中 → 完了
+**分類:** バグ / 設計不整合 / HypeCore
+**登録日:** 2026-07-23
+**完了日:** 2026-08-30（フェーズ1バッチB）
+
+#### 内容（登録時点）
+サーバー側`detect_substage()`の`real_strong`判定（3条件のOR）と、
+detail.htmlクライアント側`getRec()`の独自簡略版（`rev_yoy>30 AND
+eps_surprise>0`のみ）が別条件・別閾値で、同一銘柄・同一月でも
+サーバーとクライアントの推奨表示が矛盾しうる不整合があった。
+
+#### 実装内容
+`src/value/hypecore/hypecore.py`に`compute_real_strong(row)`を新設し
+（`detect_substage()`内の重複計算を置き換え）、`{ticker}_poc.json`の
+各月レコードに`real_strong`フィールドとして出力するよう変更。
+detail.html・index.html（BACKLOG記載外だが同一パターンの重複実装を
+追加発見）の両方の`getRec()`を、独自再計算から`d.real_strong`直接参照
+に変更した。
+
+#### 影響銘柄確認（2026-08-30実データ）
+既存の`docs/value-monitor/hypecore/data/*_poc.json`（103銘柄）の
+`rev_yoy`/`eps_surprise`に対しサーバー側条件とクライアント側旧条件を
+両方適用して比較したところ、97銘柄で少なくとも1ヶ月分の判定が食い違い、
+うちstage=4（real_strongが実際にgetRec()の表示文言へ影響する場面）に
+限っても822ヶ月分で食い違いが生じていたことを確認した。実質的な影響
+規模が大きいバグだったと判断する。
+
+本番の`*_poc.json`（103銘柄）自体は本ラウンドでは再生成していない
+（yfinance実データ取得を伴うhypecoreパイプラインのフル実行が必要で、
+今回のフロントエンド整合性修正の緊急性に対し過大なため）。
+`HypeCore_Update`ワークフロー（週次、月曜4:00 UTC安全網）の次回定期
+実行で自然に`real_strong`フィールドを含む形に更新される。それまでの間
+`d.real_strong??false`のフォールバックにより、フロントエンドは
+クラッシュせず「real_strong=false」側に倒れた安全側の表示になる
+（誤って強気の推奨文言を出す方向にはならない）。
+
+#### 回帰テスト
+`tests/test_hypecore_realstrong_dual_impl.py`（新規10ケース）。
+`compute_real_strong()`の単体検証・`detect_substage()`の既存挙動非回帰・
+HTML側ソースパターン検証（旧簡略版の消滅・新フィールド参照への統一）。
+既存の`tests/test_pipeline_logic.py`側`detect_substage()`テストも
+全てパスすることを確認済み（リファクタリングによる既存挙動への影響
+なし）。
+
+---
+
+### ✅ [TVGROWTH-EXPLICIT-DEFAULT-AMBIGUOUS-1] terminal_growth 3.0%の明示設定と未設定を区別できない
+
+**優先度:** 中 → 完了
+**分類:** バグ / TANUKI VALUATION
+**登録日:** 2026-07-23
+**完了日:** 2026-08-30（フェーズ1バッチB）
+
+#### 内容（登録時点）
+`get_terminal_growth()`は`abs(ticker_tv_g - 0.03) > 1e-5`の差分チェック
+のみのため、管理者が意図的に3.0%を明示設定してもデフォルト未設定と
+みなされ、セクター別Damodaranテーブルの値に上書きされる抜け道が
+なかった。
+
+#### 実装内容
+`maturity_config.json`の各ticker個別設定に`terminal_growth_explicit: true`
+を追加できるようにし、`get_terminal_growth()`はこのフラグがTrueなら
+値が3.0%と一致していても常にそれを採用するよう変更（フラグ省略時は
+既存の差分チェック挙動を維持、後方互換）。admin.html（設定変更の
+唯一の想定経路）にもチェックボックスUIと保存・読込ロジックを追加し、
+`config/maturity_config.json`の`_schema`にもフィールド説明を追記した。
+
+#### 影響銘柄確認（2026-08-30実データ）
+現行`config/maturity_config.json`を全件スキャンしたところ、52銘柄が
+`terminal_growth: 0.03`を持ち、うち35銘柄は実際に
+`_lookup_tv_g_by_industry()`のセクター別テーブル値（3.0%以外）に現在
+進行形で上書きされていることを確認した。この35銘柄について3.0%が
+「意図的な指定」か「単なるデフォルト値の残存」かは本ラウンドでは
+判別できない（Koichiさんの意図に関する情報がないため）ため、
+どの銘柄にも`terminal_growth_explicit`を新たに設定することはせず、
+今後Koichiさんがadmin.htmlのチェックボックスから個別に指定できる
+状態にするに留めた。
+
+#### 回帰テスト
+`tests/test_pipeline_logic.py`の`TestTerminalGrowthBySector`に4ケース
+追加。`terminal_growth_explicit=True`でセクター別テーブルと異なる
+3.0%が優先されること・フラグなし/Falseでは従来通りセクター別テーブルに
+フォールバックすること・3.0%以外の値でもフラグが無害に機能すること
+（既存経路との非回帰）を検証。修正前HEADには
+`terminal_growth_explicit`という文字列が一切存在しないことを`git show`
+で確認済み。
+
+---
+
 ## 2026-08-29（完了）
 
 ### ✅ [LAYER3-EPS-UNIT-MISMATCH-1] eps_basic/eps_dilutedのunit指定誤りにより105銘柄全数で完全に空になっている（移設漏れの是正、実装自体は2026-07-25完了済み）
