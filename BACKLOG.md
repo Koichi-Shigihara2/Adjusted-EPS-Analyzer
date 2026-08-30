@@ -3815,33 +3815,6 @@ Yahoo Finance自体が2026-07-13〜07-17の5件しか返さず、`period="5d"`�
 
 ---
 
-### [LAYER3-ANNUAL-MISCLASSIFICATION-NOW-RMBS-1] _classify_period()のfp=='FY' and days>130判定漏れが、BBAI以外にNOW（41件）・RMBS（16件）でも広範に該当
-**優先度:** 中（`[[LAYER3-ANNUAL-MISCLASSIFICATION-BBAI-1]]`と同型だが、NOW/RMBSでの実害〈Moat Score等への影響〉は未確認）
-**分類:** バグ疑い / 期間分類ロジックの誤判定
-**登録日:** 2026-08-06
-**発見:** `[[LAYER3-ANNUAL-MISCLASSIFICATION-BBAI-1]]`対応時の全銘柄横断スキャン（チャット記録、2026-08-06）
-
-#### 内容
-BBAI修正時に採用した「同一accn・同一start日内に複数end日付を持つ
-fp=='FY'エントリを除外」方式が同様に適用できるか、NOW・RMBSの
-実データで確認した上で、pipeline.py計算への実害有無を検証する必要が
-ある。
-
-#### 着手条件
-BBAI修正の本番適用後、実害調査から着手。
-
-### [LAYER3-ANNUAL-MISCLASSIFICATION-MINOR-5TICKERS-1] ASTS/SPIR/DELL/VRT/METAで同型の判定漏れが1〜3件ずつ孤立的に該当
-**優先度:** 低
-**分類:** バグ疑い / 期間分類ロジックの誤判定（軽微）
-**登録日:** 2026-08-06
-**発見:** `[[LAYER3-ANNUAL-MISCLASSIFICATION-BBAI-1]]`対応時の全銘柄横断スキャン（チャット記録、2026-08-06）
-
-#### 内容
-該当件数が少なく特定のconcept・accnに限定されるため、実害有無の
-確認を含め優先度を下げる。
-
-#### 着手条件
-なし。
 
 ### [SEC-DATA-REDESIGN-OPERATIONAL-POLICY-1] common/sec_data再設計の運用方針確定（フィックス機構・銘柄数絞り込み・新規登録フロー）— Stage 2〜3残タスク
 **優先度:** 高
@@ -5421,27 +5394,6 @@ CapEx・低転換率という二分法を前提としている。
 
 ---
 
-### [STOCK-HTML-CLASSIFICATION-MISSING-1] stock.html個別銘柄ページにTANUKI SCORE Classificationが表示されていない
-**優先度:** 未定
-**分類:** TANUKI VALUATION / 表示 / フロントエンド
-**登録日:** 2026-07-20
-**発見:** [[FCF-OUTLIER-PREROUNDING-LOSS-1]]（完了・BACKLOG_DONE.md参照）調査時の副次発見
-
-#### 背景
-FCF-OUTLIER-PREROUNDING-LOSS-1の実装可否調査時、`stock.html`
-（銘柄個別ページ）には`tanuki_score`・`score_comment`・
-Classification（BUY/WATCH/HOLD/TRIM/GROWTH_PREMIUM/SELL/PASS）の
-いずれも表示されていないことが判明した。ファイル内の"tanuki_score"の
-出現箇所はMatrix可視化に関するコメント文言のみで、実際のフィールド
-参照ではない。
-
-Classification一覧がどの画面・ツール（`index.html`等）に存在するかは、
-本タスクの発見元調査の範囲では特定できなかった。FCF-OUTLIER-
-PREROUNDING-LOSS-1で追加した`pre_rounding_score`・
-`rounded_by_policy`等の表示先を検討する際にも関わる可能性がある。
-
-#### 着手条件
-なし
 
 ---
 
@@ -6020,65 +5972,6 @@ XOM: $41.871B `reconstructed_pretax`）。実装（Layer3側への再構成移�
 
 ---
 
-### [LAYER3-FY-SCALE-ANNUAL-MISFLAG-1] Layer3の一部フィールドで、52/53週決算企業のend日にfp="FY"・年次スケールの値がis_annual=Falseのまま四半期として混入する
-
-**優先度:** 低（実害は限定的。本項目発見元の`_backfill_operating_income()`
-側では機械的ガードで回避済みのため計算結果への実害は無いが、他フィールド・
-他消費者〈`get_quarterly_series()`等〉が同型の値をそのまま拾っている
-可能性は未調査）
-**分類:** バグ / データ品質 / SEC EDGAR / Layer3統合スキーマ / 52-53週決算
-**登録日:** 2026-08-29
-**発見:** `[[LAYER3-OI-RECONSTRUCTION-FALLBACK-GAP-1]]`実装中のJNJ実測
-検証（2026-08-29）
-
-#### 内容
-JNJ（52/53週決算企業、`[[FY52WEEK-BUCKET-MISPLACE-1]]`等の既知対象
-銘柄）の`gross_profit`フィールドで、`end=2023-01-01`・`end=2023-12-31`の
-2エントリが`fp="FY"`・年次スケールの値（$13.855B・$14.597B）を持つ
-にもかかわらず`is_annual=False`のまま`entries`に残っている実データを
-確認した。`_index_quarterly_by_end()`は`is_annual`フラグのみで四半期
-判定するため、これらは「四半期」として扱われてしまう。
-
-同一end日の`research_and_development`・`selling_general_and_
-administrative`はいずれも`fp="Q4"`・四半期スケール（$3-5B台）の正常な
-値を持っており、**同一end日でフィールドごとにスケール〈年次/四半期〉が
-食い違う**という組み合わせを実測確認した（`gross_profit`側の期間分類
-のみが誤っている）。
-
-`[[LAYER3-OI-RECONSTRUCTION-FALLBACK-GAP-1]]`実装中に、これらの
-異常エントリを起点にGP法逆算（$13.855B − $3.485B − $3.107B =
-$7.263B）を行ってしまい、意味のない値が生成されることを発見した
-（対応として本関数側では`fp=="FY"`のgross_profitエントリを逆算対象
-から機械的に除外するガードを追加済み、詳細はBACKLOG_DONE.md参照）。
-
-#### 影響範囲（未調査）
-- 発見はJNJの`gross_profit`1フィールドのみ。他の52/53週決算企業
-  （TDY/ADBE/ESTC等、`[[FY52WEEK-BUCKET-MISPLACE-1]]`記載の対象銘柄群）
-  や他フィールドで同型の混入が起きているか未調査
-- `get_quarterly_series()`/`get_latest_quarterly()`を直接呼ぶ既存消費者
-  （`tail_dcf_bridge.py`・`quarterly_review_generator.py`等）がこの
-  異常エントリをそのまま「最新四半期」として拾ってしまうケースが
-  無いか未確認（`_backfill_operating_income()`のガードは新規追加した
-  operating_income側にのみ効き、既存の`gross_profit`エントリ自体は
-  未修正のまま残る）
-
-#### 対応方針（未確定）
-根本対応は`is_annual`の期間分類ロジック（`_classify_period()`または
-関連する正規化処理）側の修正が必要と推測されるが、影響範囲（対象
-銘柄数・対象フィールド数）を`[[LAYER3-ANNUAL-CLASSIFICATION-DROPS-
-DATA-1]]`と同様の全銘柄横断実測で先に確認してから着手すること。
-
-#### 関連
-- `[[LAYER3-OI-RECONSTRUCTION-FALLBACK-GAP-1]]`（BACKLOG_DONE.md、
-  本問題の発見元）
-- `[[LAYER3-ANNUAL-CLASSIFICATION-DROPS-DATA-1]]`（同じくLayer3の期間
-  分類問題だが「取りこぼし」であり本項目「誤混入」とは別種の症状）
-- `[[FY52WEEK-BUCKET-MISPLACE-1]]`（BACKLOG_DONE.md、52/53週決算企業の
-  年度バケツ誤配置。本項目と発生条件が重なる可能性があるが根本原因は
-  未確認）
-
-#### 着手条件
-なし。影響範囲の実測調査から着手すること。
 
 ---
 
@@ -7039,27 +6932,6 @@ LITE単独、9年間持続。gross_profit自体はown-dataの正しい値を維�
 
 ---
 
-### [DCF-RELIABILITY-LABEL-MISMATCH-1] DCF_Reliability非LOW表示語彙の不一致（HIGH/NORMAL）
-**優先度:** 中
-**分類:** 表示不整合 / TANUKI VALUATION
-**登録日:** 2026-07-23
-**発見:** `FIELD_DEFINITIONS.md`フェーズ8（依頼文名指し）
-
-#### 内容
-`_calc_dcf_reliability_policy_b()`は常に`"LOW"`/`"NORMAL"`のいずれかを
-返す一貫した関数だが、report.txtの表示文言はどちらの文脈で呼ばれたかに
-よって異なる。FCF_Base方式の分岐でPolicy Bが`"NORMAL"`を返した場合は
-`"DCF_Reliability: HIGH"`（`pipeline.py:1571`）、FCF_Conversion_Rate方式の
-分岐で同じ`"NORMAL"`を返した場合は`"DCF_Reliability: NORMAL"`
-（`pipeline.py:1667`）と表示される。report.txtを横断的にパースする外部
-ツールが「非LOW側」を単純な2値として扱おうとすると正規化が必要になる。
-
-#### 対応方針
-report.txt生成コードの表示文言を「LOWの対義語」として統一する
-（`HIGH`/`NORMAL`のどちらかに揃える）。
-
-#### 着手条件
-なし
 
 ---
 
@@ -7635,11 +7507,12 @@ eps_surprise>-30超)`という複数条件のORで構成されるが、detail.ht
 
 ---
 
-### [SENS-MATRIX-DUAL-IMPL-1] stock.html独自5×5感応度マトリクスとbackend 3×3の並存
+### [SENS-MATRIX-DUAL-IMPL-1] stock.html独自5×5感応度マトリクスとbackend 3×3の並存（一部対応済み）
 **優先度:** 中
 **分類:** 設計不整合 / TANUKI VALUATION
 **登録日:** 2026-07-23
 **発見:** `FIELD_DEFINITIONS.md`フェーズ6（AS-IS-066/AS-IS-014）・`OUTPUT_ITEMS_INVENTORY.md`横断的発見事項1
+**一部対応:** 2026-08-30（フェーズ1バッチA cluster 3）
 
 #### 内容
 バックエンドのAS-IS-014（`sensitivity.matrix`、3×3、DCFタイプにより
@@ -7647,16 +7520,22 @@ two_stage/three_stageを切替）とは別に、stock.html上に完全に独立�
 クライアント側5×5感応度マトリクス（`calcSensIV()`）が同一ページに並存
 する。`calcSensIV()`は常に2段階DCFのみで再計算するため、three_stage DCFや
 tapering DCFを採用している銘柄では、同じページ内の2つの「感応度分析」
-セクションが異なる計算式で異なる数値を表示する。`const alpha=d.alpha??1.0`
-という宣言されているが式中で未使用の死コードも残存する。
+セクションが異なる計算式で異なる数値を表示する。
 
-#### 対応方針
+#### 2026-08-30時点の対応状況
+死コード（`const alpha = d.alpha ?? 1.0;`、宣言されているが式中で未使用）は
+`stock.html`の`calcSensIV()`から削除済み。ただし本項目の核心である
+「バックエンドAS-IS-014（3×3）とクライアント側5×5マトリクスの計算式
+二重実装」自体は未解消のまま残っている。
+
+#### 対応方針（未解消部分）
 バックエンドのAS-IS-014をそのまま表示する設計に統一するか、クライアント側
-5×5マトリクスをDCFタイプ切替に対応させるかを判断する。死コード
-（`alpha`変数）は合わせて削除する。
+5×5マトリクスをDCFタイプ切替に対応させるかの設計判断がKoichiさんに必要。
+判断待ちのため未着手。
 
 #### 着手条件
-なし
+Koichiさんによる設計方針決定（バックエンド表示統一 or クライアント側
+DCFタイプ対応拡張）
 
 ---
 
@@ -7683,26 +7562,6 @@ and wacc > 0 else 0.0`と明示的にゼロフロアされるのに対し、直�
 
 ---
 
-### [V0-V0RM-CONFUSION-RISK-1] v0(AS-IS-007)とv0_rmの取り違えリスク
-**優先度:** 中
-**分類:** データ品質 / TANUKI VALUATION
-**登録日:** 2026-07-23
-**発見:** `FIELD_DEFINITIONS.md`フェーズ6（AS-IS-007/AS-IS-001）
-
-#### 内容
-`v0`（AS-IS-007）はβ込みCAPM WACCベースのDCF結果（`intrinsic_value_beta`
-＝AS-IS-002の計算根拠）であるのに対し、画面のメイン理論株価
-（AS-IS-001/AS-IS-006）は別途`market_return`10%固定・βなしで再計算した
-`_v0_rm`（`dcf_components.v0_rm`に格納）を使う。latest.jsonを読む外部AI
-やレビュアーが「v0からIVを積み上げ検算」しようとすると、トップレベルの
-`v0`ではなく`dcf_components.v0_rm`を使わなければ整合しない罠になりうる。
-
-#### 対応方針
-latest.jsonのフィールド名・配置を見直し、どちらが「メイン計算根拠」かを
-明確にする（例: トップレベル`v0`を廃止し`dcf_components`配下に統一する等）。
-
-#### 着手条件
-なし
 
 ---
 
@@ -8356,45 +8215,6 @@ industry_g単独1件の場合のみ候補数閾値を緩和）が既存の実装
 
 ---
 
-### [CASH-TAG-MISSING-1] tag_definitions.pyのCASH_AND_EQUIVALENTS候補リストにASU 2016-18対応タグが未登録で複数銘柄のcash_and_equivalentsが欠落
-**優先度:** 中
-**分類:** データ取得 / タグ定義
-**登録日:** 2026-07-16
-**発見:** FY52WEEK-BS-INSTANT-FACT-1調査時の副次発見
-
-#### 問題
-`tag_definitions.py`のTAG_CANDIDATES["CASH_AND_EQUIVALENTS"]に、
-ASU 2016-18（制限付き現金を含むキャッシュフロー期首・期末残高調整表示
-義務化）対応後に多くの企業が移行した
-`CashCashEquivalentsRestrictedCashAndRestrictedCashEquivalents`タグが
-一度も追加されておらず、以下でcash_and_equivalentsが欠落している
-（52/53週バグとは無関係と確認済み）:
-- CAT: 2010-2019年（優先順位1位タグが同期間データを持たないため
-  他候補にフォールバックせず欠落。`_extract_values_best_candidate`の
-  単一勝者タグ設計の限界、LLY-CAPEX-STALE-1と同型）
-- CPRT: 2020-2025年（候補リストに一切なし）
-- ELF: 2014-2021年（候補リストに一切なし、2014-2015分は他候補にも
-  該当なし）
-- GEV: 全期間（候補リストに一切なし、CashAndCashEquivalentsAt
-  CarryingValue自体が存在しない）
-- HEI: 2023-2025年（候補リストに一切なし）
-
-#### 対応方針
-該当タグを候補リストに追加する。ただしこのタグは「制限付き現金」を
-含む定義のため、単純追加すると純粋な現金同等物より過大計上になる
-リスクがある点に注意。追加時は定義上の影響範囲（Net Debt計算等への
-影響）を確認すること。
-
-#### 追記（2026-07-18・FY52WEEK-BS-NULL-SILENT-1 Phase A実装時の副次発見）
-新設したWARN-25（BS項目None検知）で**SITMのcash_and_equivalents
-（FY2025）欠落**を新規検知した。上記5銘柄（CAT/CPRT/ELF/GEV/HEI）の
-リストにSITMは含まれていなかったが、同一のタグ未登録が原因の未
-カタログ化インスタンスと推測される（`tag_definitions.py`は本追記時点
-で未更新のため）。対応方針自体に変更はなく、着手時に対象銘柄の再洗い出し
-（全105銘柄への機械スキャン）を行うことを推奨する。
-
-#### 着手条件
-なし
 
 ---
 
@@ -11081,43 +10901,6 @@ BKNGの株式数・1株当たり指標を参照する計算（EPS・希薄化率
 
 ---
 
-### [QUARTERLY-CLASSIFY-PERIOD-NO-UPPER-BOUND-1] _classify_period()のis_annual判定に上限が無く中間的な期間長を誤って年次扱いする
-**優先度:** 中〜高
-**分類:** バグ / SECデータ正規化
-**登録日:** 2026-07-24
-**発見:** [[LAYER3-ANNUAL-QUARTERLY-COLLISION-1]]波及範囲調査中の
-副次発見（DELL net_income 2023-08-04期の調査）
-
-#### 内容
-`quarterly.py::_classify_period()`（488-522行目）のis_annual判定は
-`form in ("10-K","10-K/A") and ((fp=='FY' and days>130) or
-days>300)`という基準で、130日という**下限のみ**設定されている
-（[[XBRL-TAG-KLAC-1]]対応として、fp='FY'だが実際は四半期程度
-〈89〜91日〉の期間を誤って年次扱いしないための下限）。**上限が
-存在しない**ため、181日（約6ヶ月累計）のような「四半期でも真の
-年次（365日前後）でもない」中間的な期間を持つエントリが
-is_annual=Trueに誤分類される。
-
-具体例: DELL（会計年度末は例年2月上旬）の2023-08-04期
-（181日、真の年度末ではない）が誤ってis_annual=Trueに分類されて
-いた。
-
-#### 影響
-このバグは`quarterly.py`という既存の本番コード（`normalized/`
-生成元）に存在するため、Layer3（新規コード）に限らず、現行の
-`normalized/`データ自体にも影響している可能性がある。会計年度末が
-暦年末以外の企業（DELL等）で、10-K内に埋め込まれた中間的な期間長の
-開示がある場合に発生しうる。影響範囲の全数調査は未実施。
-
-#### 対応方針
-未定。is_annualの上限（例: 300〜400日程度の範囲に限定する）を
-追加する対応が候補。[[LAYER3-ANNUAL-QUARTERLY-COLLISION-1]]の
-根本修正とは別に、既存本番コードへの影響有無を別途確認する必要が
-ある。
-
-#### 着手条件
-なし。ただし本番`normalized/`への影響が疑われるため、優先度は
-[[LAYER3-ANNUAL-QUARTERLY-COLLISION-1]]と独立して判断すべき
 
 ---
 

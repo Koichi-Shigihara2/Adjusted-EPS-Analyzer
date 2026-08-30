@@ -19826,3 +19826,291 @@ calc_ttm_series()へ挿入、コミット`e2892a91f`/`426b4fa2f`）しており�
 **分類:** 調査要 / 確認済み実害箇所の可能性
 **登録日:** 2026-08-02
 **発見:** [[RCAT-FCF-5YR-AVG-ACTUAL-3YR-1]]実装前シミュレーション（チャット記録）
+
+### ✅ [LAYER3-ANNUAL-MISCLASSIFICATION-NOW-RMBS-1] Layer3のFY誤分類フィルタがBBAI限定でRMBS等の類似パターンを未カバー — 2026-08-30、DELL/SPIRへ拡張・RMBS/ASTS/VRTは別パターンと確定
+**状態:** 完了（2026-08-30、フェーズ1バッチA cluster 1）。
+**コミット:** `03635fda5c`
+
+#### 再検証結果
+着手前に本項目とLAYER3-ANNUAL-MISCLASSIFICATION-MINOR-5TICKERS-1の前提を
+実データで再確認したところ、登録時（2026-08-06）から24日経過しており前提が
+変化していた：
+- NOW・META: 疑わしいエントリが0件になっていた（新しい決算申告が古い比較
+  開示を置き換えたことによる自然解消）
+- DELL（net_income）・SPIR（revenue）: BBAIと完全に同型のパターン
+  （同一accn・同一start、130〜300日レンジ内で複数end日が競合）を維持して
+  おり、既存フィルタへの追加が安全
+- RMBS・ASTS・VRT: BBAI型フィルタが検知できない別パターン（accn/start
+  ごとにFYタグ付きエントリが1件のみの単独異常）と判明。無理に
+  フィルタへ追加しても実質no-opで誤って「解消済み」を示すため見送り、
+  代わりに現状無害であること（7エントリの年次系列のうち最古の位置に
+  座しており、現行のいかなる消費側の遡及ウィンドウにも入らない）を
+  `build_ticker_store()`実測で確認した
+
+#### 実装内容
+`_reclassify_misannotated_fy_entries()`対象の`_ANNUAL_MISCLASSIFICATION_FIX_TICKERS`
+を`frozenset({"BBAI"})`から`frozenset({"BBAI", "DELL", "SPIR"})`へ拡張。
+RMBS/ASTS/VRTについては、同一バッチの
+[[QUARTERLY-CLASSIFY-PERIOD-NO-UPPER-BOUND-1]]（`_classify_period()`の
+共有コード修正）が副次的に解消した（下記参照）。
+
+#### 検証結果
+`tests/test_layer3_annual_misclassification.py`（新規7テスト、DELL/SPIR
+拡張・非対象銘柄パススルー・RMBS型の単独パターン限界を明示するテストを
+含む）を追加、git stashによるfail-before/pass-after確認済み。全105銘柄・
+全32フィールドのbuild_ticker_store()出力before/after diffで、変化した
+のはDELL（net_income 29→25エントリ）・SPIR（revenue 26→24エントリ）の
+2銘柄のみと確認。DELL/SPIR（共にtanuki=true）のTANUKI VALUATION出力を
+再生成し、DELLは汚染されたTTM net_incomeからDuPont比率を誤算出する
+状態から`dupont.excluded=negative_equity`（実際に自己資本が-2.47Bと
+負であることを確認済み）へ正しく修正されたことを確認。
+Gates: pytest 976 passed, audit.py exit 0, report_consistency_check NG=0。
+**優先度:** 中→クローズ
+**分類:** バグ / Layer3データ品質
+**登録日:** 2026-08-06
+**発見:** [[BACKLOG_PRIORITY_ROADMAP.md]]フェーズ1・dependency cluster 1「Layer3期間分類クラスタ」
+
+### ✅ [LAYER3-ANNUAL-MISCLASSIFICATION-MINOR-5TICKERS-1] Layer3 FY誤分類、BBAI以外の少数銘柄への波及 — 2026-08-30、RMBS/ASTS/VRTはQUARTERLY-CLASSIFY-PERIOD-NO-UPPER-BOUND-1の共有コード修正で解消と確認
+**状態:** 完了（2026-08-30、フェーズ1バッチA cluster 1）。
+**コミット:** `d43aa17e0b`（根本解消）・`03635fda5c`（再検証記録）
+
+#### 内容
+[[LAYER3-ANNUAL-MISCLASSIFICATION-NOW-RMBS-1]]の再検証で、RMBS・ASTS・
+VRTはBBAI型の`_reclassify_misannotated_fy_entries()`が検知できない
+別パターン（単独異常エントリ）であることが判明し、当初想定した
+「同一フィルタへの銘柄追加」では解消できないと確定した。
+
+#### 解消経路
+[[QUARTERLY-CLASSIFY-PERIOD-NO-UPPER-BOUND-1]]（`quarterly.py::_classify_period()`
+への上限日数の追加、Layer3が直接importして共有する関数）を実装したところ、
+その副次効果としてRMBS・ASTS・VRTの3銘柄がLayer3側でも解消されることを
+全105銘柄before/afterのbuild_ticker_store()診断で確認した。ticker別の
+post-processingフィルタでは構造的に届かなかった箇所を、より根本に近い
+共有ロジックの修正が届いた形。
+**優先度:** 中→クローズ
+**分類:** バグ / Layer3データ品質
+**登録日:** 2026-08-06
+**発見:** [[BACKLOG_PRIORITY_ROADMAP.md]]フェーズ1・dependency cluster 1「Layer3期間分類クラスタ」
+
+### ✅ [QUARTERLY-CLASSIFY-PERIOD-NO-UPPER-BOUND-1] quarterly.py::_classify_period()のis_annual判定に上限日数がなく中長期の比較開示・複数年累積開示を誤って年次分類 — 2026-08-30
+**状態:** 完了（2026-08-30、フェーズ1バッチA cluster 1）。
+**コミット:** `d43aa17e0b`
+
+#### 再検証結果
+着手前にDELL ProfitLoss 2023-08-04（181日、fp=FY、form=10-K）が報告通り
+`is_annual=True`のまま誤分類されていることを実データで再確認した。
+
+#### 調査・実装内容
+全105銘柄・company_facts.json全XBRLコンセプトの`is_annual=True`エントリ
+38万件超を走査し、安全な閾値を実データから導出した。真の年次期間は
+349〜372日（大半363〜370日、52/53週決算のばらつきを含む）に密集しており、
+336〜362日の間に完全な空白（0件）が存在することを確認。空白より下は
+数千件の中期間YTD比較開示（130〜335日）、空白より極端に上は最大3678日
+（複数年累積開示、ニッチなタグに散発）に及ぶ外れ値があり、いずれも従来は
+上限なしで拾われていた。判定を旧来の「下限のみの2分岐」から
+「340〜400日の単一ウィンドウ」に置き換えた。この変更は旧ロジックの
+`is_annual=True`となりうる全分岐が新ウィンドウの上位互換であるため
+証明可能に一方向（既存の誤検知を除去するのみで新たな誤検知を導入し
+えない）。
+
+本関数は共有コードであり、`quarterly.py`がnormalized/を構築する経路と、
+`layer3_builder.py`が同じ`_classify_period()`を直接importするLayer3の
+両方に影響する。データを一切コミットする前に両パイプラインの全105銘柄
+before/after diffを実施：
+- normalized/: 11銘柄（APGE, ASTS, BBAI, LYFT, RCAT, RDW, RMBS, SOFI,
+  SOUN, SPIR, VRT）が影響を受け、全てエントリ数減少のみ
+- Layer3 build_ticker_store(): 12銘柄が影響を受け、
+  [[LAYER3-ANNUAL-MISCLASSIFICATION-NOW-RMBS-1]]のRMBSケースと
+  [[LAYER3-ANNUAL-MISCLASSIFICATION-MINOR-5TICKERS-1]]のASTS/VRTケースを
+  この共有コード経由で副次的に解消した
+
+#### 検証結果
+`tests/test_quarterly_classify_period.py`（新規10テスト）を追加。真の
+年次期間（Q4タグ付きdays-onlyブランチの端例含む）は引き続き正しく分類
+されること、DELLの181日ケースや他の中長期・複数年外れ値が除外される
+こと、既存の130日下限・form制限が無変更であることを確認。git stashで
+fail-before/pass-after確認済み。影響を受けた11銘柄（APGE以外の
+tanuki=true 10銘柄）のTANUKI VALUATION出力を再生成し10/11がPASS、
+LYFTはanomaly_detectionでFAILしたが、これは本修正と無関係の既存の
+負のFCF状態（本修正前の直近コミット済み出力と比較し変化なしを確認）。
+Gates: pytest 986 passed, audit.py exit 0, report_consistency_check NG=0。
+**優先度:** 高→クローズ
+**分類:** バグ / 共有コード（normalized/・Layer3両影響）
+**登録日:** 2026-07-XX（詳細はBACKLOG.md旧エントリ参照）
+**発見:** [[BACKLOG_PRIORITY_ROADMAP.md]]フェーズ1・dependency cluster 1「Layer3期間分類クラスタ」
+
+### ✅ [CASH-TAG-MISSING-1] CAT/CPRT/ELF/GEV/HEI/SITM等でcash_and_equivalentsが候補タグ網羅漏れにより欠落 — 2026-08-30
+**状態:** 完了（2026-08-30、フェーズ1バッチA cluster 2）。
+**コミット:** `e12544f56c`
+
+#### 再検証結果
+着手前にGEV・SITMが既存3候補タグのいずれからもcash_and_equivalentsの
+カバレッジを得られていないことを実データで再確認した。
+
+#### 実装内容
+`tag_definitions.py::TAG_CANDIDATES["CASH_AND_EQUIVALENTS"]`に
+ASU 2016-18対応後の`CashCashEquivalentsRestrictedCashAndRestrictedCashEquivalents`
+タグを追加した上で、変更前に全105銘柄への影響をシミュレーションした。
+候補が1件もなかった銘柄（GEV, SITM、および一部年度のELF/ONDS）は
+きれいにギャップが埋まる一方、CPRT・HEIは既存タグ
+（CashAndCashEquivalentsAtCarryingValue）が引き続き機能しているにも
+関わらず、新タグの方が直近申告が新しいため
+`_extract_values_best_candidate()`の「銘柄全体で単一勝者タグ」設計により
+新タグが勝者になり、既に正しく機能していた年度が制限付き現金込みの
+数値で上書きされる過大評価リスクを事前シミュレーションで検出した。
+CPRT・HEIについては`quarterly.py::TICKER_RESTRICTIONS`に新規`cash_concept`
+キー（既存の`sti_concept`と同一パターン）を追加して既存タグへ固定し、
+`parser.py`側も既存の`revenue_concept`/`ltdebt_concept`/`sti_concept`
+override実装と同一パターンで配線した。
+
+COHRは興味深い副次発見: COHR自身のFY2022 10-K（accn 0000820318-22-000019）
+が現金を新タグでのみ申告しており、旧タグでは申告していなかったため、
+本修正によりCOHRの自社申告データへ解決するようになった。従来は
+`_resolve_bs_entity_mixing()`のentity-mixing安全弁により、その年度の
+旧タグ値が貸借対照表の他フィールドと異なるaccn（"II-VI INC"という旧
+企業名時代のSPAC-shell名称変更ウィンドウに合致）由来だったため
+黙ってNone化されていた。修正後、現金と他3つの貸借対照表フィールドが
+FY2022について同一accnを共有するようになったことを確認し、安全弁が
+検知0件を報告するのは、検知対象のentity-mixing状態自体が本当に解消
+されたためであり、安全弁の迂回（バイパス）ではないことをaccn来歴の
+追跡で確認した。
+
+#### 検証結果
+全105銘柄でparse_and_save()を実行しcash_and_equivalentsのbefore/after
+diffを取ったところ、変化したのはCOHR・ELF・GEV・ONDS・SITMの5銘柄のみで、
+いずれも既存ギャップの充填か非自社データ値の自社申告値への置換であり、
+CPRT・HEIは無変化であることを確認。無関係な7件の
+bs_identity_violations_log.jsonファイルは、パーサー再実行に伴う
+dictキー順序のノイズ（既知・別トラッキング済みの非決定性、内容変化では
+ない）のみと確認した上で元に戻した。`tests/test_cash_tag_missing.py`
+（新規5テスト: 新タグ登録・ギャップ充填・CPRT/HEIのoverride設定と
+on/offによる回帰再現）を追加、5件中3件がfail-before/pass-afterで
+確認済み。影響を受けた5銘柄（全てtanuki=true）のTANUKI VALUATION出力を
+再生成し全て検証PASS。
+Gates: pytest 991 passed, audit.py exit 0, report_consistency_check NG=0。
+
+#### 付記
+[[LITE-COGS-DA-TAG-UNMERGED-1]]・[[LAYER3-GA-STANDALONE-TAG-UNMAPPED-1]]は
+本バッチの単純な「候補タグリスト追加」パターンには当てはまらないと
+判明したため（前者は複数タグの合算が必要、後者はLayer2/Layer3の
+どのフィールドも消費していない新フィールドが必要）、今回は未実装のまま
+据え置いた。
+**優先度:** 中→クローズ
+**分類:** データ品質 / XBRLタグ候補網羅漏れ
+**登録日:** 2026-07-16
+**発見:** [[FY52WEEK-BS-INSTANT-FACT-1]]事前調査②完了時の副次発見
+
+### ✅ [LAYER3-FY-SCALE-ANNUAL-MISFLAG-1] JNJのgross_profitが年次スケールの値にも関わらずis_annual=Falseに誤分類 — 2026-08-30、再検証の結果、前提自体が事実誤りと判明しクローズ
+**状態:** 完了・前提誤りと確認しクローズ（2026-08-30、フェーズ1バッチA cluster 1、修正は実施せず）。
+
+#### 再検証結果
+本項目はJNJのgross_profitのend=2023-01-01/2023-12-31の値
+（$13.855B/$14.597B）を「年次スケールの値であるにも関わらず
+is_annualに分類されていない」誤分類として登録していた。着手前の再検証で
+raw XBRLデータを直接確認したところ、これらのエントリは`period_days=90`
+（正真正銘のQ4四半期の値）であることが判明した。JNJの実際のFY2023
+Q1〜Q3のgross_profit（$16.351B/$17.318B/$14.745B、同レンジ）と、真の
+FY2023年次値（$58.606B、約4倍の規模）を突き合わせて確認したところ、
+指摘されていた値は誤分類された年次データではなく、正当な四半期データ
+であると確定した。
+
+#### 結論
+本項目の前提そのものが事実誤りだった。現行の`is_annual=False`分類は
+正しく、コード修正は不要と判断した。バッチAの必須プロセス（着手前の
+前提再検証）により、実在しないバグへの誤修正を未然に防いだケースとして
+記録する。
+**優先度:** 中→クローズ（前提誤り・対応不要）
+**分類:** データ品質 / 誤診断（記録のみ）
+**登録日:** 2026-07-XX（詳細はBACKLOG.md旧エントリ参照）
+**発見:** [[BACKLOG_PRIORITY_ROADMAP.md]]フェーズ1・dependency cluster 1「Layer3期間分類クラスタ」
+
+### ✅ [V0-V0RM-CONFUSION-RISK-1] latest.jsonのトップレベルv0とdcf_components.v0_rmの取り違えリスク — 2026-08-30
+**状態:** 完了（2026-08-30、フェーズ1バッチA cluster 3）。
+**コミット:** `403cd9f348`
+
+#### 内容
+`KoichiValuationCalculator.calculate_pt()`の戻り値には、トップレベルの
+`v0`（β込みCAPM WACCベースのDCF結果、`intrinsic_value_beta`の計算根拠・
+参考値）と、`dcf_components.v0_rm`（market_return=10%固定・βなし、
+メインの理論株価`intrinsic_value_per_share`の実際の計算根拠）という
+名前の紛らわしい2つのフィールドが存在する。latest.jsonを直接読む外部AI・
+レビュアーがトップレベルの`v0`をメイン根拠と誤認して検算する罠がある。
+
+#### 実装内容
+既存フィールド構成は変更せず（後方互換性維持）、`calculate_pt()`の
+結果dictへ`"v0_note"`フィールドを新規追加。メインの理論株価計算根拠は
+`dcf_components.v0_rm`である旨を明示するテキストを格納する。
+
+#### 検証結果
+`tests/test_core_calculator_v0_note.py`（新規4テスト: エラー無し通過・
+v0/v0_note両方存在・v0_noteがv0_rmを指す旨の文言確認・トップレベルv0と
+dcf_components.v0_rmが別フィールドである実体確認）を追加、2/4がfail-before/
+4/4がpass-after確認済み。全100 tanuki=trueティッカーのTANUKI VALUATION
+出力を再生成（本フィールドは条件無しの一律追加のため全銘柄対象）、
+成功100/100、検証PASS=99（LYFTのみ既知の無関係な既存FAIL）。
+Gates: pytest 996 passed, audit.py exit 0, report_consistency_check NG=0。
+**優先度:** 中→クローズ
+**分類:** 表示・データ構造の紛らわしさ / TANUKI VALUATION
+**登録日:** 2026-07-23
+**発見:** `FIELD_DEFINITIONS.md`フェーズ8
+
+### ✅ [STOCK-HTML-CLASSIFICATION-MISSING-1] stock.html個別銘柄ページにTANUKI SCORE Classificationが表示されていない — 2026-08-30
+**状態:** 完了（2026-08-30、フェーズ1バッチA cluster 3）。
+**コミット:** `403cd9f348`
+
+#### 内容
+`tanuki_score/index.html`（銘柄一覧ページ）ではClassification
+（BUY/WATCH/HOLD/GROWTH_PREMIUM/TRIM/SELL/PASS）がバッジ表示されるが、
+`stock.html`（個別銘柄詳細ページ）には同じデータ（`latest.json`の
+`tanuki_score`フィールド）が存在するにもかかわらずどこにも表示されて
+いなかった。
+
+#### 実装内容
+`stock.html`に`tanuki_score/index.html`の`CAT_META`/`.badge-*`配色を
+踏襲した`.tag.cls-{CLASSIFICATION}`用CSSルールと`CLS_META`オブジェクトを
+追加し、`.ticker-tags`の先頭要素としてClassificationバッジを表示。
+`d.tanuki_score`・`d.score_comment`（`title`属性としてツールチップ表示）
+の両フィールドがlatest.jsonに実在することを配線前に確認済み。
+
+#### 検証結果
+JSテスト基盤（node.js）が環境に存在しないため、実行レベルのテストは
+未実施。ソースレベルの構造レビューで配線を確認。全100
+tanuki=trueティッカーのTANUKI VALUATION出力再生成後、`AAPL/latest.json`
+の`tanuki_score="WATCH"`・`score_comment`存在を実測確認済み。
+Gates: pytest 996 passed, audit.py exit 0, report_consistency_check NG=0。
+**優先度:** 未定→クローズ
+**分類:** TANUKI VALUATION / 表示 / フロントエンド
+**登録日:** 2026-07-20
+**発見:** [[FCF-OUTLIER-PREROUNDING-LOSS-1]]（完了・BACKLOG_DONE.md参照）調査時の副次発見
+
+### ✅ [DCF-RELIABILITY-LABEL-MISMATCH-1] DCF_Reliability非LOW表示語彙の不一致（HIGH/NORMAL） — 2026-08-30
+**状態:** 完了（2026-08-30、フェーズ1バッチA cluster 3）。
+**コミット:** `403cd9f348`
+
+#### 内容
+`_calc_dcf_reliability_policy_b()`は常に`"LOW"`/`"NORMAL"`のいずれかを
+返す一貫した関数だが、report.txtの表示文言はどちらの文脈で呼ばれたかに
+よって異なっていた。FCF_Base方式の分岐でPolicy Bが`"NORMAL"`を返した
+場合は`"DCF_Reliability: HIGH"`、FCF_Conversion_Rate方式の分岐で同じ
+`"NORMAL"`を返した場合は`"DCF_Reliability: NORMAL"`と表示されていた。
+
+#### 実装内容
+`pipeline.py`のFCF_Base方式・非LOW分岐の表示文言を`HIGH`から`NORMAL`へ
+統一し、関数の実際の戻り値と一致させた。`report_consistency_check.py`の
+関連コメント（`HIGH`と記載していた古い注釈）も更新。実際の正規表現
+（`re.match(r'^DCF_Reliability:\s+(\w+)', line)`）は`\w+`でどちらの語彙も
+そのまま捕捉するため機能的な修正は不要と確認した。
+
+#### 検証結果
+`tests/test_pipeline_logic.py`へ`TestDcfReliabilityLabelUnified`を追加。
+実装直後の初回検証ではgit stashによるfail-before確認を怠っていたが、
+再検証プロセスの一環で追って実施し、pipeline.py修正前は
+`assert "DCF_Reliability: NORMAL" in report`がAssertionErrorで失敗、
+修正後は合格することを確認した。全100 tanuki=trueティッカーの
+TANUKI VALUATION出力を再生成、成功100/100、検証PASS=99
+（LYFTのみ既知の無関係な既存FAIL）。
+Gates: pytest 996 passed, audit.py exit 0, report_consistency_check NG=0。
+**優先度:** 中→クローズ
+**分類:** 表示不整合 / TANUKI VALUATION
+**登録日:** 2026-07-23
+**発見:** `FIELD_DEFINITIONS.md`フェーズ8（依頼文名指し）

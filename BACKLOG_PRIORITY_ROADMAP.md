@@ -70,18 +70,28 @@ Aが最優先なのは、唯一「Koichiさんの投資判断に使う数値そ�
 1. `[[FCF-CAGR-YEARS-MISMATCH-1]]` — stock.html CAGR(3yr)誤表示
 2. `[[PARSER-STOCKHOLDERS-EQUITY-CROSS-YEAR-MISSELECT-1]]` — VRT/CRM
    のROE実害
-3. `[[CASH-TAG-MISSING-1]]` — 複数銘柄でcash_and_equivalents欠落
+3. ✅**完了**（2026-08-30、バッチA cluster 2）~~`[[CASH-TAG-MISSING-1]]`~~
+   — 複数銘柄でcash_and_equivalents欠落（BACKLOG_DONE.md参照）
 4. `[[EPS-DISCREPANCY-FLAG-OVERLOAD-1]]` — フラグ名の意味重複
 5. `[[RICE-ADJ-ASYMMETRIC-ZERO-1]]` — 非対称0フロア設計
 6. `[[HYPECORE-REALSTRONG-DUAL-IMPL-1]]` — Python/JS二重実装の矛盾
    リスク
-7. `[[QUARTERLY-CLASSIFY-PERIOD-NO-UPPER-BOUND-1]]` — is_annual判定に
-   上限なし
-8. `[[V0-V0RM-CONFUSION-RISK-1]]` — v0/v0_rm取り違えリスク
+7. ✅**完了**（2026-08-30、バッチA cluster 1）
+   ~~`[[QUARTERLY-CLASSIFY-PERIOD-NO-UPPER-BOUND-1]]`~~ — is_annual判定に
+   上限なし（BACKLOG_DONE.md参照）
+8. ✅**完了**（2026-08-30、バッチA cluster 3）~~`[[V0-V0RM-CONFUSION-RISK-1]]`~~
+   — v0/v0_rm取り違えリスク（BACKLOG_DONE.md参照）
 9. `[[TVGROWTH-EXPLICIT-DEFAULT-AMBIGUOUS-1]]` — terminal_growth明示/
    未設定の区別不能
-10. `[[LAYER3-ANNUAL-MISCLASSIFICATION-NOW-RMBS-1]]` — 実証済み修正
-    パターンの横展開
+10. ✅**完了**（2026-08-30、バッチA cluster 1）
+    ~~`[[LAYER3-ANNUAL-MISCLASSIFICATION-NOW-RMBS-1]]`~~ — 実証済み修正
+    パターンの横展開（BACKLOG_DONE.md参照）
+
+上記10件中4件がバッチA（2026-08-30）で完了。残る6件
+（FCF-CAGR-YEARS-MISMATCH-1・PARSER-STOCKHOLDERS-EQUITY-CROSS-YEAR-
+MISSELECT-1・EPS-DISCREPANCY-FLAG-OVERLOAD-1・RICE-ADJ-ASYMMETRIC-ZERO-1・
+HYPECORE-REALSTRONG-DUAL-IMPL-1・TVGROWTH-EXPLICIT-DEFAULT-AMBIGUOUS-1）
+は将来の「バッチB」着手候補として据え置き。
 
 ---
 
@@ -106,19 +116,30 @@ Dのepic級設計課題が該当する。
 同一コード領域・同一configファイル・同一画面群に関わる項目は、個別に
 着手するより一括対応した方が効率的。
 
-1. **Layer3期間分類クラスタ**（同一関数`_classify_period()`/
-   `is_annual`周辺）: `[[LAYER3-ANNUAL-MISCLASSIFICATION-NOW-RMBS-1]]`・
+1. ✅**完了**（2026-08-30、バッチA）**Layer3期間分類クラスタ**
+   （同一関数`_classify_period()`/`is_annual`周辺）:
+   `[[LAYER3-ANNUAL-MISCLASSIFICATION-NOW-RMBS-1]]`・
    `[[LAYER3-ANNUAL-MISCLASSIFICATION-MINOR-5TICKERS-1]]`・
-   `[[QUARTERLY-CLASSIFY-PERIOD-NO-UPPER-BOUND-1]]`・
-   `[[LAYER3-FY-SCALE-ANNUAL-MISFLAG-1]]`
-2. **XBRL候補タグ拡張バッチ**（「候補タグ追加＋全母集団シミュレー
-   ション」という同一パターン）: `[[CASH-TAG-MISSING-1]]`・
-   `[[LITE-COGS-DA-TAG-UNMERGED-1]]`・`[[LAYER3-GA-STANDALONE-TAG-
-   UNMAPPED-1]]`
-3. **stock.html表示整合性バッチ**（同一ファイル改修）:
-   `[[STOCK-HTML-CLASSIFICATION-MISSING-1]]`・`[[DCF-RELIABILITY-
-   LABEL-MISMATCH-1]]`・`[[SENS-MATRIX-DUAL-IMPL-1]]`・
-   `[[V0-V0RM-CONFUSION-RISK-1]]`
+   `[[QUARTERLY-CLASSIFY-PERIOD-NO-UPPER-BOUND-1]]`（以上3件、真の
+   実装対応）・`[[LAYER3-FY-SCALE-ANNUAL-MISFLAG-1]]`（前提誤りと
+   判明、対応不要でクローズ）。4件は当初想定と異なり単一の根本原因を
+   共有していなかった（3種の異なる原因・解消経路）。詳細は
+   BACKLOG_DONE.md参照
+2. ✅**完了**（2026-08-30、バッチA）**XBRL候補タグ拡張バッチ**
+   （「候補タグ追加＋全母集団シミュレーション」という同一パターン）:
+   `[[CASH-TAG-MISSING-1]]`のみバッチAで実装完了（BACKLOG_DONE.md
+   参照）。`[[LITE-COGS-DA-TAG-UNMERGED-1]]`（複数タグの合算が必要）・
+   `[[LAYER3-GA-STANDALONE-TAG-UNMAPPED-1]]`（Layer2/Layer3双方への
+   新規フィールド追加が必要）は、着手前の再検証でこのバッチの単純な
+   「候補タグ追加」パターンに当てはまらないと判明したため未実装のまま
+   バッチB候補として据え置き
+3. **stock.html表示整合性バッチ**（同一ファイル改修）、バッチAで3/4件
+   実装完了: ✅`[[STOCK-HTML-CLASSIFICATION-MISSING-1]]`・
+   ✅`[[DCF-RELIABILITY-LABEL-MISMATCH-1]]`・
+   ✅`[[V0-V0RM-CONFUSION-RISK-1]]`（BACKLOG_DONE.md参照）。
+   `[[SENS-MATRIX-DUAL-IMPL-1]]`は死コード（`alpha`変数）削除のみ完了、
+   核心の5×5/3×3統一方針はKoichiさんの設計判断待ちでBACKLOG.mdに
+   残置（部分対応）
 4. **TAIL KPIパイプラインクラスタ**（同一パイプラインの入口〜出口）:
    `[[TAIL-KPI-PROPOSER-CORE-ONLY-GATE-1]]`・`[[TAIL-XBRL-SEGMENT-
    FETCHER-NONDIMENSIONED-GAP-1]]`・`[[TAIL-THESIS-KPIS-EMPTY-ADBE-
