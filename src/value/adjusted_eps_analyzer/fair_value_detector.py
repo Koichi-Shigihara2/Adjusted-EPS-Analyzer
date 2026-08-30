@@ -239,7 +239,9 @@ def apply_fair_value_detection(
     全四半期に対して公正価値変動の自動検出を実行し、quarterly_results を更新する。
 
     条件1+2+3を全て満たす四半期のみ調整項目を追加し、Adj EPS を再計算する。
-    EPS_DISCREPANCY フラグと special_notes も自動設定する。
+    FAIR_VALUE_ADJUSTED フラグと special_notes も自動設定する
+    （[[EPS-DISCREPANCY-FLAG-OVERLOAD-1]]対応: check_eps_discrepancy()の
+    EPS_DISCREPANCYフラグとは意味が異なるため別名にした）。
 
     Args:
         quarterly_raw:     extract_quarterly_facts が返す生データリスト（FV XBRLタグ含む）
@@ -373,16 +375,20 @@ def apply_fair_value_detection(
             f"Adj EPS={q['adjusted_eps']:+.4f}"
         )
 
-        # EPS_DISCREPANCY フラグ
+        # [[EPS-DISCREPANCY-FLAG-OVERLOAD-1]]: 公正価値変動の自動検出・調整は
+        # XBRL vs Alpha Vantage公式値の乖離（check_eps_discrepancy()、意味の
+        # 異なる別処理）とは別のフラグ名にする（special_notesのどちらの
+        # サブキーが埋まっているかを確認しないと原因を判別できない問題を
+        # 解消するため）
         flags = list(q.get("special_flags", []))
-        if "EPS_DISCREPANCY" not in flags:
-            flags.append("EPS_DISCREPANCY")
+        if "FAIR_VALUE_ADJUSTED" not in flags:
+            flags.append("FAIR_VALUE_ADJUSTED")
         q["special_flags"] = flags
 
         # special_notes に検出詳細を追加
         notes = dict(q.get("special_notes", {}))
         notes["fair_value_auto_detect"] = {
-            "flag": "EPS_DISCREPANCY",
+            "flag": "FAIR_VALUE_ADJUSTED",
             "detected_items": [
                 {
                     "item_name": adj_it["item_name"],
