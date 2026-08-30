@@ -8,6 +8,11 @@ on:
 env:
   TZ: Asia/Tokyo
 
+permissions:
+  contents: read
+  actions: read  # [[DATA-FRESHNESS-MONITORING-FUTURE-IDEA-1]]対応: cronワークフロー
+                 # の実行状況をGitHub Actions REST APIで確認するために必要
+
 jobs:
   health-check:
     runs-on: ubuntu-latest
@@ -31,4 +36,5 @@ jobs:
       - name: Run System Health Check
         env:
           DISCORD_WEB_HOOK: ${{ secrets.DISCORD_WEB_HOOK }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: python common/system_health.py
