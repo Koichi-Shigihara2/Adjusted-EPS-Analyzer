@@ -97,13 +97,27 @@ NO_CANDIDATE_MERGE_FIELDS = frozenset({
 # エントリ群は、真の単年度決算ではあり得ない（同一起点からのYTD累計を
 # 複数時点で開示している比較データの混入）と判定できる。
 #
-# 対象は実データ検証済みのBBAIのみ（2026-08-06投資調査で105銘柄横断
-# スキャンした結果、同型の誤分類がNOW・RMBS等18銘柄に及ぶことが判明
-# したが、実害未検証のため今回はBBAIのみに限定。NOW/RMBSは
-# [[LAYER3-ANNUAL-MISCLASSIFICATION-NOW-RMBS-1]]、ASTS/SPIR/DELL/
-# VRT/METAは[[LAYER3-ANNUAL-MISCLASSIFICATION-MINOR-5TICKERS-1]]で
-# 別途検証してから対象に加えるかを判断する）。
-_ANNUAL_MISCLASSIFICATION_FIX_TICKERS = frozenset({"BBAI"})
+# 対象は実データ検証済みのBBAI・DELL・SPIRのみ（2026-08-06投資調査で
+# 105銘柄横断スキャンした結果、同型の誤分類がNOW・RMBS等18銘柄に及ぶ
+# ことが判明したが、実害未検証のため当初はBBAIのみに限定していた。
+# 2026-08-30、[[LAYER3-ANNUAL-MISCLASSIFICATION-NOW-RMBS-1]]・
+# [[LAYER3-ANNUAL-MISCLASSIFICATION-MINOR-5TICKERS-1]]対応時に105銘柄
+# 全数を実データで再スキャンしたところ、24日間のデータ更新により
+# 前提が変化していたことが判明した:
+#   - NOW・METAは現在は該当エントリ自体が0件（自然解消）
+#   - DELL（net_income、2グループ計4件）・SPIR（revenue、1グループ
+#     2件）はBBAIと完全に同型（同一accn・同一start内で複数end日付が
+#     競合）のため対象に追加した
+#   - RMBS（16件）・ASTS（1件）・VRT（3件）は、同一(accn,start)内の
+#     end日付が1種類のみ（グループ内で競合していない）という別パターン
+#     であり、本関数の判定基準（複数end日付の競合）では検知できない。
+#     実データ確認の結果、いずれも2020年の孤立した9ヶ月累計
+#     （period_days=273、真の年次end=2020-12-31とは別に混入）で、
+#     現在のannualエントリ列の最古（7件中1件目）に位置し、Moat Score
+#     等のtrailing window（直近3〜6年）には現時点で影響しないことを
+#     確認済み。この3銘柄は別種の検知ロジックが必要なため今回は対象外
+#     のまま両エントリに残す。
+_ANNUAL_MISCLASSIFICATION_FIX_TICKERS = frozenset({"BBAI", "DELL", "SPIR"})
 
 
 def _reclassify_misannotated_fy_entries(entries: list, ticker: str) -> list:
@@ -121,7 +135,8 @@ def _reclassify_misannotated_fy_entries(entries: list, ticker: str) -> list:
     の累計を複数end日で開示）のみを対象にできる。
 
     対象は`_ANNUAL_MISCLASSIFICATION_FIX_TICKERS`に含まれるtickerのみ
-    （現状BBAI限定）。対象外のtickerでは入力をそのまま返す。
+    （2026-08-30時点でBBAI・DELL・SPIR）。対象外のtickerでは入力を
+    そのまま返す。
 
     除外方式（is_annual=Falseへの再分類ではなく完全除外）を採用した
     理由: これらのエントリをis_ytd=Trueの四半期候補として復活させると
