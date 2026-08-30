@@ -1,6 +1,6 @@
 {
   "ticker": "AMAT",
-  "last_updated": "2026-08-24T04:57:18.981474",
+  "last_updated": "2026-08-30T15:34:31.623705",
   "quarters": [
     {
       "gaap_eps": 3.1725,
@@ -52,9 +52,15 @@
         }
       },
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にリクエストエラーが発生しました: Request failed: HTTPSConnectionPool(host='api.x.ai', port=443): Read timed out. (read timeout=30)",
-        "sources": []
+        "health": "調整中",
+        "comment": "SBCは毎期発生する恒常的な非現金費用であり、一過性とは言えない。調整によりAdjusted EPSがGAAP EPSを上回っているが、市場がGAAPベースで評価する場合、企業の実力（キャッシュフロー生成力など）が過小評価される可能性がある。ただしSBCは経済的コスト（従業員インセンティブ・希薄化）を伴うため、完全に加算還元すると過大評価リスクも生じる。投資家はSBCの規模推移と希薄化効果を注視すべき。",
+        "sources": [
+          {
+            "item": "sbc",
+            "snippet": "非現金費用として株式報酬費用をadd_backしているが、テック企業では毎期発生する恒常的なコストである。",
+            "confidence": 0.2
+          }
+        ]
       }
     },
     {

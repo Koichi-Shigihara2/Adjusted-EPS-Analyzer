@@ -1,6 +1,6 @@
 {
   "ticker": "SITM",
-  "last_updated": "2026-08-24T05:02:23.971227",
+  "last_updated": "2026-08-30T15:37:58.008541",
   "quarters": [
     {
       "gaap_eps": 0.6604583484903601,
@@ -52,9 +52,15 @@
         }
       },
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にリクエストエラーが発生しました: Request failed: HTTPSConnectionPool(host='api.x.ai', port=443): Read timed out. (read timeout=30)",
-        "sources": []
+        "health": "調整中",
+        "comment": "調整項目は買収関連無形資産償却費の加算戻しであり、非現金ではあるが買収後複数年にわたり恒常的に発生する費用であるため一過性とは言い難い。市場がGAAP EPS(0.66)で評価する場合、Adjusted EPS(0.878)で示される真の稼得力が過小評価される可能性がある。投資家はキャッシュ生成力に着目すべきだが、償却が毎期続く恒常的性質から調整依存度が高まると過大評価リスクも伴う。",
+        "sources": [
+          {
+            "item": "amortization_intangibles",
+            "snippet": "買収関連無形資産の償却 (category: 買収・統合関連)。非現金だが恒常的に発生する費用。",
+            "confidence": 0.2
+          }
+        ]
       }
     },
     {

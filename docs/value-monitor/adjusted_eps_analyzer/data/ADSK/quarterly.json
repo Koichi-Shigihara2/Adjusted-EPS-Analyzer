@@ -1,7 +1,86 @@
 {
   "ticker": "ADSK",
-  "last_updated": "2026-08-24T05:03:25.099210",
+  "last_updated": "2026-08-30T15:38:44.524695",
   "quarters": [
+    {
+      "gaap_eps": 2.3317535545023698,
+      "adjusted_eps": 3.1063833188142866,
+      "gaap_net_income": 492000000.0,
+      "adjusted_net_income": 655446880.2698145,
+      "diluted_shares_used": 211000000.0,
+      "adjustments": [
+        {
+          "item_id": "sbc",
+          "item_name": "株式報酬費用",
+          "amount": 184000000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金費用",
+          "extracted_from": "us-gaap:AllocatedShareBasedCompensationExpense",
+          "category": "株式報酬関連",
+          "net_amount": 152661045.5311973,
+          "tax_rate_applied": 0.1703204047217538
+        },
+        {
+          "item_id": "amortization_intangibles",
+          "item_name": "無形資産償却費",
+          "amount": 13000000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "買収関連無形資産の償却",
+          "extracted_from": "us-gaap:AmortizationOfIntangibleAssets",
+          "category": "買収・統合関連",
+          "net_amount": 10785834.7386172,
+          "tax_rate_applied": 0.1703204047217538
+        }
+      ],
+      "net_adjustment_total": 163446880.26981452,
+      "filing_date": "2026-07-31",
+      "form": "10-Q",
+      "sector": "Technology",
+      "sector_exclusions": [
+        "inventory_writeoff",
+        "gov_subsidy_timing",
+        "fx_gains_losses",
+        "derivative_gains_losses",
+        "tax_one_time"
+      ],
+      "revenue": 2046000000.0,
+      "diluted_shares": 211000000.0,
+      "period_end": "2026-07-31",
+      "fiscal_year": 2027,
+      "quarter": 2,
+      "tax_expense": 101000000.0,
+      "pretax_income": 593000000.0,
+      "maturity_monitor": {
+        "alert": "SBC寄与率が40%超（現在 112.6%）",
+        "sbc_contribution": 1.126,
+        "sbc_to_revenue": 0.09,
+        "sbc_per_share": 0.872,
+        "sector_threshold": {
+          "sbc_contribution": 0.4,
+          "sbc_to_revenue": 0.25
+        }
+      },
+      "ai_analysis": {
+        "health": "調整大",
+        "comment": "主な調整項目であるSBCと無形資産償却はともに恒常的に発生する非現金費用であり、一過性とは言えない。GAAP EPSではこれらが控除されるため、市場がGAAPベースのみで判断する場合、ADSKの真のキャッシュ生成力や事業実力が過小評価される可能性がある。特にSBCのadd-back額が大きいためEPS差は顕著だが、SBCは報酬としての実質コスト（希薄化含む）である点に留意が必要。投資家は非GAAPメトリクスとともに株式希薄化影響と調整の持続性を確認すべき。過小評価リスクはあるものの、過大評価に繋がる調整依存にも警戒。",
+        "sources": [
+          {
+            "item": "sbc",
+            "snippet": "非現金費用だが技術企業で毎期発生する恒常的な報酬コストであり、買収関連ではなくコアオペレーションの一部",
+            "confidence": 0.2
+          },
+          {
+            "item": "amortization_intangibles",
+            "snippet": "買収関連無形資産の償却は過去のM&Aから生じる定期的な非現金費用で、恒常的な性格が強い",
+            "confidence": 0.2
+          }
+        ]
+      }
+    },
     {
       "gaap_eps": 2.3160377358490565,
       "adjusted_eps": 3.077739628941317,
@@ -66,22 +145,7 @@
       "fiscal_year": 2027,
       "quarter": 1,
       "tax_expense": 108000000.0,
-      "pretax_income": 599000000.0,
-      "maturity_monitor": {
-        "alert": "SBC寄与率が40%超（現在 96.0%）",
-        "sbc_contribution": 0.96,
-        "sbc_to_revenue": 0.08,
-        "sbc_per_share": 0.7311,
-        "sector_threshold": {
-          "sbc_contribution": 0.4,
-          "sbc_to_revenue": 0.25
-        }
-      },
-      "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にリクエストエラーが発生しました: Request failed: HTTPSConnectionPool(host='api.x.ai', port=443): Read timed out. (read timeout=30)",
-        "sources": []
-      }
+      "pretax_income": 599000000.0
     },
     {
       "gaap_eps": 1.4697674418604652,

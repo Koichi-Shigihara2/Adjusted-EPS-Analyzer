@@ -1,6 +1,6 @@
 {
   "ticker": "ELF",
-  "last_updated": "2026-08-24T04:59:21.361302",
+  "last_updated": "2026-08-30T15:36:09.304387",
   "quarters": [
     {
       "gaap_eps": 1.1150461072628515,
@@ -49,9 +49,20 @@
       "tax_expense": 27703000.0,
       "pretax_income": 94302000.0,
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にリクエストエラーが発生しました: Request failed: HTTPSConnectionPool(host='api.x.ai', port=443): Read timed out. (read timeout=30)",
-        "sources": []
+        "health": "調整大",
+        "comment": "調整項目のSBCと無形資産償却費はともに恒常的に発生する非現金費用であり、特にSBCは人材獲得のための継続コスト、無形資産償却は買収後の定期償却です。GAAP EPS 1.115に対しAdjusted EPS 1.479と約33%の上方修正となっており、市場がGAAP EPSで判断する場合、非現金項目を除いた企業の実力が見えにくくなり、過小評価の可能性があります。ただしこれらは非経常的とは言えず、SBCの経済的コストや株式希薄化を無視した調整は過大評価リスクも孕むため、投資家はキャッシュフローや希薄化効果を慎重に検証すべきです。",
+        "sources": [
+          {
+            "item": "sbc",
+            "snippet": "株式報酬費用は非現金費用だが、企業が継続的に付与する恒常的な運用コストである",
+            "confidence": 0.2
+          },
+          {
+            "item": "amortization_intangibles",
+            "snippet": "買収関連無形資産の償却は非現金だが、買収後複数期にわたって定期的に発生する費用である",
+            "confidence": 0.2
+          }
+        ]
       }
     },
     {
@@ -114,11 +125,11 @@
       "tax_expense": 14141000.0,
       "pretax_income": -35224000.0,
       "special_flags": [
-        "EPS_DISCREPANCY"
+        "FAIR_VALUE_ADJUSTED"
       ],
       "special_notes": {
         "fair_value_auto_detect": {
-          "flag": "EPS_DISCREPANCY",
+          "flag": "FAIR_VALUE_ADJUSTED",
           "detected_items": [
             {
               "item_name": "偶発対価公正価値変動損益",

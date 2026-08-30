@@ -1,6 +1,6 @@
 {
   "ticker": "JOBY",
-  "last_updated": "2026-08-24T05:00:22.251353",
+  "last_updated": "2026-08-30T15:36:40.227092",
   "quarters": [
     {
       "gaap_eps": -0.25305868966663525,
@@ -49,9 +49,20 @@
       "tax_expense": 142000.0,
       "pretax_income": -245301000.0,
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にリクエストエラーが発生しました: Request failed: HTTPSConnectionPool(host='api.x.ai', port=443): Read timed out. (read timeout=30)",
-        "sources": []
+        "health": "調整中",
+        "comment": "調整項目の主なものはSBCと無形資産償却であり、どちらも恒常的に発生する非現金費用です。市場がGAAP EPS(-0.253)で判断する場合、非現金コストにより企業の実力(Adjusted EPS -0.197)が見えにくくなり、過小評価のリスクがあります。ただしSBCは株主希薄化を伴う実質コストのため、調整後の数字を過信すると過大評価リスクもあります。投資家は調整の恒常性を考慮し、キャッシュフローと株式希薄化を注視すべきです。",
+        "sources": [
+          {
+            "item": "sbc",
+            "snippet": "株式報酬費用は成長企業で毎期発生する恒常的な非現金費用であり、一過性ではない",
+            "confidence": 0.2
+          },
+          {
+            "item": "amortization_intangibles",
+            "snippet": "無形資産償却費は買収関連で定期的に発生する恒常的な非現金項目であり、一過性ではない",
+            "confidence": 0.2
+          }
+        ]
       }
     },
     {
@@ -584,11 +595,11 @@
       "tax_expense": 28000.0,
       "pretax_income": 1553000.0,
       "special_flags": [
-        "EPS_DISCREPANCY"
+        "FAIR_VALUE_ADJUSTED"
       ],
       "special_notes": {
         "fair_value_auto_detect": {
-          "flag": "EPS_DISCREPANCY",
+          "flag": "FAIR_VALUE_ADJUSTED",
           "detected_items": [
             {
               "item_name": "デリバティブ公正価値変動損益",
@@ -663,11 +674,11 @@
       "tax_expense": 56000.0,
       "pretax_income": -286023000.0,
       "special_flags": [
-        "EPS_DISCREPANCY"
+        "FAIR_VALUE_ADJUSTED"
       ],
       "special_notes": {
         "fair_value_auto_detect": {
-          "flag": "EPS_DISCREPANCY",
+          "flag": "FAIR_VALUE_ADJUSTED",
           "detected_items": [
             {
               "item_name": "デリバティブ公正価値変動損益",

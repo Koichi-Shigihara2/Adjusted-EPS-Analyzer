@@ -1,6 +1,6 @@
 {
   "ticker": "ADBE",
-  "last_updated": "2026-08-24T05:02:56.060147",
+  "last_updated": "2026-08-30T15:38:33.485815",
   "quarters": [
     {
       "gaap_eps": 4.253416149068323,
@@ -65,9 +65,20 @@
         }
       },
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にリクエストエラーが発生しました: Request failed: HTTPSConnectionPool(host='api.x.ai', port=443): Read timed out. (read timeout=30)",
-        "sources": []
+        "health": "調整大",
+        "comment": "SBC（恒常的運用コスト）と無形資産償却（買収関連で継続発生）の調整によりAdjusted EPSがGAAP EPSを約26%上回る水準。市場がGAAP EPSのみで判断する場合、Adobeの非現金費用を控除した実質的な収益力が見えにくくなり、企業の実力を過小評価するリスクがある。ただしSBCは株主希薄化を伴う実質コストのため、調整を過度に信頼すると過大評価のリスクも存在。投資家はフリーキャッシュフローや希薄化影響を併せて検証すべき。",
+        "sources": [
+          {
+            "item": "sbc",
+            "snippet": "非現金費用だが恒常的に毎期発生する株式報酬費用であり、運用コストとして実質的な影響がある",
+            "confidence": 0.2
+          },
+          {
+            "item": "amortization_intangibles",
+            "snippet": "買収関連無形資産の償却は過去のM&Aに基づく非現金費用で、定常的に発生する",
+            "confidence": 0.2
+          }
+        ]
       }
     },
     {

@@ -1,6 +1,6 @@
 {
   "ticker": "SN",
-  "last_updated": "2026-08-24T05:06:58.615010",
+  "last_updated": "2026-08-30T15:41:29.117495",
   "quarters": [
     {
       "gaap_eps": 0.9173820687634169,
@@ -62,9 +62,25 @@
       "tax_expense": 33877000.0,
       "pretax_income": 163693000.0,
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にリクエストエラーが発生しました: Request failed: HTTPSConnectionPool(host='api.x.ai', port=443): Read timed out. (read timeout=30)",
-        "sources": []
+        "health": "過大調整",
+        "comment": "主な調整であるSBCと無形資産償却は恒常的なコストであり一過性とは言えず、Adjusted EPSを大幅に押し上げているため持続可能な実力を過大に示すリスクが高い。市場がGAAP EPSで判断する場合、非現金費用により企業の実力が見えにくくなり過小評価の可能性があるが、SBCによる株主希薄化を無視した調整は過大評価を招く恐れが大きい。投資家は調整項目の持続可能性と真の経済的コストを慎重に考慮すべき。",
+        "sources": [
+          {
+            "item": "sbc",
+            "snippet": "非現金費用として株式報酬費用を加算。ただし毎期発生する恒常的な運用コストであり一過性ではない。",
+            "confidence": 0.2
+          },
+          {
+            "item": "amortization_intangibles",
+            "snippet": "買収関連無形資産の償却費を加算。定期的に発生する非現金費用で恒常的性格が強い。",
+            "confidence": 0.2
+          },
+          {
+            "item": "loan_loss_provision_abnormal",
+            "snippet": "マクロ変動による一時的な異常変動分として貸倒引当金を加算。これは一過性の調整として妥当。",
+            "confidence": 0.75
+          }
+        ]
       }
     },
     {

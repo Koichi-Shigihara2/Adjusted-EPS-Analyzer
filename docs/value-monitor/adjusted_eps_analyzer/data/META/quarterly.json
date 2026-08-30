@@ -1,6 +1,6 @@
 {
   "ticker": "META",
-  "last_updated": "2026-08-24T05:00:52.832963",
+  "last_updated": "2026-08-30T15:36:59.928902",
   "quarters": [
     {
       "gaap_eps": 6.176149649259548,
@@ -52,9 +52,15 @@
         }
       },
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にリクエストエラーが発生しました: Request failed: HTTPSConnectionPool(host='api.x.ai', port=443): Read timed out. (read timeout=30)",
-        "sources": []
+        "health": "過大調整",
+        "comment": "株式報酬費用(SBC)は毎期発生する恒常的な非現金コストであり、一過性調整とは言えない。GAAP EPS 6.18に対しAdjusted EPS 8.68と約40%上方修正されており、市場がGAAPベースで判断している場合、METAのキャッシュ生成力や事業実力が過小評価される可能性がある。ただしSBCは実質的な報酬コストであり株主希薄化を伴うため、この調整を過度に信頼すると過大評価リスクが生じる。投資家は調整後数字だけでなく、希薄化後EPSやフリーキャッシュフローを注視すべき。",
+        "sources": [
+          {
+            "item": "sbc",
+            "snippet": "非現金費用",
+            "confidence": 0.2
+          }
+        ]
       }
     },
     {

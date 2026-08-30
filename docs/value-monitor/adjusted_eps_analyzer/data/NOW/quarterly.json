@@ -1,6 +1,6 @@
 {
   "ticker": "NOW",
-  "last_updated": "2026-08-24T05:01:23.240800",
+  "last_updated": "2026-08-30T15:37:22.465262",
   "quarters": [
     {
       "gaap_eps": 0.2881080966109593,
@@ -52,9 +52,15 @@
         }
       },
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にリクエストエラーが発生しました: Request failed: HTTPSConnectionPool(host='api.x.ai', port=443): Read timed out. (read timeout=30)",
-        "sources": []
+        "health": "調整大",
+        "comment": "無形資産償却費は買収に伴う恒常的な非現金費用であり、一過性ではなく複数年にわたって発生する項目です。市場がGAAP EPS（0.29程度）で判断する場合、この償却費により企業の真の実力（キャッシュ生成力や事業収益性）が過小評価されやすくなっています。Adjusted EPSが約50%高い0.43となるため、投資家は調整の持続性を慎重に見極める必要があります。過小評価リスクが高い一方で、買収プレミアムの経済的コストを無視した過大評価リスクも存在します。",
+        "sources": [
+          {
+            "item": "amortization_intangibles",
+            "snippet": "買収関連無形資産の償却は、M&A完了後も複数会計期間にわたって発生する非現金支出であり、恒常的な調整項目に該当する。",
+            "confidence": 0.2
+          }
+        ]
       }
     },
     {

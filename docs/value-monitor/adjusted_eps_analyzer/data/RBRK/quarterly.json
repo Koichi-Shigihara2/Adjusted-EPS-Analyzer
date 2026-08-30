@@ -1,6 +1,6 @@
 {
   "ticker": "RBRK",
-  "last_updated": "2026-08-24T05:01:53.554233",
+  "last_updated": "2026-08-30T15:37:38.657105",
   "quarters": [
     {
       "gaap_eps": -0.20549619969754698,
@@ -52,9 +52,15 @@
         }
       },
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にリクエストエラーが発生しました: Request failed: HTTPSConnectionPool(host='api.x.ai', port=443): Read timed out. (read timeout=30)",
-        "sources": []
+        "health": "過大調整",
+        "comment": "SBCは恒常的な報酬コストであり、毎期発生する非現金費用ながら株主希薄化の実態を伴うため、この調整によりAdjusted EPSがプラス転換している。市場がGAAP EPS（マイナス）の数値で判断する場合、企業の実力（キャッシュ創出力）が過小評価されている可能性はあるが、SBCを完全に無視した調整は実態を過大に見せている。投資家はSBCの継続性と希薄化効果に注目すべきで、調整EPS依存は過大評価リスクが高い。",
+        "sources": [
+          {
+            "item": "sbc",
+            "snippet": "株式報酬費用は非現金費用としてadd_backされているが、テック企業では毎期継続的に発生する恒常的コストであり、株主価値の希薄化を伴う。",
+            "confidence": 0.2
+          }
+        ]
       }
     },
     {

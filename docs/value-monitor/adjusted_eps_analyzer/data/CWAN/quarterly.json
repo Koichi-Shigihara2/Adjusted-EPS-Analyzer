@@ -1,6 +1,6 @@
 {
   "ticker": "CWAN",
-  "last_updated": "2026-08-24T04:59:21.322772",
+  "last_updated": "2026-08-30T15:36:02.457055",
   "quarters": [
     {
       "gaap_eps": -0.009410515479494544,
@@ -78,9 +78,25 @@
         }
       },
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にリクエストエラーが発生しました: Request failed: HTTPSConnectionPool(host='api.x.ai', port=443): Read timed out. (read timeout=30)",
-        "sources": []
+        "health": "調整大",
+        "comment": "主な調整項目であるsbcとamortization_intangiblesは恒常的に発生する非現金費用（株式報酬と買収関連償却）であり、調整によりGAAP EPSの赤字がAdjusted EPSの黒字に転換されている。市場がGAAP EPSで判断する場合、非現金・非コア項目の影響で企業の実力（コア収益力）が過小評価される可能性が高い。ただしこれらは毎期継続するコストのため過大調整のリスクもあり、投資家はSBCによる株式希薄化や償却の長期影響を注視すべき。loan_loss_provision_abnormalは一過性が高いが全体調整額に占める割合は小さい。過小評価リスクはあるが、調整の質を考慮した慎重な評価が必要。",
+        "sources": [
+          {
+            "item": "sbc",
+            "snippet": "非現金費用。毎期発生する恒常的な株式報酬費用であり一過性ではない",
+            "confidence": 0.2
+          },
+          {
+            "item": "amortization_intangibles",
+            "snippet": "買収関連無形資産の償却。定期的に発生する恒常的費用",
+            "confidence": 0.2
+          },
+          {
+            "item": "loan_loss_provision_abnormal",
+            "snippet": "マクロ変動による一時的影響。異常変動分として一過性が高い",
+            "confidence": 0.8
+          }
+        ]
       }
     },
     {

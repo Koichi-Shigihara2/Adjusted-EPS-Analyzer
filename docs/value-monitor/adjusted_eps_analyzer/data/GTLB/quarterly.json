@@ -1,6 +1,6 @@
 {
   "ticker": "GTLB",
-  "last_updated": "2026-08-24T04:59:51.810928",
+  "last_updated": "2026-08-30T15:36:21.936015",
   "quarters": [
     {
       "gaap_eps": -0.029256007720008474,
@@ -65,9 +65,20 @@
         }
       },
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にリクエストエラーが発生しました: Request failed: HTTPSConnectionPool(host='api.x.ai', port=443): Read timed out. (read timeout=30)",
-        "sources": []
+        "health": "調整大",
+        "comment": "SBCと無形資産償却の調整によりGAAP EPSが-0.03からAdjusted EPS +0.21へ大幅に改善している。これらは主に恒常的な非現金費用であるため、市場がGAAP EPSのみで判断する場合、企業のキャッシュ生成力や事業実力を過小評価している可能性がある。特にSaaS企業であるGTLBではSBCが事業継続に不可欠なコストであり、調整依存が高まると実態を歪曲するリスクがある。投資家は調整後数値だけでなく、希薄化効果や将来の償却負担を考慮すべきで、過大評価リスクとして非GAAP依存による楽観視が懸念される。",
+        "sources": [
+          {
+            "item": "sbc",
+            "snippet": "株式報酬費用は非現金費用として毎期発生する恒常的なコストであり、調整により実力が見えにくくなる典型例。",
+            "confidence": 0.2
+          },
+          {
+            "item": "amortization_intangibles",
+            "snippet": "買収関連無形資産の償却は定期的に発生する非現金項目で、恒常的な性質が強く一過性とは言えない。",
+            "confidence": 0.25
+          }
+        ]
       }
     },
     {

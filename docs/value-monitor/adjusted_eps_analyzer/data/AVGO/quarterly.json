@@ -1,6 +1,6 @@
 {
   "ticker": "AVGO",
-  "last_updated": "2026-08-24T05:03:24.814254",
+  "last_updated": "2026-08-30T15:38:37.879369",
   "quarters": [
     {
       "gaap_eps": 1.90935192780968,
@@ -65,9 +65,20 @@
         }
       },
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にリクエストエラーが発生しました: Request failed: HTTPSConnectionPool(host='api.x.ai', port=443): Read timed out. (read timeout=30)",
-        "sources": []
+        "health": "過大調整",
+        "comment": "SBCと無形資産償却はともに恒常的に発生する費用（非現金だが定期的なコスト）であり、一過性とは言えません。調整によりAdjusted EPSがGAAP EPSを約40%上回る水準となっており、市場がGAAPベースで評価する場合、企業の現金生成力や実力が過小評価される可能性があります。ただし恒常的項目の加算は持続可能な利益を過大に歪曲するリスクもあり、投資家は株式希薄化効果や買収依存の持続可能性を注視し、調整の妥当性を慎重に判断すべきです。",
+        "sources": [
+          {
+            "item": "sbc",
+            "snippet": "株式報酬費用は毎期発生する恒常的な非現金費用であり、一過性ではない（SBCは継続的な運用コスト）。",
+            "confidence": 0.2
+          },
+          {
+            "item": "amortization_intangibles",
+            "snippet": "無形資産償却費は買収関連で継続的に発生する恒常的な償却であり、一過性ではない。",
+            "confidence": 0.2
+          }
+        ]
       }
     },
     {

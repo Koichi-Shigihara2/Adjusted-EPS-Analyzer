@@ -1,6 +1,6 @@
 {
   "ticker": "AMZN",
-  "last_updated": "2026-08-24T04:57:49.507628",
+  "last_updated": "2026-08-30T15:34:50.984686",
   "quarters": [
     {
       "gaap_eps": 5.745849766119417,
@@ -36,9 +36,15 @@
       "tax_expense": 18199000000.0,
       "pretax_income": 80846000000.0,
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にリクエストエラーが発生しました: Request failed: HTTPSConnectionPool(host='api.x.ai', port=443): Read timed out. (read timeout=30)",
-        "sources": []
+        "health": "調整中",
+        "comment": "株式報酬費用(SBC)は恒常的に発生する非現金コストであり、調整によりAdjusted EPSがGAAP EPS(5.75)から6.17へ約7.5%押し上げられている。市場がGAAP EPSのみで判断する場合、Amazonの現金生成力や成長投資実態が見えにくくなり、実力を過小評価するリスクがある。ただしSBCは従業員報酬の主要形態であり希薄化効果を伴うため、調整を過信すると過大評価のリスクも生じる。投資家は調整後EPSだけでなく、希薄化後株式数やキャッシュフローへの影響を総合的に検証すべき。",
+        "sources": [
+          {
+            "item": "sbc",
+            "snippet": "非現金費用としてadd_backされているが、テック企業における毎期発生する恒常的報酬コストであり一過性ではない(毎期発生するSBC)。",
+            "confidence": 0.25
+          }
+        ]
       }
     },
     {

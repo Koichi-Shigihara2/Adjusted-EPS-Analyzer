@@ -1,23 +1,138 @@
 {
   "ticker": "SNPS",
-  "last_updated": "2026-08-24T05:06:46.443814",
+  "last_updated": "2026-08-30T15:41:05.518379",
   "quarters": [
     {
+      "gaap_eps": 2.837993126004191,
+      "adjusted_eps": 4.480783447081448,
+      "gaap_net_income": 545800000.0,
+      "adjusted_net_income": 861739791.7592571,
+      "diluted_shares_used": 192319000.0,
+      "adjustments": [
+        {
+          "item_id": "sbc",
+          "item_name": "株式報酬費用",
+          "amount": 231604000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金費用",
+          "extracted_from": "us-gaap:ShareBasedCompensation",
+          "category": "株式報酬関連",
+          "net_amount": 184804833.8050572,
+          "tax_rate_applied": 0.20206544876143248
+        },
+        {
+          "item_id": "amortization_intangibles",
+          "item_name": "無形資産償却費",
+          "amount": 155174000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "買収関連無形資産の償却",
+          "extracted_from": "us-gaap:AmortizationOfIntangibleAssets",
+          "category": "買収・統合関連",
+          "net_amount": 123818696.05389348,
+          "tax_rate_applied": 0.20206544876143248
+        },
+        {
+          "item_id": "loan_loss_provision_abnormal",
+          "item_name": "貸倒引当金繰入（異常変動分）",
+          "amount": 7005000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "マクロ変動による一時的影響",
+          "extracted_from": "us-gaap:ProvisionForDoubtfulAccounts",
+          "category": "金融関連",
+          "net_amount": 5589531.531426165,
+          "tax_rate_applied": 0.20206544876143248
+        },
+        {
+          "item_id": "restructuring",
+          "item_name": "リストラ費用",
+          "amount": 2164000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "一過性の事業再編費用",
+          "extracted_from": "us-gaap:RestructuringCharges",
+          "category": "リストラ・事業再編関連",
+          "net_amount": 1726730.36888026,
+          "tax_rate_applied": 0.20206544876143248
+        }
+      ],
+      "net_adjustment_total": 315939791.75925714,
+      "filing_date": "2026-07-31",
+      "form": "10-Q",
+      "sector": "Technology",
+      "sector_exclusions": [
+        "inventory_writeoff",
+        "gov_subsidy_timing",
+        "fx_gains_losses",
+        "derivative_gains_losses",
+        "tax_one_time"
+      ],
+      "revenue": 2476822000.0,
+      "diluted_shares": 192319000.0,
+      "period_end": "2026-07-31",
+      "fiscal_year": 2026,
+      "quarter": 3,
+      "tax_expense": 138216000.0,
+      "pretax_income": 684016000.0,
+      "maturity_monitor": {
+        "alert": "SBC寄与率が40%超（現在 73.3%）",
+        "sbc_contribution": 0.733,
+        "sbc_to_revenue": 0.094,
+        "sbc_per_share": 1.2043,
+        "sector_threshold": {
+          "sbc_contribution": 0.4,
+          "sbc_to_revenue": 0.25
+        }
+      },
+      "ai_analysis": {
+        "health": "調整大",
+        "comment": "主な調整項目であるSBC（株式報酬）と無形資産償却は恒常的な非現金費用であり、リストラと異常貸倒引当は一過性と判断される。GAAP EPSで市場が判断する場合、これら非現金・買収関連費用によりSNPSのキャッシュ生成能力や事業実力が過小評価されている可能性が高い。ただしSBCは株主希薄化を伴う実質コストのため、調整後EPSが実態を過大に見せているリスクもあり、投資家は非GAAPトレンド、SBCの継続額、買収戦略の影響を注視すべき。全体として調整幅が大きく、過小評価の可能性はあるが慎重な評価が必要。",
+        "sources": [
+          {
+            "item": "sbc",
+            "snippet": "株式報酬費用は非現金費用だがテック企業で毎期発生する恒常的コストであり、株主希薄化の影響を伴う。",
+            "confidence": 0.2
+          },
+          {
+            "item": "amortization_intangibles",
+            "snippet": "買収関連無形資産の償却は継続的に発生する非現金費用で、恒常的な性質が強い。",
+            "confidence": 0.2
+          },
+          {
+            "item": "loan_loss_provision_abnormal",
+            "snippet": "マクロ変動による異常変動分の貸倒引当金は一時的・非経常的な影響として扱える。",
+            "confidence": 0.8
+          },
+          {
+            "item": "restructuring",
+            "snippet": "リストラ費用は一過性の事業再編費用であり、真に非経常的とみなせる。",
+            "confidence": 0.8
+          }
+        ]
+      }
+    },
+    {
       "gaap_eps": 0.0890217753351653,
-      "adjusted_eps": 2.3403287767288354,
+      "adjusted_eps": 2.3706033885837092,
       "gaap_net_income": 17105000.0,
-      "adjusted_net_income": 449680132.4757853,
+      "adjusted_net_income": 455497217.49602824,
       "diluted_shares_used": 192144000.0,
       "adjustments": [
         {
           "item_id": "sbc",
           "item_name": "株式報酬費用",
-          "amount": 222303000,
+          "amount": 222303000.0,
           "unit": "USD",
           "direction": "add_back",
           "pre_tax": true,
           "reason": "非現金費用",
-          "extracted_from": "us-gaap:AllocatedShareBasedCompensationExpense",
+          "extracted_from": "us-gaap:ShareBasedCompensation",
           "category": "株式報酬関連",
           "net_amount": 194869718.39286628,
           "tax_rate_applied": 0.12340490954748116
@@ -36,6 +151,19 @@
           "tax_rate_applied": 0.12340490954748116
         },
         {
+          "item_id": "loan_loss_provision_abnormal",
+          "item_name": "貸倒引当金繰入（異常変動分）",
+          "amount": 6636000.0,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "マクロ変動による一時的影響",
+          "extracted_from": "us-gaap:ProvisionForDoubtfulAccounts",
+          "category": "金融関連",
+          "net_amount": 5817085.020242915,
+          "tax_rate_applied": 0.12340490954748116
+        },
+        {
           "item_id": "restructuring",
           "item_name": "リストラ費用",
           "amount": 115894000,
@@ -49,7 +177,7 @@
           "tax_rate_applied": 0.12340490954748116
         }
       ],
-      "net_adjustment_total": 432575132.4757853,
+      "net_adjustment_total": 438392217.49602824,
       "filing_date": "2026-04-30",
       "form": "10-Q",
       "sector": "Technology",
@@ -66,38 +194,7 @@
       "fiscal_year": 2026,
       "quarter": 2,
       "tax_expense": 2408000.0,
-      "pretax_income": 19513000.0,
-      "maturity_monitor": {
-        "alert": "SBC寄与率が40%超（現在 51.4%）",
-        "sbc_contribution": 0.514,
-        "sbc_to_revenue": 0.098,
-        "sbc_per_share": 1.157,
-        "sector_threshold": {
-          "sbc_contribution": 0.4,
-          "sbc_to_revenue": 0.25
-        }
-      },
-      "ai_analysis": {
-        "health": "調整大",
-        "comment": "調整項目のうちSBCと無形資産償却は恒常的な非現金費用だが、リストラ費用は一過性である。GAAP EPSが0.089と極めて低い一方でAdjusted EPSが2.34と大幅に高いため、市場がGAAPベースで判断している場合に企業の実力が見えにくくなっており、過小評価の可能性が高い。ただしSBCは株主希薄化を伴う実質コストであるため、調整後数値に過度に依拠すると過大評価リスクもある。投資家はSBCの継続性と買収戦略の経済性を注視すべき。",
-        "sources": [
-          {
-            "item": "sbc",
-            "snippet": "株式報酬費用は非現金費用だがテック企業で毎期発生する恒常的コストであり、株主希薄化効果を伴う",
-            "confidence": 0.2
-          },
-          {
-            "item": "amortization_intangibles",
-            "snippet": "買収関連無形資産の償却は定期的に発生する非現金費用で、恒常的な調整項目に該当する",
-            "confidence": 0.2
-          },
-          {
-            "item": "restructuring",
-            "snippet": "リストラ費用は一過性の事業再編費用であり、調整の正当性が高い",
-            "confidence": 0.8
-          }
-        ]
-      }
+      "pretax_income": 19513000.0
     },
     {
       "gaap_eps": 0.34051855191285474,
@@ -1364,59 +1461,6 @@
       "quarter": 3,
       "tax_expense": 14945000.0,
       "pretax_income": 213591000.0
-    },
-    {
-      "gaap_eps": 1.2419259344143319,
-      "adjusted_eps": 1.8183475691715403,
-      "gaap_net_income": 195078000.0,
-      "adjusted_net_income": 285620581.12275803,
-      "diluted_shares_used": 157077000.0,
-      "adjustments": [
-        {
-          "item_id": "sbc",
-          "item_name": "株式報酬費用",
-          "amount": 79586000,
-          "unit": "USD",
-          "direction": "add_back",
-          "pre_tax": true,
-          "reason": "非現金費用",
-          "extracted_from": "us-gaap:AllocatedShareBasedCompensationExpense",
-          "category": "株式報酬関連",
-          "net_amount": 71787145.33155161,
-          "tax_rate_applied": 0.09799279607529442
-        },
-        {
-          "item_id": "amortization_intangibles",
-          "item_name": "無形資産償却費",
-          "amount": 20793000,
-          "unit": "USD",
-          "direction": "add_back",
-          "pre_tax": true,
-          "reason": "買収関連無形資産の償却",
-          "extracted_from": "us-gaap:AmortizationOfIntangibleAssets",
-          "category": "買収・統合関連",
-          "net_amount": 18755435.791206405,
-          "tax_rate_applied": 0.09799279607529442
-        }
-      ],
-      "net_adjustment_total": 90542581.12275802,
-      "filing_date": "2021-04-30",
-      "form": "10-Q",
-      "sector": "Technology",
-      "sector_exclusions": [
-        "inventory_writeoff",
-        "gov_subsidy_timing",
-        "fx_gains_losses",
-        "derivative_gains_losses",
-        "tax_one_time"
-      ],
-      "revenue": 1024323000.0,
-      "diluted_shares": 157077000.0,
-      "period_end": "2021-04-30",
-      "fiscal_year": 2021,
-      "quarter": 2,
-      "tax_expense": 21193000.0,
-      "pretax_income": 216271000.0
     }
   ]
 }

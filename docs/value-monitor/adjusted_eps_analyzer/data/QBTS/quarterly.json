@@ -1,6 +1,6 @@
 {
   "ticker": "QBTS",
-  "last_updated": "2026-08-24T05:01:53.761638",
+  "last_updated": "2026-08-30T15:37:47.456275",
   "quarters": [
     {
       "gaap_eps": -0.12951133940835932,
@@ -49,9 +49,20 @@
       "tax_expense": 8000.0,
       "pretax_income": -48020000.0,
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にリクエストエラーが発生しました: Request failed: HTTPSConnectionPool(host='api.x.ai', port=443): Read timed out. (read timeout=30)",
-        "sources": []
+        "health": "調整大",
+        "comment": "調整項目のSBCと無形資産償却費はいずれも恒常的に発生する費用であり、特にSBCは成長企業で継続的な報酬コストです。市場がGAAP EPS(-0.1295)で判断する場合、非現金項目を除いたAdjusted EPS(-0.0896)より厳しい評価となり、企業の実力(特にキャッシュベースの事業力)が過小評価される可能性があります。ただしSBCは株式希薄化を伴う実質コストのため、調整を過度に信用すると過大評価リスクが生じます。投資家は非GAAP依存を避け、収益成長や量子技術の進捗を注視すべきです。",
+        "sources": [
+          {
+            "item": "sbc",
+            "snippet": "株式報酬費用は非現金費用だが、毎期発生する恒常的なコスト(成長企業では継続的報酬)であり調整の正当性は限定的",
+            "confidence": 0.2
+          },
+          {
+            "item": "amortization_intangibles",
+            "snippet": "無形資産償却費は買収関連の定期的な非現金償却であり、恒常的な可能性が高い",
+            "confidence": 0.2
+          }
+        ]
       }
     },
     {
@@ -234,11 +245,11 @@
       "tax_expense": 0,
       "pretax_income": 0,
       "special_flags": [
-        "EPS_DISCREPANCY"
+        "FAIR_VALUE_ADJUSTED"
       ],
       "special_notes": {
         "fair_value_auto_detect": {
-          "flag": "EPS_DISCREPANCY",
+          "flag": "FAIR_VALUE_ADJUSTED",
           "detected_items": [
             {
               "item_name": "ワラント公正価値変動損益",
@@ -326,11 +337,11 @@
       "tax_expense": 0,
       "pretax_income": -167329000.0,
       "special_flags": [
-        "EPS_DISCREPANCY"
+        "FAIR_VALUE_ADJUSTED"
       ],
       "special_notes": {
         "fair_value_auto_detect": {
-          "flag": "EPS_DISCREPANCY",
+          "flag": "FAIR_VALUE_ADJUSTED",
           "detected_items": [
             {
               "item_name": "ワラント公正価値変動損益",
@@ -465,11 +476,11 @@
       "tax_expense": 0,
       "pretax_income": 0,
       "special_flags": [
-        "EPS_DISCREPANCY"
+        "FAIR_VALUE_ADJUSTED"
       ],
       "special_notes": {
         "fair_value_auto_detect": {
-          "flag": "EPS_DISCREPANCY",
+          "flag": "FAIR_VALUE_ADJUSTED",
           "detected_items": [
             {
               "item_name": "ワラント公正価値変動損益",

@@ -1,6 +1,6 @@
 {
   "ticker": "KULR",
-  "last_updated": "2026-08-24T05:04:26.043521",
+  "last_updated": "2026-08-30T15:39:17.442415",
   "quarters": [
     {
       "gaap_eps": -0.4744941954475474,
@@ -49,9 +49,20 @@
       "tax_expense": 0,
       "pretax_income": 0,
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にリクエストエラーが発生しました: Request failed: HTTPSConnectionPool(host='api.x.ai', port=443): Read timed out. (read timeout=30)",
-        "sources": []
+        "health": "調整中",
+        "comment": "SBCは恒常的な非現金費用として毎期発生する可能性が高く、調整の正当性は中程度。一方、貸倒引当金の異常変動分はマクロ要因による一時的影響と位置づけられる。GAAP EPSはこれら調整により実態より悪化して表示されており、市場がGAAPベースで判断する場合に企業の実力が見えにくくなり、過小評価のリスクが存在する。投資家はSBCの希薄化効果と異常引当金の今後の反転可能性に注目すべきで、過大評価リスクは限定的。",
+        "sources": [
+          {
+            "item": "sbc",
+            "snippet": "非現金費用だが毎期発生する株式報酬は恒常的な運用コスト",
+            "confidence": 0.2
+          },
+          {
+            "item": "loan_loss_provision_abnormal",
+            "snippet": "マクロ変動による一時的影響として異常変動分を加算",
+            "confidence": 0.65
+          }
+        ]
       }
     },
     {

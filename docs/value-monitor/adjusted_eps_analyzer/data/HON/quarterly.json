@@ -1,6 +1,6 @@
 {
   "ticker": "HON",
-  "last_updated": "2026-08-24T05:03:56.660935",
+  "last_updated": "2026-08-30T15:39:14.137970",
   "quarters": [
     {
       "gaap_eps": 17.83427495291902,
@@ -62,9 +62,25 @@
       "tax_expense": 1578000000.0,
       "pretax_income": 7260000000.0,
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にリクエストエラーが発生しました: Request failed: HTTPSConnectionPool(host='api.x.ai', port=443): Read timed out. (read timeout=30)",
-        "sources": []
+        "health": "調整中",
+        "comment": "調整項目には恒常的なSBCと無形資産償却（毎期発生する非現金費用）が含まれる一方、リストラ費用は一過性である。市場がGAAP EPSのみで判断する場合、非現金・一時的費用により企業の実力（調整後EPSベースの収益力）が過小評価される可能性がある。ただし恒常コストの加回しにより調整後EPSが実態以上に良好に見える過大評価リスクも伴う。投資家はSBCの希薄化効果とリストラの再発可能性を注視し、持続的な稼得力を評価すべき。",
+        "sources": [
+          {
+            "item": "sbc",
+            "snippet": "株式報酬費用は非現金費用だが、企業が継続的に付与する恒常的な運用コストである。",
+            "confidence": 0.2
+          },
+          {
+            "item": "amortization_intangibles",
+            "snippet": "買収関連無形資産の償却は過去のM&Aに基づき毎期発生する恒常的な非現金項目。",
+            "confidence": 0.2
+          },
+          {
+            "item": "restructuring",
+            "snippet": "リストラ費用は一過性の事業再編費用であり、調整して実力値を把握すべき。",
+            "confidence": 0.8
+          }
+        ]
       }
     },
     {

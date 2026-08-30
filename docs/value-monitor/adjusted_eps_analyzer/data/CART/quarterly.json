@@ -1,6 +1,6 @@
 {
   "ticker": "CART",
-  "last_updated": "2026-08-24T04:58:20.026903",
+  "last_updated": "2026-08-30T15:35:24.361104",
   "quarters": [
     {
       "gaap_eps": 0.445899532006347,
@@ -36,9 +36,15 @@
       "tax_expense": 36000000.0,
       "pretax_income": 147000000.0,
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にリクエストエラーが発生しました: Request failed: HTTPSConnectionPool(host='api.x.ai', port=443): Read timed out. (read timeout=30)",
-        "sources": []
+        "health": "過大調整",
+        "comment": "調整項目は恒常的な株式報酬費用(SBC)であり、非現金ながら継続的に発生するコストで株主希薄化も伴うため一過性調整とは評価しにくい。GAAP EPS 0.446に対しAdjusted EPS 0.877とほぼ2倍に上方修正されており、市場がGAAPベースで判断する場合に企業の実力(収益力)が過小評価される可能性がある。ただしSBCを全額加算戻しすると実態を過大評価するリスクも高く、投資家はSBCの絶対額推移・希薄化効果・将来の現金化影響を注視し、調整依存のEPSを過信しないよう留意すべき。",
+        "sources": [
+          {
+            "item": "sbc",
+            "snippet": "株式報酬費用は非現金費用としてadd_backされているが、テック企業で毎期発生する恒常的コストであり、株主価値の希薄化を伴うため非経常的とはみなせない(調整の信頼性は低い)。",
+            "confidence": 0.2
+          }
+        ]
       }
     },
     {

@@ -1,6 +1,6 @@
 {
   "ticker": "BBAI",
-  "last_updated": "2026-08-24T04:58:19.965603",
+  "last_updated": "2026-08-30T15:35:16.107554",
   "quarters": [
     {
       "gaap_eps": -0.053742286370096475,
@@ -78,9 +78,25 @@
         }
       },
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にリクエストエラーが発生しました: Request failed: HTTPSConnectionPool(host='api.x.ai', port=443): Read timed out. (read timeout=30)",
-        "sources": []
+        "health": "調整大",
+        "comment": "調整項目の大部分を占めるSBCと無形資産償却は恒常的な非現金費用であり、リストラのみ一過性。市場がGAAP EPS(-0.0537)で判断する場合、これら非現金項目による損失拡大でBBAIのAI事業の実力・成長ポテンシャルが過小評価されるリスクが高い。ただし恒常コストの大部分を加算還元した調整EPS(-0.0292)は業績を過大に見せる可能性もあり、過小評価と過大評価の両リスクが存在。投資家はキャッシュフロー持続性と希薄化効果を注視すべき。",
+        "sources": [
+          {
+            "item": "sbc",
+            "snippet": "株式報酬費用は毎期発生する非現金費用であり、恒常的な運用コストと見なされる。",
+            "confidence": 0.2
+          },
+          {
+            "item": "amortization_intangibles",
+            "snippet": "無形資産償却費は買収関連で複数年にわたって発生する非現金償却であり、恒常的である。",
+            "confidence": 0.2
+          },
+          {
+            "item": "restructuring",
+            "snippet": "リストラ費用は事業再編に伴う一過性の費用と分類される。",
+            "confidence": 0.8
+          }
+        ]
       }
     },
     {
@@ -149,11 +165,11 @@
       "tax_expense": 14000.0,
       "pretax_income": -56749000.0,
       "special_flags": [
-        "EPS_DISCREPANCY"
+        "FAIR_VALUE_ADJUSTED"
       ],
       "special_notes": {
         "fair_value_auto_detect": {
-          "flag": "EPS_DISCREPANCY",
+          "flag": "FAIR_VALUE_ADJUSTED",
           "detected_items": [
             {
               "item_name": "デリバティブ公正価値変動損益",
@@ -247,11 +263,11 @@
       "tax_expense": -21722000.0,
       "pretax_income": -27552000.0,
       "special_flags": [
-        "EPS_DISCREPANCY"
+        "FAIR_VALUE_ADJUSTED"
       ],
       "special_notes": {
         "fair_value_auto_detect": {
-          "flag": "EPS_DISCREPANCY",
+          "flag": "FAIR_VALUE_ADJUSTED",
           "detected_items": [
             {
               "item_name": "デリバティブ公正価値変動損益",
@@ -345,11 +361,11 @@
       "tax_expense": 17000.0,
       "pretax_income": 2538000.0,
       "special_flags": [
-        "EPS_DISCREPANCY"
+        "FAIR_VALUE_ADJUSTED"
       ],
       "special_notes": {
         "fair_value_auto_detect": {
-          "flag": "EPS_DISCREPANCY",
+          "flag": "FAIR_VALUE_ADJUSTED",
           "detected_items": [
             {
               "item_name": "デリバティブ公正価値変動損益",
@@ -469,11 +485,11 @@
       "tax_expense": 14000.0,
       "pretax_income": -228605000.0,
       "special_flags": [
-        "EPS_DISCREPANCY"
+        "FAIR_VALUE_ADJUSTED"
       ],
       "special_notes": {
         "fair_value_auto_detect": {
-          "flag": "EPS_DISCREPANCY",
+          "flag": "FAIR_VALUE_ADJUSTED",
           "detected_items": [
             {
               "item_name": "デリバティブ公正価値変動損益",
@@ -580,11 +596,11 @@
       "tax_expense": 25000.0,
       "pretax_income": -61961000.0,
       "special_flags": [
-        "EPS_DISCREPANCY"
+        "FAIR_VALUE_ADJUSTED"
       ],
       "special_notes": {
         "fair_value_auto_detect": {
-          "flag": "EPS_DISCREPANCY",
+          "flag": "FAIR_VALUE_ADJUSTED",
           "detected_items": [
             {
               "item_name": "デリバティブ公正価値変動損益",
@@ -691,11 +707,11 @@
       "tax_expense": -256000.0,
       "pretax_income": -146743000.0,
       "special_flags": [
-        "EPS_DISCREPANCY"
+        "FAIR_VALUE_ADJUSTED"
       ],
       "special_notes": {
         "fair_value_auto_detect": {
-          "flag": "EPS_DISCREPANCY",
+          "flag": "FAIR_VALUE_ADJUSTED",
           "detected_items": [
             {
               "item_name": "デリバティブ公正価値変動損益",
@@ -868,11 +884,11 @@
       "tax_expense": 15000.0,
       "pretax_income": -11722000.0,
       "special_flags": [
-        "EPS_DISCREPANCY"
+        "FAIR_VALUE_ADJUSTED"
       ],
       "special_notes": {
         "fair_value_auto_detect": {
-          "flag": "EPS_DISCREPANCY",
+          "flag": "FAIR_VALUE_ADJUSTED",
           "detected_items": [
             {
               "item_name": "デリバティブ公正価値変動損益",
@@ -1071,11 +1087,11 @@
       "tax_expense": 101000.0,
       "pretax_income": -21155000.0,
       "special_flags": [
-        "EPS_DISCREPANCY"
+        "FAIR_VALUE_ADJUSTED"
       ],
       "special_notes": {
         "fair_value_auto_detect": {
-          "flag": "EPS_DISCREPANCY",
+          "flag": "FAIR_VALUE_ADJUSTED",
           "detected_items": [
             {
               "item_name": "デリバティブ公正価値変動損益",
@@ -1169,11 +1185,11 @@
       "tax_expense": -5000.0,
       "pretax_income": 3994000.0,
       "special_flags": [
-        "EPS_DISCREPANCY"
+        "FAIR_VALUE_ADJUSTED"
       ],
       "special_notes": {
         "fair_value_auto_detect": {
-          "flag": "EPS_DISCREPANCY",
+          "flag": "FAIR_VALUE_ADJUSTED",
           "detected_items": [
             {
               "item_name": "デリバティブ公正価値変動損益",
@@ -1359,11 +1375,11 @@
       "tax_expense": 59000.0,
       "pretax_income": -26155000.0,
       "special_flags": [
-        "EPS_DISCREPANCY"
+        "FAIR_VALUE_ADJUSTED"
       ],
       "special_notes": {
         "fair_value_auto_detect": {
-          "flag": "EPS_DISCREPANCY",
+          "flag": "FAIR_VALUE_ADJUSTED",
           "detected_items": [
             {
               "item_name": "デリバティブ公正価値変動損益",

@@ -1,7 +1,123 @@
 {
   "ticker": "CRM",
-  "last_updated": "2026-08-24T04:58:50.642895",
+  "last_updated": "2026-08-30T15:35:45.825519",
   "quarters": [
+    {
+      "gaap_eps": 4.294762484774665,
+      "adjusted_eps": 2.772914530481709,
+      "gaap_net_income": 3526000000.0,
+      "adjusted_net_income": 2276562829.525483,
+      "diluted_shares_used": 821000000.0,
+      "adjustments": [
+        {
+          "item_id": "sbc",
+          "item_name": "株式報酬費用",
+          "amount": 906000000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金費用",
+          "extracted_from": "us-gaap:ShareBasedCompensation",
+          "category": "株式報酬関連",
+          "net_amount": 701791739.8945519,
+          "tax_rate_applied": 0.22539543057996486
+        },
+        {
+          "item_id": "restructuring",
+          "item_name": "リストラ費用",
+          "amount": 94000000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "一過性の事業再編費用",
+          "extracted_from": "us-gaap:RestructuringCharges",
+          "category": "リストラ・事業再編関連",
+          "net_amount": 72812829.52548331,
+          "tax_rate_applied": 0.22539543057996486
+        },
+        {
+          "item_id": "investment_fv_change",
+          "item_name": "投資公正価値変動損益",
+          "amount": -2613000000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金・非経常の投資時価評価変動",
+          "extracted_from": "us-gaap:GainLossOnInvestments",
+          "category": "公正価値変動関連",
+          "net_amount": -2024041739.894552,
+          "tax_rate_applied": 0.22539543057996486
+        }
+      ],
+      "net_adjustment_total": -1249437170.4745169,
+      "filing_date": "2026-07-31",
+      "form": "10-Q",
+      "sector": "Technology",
+      "sector_exclusions": [
+        "inventory_writeoff",
+        "gov_subsidy_timing",
+        "fx_gains_losses",
+        "derivative_gains_losses",
+        "tax_one_time"
+      ],
+      "revenue": 11345000000.0,
+      "diluted_shares": 821000000.0,
+      "period_end": "2026-07-31",
+      "fiscal_year": 2027,
+      "quarter": 2,
+      "tax_expense": 1026000000.0,
+      "pretax_income": 4552000000.0,
+      "special_flags": [
+        "FAIR_VALUE_ADJUSTED"
+      ],
+      "special_notes": {
+        "fair_value_auto_detect": {
+          "flag": "FAIR_VALUE_ADJUSTED",
+          "detected_items": [
+            {
+              "item_name": "投資公正価値変動損益",
+              "xbrl_tag": "us-gaap:GainLossOnInvestments",
+              "xbrl_value": 2613000000,
+              "adjustment_amount": -2613000000,
+              "net_amount": -2024041739.894552
+            }
+          ],
+          "condition1": "純利益変動87% / 売上変動11% = 8.0倍（閾値5倍）",
+          "note": "公正価値変動（非現金・非経常）が純利益の30%以上を占めると判定されました。GAAP EPSは経済実態を反映していない可能性があります。Adj EPSは以下の項目を除外して再計算しています: 投資公正価値変動損益"
+        }
+      },
+      "maturity_monitor": {
+        "alert": "SBC寄与率が40%超（現在 117.0%）",
+        "sbc_contribution": 1.17,
+        "sbc_to_revenue": 0.08,
+        "sbc_per_share": 1.1035,
+        "sector_threshold": {
+          "sbc_contribution": 0.4,
+          "sbc_to_revenue": 0.25
+        }
+      },
+      "ai_analysis": {
+        "health": "調整大",
+        "comment": "投資公正価値変動の巨額マイナス調整（-26億ドル規模）によりGAAP EPS（4.29）がAdjusted EPS（2.77）を大幅に上回る形となっている。市場がGAAP EPSで判断する場合、一時的な投資益が実力を過大に見せ、継続的な事業収益力が見えにくくなる。SBCは恒常的コストのため調整の妥当性に疑問が残るが、全体として過大評価リスクが高く、過小評価の可能性は低い。",
+        "sources": [
+          {
+            "item": "sbc",
+            "snippet": "株式報酬費用は非現金費用だがテック企業では毎期発生する恒常的な運用コストであり、調整により実力を過大評価するリスクがある。",
+            "confidence": 0.2
+          },
+          {
+            "item": "restructuring",
+            "snippet": "リストラ費用は一過性の事業再編費用であり、調整することでコアな収益力をより明確に反映する。",
+            "confidence": 0.8
+          },
+          {
+            "item": "investment_fv_change",
+            "snippet": "投資公正価値変動損益は非現金・非経常の時価評価変動であり、ボラティリティを排除して実力評価を改善する。",
+            "confidence": 0.85
+          }
+        ]
+      }
+    },
     {
       "gaap_eps": 2.4190585533869116,
       "adjusted_eps": 3.2520823918740622,
@@ -53,22 +169,7 @@
       "fiscal_year": 2027,
       "quarter": 1,
       "tax_expense": 614000000.0,
-      "pretax_income": 2721000000.0,
-      "maturity_monitor": {
-        "alert": "SBC寄与率が40%超（現在 118.1%）",
-        "sbc_contribution": 1.181,
-        "sbc_to_revenue": 0.077,
-        "sbc_per_share": 0.9839,
-        "sector_threshold": {
-          "sbc_contribution": 0.4,
-          "sbc_to_revenue": 0.25
-        }
-      },
-      "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にリクエストエラーが発生しました: Request failed: HTTPSConnectionPool(host='api.x.ai', port=443): Read timed out. (read timeout=30)",
-        "sources": []
-      }
+      "pretax_income": 2721000000.0
     },
     {
       "gaap_eps": 2.032426778242678,
@@ -719,11 +820,11 @@
       "tax_expense": 127000000.0,
       "pretax_income": 326000000.0,
       "special_flags": [
-        "EPS_DISCREPANCY"
+        "FAIR_VALUE_ADJUSTED"
       ],
       "special_notes": {
         "fair_value_auto_detect": {
-          "flag": "EPS_DISCREPANCY",
+          "flag": "FAIR_VALUE_ADJUSTED",
           "detected_items": [
             {
               "item_name": "投資公正価値変動損益",
@@ -737,46 +838,6 @@
           "note": "公正価値変動（非現金・非経常）が純利益の30%以上を占めると判定されました。GAAP EPSは経済実態を反映していない可能性があります。Adj EPSは以下の項目を除外して再計算しています: 投資公正価値変動損益"
         }
       }
-    },
-    {
-      "gaap_eps": 0.21,
-      "adjusted_eps": 0.87597,
-      "gaap_net_income": 210000000.0,
-      "adjusted_net_income": 875970000.0,
-      "diluted_shares_used": 1000000000.0,
-      "adjustments": [
-        {
-          "item_id": "sbc",
-          "item_name": "株式報酬費用",
-          "amount": 843000000,
-          "unit": "USD",
-          "direction": "add_back",
-          "pre_tax": true,
-          "reason": "非現金費用",
-          "extracted_from": "us-gaap:ShareBasedCompensation",
-          "category": "株式報酬関連",
-          "net_amount": 665970000.0,
-          "tax_rate_applied": 0.21
-        }
-      ],
-      "net_adjustment_total": 665970000.0,
-      "filing_date": "2022-10-31",
-      "form": "10-Q",
-      "sector": "Technology",
-      "sector_exclusions": [
-        "inventory_writeoff",
-        "gov_subsidy_timing",
-        "fx_gains_losses",
-        "derivative_gains_losses",
-        "tax_one_time"
-      ],
-      "revenue": 7837000000.0,
-      "diluted_shares": 1000000000.0,
-      "period_end": "2022-10-31",
-      "fiscal_year": 2023,
-      "quarter": 3,
-      "tax_expense": 265000000.0,
-      "pretax_income": 475000000.0
     }
   ]
 }

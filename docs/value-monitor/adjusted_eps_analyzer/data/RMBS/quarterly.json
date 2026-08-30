@@ -1,6 +1,6 @@
 {
   "ticker": "RMBS",
-  "last_updated": "2026-08-24T05:07:16.777268",
+  "last_updated": "2026-08-30T15:41:30.403004",
   "quarters": [
     {
       "gaap_eps": 0.5455722046009698,
@@ -65,9 +65,20 @@
         }
       },
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にリクエストエラーが発生しました: Request failed: HTTPSConnectionPool(host='api.x.ai', port=443): Read timed out. (read timeout=30)",
-        "sources": []
+        "health": "調整大",
+        "comment": "SBCと無形資産償却費はいずれも恒常的に発生する項目であり、特にSBCは従業員インセンティブとして実質的なコストを伴います。GAAP EPSに比べてAdjusted EPSが約19%高い水準にあるため、市場がGAAPベースで評価している場合に企業の実力（キャッシュ生成力）が過小評価されている可能性があります。ただし、これらを全額加回する調整は実態を過大評価するリスクもあり、株主希薄化効果や買収の経済的コストを考慮する必要があります。投資家は非GAAP指標の持続可能性と真の経済利益を慎重に検証すべきです。",
+        "sources": [
+          {
+            "item": "sbc",
+            "snippet": "非現金費用だが毎期継続的に発生する株式報酬コストであり、従業員報酬の実質的支出を反映",
+            "confidence": 0.2
+          },
+          {
+            "item": "amortization_intangibles",
+            "snippet": "買収関連無形資産の償却で、買収後も複数期にわたり恒常的に計上される費用",
+            "confidence": 0.2
+          }
+        ]
       }
     },
     {
@@ -774,11 +785,11 @@
       "tax_expense": 201000.0,
       "pretax_income": 3482000.0,
       "special_flags": [
-        "EPS_DISCREPANCY"
+        "FAIR_VALUE_ADJUSTED"
       ],
       "special_notes": {
         "fair_value_auto_detect": {
-          "flag": "EPS_DISCREPANCY",
+          "flag": "FAIR_VALUE_ADJUSTED",
           "detected_items": [
             {
               "item_name": "偶発対価公正価値変動損益",
@@ -938,11 +949,11 @@
       "tax_expense": 2501000.0,
       "pretax_income": 3440000.0,
       "special_flags": [
-        "EPS_DISCREPANCY"
+        "FAIR_VALUE_ADJUSTED"
       ],
       "special_notes": {
         "fair_value_auto_detect": {
-          "flag": "EPS_DISCREPANCY",
+          "flag": "FAIR_VALUE_ADJUSTED",
           "detected_items": [
             {
               "item_name": "偶発対価公正価値変動損益",
@@ -1143,11 +1154,11 @@
       "tax_expense": 4952000.0,
       "pretax_income": 11057000.0,
       "special_flags": [
-        "EPS_DISCREPANCY"
+        "FAIR_VALUE_ADJUSTED"
       ],
       "special_notes": {
         "fair_value_auto_detect": {
-          "flag": "EPS_DISCREPANCY",
+          "flag": "FAIR_VALUE_ADJUSTED",
           "detected_items": [
             {
               "item_name": "偶発対価公正価値変動損益",

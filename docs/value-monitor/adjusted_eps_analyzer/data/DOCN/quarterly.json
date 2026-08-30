@@ -1,6 +1,6 @@
 {
   "ticker": "DOCN",
-  "last_updated": "2026-08-24T05:04:57.653096",
+  "last_updated": "2026-08-30T15:39:57.419651",
   "quarters": [
     {
       "gaap_eps": 0.2800281316180422,
@@ -52,9 +52,15 @@
         }
       },
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にリクエストエラーが発生しました: Request failed: HTTPSConnectionPool(host='api.x.ai', port=443): Read timed out. (read timeout=30)",
-        "sources": []
+        "health": "過大調整",
+        "comment": "SBCは恒常的なコスト（毎期発生する株式報酬）であり一過性ではないため、調整加算によりAdjusted EPSが大きく押し上げられている（0.28→0.46）。市場がGAAP EPS基準で評価する場合、非現金とはいえ株主希薄化を伴う実質コストが排除され企業の実力が見えにくくなり、銘柄の過小評価リスクが生じる。ただしSBC調整は本質的に過大調整の可能性が高く、投資家は希薄化影響や持続可能性を注視すべきで、過大評価リスクも同時に抱える。",
+        "sources": [
+          {
+            "item": "sbc",
+            "snippet": "株式報酬費用は非現金費用としてadd_backされるが、技術企業において毎期発生する恒常的な運用コストであり株主希薄化を伴う",
+            "confidence": 0.2
+          }
+        ]
       }
     },
     {

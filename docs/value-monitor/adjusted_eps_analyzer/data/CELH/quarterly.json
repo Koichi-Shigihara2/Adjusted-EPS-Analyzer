@@ -1,6 +1,6 @@
 {
   "ticker": "CELH",
-  "last_updated": "2026-08-24T04:58:50.623932",
+  "last_updated": "2026-08-30T15:35:37.921833",
   "quarters": [
     {
       "gaap_eps": 0.21520396367924713,
@@ -74,9 +74,20 @@
         }
       },
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にリクエストエラーが発生しました: Request failed: HTTPSConnectionPool(host='api.x.ai', port=443): Read timed out. (read timeout=30)",
-        "sources": []
+        "health": "調整大",
+        "comment": "リストラ費用は一過性の事業再編コストと判断され調整の妥当性が高い一方、無形資産償却は買収に伴う継続的な非現金費用であり恒常的性格が強い。GAAP EPS 0.215に対しAdjusted EPS 0.484と2倍以上に跳ね上がる大規模調整のため、市場がGAAPベースで評価している場合に企業の実力（真の収益力）が大幅に過小評価されている可能性がある。投資家はリストラの再発リスクと償却費の継続性を注視すべきで、過小評価の投資機会がある一方、過大調整による楽観視リスクも存在する。",
+        "sources": [
+          {
+            "item": "amortization_intangibles",
+            "snippet": "買収関連無形資産の償却は、買収後も複数期にわたって発生する恒常的な非現金費用であるため、調整の一過性は限定的。",
+            "confidence": 0.2
+          },
+          {
+            "item": "restructuring",
+            "snippet": "一過性の事業再編費用であり、事業構造の見直しに伴う臨時的な支出と位置づけられる。",
+            "confidence": 0.8
+          }
+        ]
       }
     },
     {

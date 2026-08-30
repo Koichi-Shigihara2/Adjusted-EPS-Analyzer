@@ -1,6 +1,6 @@
 {
   "ticker": "NET",
-  "last_updated": "2026-08-24T05:00:53.158988",
+  "last_updated": "2026-08-30T15:37:19.995709",
   "quarters": [
     {
       "gaap_eps": -0.47971969949256915,
@@ -78,9 +78,25 @@
         }
       },
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にリクエストエラーが発生しました: Request failed: HTTPSConnectionPool(host='api.x.ai', port=443): Read timed out. (read timeout=30)",
-        "sources": []
+        "health": "過大調整",
+        "comment": "調整項目の大部分を占めるSBC（恒常的コスト）と無形資産償却は毎期発生する性質が強く、リストラは一過性だが全体として調整幅が大きくGAAP EPSを-0.48から+0.41へ転換させている。市場がGAAP EPSで判断する場合、企業の実力（調整後収益力）が大幅に見えにくくなっており過小評価の可能性がある一方、恒常的SBCのadd backが大きいため調整の信頼性が低く過大評価リスクも伴う。投資家はSBCによる希薄化効果と持続可能性に特に注目すべき。",
+        "sources": [
+          {
+            "item": "sbc",
+            "snippet": "株式報酬費用は非現金費用だが、テック企業では毎期継続的に発生する恒常的コストである。",
+            "confidence": 0.2
+          },
+          {
+            "item": "amortization_intangibles",
+            "snippet": "無形資産償却費は買収関連で定期的に発生する非現金項目。",
+            "confidence": 0.2
+          },
+          {
+            "item": "restructuring",
+            "snippet": "リストラ費用は一過性の事業再編費用として調整されることが一般的。",
+            "confidence": 0.8
+          }
+        ]
       }
     },
     {

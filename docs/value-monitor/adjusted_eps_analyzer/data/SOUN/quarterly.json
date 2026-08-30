@@ -1,6 +1,6 @@
 {
   "ticker": "SOUN",
-  "last_updated": "2026-08-24T05:02:25.539200",
+  "last_updated": "2026-08-30T15:38:09.678630",
   "quarters": [
     {
       "gaap_eps": -0.09761119639200823,
@@ -65,9 +65,20 @@
         }
       },
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にリクエストエラーが発生しました: Request failed: HTTPSConnectionPool(host='api.x.ai', port=443): Read timed out. (read timeout=30)",
-        "sources": []
+        "health": "調整大",
+        "comment": "SBCと無形資産償却はともに恒常的な非現金項目（特にSBCはテック企業で継続的に発生し株主希薄化を伴う）であるため、調整により損失が半減近くに見えるが、これは企業の実力をやや過大評価させるリスクがある。市場がGAAP EPS（-0.0976）で判断する場合、非現金費用の影響で実力（キャッシュフローベースの改善）を過小評価している可能性はある。ただしSBCの恒常性を考慮すると過小評価の程度は限定的で、投資家は希薄化効果や将来の現金収支を注視すべき。過大調整の懸念が残る。",
+        "sources": [
+          {
+            "item": "sbc",
+            "snippet": "株式報酬費用は非現金費用だが、毎期発生する恒常的なコストであり、株主希薄化を伴う（調整項目のreason: 非現金費用、category: 株式報酬関連）",
+            "confidence": 0.2
+          },
+          {
+            "item": "amortization_intangibles",
+            "snippet": "無形資産償却費は買収関連で一定期間毎期発生する恒常的な非現金償却（調整項目のreason: 買収関連無形資産の償却、category: 買収・統合関連）",
+            "confidence": 0.2
+          }
+        ]
       }
     },
     {
@@ -136,11 +147,11 @@
       "tax_expense": 798000.0,
       "pretax_income": -24230000.0,
       "special_flags": [
-        "EPS_DISCREPANCY"
+        "FAIR_VALUE_ADJUSTED"
       ],
       "special_notes": {
         "fair_value_auto_detect": {
-          "flag": "EPS_DISCREPANCY",
+          "flag": "FAIR_VALUE_ADJUSTED",
           "detected_items": [
             {
               "item_name": "偶発対価公正価値変動損益",
@@ -221,11 +232,11 @@
       "tax_expense": 4732000.0,
       "pretax_income": 44789000.0,
       "special_flags": [
-        "EPS_DISCREPANCY"
+        "FAIR_VALUE_ADJUSTED"
       ],
       "special_notes": {
         "fair_value_auto_detect": {
-          "flag": "EPS_DISCREPANCY",
+          "flag": "FAIR_VALUE_ADJUSTED",
           "detected_items": [
             {
               "item_name": "偶発対価公正価値変動損益",
@@ -306,7 +317,8 @@
       "tax_expense": 457000.0,
       "pretax_income": -108814000.0,
       "special_flags": [
-        "EPS_DISCREPANCY"
+        "EPS_DISCREPANCY",
+        "FAIR_VALUE_ADJUSTED"
       ],
       "special_notes": {
         "eps_discrepancy": {
@@ -317,7 +329,7 @@
           "note": "XBRLと公式発表のGAAP EPSに785%の差異があります。公式EPS: $-0.03, XBRL計算EPS: $-0.27。買収関連負債の公正価値変動など、特殊な会計処理が影響している可能性があります。当ツールのAdj EPSはこれらの一過性項目を除外した実力ベースの値です。"
         },
         "fair_value_auto_detect": {
-          "flag": "EPS_DISCREPANCY",
+          "flag": "FAIR_VALUE_ADJUSTED",
           "detected_items": [
             {
               "item_name": "偶発対価公正価値変動損益",
@@ -451,7 +463,8 @@
       "tax_expense": 819000.0,
       "pretax_income": 130751000.0,
       "special_flags": [
-        "EPS_DISCREPANCY"
+        "EPS_DISCREPANCY",
+        "FAIR_VALUE_ADJUSTED"
       ],
       "special_notes": {
         "eps_discrepancy": {
@@ -462,7 +475,7 @@
           "note": "XBRLと公式発表のGAAP EPSに623%の差異があります。公式EPS: $-0.06, XBRL計算EPS: $0.31。買収関連負債の公正価値変動など、特殊な会計処理が影響している可能性があります。当ツールのAdj EPSはこれらの一過性項目を除外した実力ベースの値です。"
         },
         "fair_value_auto_detect": {
-          "flag": "EPS_DISCREPANCY",
+          "flag": "FAIR_VALUE_ADJUSTED",
           "detected_items": [
             {
               "item_name": "偶発対価公正価値変動損益",
@@ -543,7 +556,8 @@
       "tax_expense": -9247000.0,
       "pretax_income": -267846000.0,
       "special_flags": [
-        "EPS_DISCREPANCY"
+        "EPS_DISCREPANCY",
+        "FAIR_VALUE_ADJUSTED"
       ],
       "special_notes": {
         "eps_discrepancy": {
@@ -554,7 +568,7 @@
           "note": "XBRLと公式発表のGAAP EPSに1428%の差異があります。公式EPS: $-0.05, XBRL計算EPS: $-0.76。買収関連負債の公正価値変動など、特殊な会計処理が影響している可能性があります。当ツールのAdj EPSはこれらの一過性項目を除外した実力ベースの値です。"
         },
         "fair_value_auto_detect": {
-          "flag": "EPS_DISCREPANCY",
+          "flag": "FAIR_VALUE_ADJUSTED",
           "detected_items": [
             {
               "item_name": "偶発対価公正価値変動損益",

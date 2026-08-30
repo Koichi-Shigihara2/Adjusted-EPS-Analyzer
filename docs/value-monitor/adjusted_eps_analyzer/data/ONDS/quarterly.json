@@ -1,6 +1,6 @@
 {
   "ticker": "ONDS",
-  "last_updated": "2026-08-24T05:01:23.542036",
+  "last_updated": "2026-08-30T15:37:37.140645",
   "quarters": [
     {
       "gaap_eps": -0.17552269392148023,
@@ -49,9 +49,15 @@
         }
       },
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にリクエストエラーが発生しました: Request failed: HTTPSConnectionPool(host='api.x.ai', port=443): Read timed out. (read timeout=30)",
-        "sources": []
+        "health": "調整中",
+        "comment": "調整項目は市場金利変動によるローン公正価値評価損の一時的加算戻しであり、非コア・非現金的な性質を持つ。市場がGAAP EPS（より大きな赤字）の数値で判断する場合、企業のコア事業の実力やキャッシュ生成力が歪められて見えにくくなっており、結果として銘柄の実力を過小評価している可能性がある。投資家としては金融関連の公正価値変動を除いたAdjusted EPSに着目すべきだが、毎期金利環境次第で同様の変動が繰り返されるリスクもあり、過大評価に繋がる恐れも否定できない。",
+        "sources": [
+          {
+            "item": "loan_fair_value",
+            "snippet": "市場金利変動による一時的評価替え。us-gaap:FairValueOptionChangesInFairValueGainLoss1から抽出された金融関連の非経常項目。",
+            "confidence": 0.6
+          }
+        ]
       }
     },
     {
@@ -91,11 +97,11 @@
       "tax_expense": 245000.0,
       "pretax_income": 363041000.0,
       "special_flags": [
-        "EPS_DISCREPANCY"
+        "FAIR_VALUE_ADJUSTED"
       ],
       "special_notes": {
         "fair_value_auto_detect": {
-          "flag": "EPS_DISCREPANCY",
+          "flag": "FAIR_VALUE_ADJUSTED",
           "detected_items": [
             {
               "item_name": "ワラント公正価値変動損益",
@@ -160,11 +166,11 @@
       "tax_expense": 488000.0,
       "pretax_income": -99379644.0,
       "special_flags": [
-        "EPS_DISCREPANCY"
+        "FAIR_VALUE_ADJUSTED"
       ],
       "special_notes": {
         "fair_value_auto_detect": {
-          "flag": "EPS_DISCREPANCY",
+          "flag": "FAIR_VALUE_ADJUSTED",
           "detected_items": [
             {
               "item_name": "ワラント公正価値変動損益",
@@ -216,11 +222,11 @@
       "tax_expense": 307456.0,
       "pretax_income": -7173400.0,
       "special_flags": [
-        "EPS_DISCREPANCY"
+        "FAIR_VALUE_ADJUSTED"
       ],
       "special_notes": {
         "fair_value_auto_detect": {
-          "flag": "EPS_DISCREPANCY",
+          "flag": "FAIR_VALUE_ADJUSTED",
           "detected_items": [
             {
               "item_name": "投資公正価値変動損益",

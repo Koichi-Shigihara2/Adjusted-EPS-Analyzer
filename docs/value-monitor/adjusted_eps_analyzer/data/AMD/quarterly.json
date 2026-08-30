@@ -1,6 +1,6 @@
 {
   "ticker": "AMD",
-  "last_updated": "2026-08-24T04:57:18.992216",
+  "last_updated": "2026-08-30T15:34:34.778151",
   "quarters": [
     {
       "gaap_eps": 1.38456901748041,
@@ -52,9 +52,15 @@
         }
       },
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にリクエストエラーが発生しました: Request failed: HTTPSConnectionPool(host='api.x.ai', port=443): Read timed out. (read timeout=30)",
-        "sources": []
+        "health": "過大調整",
+        "comment": "SBCは技術企業において毎期継続的に発生する恒常的なコストであり、一過性とは言えないため、この調整によりAdjusted EPSが過大に表示される可能性が高い。市場がGAAP EPS（1.38）を基準に評価する場合、SBCの影響で企業の実力（キャッシュ生成力）が過小評価されやすく、株価に下方圧力がかかるリスクがある。ただし株式報酬による希薄化効果を考慮すると、Adjusted EPS relianceは過大評価リスクを伴う。投資家はSBC調整後の実質EPSと希薄化後株式数を注視し、持続可能性を慎重に判断すべき。",
+        "sources": [
+          {
+            "item": "sbc",
+            "snippet": "株式報酬費用は非現金費用としてadd_backされているが、AMDのようなテック企業では継続的な人材確保コストであり恒常的。希薄化を伴う実質的な費用。",
+            "confidence": 0.2
+          }
+        ]
       }
     },
     {
@@ -176,11 +182,11 @@
       "tax_expense": -103000000.0,
       "pretax_income": 1408000000.0,
       "special_flags": [
-        "EPS_DISCREPANCY"
+        "FAIR_VALUE_ADJUSTED"
       ],
       "special_notes": {
         "fair_value_auto_detect": {
-          "flag": "EPS_DISCREPANCY",
+          "flag": "FAIR_VALUE_ADJUSTED",
           "detected_items": [
             {
               "item_name": "偶発対価公正価値変動損益",

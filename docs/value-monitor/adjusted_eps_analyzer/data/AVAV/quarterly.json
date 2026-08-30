@@ -1,6 +1,6 @@
 {
   "ticker": "AVAV",
-  "last_updated": "2026-08-24T04:57:49.572992",
+  "last_updated": "2026-08-30T15:35:02.913838",
   "quarters": [
     {
       "gaap_eps": -0.49092081694536915,
@@ -88,9 +88,35 @@
       "tax_expense": -23059000.0,
       "pretax_income": -47157000.0,
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にリクエストエラーが発生しました: Request failed: HTTPSConnectionPool(host='api.x.ai', port=443): Read timed out. (read timeout=30)",
-        "sources": []
+        "health": "調整大",
+        "comment": "調整項目の合計が大きく、GAAP EPSが-0.49の赤字に対しAdjusted EPSが+1.12と大幅に黒字化している。のれん減損や在庫評価損・異常貸倒引当は一過性が高い一方、SBCと無形資産償却は買収後にも恒常的に発生しやすい性質を持つ。市場がGAAP EPS中心に判断する場合、非現金・非経常項目の影響で企業の実力（キャッシュ生成力や調整後収益性）が過小評価されている可能性が高い。ただし調整規模が極めて大きいため、恒常費用の除外により実力の過大評価リスクも存在する。投資家はSBCの継続性、のれん計上の背景、フリーキャッシュフローを重点的に検証すべき。",
+        "sources": [
+          {
+            "item": "sbc",
+            "snippet": "非現金費用",
+            "confidence": 0.2
+          },
+          {
+            "item": "amortization_intangibles",
+            "snippet": "買収関連無形資産の償却",
+            "confidence": 0.3
+          },
+          {
+            "item": "goodwill_impairment",
+            "snippet": "非現金減損",
+            "confidence": 0.8
+          },
+          {
+            "item": "loan_loss_provision_abnormal",
+            "snippet": "マクロ変動による一時的影響",
+            "confidence": 0.85
+          },
+          {
+            "item": "inventory_writeoff",
+            "snippet": "一過性の在庫評価損",
+            "confidence": 0.75
+          }
+        ]
       }
     },
     {
@@ -497,11 +523,11 @@
       "tax_expense": -605000.0,
       "pretax_income": -2359000.0,
       "special_flags": [
-        "EPS_DISCREPANCY"
+        "FAIR_VALUE_ADJUSTED"
       ],
       "special_notes": {
         "fair_value_auto_detect": {
-          "flag": "EPS_DISCREPANCY",
+          "flag": "FAIR_VALUE_ADJUSTED",
           "detected_items": [
             {
               "item_name": "投資公正価値変動損益",
@@ -1139,11 +1165,11 @@
       "tax_expense": -531000.0,
       "pretax_income": -1207000.0,
       "special_flags": [
-        "EPS_DISCREPANCY"
+        "FAIR_VALUE_ADJUSTED"
       ],
       "special_notes": {
         "fair_value_auto_detect": {
-          "flag": "EPS_DISCREPANCY",
+          "flag": "FAIR_VALUE_ADJUSTED",
           "detected_items": [
             {
               "item_name": "投資公正価値変動損益",

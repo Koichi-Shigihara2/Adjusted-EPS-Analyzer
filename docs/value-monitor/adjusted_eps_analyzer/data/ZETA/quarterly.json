@@ -1,6 +1,6 @@
 {
   "ticker": "ZETA",
-  "last_updated": "2026-08-24T05:02:55.863160",
+  "last_updated": "2026-08-30T15:38:23.185185",
   "quarters": [
     {
       "gaap_eps": 0.031853423337058866,
@@ -65,9 +65,20 @@
         }
       },
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にリクエストエラーが発生しました: Request failed: HTTPSConnectionPool(host='api.x.ai', port=443): Read timed out. (read timeout=30)",
-        "sources": []
+        "health": "調整大",
+        "comment": "SBCと無形資産償却の両調整項目は恒常的な性質が強く、毎期発生する非現金費用である。GAAP EPSが0.032と低く抑えられているため、市場がGAAPベースで判断する場合にZETAの実力（調整後EPS 0.282）が過小評価されている可能性がある。ただしSBCは株主希薄化を伴う実質コスト、無形資産償却も買収の経済効果を反映するため、調整後EPSを過度に信頼すると過大評価リスクが生じる。投資家はフリーキャッシュフローや希薄化後EPSを併せて検証すべき。",
+        "sources": [
+          {
+            "item": "sbc",
+            "snippet": "株式報酬費用は非現金だが恒常的な運用コストであり、株主希薄化を伴う実質的な費用である（毎期発生するSBC）。",
+            "confidence": 0.2
+          },
+          {
+            "item": "amortization_intangibles",
+            "snippet": "無形資産償却費は買収関連の恒常的非現金費用であり、経済的コストを反映する（毎期発生する無形資産償却）。",
+            "confidence": 0.2
+          }
+        ]
       }
     },
     {

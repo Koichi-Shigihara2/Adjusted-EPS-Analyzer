@@ -1,6 +1,6 @@
 {
   "ticker": "FROG",
-  "last_updated": "2026-08-24T05:05:58.675201",
+  "last_updated": "2026-08-30T15:40:38.802635",
   "quarters": [
     {
       "gaap_eps": -0.03419093810764593,
@@ -65,9 +65,20 @@
         }
       },
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にリクエストエラーが発生しました: Request failed: HTTPSConnectionPool(host='api.x.ai', port=443): Read timed out. (read timeout=30)",
-        "sources": []
+        "health": "過大調整",
+        "comment": "SBCと無形資産償却はともに恒常的な項目（成長企業における毎期のSBC発生、無形資産の継続償却）であり一過性ではないため、GAAP EPS(-0.034)が赤字でもAdjusted EPS(0.237)へ大幅加算される調整は企業の実力を過大に見せかける可能性が高い。市場がGAAPベースで判断する場合、むしろ実力の過小評価ではなく適切な警戒をしていると考えられ、過小評価リスクは低い。投資家はSBCによる株主希薄化効果や償却の継続性を注視し、調整依存の収益性を過信しないよう留意すべき。",
+        "sources": [
+          {
+            "item": "sbc",
+            "snippet": "株式報酬費用は非現金費用だが恒常的に発生する報酬コストであり一過性ではない(毎期の事業運営に必要なコスト)。",
+            "confidence": 0.2
+          },
+          {
+            "item": "amortization_intangibles",
+            "snippet": "無形資産償却費は買収関連無形資産の継続的な償却であり恒常的コスト。",
+            "confidence": 0.2
+          }
+        ]
       }
     },
     {

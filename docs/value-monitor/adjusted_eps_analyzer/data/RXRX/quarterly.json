@@ -1,6 +1,6 @@
 {
   "ticker": "RXRX",
-  "last_updated": "2026-08-24T05:01:55.089407",
+  "last_updated": "2026-08-30T15:37:52.624930",
   "quarters": [
     {
       "gaap_eps": -0.24603722173841444,
@@ -62,9 +62,20 @@
         }
       },
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にリクエストエラーが発生しました: Request failed: HTTPSConnectionPool(host='api.x.ai', port=443): Read timed out. (read timeout=30)",
-        "sources": []
+        "health": "調整大",
+        "comment": "調整項目のSBCと無形資産償却費は主に恒常的な非現金費用であり、特にSBCはバイオテック企業で毎期発生する継続コストです。市場がGAAP EPS(-0.246)で判断する場合、非現金調整を加味した企業の実力(Adjusted EPS -0.188)が歪められ過小評価の可能性がありますが、SBCの株式希薄化効果を考慮するとGAAPの方が経済実態を反映しており、調整依存による過大評価リスクもあります。投資家は調整後の数字だけでなく、継続的なSBC規模や希薄化・キャッシュバーンに注目すべきです。",
+        "sources": [
+          {
+            "item": "sbc",
+            "snippet": "株式報酬費用は非現金費用だが、成長企業で継続的に発生する恒常的コストであり一過性ではない",
+            "confidence": 0.2
+          },
+          {
+            "item": "amortization_intangibles",
+            "snippet": "無形資産償却費は買収関連の非現金償却だが、定期的に発生する恒常的な項目である",
+            "confidence": 0.2
+          }
+        ]
       }
     },
     {

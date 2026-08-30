@@ -1,6 +1,6 @@
 {
   "ticker": "CAKE",
-  "last_updated": "2026-08-24T04:58:20.257917",
+  "last_updated": "2026-08-30T15:35:15.947167",
   "quarters": [
     {
       "gaap_eps": 1.4104763868838937,
@@ -36,9 +36,15 @@
       "tax_expense": 8509000.0,
       "pretax_income": 76903000.0,
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にリクエストエラーが発生しました: Request failed: HTTPSConnectionPool(host='api.x.ai', port=443): Read timed out. (read timeout=30)",
-        "sources": []
+        "health": "過大調整",
+        "comment": "SBCは恒常的な報酬コスト（非現金だが株主希薄化を伴う）であるため、この調整は企業の持続可能な実力を過大に見せている可能性が高い。市場がGAAP EPS（1.41）で判断する場合、SBCの経済的コストを適切に反映しており実力が見えにくくなるというより保守的な評価となっている。投資家はSBCの継続規模と業績連動性を注視すべきであり、調整依存により過大評価リスクが存在する。過小評価の可能性は低い。",
+        "sources": [
+          {
+            "item": "sbc",
+            "snippet": "株式報酬費用は非現金費用だが、毎期発生する恒常的な報酬コストであり株主希薄化効果を伴う",
+            "confidence": 0.2
+          }
+        ]
       }
     },
     {
@@ -582,11 +588,11 @@
       "tax_expense": -10231000.0,
       "pretax_income": -13529000.0,
       "special_flags": [
-        "EPS_DISCREPANCY"
+        "FAIR_VALUE_ADJUSTED"
       ],
       "special_notes": {
         "fair_value_auto_detect": {
-          "flag": "EPS_DISCREPANCY",
+          "flag": "FAIR_VALUE_ADJUSTED",
           "detected_items": [
             {
               "item_name": "偶発対価公正価値変動損益",

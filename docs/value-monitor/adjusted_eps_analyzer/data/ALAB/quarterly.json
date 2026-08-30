@@ -1,6 +1,6 @@
 {
   "ticker": "ALAB",
-  "last_updated": "2026-08-24T04:57:18.968347",
+  "last_updated": "2026-08-30T15:34:37.825217",
   "quarters": [
     {
       "gaap_eps": 0.8349950910875968,
@@ -52,9 +52,15 @@
         }
       },
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にリクエストエラーが発生しました: Request failed: HTTPSConnectionPool(host='api.x.ai', port=443): Read timed out. (read timeout=30)",
-        "sources": []
+        "health": "過大調整",
+        "comment": "SBC（株式報酬費用）は恒常的に発生する報酬コストであり、一過性項目ではない。市場がGAAP EPS（0.835）で判断する場合、非現金費用を控除した数字により企業のキャッシュ生成力や実力が過小評価される可能性があるが、SBCは経済的実態を伴う（希薄化効果あり）ため、これを全額加回する調整は実力を過大評価するリスクが高い。投資家は調整後EPSだけでなく、株式希薄化率やFCFを注視し、過大調整の罠に注意すべき。",
+        "sources": [
+          {
+            "item": "sbc",
+            "snippet": "非現金費用として株式報酬費用をadd_backしているが、技術企業では毎期発生する恒常的な報酬コストである。",
+            "confidence": 0.2
+          }
+        ]
       }
     },
     {

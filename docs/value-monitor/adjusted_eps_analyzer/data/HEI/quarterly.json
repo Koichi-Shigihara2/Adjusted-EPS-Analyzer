@@ -1,7 +1,52 @@
 {
   "ticker": "HEI",
-  "last_updated": "2026-08-24T05:03:55.675253",
+  "last_updated": "2026-08-30T15:39:03.291368",
   "quarters": [
+    {
+      "gaap_eps": 1.6666005988574988,
+      "adjusted_eps": 1.9059189156607308,
+      "gaap_net_income": 235439000.0,
+      "adjusted_net_income": 269247259.29647577,
+      "diluted_shares_used": 141269000.0,
+      "adjustments": [
+        {
+          "item_id": "amortization_intangibles",
+          "item_name": "無形資産償却費",
+          "amount": 43300000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "買収関連無形資産の償却",
+          "extracted_from": "us-gaap:AmortizationOfIntangibleAssets",
+          "category": "買収・統合関連",
+          "net_amount": 33808259.296475746,
+          "tax_rate_applied": 0.21920879222919756
+        }
+      ],
+      "net_adjustment_total": 33808259.296475746,
+      "filing_date": "2026-07-31",
+      "form": "10-Q",
+      "sector": null,
+      "sector_exclusions": [],
+      "revenue": 1413050000.0,
+      "diluted_shares": 141269000.0,
+      "period_end": "2026-07-31",
+      "fiscal_year": 2026,
+      "quarter": 3,
+      "tax_expense": 66100000.0,
+      "pretax_income": 301539000.0,
+      "ai_analysis": {
+        "health": "調整中",
+        "comment": "調整項目は買収に伴う無形資産償却費で、恒常的に発生する非現金費用です。市場がGAAP EPSで判断する場合、この償却によりEPSが低く抑えられ、企業の実力（特にキャッシュ稼得力）が過小評価されている可能性があります。ただし償却は過去の買収コストを反映するものであり、調整の妥当性に注意が必要。投資家は調整後EPSだけでなく、買収戦略の持続性やフリーキャッシュフローの推移に注目すべきで、過小評価リスクがある一方で買収依存の潜在的リスクも考慮する必要があります。",
+        "sources": [
+          {
+            "item": "amortization_intangibles",
+            "snippet": "買収関連無形資産の償却は、買収後に複数期にわたって継続的に計上される非現金費用であり、一過性ではなく恒常的な調整項目です。",
+            "confidence": 0.2
+          }
+        ]
+      }
+    },
     {
       "gaap_eps": 1.6573638245385205,
       "adjusted_eps": 1.882015716197258,
@@ -34,12 +79,7 @@
       "fiscal_year": 2026,
       "quarter": 2,
       "tax_expense": 67200000.0,
-      "pretax_income": 301001000.0,
-      "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にリクエストエラーが発生しました: Request failed: HTTPSConnectionPool(host='api.x.ai', port=443): Read timed out. (read timeout=30)",
-        "sources": []
-      }
+      "pretax_income": 301001000.0
     },
     {
       "gaap_eps": 1.3485736976082934,
@@ -652,40 +692,6 @@
       "quarter": 3,
       "tax_expense": 15600000.0,
       "pretax_income": 92489000.0
-    },
-    {
-      "gaap_eps": 0.5128143729954867,
-      "adjusted_eps": 0.5996511625195786,
-      "gaap_net_income": 70673000.0,
-      "adjusted_net_income": 82640325.3114732,
-      "diluted_shares_used": 137814000.0,
-      "adjustments": [
-        {
-          "item_id": "amortization_intangibles",
-          "item_name": "無形資産償却費",
-          "amount": 15100000,
-          "unit": "USD",
-          "direction": "add_back",
-          "pre_tax": true,
-          "reason": "買収関連無形資産の償却",
-          "extracted_from": "us-gaap:AmortizationOfIntangibleAssets",
-          "category": "買収・統合関連",
-          "net_amount": 11967325.311473204,
-          "tax_rate_applied": 0.20746189990243682
-        }
-      ],
-      "net_adjustment_total": 11967325.311473204,
-      "filing_date": "2021-04-30",
-      "form": "10-Q",
-      "sector": null,
-      "sector_exclusions": [],
-      "revenue": 466651000.0,
-      "diluted_shares": 137814000.0,
-      "period_end": "2021-04-30",
-      "fiscal_year": 2021,
-      "quarter": 2,
-      "tax_expense": 18500000.0,
-      "pretax_income": 89173000.0
     }
   ]
 }

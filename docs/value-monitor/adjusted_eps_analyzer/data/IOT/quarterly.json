@@ -1,6 +1,6 @@
 {
   "ticker": "IOT",
-  "last_updated": "2026-08-24T05:00:22.250862",
+  "last_updated": "2026-08-30T15:36:34.177462",
   "quarters": [
     {
       "gaap_eps": 0.07573581033108091,
@@ -65,9 +65,20 @@
         }
       },
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にリクエストエラーが発生しました: Request failed: HTTPSConnectionPool(host='api.x.ai', port=443): Read timed out. (read timeout=30)",
-        "sources": []
+        "health": "過大調整",
+        "comment": "SBCの調整額が大半を占め恒常的な非現金コストである一方、貸倒引当異常分は一過性と判断される。調整によりEPSが約2.6倍に跳ね上がるため、市場がGAAP EPSを基準に評価する場合、企業の実力（調整後収益力）が過小評価される可能性がある。ただしSBC加算は株式希薄化の実態を無視した過大調整のリスクが高く、持続的な利益を過大視する恐れがある。投資家はSBCの継続性と希薄化効果、異常貸倒の再発リスクに特に注目すべき。",
+        "sources": [
+          {
+            "item": "sbc",
+            "snippet": "非現金費用だが技術企業では恒常的に発生する株式報酬コストであり、毎期の調整が継続する可能性が高い",
+            "confidence": 0.2
+          },
+          {
+            "item": "loan_loss_provision_abnormal",
+            "snippet": "マクロ変動による一時的影響として異常変動分を加算。一過性の可能性が高い",
+            "confidence": 0.75
+          }
+        ]
       }
     },
     {

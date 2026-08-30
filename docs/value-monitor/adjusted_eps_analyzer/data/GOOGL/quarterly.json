@@ -1,6 +1,6 @@
 {
   "ticker": "GOOGL",
-  "last_updated": "2026-08-24T04:59:51.606045",
+  "last_updated": "2026-08-30T15:36:27.026429",
   "quarters": [
     {
       "gaap_eps": 9.11471281176375,
@@ -65,9 +65,20 @@
         }
       },
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にリクエストエラーが発生しました: Request failed: HTTPSConnectionPool(host='api.x.ai', port=443): Read timed out. (read timeout=30)",
-        "sources": []
+        "health": "過大調整",
+        "comment": "調整項目の株式報酬費用（SBC）と無形資産償却費はともに恒常的なコストであり、特にSBCは8BUSD規模で毎期発生する非現金費用です。市場がGAAP EPS（9.11）で判断する場合、非現金費用の影響により企業のキャッシュ生成力の実力が過小評価されている可能性がありますが、SBCは株式希薄化という実質的コストを伴うため、調整後EPS（9.66）に過度に依拠すると過大評価リスクが生じます。投資家は調整の持続性と希薄化影響を注視し、FCFや実質株主還元を総合的に評価すべきです。",
+        "sources": [
+          {
+            "item": "sbc",
+            "snippet": "毎期発生する恒常的な株式報酬費用であり、非現金だが従業員インセンティブとしての実質コスト。調整によりEPSが押し上げられるが一過性ではない。",
+            "confidence": 0.2
+          },
+          {
+            "item": "amortization_intangibles",
+            "snippet": "買収関連無形資産の定期的な償却費で恒常的に発生。買収が継続する限り続く非現金費用であり、一過性とは言えない。",
+            "confidence": 0.2
+          }
+        ]
       }
     },
     {

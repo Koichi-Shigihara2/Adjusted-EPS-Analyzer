@@ -1,7 +1,70 @@
 {
   "ticker": "HQY",
-  "last_updated": "2026-08-24T05:04:53.373052",
+  "last_updated": "2026-08-30T15:39:50.606507",
   "quarters": [
+    {
+      "gaap_eps": 0.781345966148499,
+      "adjusted_eps": 1.3478918206220762,
+      "gaap_net_income": 65644000.0,
+      "adjusted_net_income": 113241783.41774312,
+      "diluted_shares_used": 84014000.0,
+      "adjustments": [
+        {
+          "item_id": "sbc",
+          "item_name": "株式報酬費用",
+          "amount": 22210000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金費用",
+          "extracted_from": "us-gaap:AllocatedShareBasedCompensationExpense",
+          "category": "株式報酬関連",
+          "net_amount": 16593105.787287315,
+          "tax_rate_applied": 0.252899334205884
+        },
+        {
+          "item_id": "amortization_intangibles",
+          "item_name": "無形資産償却費",
+          "amount": 41500000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "買収関連無形資産の償却",
+          "extracted_from": "us-gaap:AmortizationOfIntangibleAssets",
+          "category": "買収・統合関連",
+          "net_amount": 31004677.63045581,
+          "tax_rate_applied": 0.252899334205884
+        }
+      ],
+      "net_adjustment_total": 47597783.417743124,
+      "filing_date": "2026-07-31",
+      "form": "10-Q",
+      "sector": null,
+      "sector_exclusions": [],
+      "revenue": 350732000.0,
+      "diluted_shares": 84014000.0,
+      "period_end": "2026-07-31",
+      "fiscal_year": 2027,
+      "quarter": 2,
+      "tax_expense": 22221000.0,
+      "pretax_income": 87865000.0,
+      "ai_analysis": {
+        "health": "調整大",
+        "comment": "調整項目であるSBCと無形資産償却費はともに恒常的な非現金費用であり、毎期継続的に発生する性質のものです。GAAP EPS 0.78に対しAdjusted EPS 1.35と大幅に加算されており、市場がGAAPベースで判断する場合、企業の実質的なキャッシュ生成力や事業体力を過小評価している可能性があります。ただしSBCは株主希薄化を伴う実質コスト、無形資産償却も買収の経済的対価を反映するため、調整を過度に信頼すると過大評価リスクが生じます。投資家は調整依存度の高さと今後の償却・報酬スケジュールを注視すべきです。",
+        "sources": [
+          {
+            "item": "sbc",
+            "snippet": "株式報酬費用は非現金費用として加算されているが、毎期発生する恒常的な報酬コストであり一過性ではない",
+            "confidence": 0.2
+          },
+          {
+            "item": "amortization_intangibles",
+            "snippet": "無形資産償却費は買収関連無形資産の償却として加算されているが、定期的に発生する恒常的な会計項目である",
+            "confidence": 0.2
+          }
+        ]
+      }
+    },
     {
       "gaap_eps": 0.8166247088440816,
       "adjusted_eps": 1.3212525276926217,
@@ -47,23 +110,7 @@
       "fiscal_year": 2027,
       "quarter": 1,
       "tax_expense": 22995000.0,
-      "pretax_income": 92413000.0,
-      "ai_analysis": {
-        "health": "調整大",
-        "comment": "SBCと無形資産償却費の両調整項目は恒常的に発生する非現金費用であり、GAAP EPSを大幅に押し下げています（0.82→1.32）。市場がGAAP EPSのみで判断する場合、企業の真のキャッシュ生成能力や事業実力が過小評価される可能性が高いです。ただしこれらは毎期継続するコスト（特にSBCは株主希薄化を伴う）のため、調整依存を過信すると将来的に過大評価リスクが生じます。投資家は調整の持続性と実質的な経済効果を慎重に検証すべきです。",
-        "sources": [
-          {
-            "item": "sbc",
-            "snippet": "非現金費用だが、継続的に発生する株式報酬関連の恒常的コストである。",
-            "confidence": 0.2
-          },
-          {
-            "item": "amortization_intangibles",
-            "snippet": "買収関連無形資産の償却は定期的に発生する非現金費用であり、一過性とは言えない。",
-            "confidence": 0.2
-          }
-        ]
-      }
+      "pretax_income": 92413000.0
     },
     {
       "gaap_eps": 0.5686326066329038,

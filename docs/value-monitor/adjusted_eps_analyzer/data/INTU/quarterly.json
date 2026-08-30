@@ -1,6 +1,6 @@
 {
   "ticker": "INTU",
-  "last_updated": "2026-08-24T05:03:55.271666",
+  "last_updated": "2026-08-30T15:38:58.696746",
   "quarters": [
     {
       "gaap_eps": 11.101449275362318,
@@ -65,9 +65,20 @@
         }
       },
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にリクエストエラーが発生しました: Request failed: HTTPSConnectionPool(host='api.x.ai', port=443): Read timed out. (read timeout=30)",
-        "sources": []
+        "health": "調整大",
+        "comment": "SBCと無形資産償却はともに恒常的に発生する非現金費用であり一過性ではないため、調整の性質は継続的コストの排除と言えます。市場がGAAP EPSで判断する場合、非現金項目の控除によりINTUのキャッシュ生成力や事業実力が過小評価される可能性があります。ただしSBCは株式希薄化という実質的コストを伴うため、調整後EPS relianceは過大評価リスクも孕み、投資家はFCFや希薄化後EPSを併せて検証すべきです。",
+        "sources": [
+          {
+            "item": "sbc",
+            "snippet": "株式報酬費用は非現金費用だが、毎期継続して発生する恒常的なコストであり、経済的希薄化効果を伴う",
+            "confidence": 0.2
+          },
+          {
+            "item": "amortization_intangibles",
+            "snippet": "無形資産償却費は買収関連の非現金償却だが、継続的なM&Aを実施する企業では恒常的に発生する項目",
+            "confidence": 0.2
+          }
+        ]
       }
     },
     {

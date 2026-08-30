@@ -1,6 +1,6 @@
 {
   "ticker": "CRWV",
-  "last_updated": "2026-08-24T04:58:50.788108",
+  "last_updated": "2026-08-30T15:35:44.534133",
   "quarters": [
     {
       "gaap_eps": -1.1361161524500907,
@@ -52,9 +52,15 @@
         }
       },
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にリクエストエラーが発生しました: Request failed: HTTPSConnectionPool(host='api.x.ai', port=443): Read timed out. (read timeout=30)",
-        "sources": []
+        "health": "過大調整",
+        "comment": "調整項目はSBC（株式報酬費用）であり、恒常的なコストであるため一過性とは言えず、毎期発生する運用コストとして実質的な希薄化効果を伴います。市場がGAAP EPS（-1.136）で判断する場合、非現金費用を含む厳しい数字を見ているため企業の実力が見えにくくなっている可能性がありますが、SBCを全額加算したAdjusted EPS（-0.87）は実力を過大に示すリスクが高いです。投資家として注目すべきはSBCの継続性・規模と潜在的な希薄化で、過大調整により株価が調整後ベースで過大評価されるリスクがあり、市場がGAAPを重視する限り過小評価の可能性は限定的ですが、根本的な収益力の持続可能性を慎重に評価する必要があります。",
+        "sources": [
+          {
+            "item": "sbc",
+            "snippet": "株式報酬費用は非現金費用としてadd_backされているが、成長企業で毎期継続的に発生する恒常的なコストであり、従業員報酬としての経済的実態と株式希薄化を伴う。",
+            "confidence": 0.2
+          }
+        ]
       }
     },
     {
@@ -428,11 +434,11 @@
       "tax_expense": 41659000.0,
       "pretax_income": -318148000.0,
       "special_flags": [
-        "EPS_DISCREPANCY"
+        "FAIR_VALUE_ADJUSTED"
       ],
       "special_notes": {
         "fair_value_auto_detect": {
-          "flag": "EPS_DISCREPANCY",
+          "flag": "FAIR_VALUE_ADJUSTED",
           "detected_items": [
             {
               "item_name": "デリバティブ公正価値変動損益",
@@ -513,11 +519,11 @@
       "tax_expense": 40151000.0,
       "pretax_income": -282870000.0,
       "special_flags": [
-        "EPS_DISCREPANCY"
+        "FAIR_VALUE_ADJUSTED"
       ],
       "special_notes": {
         "fair_value_auto_detect": {
-          "flag": "EPS_DISCREPANCY",
+          "flag": "FAIR_VALUE_ADJUSTED",
           "detected_items": [
             {
               "item_name": "デリバティブ公正価値変動損益",
@@ -598,11 +604,11 @@
       "tax_expense": 15399000.0,
       "pretax_income": -113849000.0,
       "special_flags": [
-        "EPS_DISCREPANCY"
+        "FAIR_VALUE_ADJUSTED"
       ],
       "special_notes": {
         "fair_value_auto_detect": {
-          "flag": "EPS_DISCREPANCY",
+          "flag": "FAIR_VALUE_ADJUSTED",
           "detected_items": [
             {
               "item_name": "デリバティブ公正価値変動損益",

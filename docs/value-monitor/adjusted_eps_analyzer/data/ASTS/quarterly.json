@@ -1,6 +1,6 @@
 {
   "ticker": "ASTS",
-  "last_updated": "2026-08-24T04:57:49.565672",
+  "last_updated": "2026-08-30T15:34:57.295844",
   "quarters": [
     {
       "gaap_eps": -0.7721116724082139,
@@ -36,9 +36,15 @@
       "tax_expense": 1113000.0,
       "pretax_income": -229796000.0,
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にリクエストエラーが発生しました: Request failed: HTTPSConnectionPool(host='api.x.ai', port=443): Read timed out. (read timeout=30)",
-        "sources": []
+        "health": "調整大",
+        "comment": "調整項目は株式報酬費用(SBC)で恒常的な非現金コストであり、一過性ではありません。GAAP EPS(-0.77)がSBCを反映して損失を大きく見せているため、市場がGAAPベースで判断する場合に企業の非現金費用を控除した実力(調整後EPS-0.56)が分かりにくくなり、過小評価のリスクがあります。特に成長段階のASTSではSBCが継続的に発生するため、投資家は希薄化影響を注視すべきですが、過大調整の懸念もあり実質的な企業価値を過小評価している可能性は中程度です。",
+        "sources": [
+          {
+            "item": "sbc",
+            "snippet": "株式報酬費用は非現金費用としてadd_backされているが、成長企業では毎期発生する恒常的な報酬コストであり、株主希薄化の実質的影響を伴う。",
+            "confidence": 0.2
+          }
+        ]
       }
     },
     {
@@ -292,11 +298,11 @@
       "tax_expense": 646000.0,
       "pretax_income": -171300000.0,
       "special_flags": [
-        "EPS_DISCREPANCY"
+        "FAIR_VALUE_ADJUSTED"
       ],
       "special_notes": {
         "fair_value_auto_detect": {
-          "flag": "EPS_DISCREPANCY",
+          "flag": "FAIR_VALUE_ADJUSTED",
           "detected_items": [
             {
               "item_name": "ワラント公正価値変動損益",
@@ -358,11 +364,11 @@
       "tax_expense": 231000.0,
       "pretax_income": -72319000.0,
       "special_flags": [
-        "EPS_DISCREPANCY"
+        "FAIR_VALUE_ADJUSTED"
       ],
       "special_notes": {
         "fair_value_auto_detect": {
-          "flag": "EPS_DISCREPANCY",
+          "flag": "FAIR_VALUE_ADJUSTED",
           "detected_items": [
             {
               "item_name": "ワラント公正価値変動損益",
@@ -424,11 +430,11 @@
       "tax_expense": 294000.0,
       "pretax_income": -19436000.0,
       "special_flags": [
-        "EPS_DISCREPANCY"
+        "FAIR_VALUE_ADJUSTED"
       ],
       "special_notes": {
         "fair_value_auto_detect": {
-          "flag": "EPS_DISCREPANCY",
+          "flag": "FAIR_VALUE_ADJUSTED",
           "detected_items": [
             {
               "item_name": "ワラント公正価値変動損益",
@@ -558,11 +564,11 @@
       "tax_expense": -789000.0,
       "pretax_income": -19197000.0,
       "special_flags": [
-        "EPS_DISCREPANCY"
+        "FAIR_VALUE_ADJUSTED"
       ],
       "special_notes": {
         "fair_value_auto_detect": {
-          "flag": "EPS_DISCREPANCY",
+          "flag": "FAIR_VALUE_ADJUSTED",
           "detected_items": [
             {
               "item_name": "ワラント公正価値変動損益",
@@ -658,11 +664,11 @@
       "tax_expense": 617000.0,
       "pretax_income": -7612000.0,
       "special_flags": [
-        "EPS_DISCREPANCY"
+        "FAIR_VALUE_ADJUSTED"
       ],
       "special_notes": {
         "fair_value_auto_detect": {
-          "flag": "EPS_DISCREPANCY",
+          "flag": "FAIR_VALUE_ADJUSTED",
           "detected_items": [
             {
               "item_name": "ワラント公正価値変動損益",
@@ -724,11 +730,11 @@
       "tax_expense": -550000.0,
       "pretax_income": -10316000.0,
       "special_flags": [
-        "EPS_DISCREPANCY"
+        "FAIR_VALUE_ADJUSTED"
       ],
       "special_notes": {
         "fair_value_auto_detect": {
-          "flag": "EPS_DISCREPANCY",
+          "flag": "FAIR_VALUE_ADJUSTED",
           "detected_items": [
             {
               "item_name": "ワラント公正価値変動損益",
@@ -790,11 +796,11 @@
       "tax_expense": -96000.0,
       "pretax_income": -3020000.0,
       "special_flags": [
-        "EPS_DISCREPANCY"
+        "FAIR_VALUE_ADJUSTED"
       ],
       "special_notes": {
         "fair_value_auto_detect": {
-          "flag": "EPS_DISCREPANCY",
+          "flag": "FAIR_VALUE_ADJUSTED",
           "detected_items": [
             {
               "item_name": "ワラント公正価値変動損益",
@@ -869,11 +875,11 @@
       "tax_expense": 104000.0,
       "pretax_income": -10617000.0,
       "special_flags": [
-        "EPS_DISCREPANCY"
+        "FAIR_VALUE_ADJUSTED"
       ],
       "special_notes": {
         "fair_value_auto_detect": {
-          "flag": "EPS_DISCREPANCY",
+          "flag": "FAIR_VALUE_ADJUSTED",
           "detected_items": [
             {
               "item_name": "ワラント公正価値変動損益",
@@ -935,11 +941,11 @@
       "tax_expense": 16000.0,
       "pretax_income": 4131000.0,
       "special_flags": [
-        "EPS_DISCREPANCY"
+        "FAIR_VALUE_ADJUSTED"
       ],
       "special_notes": {
         "fair_value_auto_detect": {
-          "flag": "EPS_DISCREPANCY",
+          "flag": "FAIR_VALUE_ADJUSTED",
           "detected_items": [
             {
               "item_name": "ワラント公正価値変動損益",

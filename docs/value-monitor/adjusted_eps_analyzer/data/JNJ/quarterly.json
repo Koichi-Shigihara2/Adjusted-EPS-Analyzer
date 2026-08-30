@@ -1,6 +1,6 @@
 {
   "ticker": "JNJ",
-  "last_updated": "2026-08-24T05:06:22.674970",
+  "last_updated": "2026-08-30T15:41:00.073510",
   "quarters": [
     {
       "gaap_eps": 2.2679398385312077,
@@ -62,9 +62,20 @@
         }
       },
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にリクエストエラーが発生しました: Request failed: HTTPSConnectionPool(host='api.x.ai', port=443): Read timed out. (read timeout=30)",
-        "sources": []
+        "health": "調整大",
+        "comment": "主な調整項目である無形資産償却費は買収に伴う非現金費用だが恒常的に発生しやすい性質のものであり、リストラ費用は一過性と言える。市場がGAAP EPS（2.27）で判断する場合、調整後EPS（2.68）に見られる収益力の実態が見えにくくなっており、償却費の影響で企業の実力が過小評価されるリスクがある。ただし、無形資産償却を大幅に加算調整しているため、調整後数値をそのまま信用すると過大評価のリスクも伴う。投資家はこれらの調整項目の持続可能性と経済的実質を慎重に検証する必要がある。",
+        "sources": [
+          {
+            "item": "amortization_intangibles",
+            "snippet": "買収関連無形資産の償却。これは毎期発生する可能性が高い恒常的コストに近く、非経常的とは言いにくい。",
+            "confidence": 0.2
+          },
+          {
+            "item": "restructuring",
+            "snippet": "一過性の事業再編費用。これはリストラ関連でほぼ一過性とみなせる。",
+            "confidence": 0.8
+          }
+        ]
       }
     },
     {

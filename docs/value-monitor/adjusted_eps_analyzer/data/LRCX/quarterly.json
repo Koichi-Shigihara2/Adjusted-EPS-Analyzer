@@ -1,6 +1,6 @@
 {
   "ticker": "LRCX",
-  "last_updated": "2026-08-24T05:07:47.269901",
+  "last_updated": "2026-08-30T15:41:48.602291",
   "quarters": [
     {
       "gaap_eps": 1.8057873193445098,
@@ -36,9 +36,15 @@
       "tax_expense": 997077000.0,
       "pretax_income": 3274359000.0,
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にリクエストエラーが発生しました: Request failed: HTTPSConnectionPool(host='api.x.ai', port=443): Read timed out. (read timeout=30)",
-        "sources": []
+        "health": "調整中",
+        "comment": "SBCは毎期継続的に発生する恒常的な報酬コストであり、一過性項目ではない。市場がGAAP EPS（1.81）を基準に判断する場合、非現金費用を加回したAdjusted EPS（1.86）の企業実力が分かりにくくなり、収益力を過小評価するリスクがある。ただしSBCは株式希薄化を通じた実質コストのため、調整を過信すると過大評価リスクも生じる。投資家はSBCの継続額、希薄化影響、FCFを総合的に検証すべき。",
+        "sources": [
+          {
+            "item": "sbc",
+            "snippet": "非現金費用としてadd_backされた株式報酬費用。category:株式報酬関連、毎期発生する恒常的コスト。",
+            "confidence": 0.2
+          }
+        ]
       }
     },
     {

@@ -1,6 +1,6 @@
 {
   "ticker": "HWM",
-  "last_updated": "2026-08-24T05:03:56.915027",
+  "last_updated": "2026-08-30T15:39:03.706526",
   "quarters": [
     {
       "gaap_eps": 1.328358208955224,
@@ -49,9 +49,15 @@
         }
       },
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にリクエストエラーが発生しました: Request failed: HTTPSConnectionPool(host='api.x.ai', port=443): Read timed out. (read timeout=30)",
-        "sources": []
+        "health": "調整小",
+        "comment": "調整項目は一過性の税効果（法人税率変更や過年度修正等）であり、恒常的コストではない。GAAP EPS（1.328）がAdjusted EPS（1.279）を上回っているのは、この一過性税メリットがGAAPに寄与したため。市場がGAAP EPSのみで判断する場合、企業の継続的な実力が過大に見え、持続可能性を誤認するリスクがある。過小評価ではなく過大評価のリスクが中心であり、投資家はAdjustedベースの収益力を注視すべき。",
+        "sources": [
+          {
+            "item": "tax_one_time",
+            "snippet": "一過性税効果 - 法人税率変更・過年度税額戻し等の一過性影響",
+            "confidence": 0.9
+          }
+        ]
       }
     },
     {

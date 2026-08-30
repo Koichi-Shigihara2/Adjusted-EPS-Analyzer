@@ -1,6 +1,6 @@
 {
   "ticker": "KO",
-  "last_updated": "2026-08-24T05:00:22.326158",
+  "last_updated": "2026-08-30T15:36:49.195863",
   "quarters": [
     {
       "gaap_eps": 0.9095966620305981,
@@ -62,9 +62,20 @@
         }
       },
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にリクエストエラーが発生しました: Request failed: HTTPSConnectionPool(host='api.x.ai', port=443): Read timed out. (read timeout=30)",
-        "sources": []
+        "health": "調整小",
+        "comment": "調整項目の主なものは恒常的なSBCと一過性の訴訟和解です。調整幅が小さく(約0.01のEPS差)、市場がGAAP EPSで判断していてもKOの実力が見えにくくなっている可能性は低いです。SBCは実質的な株主希薄化コストであるため、調整を過信するとやや過大評価のリスクがありますが、訴訟和解の加算は妥当であり全体として大きな過小評価・過大評価リスクは限定的です。投資家はSBCの継続性を注視すべきです。",
+        "sources": [
+          {
+            "item": "sbc",
+            "snippet": "非現金費用だが恒常的に発生する株式報酬費用",
+            "confidence": 0.2
+          },
+          {
+            "item": "litigation_settlement",
+            "snippet": "非経常的な訴訟関連費用",
+            "confidence": 1.0
+          }
+        ]
       }
     },
     {

@@ -1,6 +1,6 @@
 {
   "ticker": "CDNS",
-  "last_updated": "2026-08-24T05:03:26.373200",
+  "last_updated": "2026-08-30T15:38:49.244637",
   "quarters": [
     {
       "gaap_eps": 1.2262672390172618,
@@ -78,9 +78,25 @@
         }
       },
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にリクエストエラーが発生しました: Request failed: HTTPSConnectionPool(host='api.x.ai', port=443): Read timed out. (read timeout=30)",
-        "sources": []
+        "health": "調整大",
+        "comment": "SBC（138M USD）と無形資産償却は恒常的に発生する項目であり、特にSBCはテック企業の人材確保に不可欠な継続コストのため、調整EPSは実態を過大に見せている可能性が高い。リストラは一過性だが金額が極小。市場がGAAP EPS（1.23）で判断する場合、非現金費用や買収会計を控除した真の事業力（キャッシュ生成力）が過小評価されやすく、株価に反映されにくいリスクがある。ただしSBCは株式希薄化の実質コストであるため、調整を過信すると過大評価リスクも伴う。投資家は非GAAPの持続可能性を慎重に検証すべき。",
+        "sources": [
+          {
+            "item": "sbc",
+            "snippet": "非現金費用だが、テック企業では恒常的に発生する株式報酬コストであり、毎期の事業運営に必要",
+            "confidence": 0.2
+          },
+          {
+            "item": "amortization_intangibles",
+            "snippet": "買収関連無形資産の償却は、過去のM&Aに基づく継続的な会計処理",
+            "confidence": 0.2
+          },
+          {
+            "item": "restructuring",
+            "snippet": "一過性の事業再編費用",
+            "confidence": 0.8
+          }
+        ]
       }
     },
     {

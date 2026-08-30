@@ -1,6 +1,6 @@
 {
   "ticker": "MSFT",
-  "last_updated": "2026-08-24T05:00:53.105905",
+  "last_updated": "2026-08-30T15:37:14.309227",
   "quarters": [
     {
       "gaap_eps": 4.7988729370723195,
@@ -65,9 +65,20 @@
         }
       },
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にリクエストエラーが発生しました: Request failed: HTTPSConnectionPool(host='api.x.ai', port=443): Read timed out. (read timeout=30)",
-        "sources": []
+        "health": "過大調整",
+        "comment": "調整項目のSBCと無形資産償却費はともに恒常的に発生する費用（SBCは毎期の報酬コスト、無形資産償却は買収後の継続的非現金費用）であり、一過性とは言い難い。市場がGAAP EPSで判断する場合、非現金項目を控除した実力が見えにくくなり企業の実力を過小評価する可能性があるが、これらが実質的な経済コストであるためAdjusted EPS relianceは過大評価リスクを伴う。投資家はSBCによる希薄化や買収リターンを別途検証すべき。",
+        "sources": [
+          {
+            "item": "sbc",
+            "snippet": "株式報酬費用は非現金だが毎期発生する恒常的な従業員報酬コストであり、株主希薄化の実質的影響を伴う",
+            "confidence": 0.2
+          },
+          {
+            "item": "amortization_intangibles",
+            "snippet": "無形資産償却費は過去の買収関連で継続的に発生する非現金費用であり、恒常的なコストとみなされる",
+            "confidence": 0.2
+          }
+        ]
       }
     },
     {

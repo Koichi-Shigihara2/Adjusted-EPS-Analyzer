@@ -1,6 +1,6 @@
 {
   "ticker": "VRT",
-  "last_updated": "2026-08-24T05:02:54.503207",
+  "last_updated": "2026-08-30T15:38:28.017662",
   "quarters": [
     {
       "gaap_eps": 1.26748265781112,
@@ -52,9 +52,15 @@
         }
       },
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にリクエストエラーが発生しました: Request failed: HTTPSConnectionPool(host='api.x.ai', port=443): Read timed out. (read timeout=30)",
-        "sources": []
+        "health": "調整小",
+        "comment": "リストラ費用は典型的な一過性項目であり、調整により企業コアの実力をより明確に示している。市場がGAAP EPSで判断する場合、この一過性費用によりEPSが低下し企業の実力が過小評価される可能性がある。本調整の影響はEPSで約0.008と小さく過大調整の懸念は低い。投資家はリストラが繰り返されないかを確認すべきであり、GAAP偏重の場合に過小評価リスクが存在する。",
+        "sources": [
+          {
+            "item": "restructuring",
+            "snippet": "一過性の事業再編費用",
+            "confidence": 0.8
+          }
+        ]
       }
     },
     {
@@ -466,11 +472,11 @@
       "tax_expense": 269600000.0,
       "pretax_income": 416600000.0,
       "special_flags": [
-        "EPS_DISCREPANCY"
+        "FAIR_VALUE_ADJUSTED"
       ],
       "special_notes": {
         "fair_value_auto_detect": {
-          "flag": "EPS_DISCREPANCY",
+          "flag": "FAIR_VALUE_ADJUSTED",
           "detected_items": [
             {
               "item_name": "ワラント公正価値変動損益",
@@ -696,11 +702,11 @@
       "tax_expense": -7100000.0,
       "pretax_income": -13000000.0,
       "special_flags": [
-        "EPS_DISCREPANCY"
+        "FAIR_VALUE_ADJUSTED"
       ],
       "special_notes": {
         "fair_value_auto_detect": {
-          "flag": "EPS_DISCREPANCY",
+          "flag": "FAIR_VALUE_ADJUSTED",
           "detected_items": [
             {
               "item_name": "ワラント公正価値変動損益",
@@ -860,11 +866,11 @@
       "tax_expense": 51700000.0,
       "pretax_income": 145800000.0,
       "special_flags": [
-        "EPS_DISCREPANCY"
+        "FAIR_VALUE_ADJUSTED"
       ],
       "special_notes": {
         "fair_value_auto_detect": {
-          "flag": "EPS_DISCREPANCY",
+          "flag": "FAIR_VALUE_ADJUSTED",
           "detected_items": [
             {
               "item_name": "ワラント公正価値変動損益",
@@ -958,11 +964,11 @@
       "tax_expense": 29700000.0,
       "pretax_income": 112900000.0,
       "special_flags": [
-        "EPS_DISCREPANCY"
+        "FAIR_VALUE_ADJUSTED"
       ],
       "special_notes": {
         "fair_value_auto_detect": {
-          "flag": "EPS_DISCREPANCY",
+          "flag": "FAIR_VALUE_ADJUSTED",
           "detected_items": [
             {
               "item_name": "ワラント公正価値変動損益",

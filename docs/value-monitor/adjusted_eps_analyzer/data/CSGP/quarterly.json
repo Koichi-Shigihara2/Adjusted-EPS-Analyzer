@@ -1,6 +1,6 @@
 {
   "ticker": "CSGP",
-  "last_updated": "2026-08-24T04:59:21.354732",
+  "last_updated": "2026-08-30T15:35:55.672710",
   "quarters": [
     {
       "gaap_eps": 0.13600395647873392,
@@ -49,9 +49,20 @@
       "tax_expense": 19000000.0,
       "pretax_income": 74000000.0,
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にリクエストエラーが発生しました: Request failed: HTTPSConnectionPool(host='api.x.ai', port=443): Read timed out. (read timeout=30)",
-        "sources": []
+        "health": "調整大",
+        "comment": "株式報酬費用と無形資産償却費はともに恒常的に発生する項目（SBCは毎期の報酬コスト、無形資産償却は買収後複数年にわたる償却）であり一過性とは言えない。GAAP EPSがこれら非現金費用で大幅に低下しているため、市場がGAAP中心に判断する場合に企業の実力（調整後収益力やキャッシュ生成力）が過小評価されている可能性がある。ただしSBCは株式希薄化の実質コストを伴うため、調整後EPSに過大評価リスクもあり、投資家はFCFや希薄化影響を注視すべき。",
+        "sources": [
+          {
+            "item": "sbc",
+            "snippet": "株式報酬費用は非現金費用だが恒常的な運用コストであり、毎期発生するSBCとして実質的な経済コストを伴う",
+            "confidence": 0.2
+          },
+          {
+            "item": "amortization_intangibles",
+            "snippet": "買収関連無形資産の償却は過去のM&Aから生じる恒常的な非現金費用で、複数年にわたって継続する",
+            "confidence": 0.2
+          }
+        ]
       }
     },
     {
