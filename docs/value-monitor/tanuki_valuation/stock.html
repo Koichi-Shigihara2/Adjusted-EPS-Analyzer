@@ -2075,13 +2075,19 @@ function render(d) {
         bars += `<text x="${x+barW/2}" y="${fcf!=null&&fcf>=0?barY-3:barY+barH+10}" font-size="8" fill="${col}" text-anchor="middle" font-family="monospace">${valStr}</text>`;
         bars += `<text x="${x+barW/2}" y="${H-2}" font-size="8" fill="#475569" text-anchor="middle" font-family="monospace">${h.year}</text>`;
       });
-      // FCF CAGR 3yr
+      // FCF CAGR（経過年数は実測。[[FCF-CAGR-YEARS-MISMATCH-1]]対応:
+      // validはゼロ/マイナスFCF年を除外したフィルタ後配列のため、
+      // valid[-4]〜valid[-1]間に除外年が挟まると実経過年数は3年より
+      // 多くなりうる。固定`1/3`ではなく年ラベルの差分から実測する）
       const valid = hist.filter(h=>h.fcf!=null&&h.fcf>0);
       let cagrStr = '';
       if (valid.length >= 4) {
-        const old = valid[valid.length-4].fcf, nw = valid[valid.length-1].fcf;
-        const cagr = ((nw/old)**(1/3)-1)*100;
-        cagrStr = `FCF CAGR(3yr): ${cagr>=0?'+':''}${cagr.toFixed(1)}%`;
+        const oldEntry = valid[valid.length-4], nwEntry = valid[valid.length-1];
+        const years = nwEntry.year - oldEntry.year;
+        if (years > 0) {
+          const cagr = ((nwEntry.fcf/oldEntry.fcf)**(1/years)-1)*100;
+          cagrStr = `FCF CAGR(${years}yr): ${cagr>=0?'+':''}${cagr.toFixed(1)}%`;
+        }
       }
       return `<div class="chart-container" style="margin-top:24px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
