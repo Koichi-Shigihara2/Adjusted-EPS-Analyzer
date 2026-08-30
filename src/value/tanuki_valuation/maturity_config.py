@@ -236,13 +236,23 @@ def get_terminal_growth(ticker: str) -> float:
     """銘柄のターミナル成長率を取得
 
     優先順位:
-    1. maturity_config.json の ticker 個別設定（3.0% 以外に明示設定された場合）
+    1. maturity_config.json の ticker 個別設定
+       - terminal_growth_explicit: true が明示されていれば、値がデフォルト
+         3.0%と一致していても常にこれを採用する（[[TVGROWTH-EXPLICIT-
+         DEFAULT-AMBIGUOUS-1]]対応: 従来は差分チェックのみのため、3.0%を
+         意図的に指定しても「未設定」とみなされセクター別テーブルの値に
+         上書きされてしまう抜け道がなかった）
+       - 上記フラグがない場合は従来通り、3.0% 以外に明示設定された場合のみ
+         採用する（後方互換。既存のmaturity_config.jsonエントリは全て
+         このフラグを持たないため、本変更による既存挙動への影響はない）
     2. growth_sanity.TICKER_INDUSTRY_OVERRIDES → _DAMODARAN_TV_G（セクター別）
     3. デフォルト 3.0%
     """
     _DEFAULT_TV_G = 0.03
     profile = get_maturity_profile(ticker)
     ticker_tv_g = profile.get("terminal_growth", _DEFAULT_TV_G)
+    if profile.get("terminal_growth_explicit") is True:
+        return ticker_tv_g
     # JSON に 3.0% 以外の値が明示設定されていればそれを使う
     if abs(ticker_tv_g - _DEFAULT_TV_G) > 1e-5:
         return ticker_tv_g

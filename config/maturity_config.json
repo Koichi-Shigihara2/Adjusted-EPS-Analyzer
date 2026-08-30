@@ -2,7 +2,7 @@
   "_meta": {
     "description": "DCF成熟プロファイル設定（two_stage / three_stage）",
     "encoding": "UTF-8",
-    "updated_at": "2026-05-13",
+    "updated_at": "2026-08-30",
     "schema_version": "1.0"
   },
   "_schema": {
@@ -12,6 +12,7 @@
     "phase2.years": "移行期の年数（three_stageのみ有効）",
     "phase2.growth": "移行期の成長率（three_stageのみ有効）",
     "terminal_growth": "永続成長率（通常0.03）",
+    "terminal_growth_explicit": "true にすると、terminal_growthが3.0%と一致していてもデフォルト未設定とみなさず常にこの値を採用する（省略時=false相当。[[TVGROWTH-EXPLICIT-DEFAULT-AMBIGUOUS-1]]）",
     "_default": "銘柄未設定時のフォールバック（two_stage）"
   },
   "_sector_caps": {

@@ -1068,6 +1068,49 @@ class TestTerminalGrowthBySector:
             result = _mc.get_terminal_growth("UNKNOWN_XYZ")
         assert result == pytest.approx(0.030, rel=1e-6)
 
+    # ── [[TVGROWTH-EXPLICIT-DEFAULT-AMBIGUOUS-1]] ──────────────────────
+    # terminal_growth_explicit: true を明示設定した場合、値が3.0%と一致
+    # していてもデフォルト未設定とみなさず常にそれを採用することの検証。
+    # 修正前は差分チェック(abs(g-0.03)>1e-5)のみだったため、3.0%を意図的に
+    # 指定してもセクター別テーブルの値に上書きされる抜け道があった。
+
+    def test_explicit_3pct_is_honored_even_when_sector_table_disagrees(self):
+        """terminal_growth=0.03・terminal_growth_explicit=Trueの場合、
+        セクター別テーブルが別の値（例:3.5%）を返しても3.0%が優先される
+        （修正前バグ: このケースは常にセクター別の値に上書きされていた）"""
+        profile = {"type": "two_stage", "terminal_growth": 0.03, "terminal_growth_explicit": True}
+        with patch.object(_mc, "get_maturity_profile", return_value=profile), \
+             patch.object(_mc, "_lookup_tv_g_by_industry", return_value=0.035):
+            result = _mc.get_terminal_growth("EXPLICIT_3PCT_TICKER")
+        assert result == pytest.approx(0.03, rel=1e-6)
+
+    def test_without_explicit_flag_3pct_still_falls_back_to_sector(self):
+        """explicit флаг無し（既存挙動）: 3.0%は「未設定」とみなされ、
+        セクター別テーブルの値が優先される（後方互換の確認）"""
+        profile = {"type": "two_stage", "terminal_growth": 0.03}
+        with patch.object(_mc, "get_maturity_profile", return_value=profile), \
+             patch.object(_mc, "_lookup_tv_g_by_industry", return_value=0.035):
+            result = _mc.get_terminal_growth("NO_EXPLICIT_FLAG_TICKER")
+        assert result == pytest.approx(0.035, rel=1e-6)
+
+    def test_explicit_flag_false_behaves_like_absent(self):
+        """terminal_growth_explicit: false（明示的にfalse）も未設定と
+        同様に扱われること"""
+        profile = {"type": "two_stage", "terminal_growth": 0.03, "terminal_growth_explicit": False}
+        with patch.object(_mc, "get_maturity_profile", return_value=profile), \
+             patch.object(_mc, "_lookup_tv_g_by_industry", return_value=0.035):
+            result = _mc.get_terminal_growth("EXPLICIT_FALSE_TICKER")
+        assert result == pytest.approx(0.035, rel=1e-6)
+
+    def test_explicit_flag_with_non_default_value_still_honored(self):
+        """3.0%以外の値でもexplicitフラグは無害に機能する（既存の差分
+        チェック経路と同じ結果になる、回帰なしの確認）"""
+        profile = {"type": "two_stage", "terminal_growth": 0.04, "terminal_growth_explicit": True}
+        with patch.object(_mc, "get_maturity_profile", return_value=profile), \
+             patch.object(_mc, "_lookup_tv_g_by_industry", return_value=0.035):
+            result = _mc.get_terminal_growth("EXPLICIT_NONDEFAULT_TICKER")
+        assert result == pytest.approx(0.04, rel=1e-6)
+
     def test_damodaran_tv_g_table_has_software_35_pct(self):
         """_DAMODARAN_TV_G テーブルに Software (System & Application) → 3.5% が含まれる"""
         assert _mc._DAMODARAN_TV_G.get("Software (System & Application)") == pytest.approx(0.035)
