@@ -76,6 +76,21 @@ TAG_CANDIDATES: dict[str, tuple[str, ...]] = {
         "CashAndCashEquivalentsAtCarryingValue",
         "CashCashEquivalentsAndShortTermInvestments",  # RCAT等
         "Cash",
+        # [[CASH-TAG-MISSING-1]]対応（2026-08-30）: ASU 2016-18（制限付き
+        # 現金を含むキャッシュフロー期首・期末残高調整表示義務化）対応後に
+        # 移行した企業向け。GEV・SITM等、上記3タグのいずれも報告していない
+        # 銘柄のcash_and_equivalentsが完全欠落していたことを解消する。
+        # 「制限付き現金」を含む定義のため、純粋な現金同等物より広い概念
+        # である点に注意。CPRT・HEIは上記CashAndCashEquivalentsAtCarrying
+        # Valueが引き続き機能しているにもかかわらず、このタグの方が
+        # 直近年度まで新しく報告されているため
+        # _extract_values_best_candidate()の「最新annual年が新しい候補が
+        # 全期間の採用タグになる」設計により、機能していた期間まで
+        # 過大計上（制限付き現金の混入）に置き換わってしまうリスクを
+        # 全105銘柄シミュレーションで確認した。両銘柄はquarterly.py::
+        # TICKER_RESTRICTIONSのcash_concept上書きで明示的に既存タグへ
+        # 固定し、このリスクを回避している。
+        "CashCashEquivalentsRestrictedCashAndRestrictedCashEquivalents",
     ),
     "RESEARCH_AND_DEVELOPMENT": (
         # [[JNJ-RD-TAG-PRIORITY-1]]対応: ExcludingAcquiredInProcessCostを

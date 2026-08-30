@@ -485,6 +485,11 @@ class SECParser:
         # 申告停止済み・非分類BS・正しいタグが汎用的すぎるため、ltdebt_conceptと
         # 同型のticker限定オーバーライドとする）
         _sti_concept_override = TICKER_RESTRICTIONS.get(ticker, {}).get("sti_concept")
+        # 銘柄別 cash_concept オーバーライド（CASH-TAG-MISSING-1: CPRT/HEIは
+        # ASU 2016-18対応タグ追加後、そちらの方が直近年度まで新しいため
+        # 全期間の採用タグが切り替わり過大計上になるのを防ぐ。sti_concept等
+        # と同型のticker限定オーバーライド）
+        _cash_concept_override = TICKER_RESTRICTIONS.get(ticker, {}).get("cash_concept")
         # 銘柄別 cross_filing_tags オーバーライド（NVDA-STI-TAG-UNIDENTIFIED-1:
         # ANOMALY-PATTERN-CATALOG-1型C。単一タグでは捕捉できず、複数XBRL概念を
         # 指定end_date・指定form制限で直接検索し合算する必要があるケース向け。
@@ -536,6 +541,9 @@ class SECParser:
             # sti_concept が指定されている場合はそのタグのみ使用
             if field_name == "short_term_investments" and _sti_concept_override:
                 xbrl_keys = [_sti_concept_override]
+            # cash_concept が指定されている場合はそのタグのみ使用
+            if field_name == "cash_and_equivalents" and _cash_concept_override:
+                xbrl_keys = [_cash_concept_override]
             extracted[field_name] = self._extract_values(
                 us_gaap, xbrl_keys, use_max=use_max, merge_all_tags=merge_all,
                 fiscal_end_month=fiscal_end_month, accn_reportdate=_accn_reportdate,

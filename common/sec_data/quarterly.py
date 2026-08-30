@@ -95,6 +95,31 @@ TICKER_RESTRICTIONS: dict[str, dict] = {
                 "ため、V限定オーバーライドとして厳格運用し、グローバル候補"
                 "リストには絶対に追加しないこと。",
     },
+    # CASH-TAG-MISSING-1（2026-08-30）: cash_and_equivalentsの候補リストへ
+    # CashCashEquivalentsRestrictedCashAndRestrictedCashEquivalents（ASU
+    # 2016-18対応タグ、制限付き現金を含む）を追加した際、CPRT・HEIは
+    # 従来のCashAndCashEquivalentsAtCarryingValueが引き続き機能して
+    # いるにもかかわらず、新タグの方が直近年度まで新しく報告されている
+    # ため_extract_values_best_candidate()の「最新annual年が新しい候補が
+    # 全期間の勝者になる」設計により、機能していた期間まで制限付き現金
+    # 混入の過大計上に置き換わってしまうことを全105銘柄シミュレーション
+    # で確認した。両銘柄はcash_concept明示指定で既存タグへ固定する
+    # （sti_concept等と同型のticker限定オーバーライド）。
+    "CPRT": {
+        "cash_concept": "CashAndCashEquivalentsAtCarryingValue",
+        "note": "CashAndCashEquivalentsAtCarryingValueが2019年まで機能して"
+                "いるが、新設のCashCashEquivalentsRestrictedCashAndRestricted"
+                "CashEquivalents（2025年まで申告）の方が新しいため無対応だと"
+                "全期間の採用タグが後者に切り替わり、2019年以前を含め制限付き"
+                "現金混入の過大計上になる。既存タグへ固定して回避する。",
+    },
+    "HEI": {
+        "cash_concept": "CashAndCashEquivalentsAtCarryingValue",
+        "note": "CPRTと同型。CashAndCashEquivalentsAtCarryingValueが2022年"
+                "まで機能しているが、新設タグの方が2025年まで新しいため"
+                "無対応だと2022年以前を含め過大計上になる。既存タグへ固定して"
+                "回避する。",
+    },
     # NVDA-STI-TAG-UNIDENTIFIED-1（2026-07-19実装・対応方針①採用）:
     # ANOMALY-PATTERN-CATALOG-1 型C（資産クラス変化・当年度未タグ化型）。
     # FY2026第1四半期に非上場投資先1社が上場したことで、BS「Marketable
