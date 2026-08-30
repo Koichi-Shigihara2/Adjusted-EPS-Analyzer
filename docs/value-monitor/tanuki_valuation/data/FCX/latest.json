@@ -6,6 +6,7 @@
   "intrinsic_value_rf": 80.49,
   "upside_percent_rf": 5.3,
   "v0": 16877091156.6861,
+  "v0_note": "v0はβ込みCAPMベース（intrinsic_value_betaの参考値）。メインの理論株価計算根拠はdcf_components.v0_rm（market_return 10%固定・βなし）を参照すること。",
   "v0_adjusted": 16877091156.6861,
   "alpha": 0.5560093503768334,
   "alpha_was_capped": false,
@@ -44,7 +45,7 @@
     }
   },
   "upside_percent": -85.0,
-  "calculation_date": "2026-08-29T13:00:24+09:00",
+  "calculation_date": "2026-08-30T12:01:19+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -92,12 +93,12 @@
   },
   "growth_scenarios": {
     "primary": {
-      "rate": 0.0636,
+      "rate": 0.06359999999999999,
       "source": "segment_weighted"
     },
     "segment": {
       "enabled": true,
-      "weighted_growth": 0.0636,
+      "weighted_growth": 0.06359999999999999,
       "fiscal_year": "FY2025",
       "source": "segment_config"
     }
@@ -199,7 +200,7 @@
     "estimated_fcf": 1308500000.0,
     "raw_fcf": 1308500000.0,
     "sector": "",
-    "note": "EPSデータなし(/home/runner/work/On-a-journey/On-a-journey/docs/value-monitor/adjusted_eps_analyzer/data/FCX/annual.json)",
+    "note": "EPSデータなし(C:\\Users\\shigi\\Documents\\On-a-journey-git\\docs\\value-monitor\\adjusted_eps_analyzer\\data\\FCX\\annual.json)",
     "divergence_ratio": 0.0,
     "divergence_warning": "",
     "ma_addback_excluded": 0.0,
@@ -327,7 +328,7 @@
     },
     "_shares_source": "yf_implied",
     "_beta_source": "beta_config()",
-    "high_growth_rate_used": 0.0636,
+    "high_growth_rate_used": 0.06359999999999999,
     "high_growth_years": 5,
     "terminal_growth_used": 0.03,
     "moat_score": 0.2996,
@@ -374,7 +375,7 @@
     "max_eps_reliability": "HIGH"
   },
   "validation": {
-    "validated_at": "2026-08-29",
+    "validated_at": "2026-08-30",
     "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
@@ -538,17 +539,17 @@
   "risk_events": [
     {
       "type": "litigation",
-      "summary": "Antitrust lawsuit against FCX",
+      "summary": "Antitrust lawsuit against Freeport-McMoRan",
       "impact": "high"
     },
     {
       "type": "regulatory",
-      "summary": "Ongoing SEC investigation into FCX",
+      "summary": "Ongoing SEC regulatory investigation",
       "impact": "high"
     },
     {
       "type": "earnings",
-      "summary": "Earnings warning impacting 2025-2026 outlook",
+      "summary": "Earnings warning amid competition risks for 2025-2026",
       "impact": "mid"
     }
   ]

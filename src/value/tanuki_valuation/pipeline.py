@@ -1659,7 +1659,15 @@ class TanukiValuationPipeline:
                     if _dev_pct_polb_raw is not None:
                         L.append(f"   [DCF-REL-SYNC-1: FCF実績が5年平均から{_dev_pct_polb_raw:.0f}%乖離]")
                 else:
-                    L.append("DCF_Reliability: HIGH  (FCF実績プラス: 通常判定適用)")
+                    # [[DCF-RELIABILITY-LABEL-MISMATCH-1]]対応（2026-08-30）:
+                    # _calc_dcf_reliability_policy_b()は常にLOW/NORMALの
+                    # いずれかを返す一貫した関数だが、この分岐（FCF_Base方式）
+                    # だけ従来HIGHと表示しており、FCF_Conversion_Rate方式側
+                    # （下記、同じNORMAL戻り値）と表示語彙が食い違っていた。
+                    # report.txtを横断的にパースする外部ツールが「非LOW側」を
+                    # 単純な2値として扱えるよう、関数の戻り値と一致するNORMAL
+                    # に統一する。
+                    L.append("DCF_Reliability: NORMAL  (FCF実績プラス: 通常判定適用)")
             # FCF-EST-NOTE-DISPLAY-1: 「買収・統合関連」加算の控除・検出情報を表示
             # （生FCF安定(CV<0.3)のためこの分岐に来た銘柄は、控除自体が
             # estimated_fcfの計算に使われない＝表示すると誤解を招くため対象外とする）

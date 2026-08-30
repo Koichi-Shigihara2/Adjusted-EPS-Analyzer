@@ -6,6 +6,7 @@
   "intrinsic_value_rf": 4293.3,
   "upside_percent_rf": 736.0,
   "v0": 2983434672691.283,
+  "v0_note": "v0はβ込みCAPMベース（intrinsic_value_betaの参考値）。メインの理論株価計算根拠はdcf_components.v0_rm（market_return 10%固定・βなし）を参照すること。",
   "v0_adjusted": 2983434672691.283,
   "alpha": 1.0,
   "alpha_was_capped": true,
@@ -44,7 +45,7 @@
     }
   },
   "upside_percent": -10.2,
-  "calculation_date": "2026-08-29T12:54:49+09:00",
+  "calculation_date": "2026-08-30T11:52:06+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + three_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "three_stage",
   "growth": {
@@ -92,12 +93,12 @@
   },
   "growth_scenarios": {
     "primary": {
-      "rate": 0.14470000000000002,
+      "rate": 0.1447,
       "source": "segment_weighted"
     },
     "segment": {
       "enabled": true,
-      "weighted_growth": 0.14470000000000002,
+      "weighted_growth": 0.1447,
       "fiscal_year": "FY2025",
       "source": "segment_config"
     }
@@ -156,7 +157,7 @@
       {
         "year": 1,
         "phase": "phase1",
-        "growth_rate": 0.14470000000000002,
+        "growth_rate": 0.1447,
         "fcf": 104318417018.47844,
         "discount_factor": 1.105643,
         "pv": 94350904422.56537
@@ -164,7 +165,7 @@
       {
         "year": 2,
         "phase": "phase1",
-        "growth_rate": 0.14470000000000002,
+        "growth_rate": 0.1447,
         "fcf": 119413291961.05228,
         "discount_factor": 1.2224464434489999,
         "pv": 97683863862.48598
@@ -172,7 +173,7 @@
       {
         "year": 3,
         "phase": "phase1",
-        "growth_rate": 0.14470000000000002,
+        "growth_rate": 0.1447,
         "fcf": 136692395307.81654,
         "discount_factor": 1.3515893530742824,
         "pv": 101134560580.03146
@@ -180,7 +181,7 @@
       {
         "year": 4,
         "phase": "phase1",
-        "growth_rate": 0.14470000000000002,
+        "growth_rate": 0.1447,
         "fcf": 156471784908.8576,
         "discount_factor": 1.4943753071011088,
         "pv": 104707153661.68105
@@ -188,7 +189,7 @@
       {
         "year": 5,
         "phase": "phase1",
-        "growth_rate": 0.14470000000000002,
+        "growth_rate": 0.1447,
         "fcf": 179113252185.1693,
         "discount_factor": 1.6522455976691912,
         "pv": 108405949114.24963
@@ -196,7 +197,7 @@
       {
         "year": 6,
         "phase": "phase1",
-        "growth_rate": 0.14470000000000002,
+        "growth_rate": 0.1447,
         "fcf": 205030939776.3633,
         "discount_factor": 1.8267937793437574,
         "pv": 112235405054.86993
@@ -204,7 +205,7 @@
       {
         "year": 7,
         "phase": "phase1",
-        "growth_rate": 0.14470000000000002,
+        "growth_rate": 0.1447,
         "fcf": 234698916762.00308,
         "discount_factor": 2.0197817545749697,
         "pv": 116200137084.31169
@@ -212,7 +213,7 @@
       {
         "year": 8,
         "phase": "phase1",
-        "growth_rate": 0.14470000000000002,
+        "growth_rate": 0.1447,
         "fcf": 268659850017.46494,
         "discount_factor": 2.233157558473533,
         "pv": 120304923850.11401
@@ -431,7 +432,7 @@
     },
     "_shares_source": "yf_implied",
     "_beta_source": "beta_config()",
-    "high_growth_rate_used": 0.14470000000000002,
+    "high_growth_rate_used": 0.1447,
     "high_growth_years": 8,
     "terminal_growth_used": 0.035,
     "moat_score": 0.7133,
@@ -478,7 +479,7 @@
     "max_eps_reliability": "HIGH"
   },
   "validation": {
-    "validated_at": "2026-08-29",
+    "validated_at": "2026-08-30",
     "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
@@ -646,12 +647,12 @@
     },
     {
       "type": "regulatory",
-      "summary": "SEC regulatory investigation",
+      "summary": "SEC investigation into regulatory compliance",
       "impact": "high"
     },
     {
       "type": "earnings",
-      "summary": "Earnings warning for 2025-2026",
+      "summary": "Earnings warning amid competition for 2025-2026",
       "impact": "mid"
     }
   ]

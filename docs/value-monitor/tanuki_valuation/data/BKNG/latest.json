@@ -6,6 +6,7 @@
   "intrinsic_value_rf": 2953.5,
   "upside_percent_rf": 1336.3,
   "v0": 239316502850.7786,
+  "v0_note": "v0はβ込みCAPMベース（intrinsic_value_betaの参考値）。メインの理論株価計算根拠はdcf_components.v0_rm（market_return 10%固定・βなし）を参照すること。",
   "v0_adjusted": 239316502850.7786,
   "alpha": 0.6,
   "alpha_was_capped": true,
@@ -44,7 +45,7 @@
     }
   },
   "upside_percent": 59.6,
-  "calculation_date": "2026-08-29T12:58:19+09:00",
+  "calculation_date": "2026-08-30T11:57:56+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -211,7 +212,7 @@
     "estimated_fcf": 7922000000.0,
     "raw_fcf": 7922000000.0,
     "sector": "Hotel_Gaming",
-    "note": "EPSデータなし(/home/runner/work/On-a-journey/On-a-journey/docs/value-monitor/adjusted_eps_analyzer/data/BKNG/annual.json)",
+    "note": "EPSデータなし(C:\\Users\\shigi\\Documents\\On-a-journey-git\\docs\\value-monitor\\adjusted_eps_analyzer\\data\\BKNG\\annual.json)",
     "divergence_ratio": 0.0,
     "divergence_warning": "",
     "ma_addback_excluded": 0.0,
@@ -366,7 +367,7 @@
     "max_eps_reliability": "MED"
   },
   "validation": {
-    "validated_at": "2026-08-29",
+    "validated_at": "2026-08-30",
     "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
@@ -454,6 +455,10 @@
     "buyback_ttm": 8040000000
   },
   "net_current_assets_ratio": 0.007,
+  "dupont": {
+    "excluded": true,
+    "reason": "negative_equity"
+  },
   "next_earnings_date": "2026-10-28",
   "segment_configured": false,
   "phase1_growth_original": 0.15,
@@ -492,17 +497,17 @@
   "risk_events": [
     {
       "type": "litigation",
-      "summary": "Antitrust lawsuit against Booking Holdings Inc.",
+      "summary": "Antitrust lawsuit",
       "impact": "high"
     },
     {
       "type": "regulatory",
-      "summary": "Ongoing SEC regulatory investigation",
+      "summary": "SEC investigation",
       "impact": "high"
     },
     {
       "type": "earnings",
-      "summary": "Earnings warning amid competition risks for 2025-2026",
+      "summary": "Earnings warning amid competition 2025-2026",
       "impact": "mid"
     }
   ]

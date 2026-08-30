@@ -6,6 +6,7 @@
   "intrinsic_value_rf": 344.43,
   "upside_percent_rf": -1.2,
   "v0": 88875064004.77988,
+  "v0_note": "v0はβ込みCAPMベース（intrinsic_value_betaの参考値）。メインの理論株価計算根拠はdcf_components.v0_rm（market_return 10%固定・βなし）を参照すること。",
   "v0_adjusted": 88875064004.77988,
   "alpha": 0.0,
   "alpha_was_capped": false,
@@ -44,7 +45,7 @@
     }
   },
   "upside_percent": -85.9,
-  "calculation_date": "2026-08-29T12:57:43+09:00",
+  "calculation_date": "2026-08-30T11:57:02+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + three_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "three_stage",
   "growth": {
@@ -381,7 +382,7 @@
       6264000000
     ],
     "diluted_shares": 3949547394,
-    "roe_10yr_avg": -0.005439994944558571,
+    "roe_10yr_avg": -0.005439994944558565,
     "roe_years_used": 10,
     "roe_outlier_adj": false,
     "current_price": 348.75,
@@ -407,7 +408,7 @@
     "moat_fcf_margin_norm": 0.1746,
     "pv_high": 47162211028.34181,
     "pv_terminal": 41712852976.43807,
-    "roe_used": -0.005439994944558571,
+    "roe_used": -0.005439994944558565,
     "fcf_floor_applied": 0.0,
     "fcf_growth_floor": 0.15,
     "fcf_growth_cap": 0.5,
@@ -442,7 +443,7 @@
     "max_eps_reliability": "HIGH"
   },
   "validation": {
-    "validated_at": "2026-08-29",
+    "validated_at": "2026-08-30",
     "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
@@ -604,17 +605,17 @@
   "risk_events": [
     {
       "type": "litigation",
-      "summary": "Antitrust lawsuit against Tesla",
+      "summary": "Antitrust lawsuit",
       "impact": "high"
     },
     {
       "type": "regulatory",
-      "summary": "Ongoing SEC regulatory investigation",
+      "summary": "SEC investigation",
       "impact": "high"
     },
     {
       "type": "earnings",
-      "summary": "Earnings warning amid 2025-2026 outlook",
+      "summary": "Earnings warning",
       "impact": "mid"
     }
   ]

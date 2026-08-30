@@ -6,6 +6,7 @@
   "intrinsic_value_rf": 1240.34,
   "upside_percent_rf": 757.1,
   "v0": 149458209560.2846,
+  "v0_note": "v0はβ込みCAPMベース（intrinsic_value_betaの参考値）。メインの理論株価計算根拠はdcf_components.v0_rm（market_return 10%固定・βなし）を参照すること。",
   "v0_adjusted": 149458209560.2846,
   "alpha": 0.0,
   "alpha_was_capped": false,
@@ -44,7 +45,7 @@
     }
   },
   "upside_percent": -4.4,
-  "calculation_date": "2026-08-29T12:55:13+09:00",
+  "calculation_date": "2026-08-30T11:52:54+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -325,7 +326,7 @@
       2140000000
     ],
     "diluted_shares": 1033862000,
-    "roe_10yr_avg": -0.010608523173643702,
+    "roe_10yr_avg": -0.010608523173643698,
     "roe_years_used": 10,
     "roe_outlier_adj": true,
     "current_price": 144.7100067138672,
@@ -351,7 +352,7 @@
     "moat_fcf_margin_norm": 1.0,
     "pv_high": 35024563124.25992,
     "pv_terminal": 114433646436.02467,
-    "roe_used": -0.010608523173643702,
+    "roe_used": -0.010608523173643698,
     "fcf_floor_applied": 0.0,
     "fcf_growth_floor": 0.15,
     "fcf_growth_cap": 0.5,
@@ -386,7 +387,7 @@
     "max_eps_reliability": "HIGH"
   },
   "validation": {
-    "validated_at": "2026-08-29",
+    "validated_at": "2026-08-30",
     "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
@@ -538,5 +539,21 @@
   "forward_earnings_yield": 0.0346,
   "dilution_severity": "low",
   "dilution_comment": "許容範囲内 ✅",
-  "risk_events": []
+  "risk_events": [
+    {
+      "type": "litigation",
+      "summary": "antitrust lawsuit",
+      "impact": "high"
+    },
+    {
+      "type": "regulatory",
+      "summary": "SEC investigation",
+      "impact": "high"
+    },
+    {
+      "type": "earnings",
+      "summary": "earnings warning",
+      "impact": "mid"
+    }
+  ]
 }

@@ -6,6 +6,7 @@
   "intrinsic_value_rf": 336.07,
   "upside_percent_rf": 801.0,
   "v0": 12032767225.0656,
+  "v0_note": "v0はβ込みCAPMベース（intrinsic_value_betaの参考値）。メインの理論株価計算根拠はdcf_components.v0_rm（market_return 10%固定・βなし）を参照すること。",
   "v0_adjusted": 12032767225.0656,
   "alpha": 0.8,
   "alpha_was_capped": true,
@@ -44,7 +45,7 @@
     }
   },
   "upside_percent": -4.4,
-  "calculation_date": "2026-08-29T12:49:50+09:00",
+  "calculation_date": "2026-08-30T11:42:03+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -325,7 +326,7 @@
       330162000
     ],
     "diluted_shares": 302092889,
-    "roe_10yr_avg": 0.35497792458687794,
+    "roe_10yr_avg": 0.3549779245868779,
     "roe_years_used": 8,
     "roe_outlier_adj": true,
     "current_price": 37.29999923706055,
@@ -351,7 +352,7 @@
     "moat_fcf_margin_norm": 1.0,
     "pv_high": 3471663498.1079416,
     "pv_terminal": 8561103726.957658,
-    "roe_used": 0.35497792458687794,
+    "roe_used": 0.3549779245868779,
     "fcf_floor_applied": 0.0,
     "fcf_growth_floor": 0.15,
     "fcf_growth_cap": 0.5,
@@ -359,7 +360,7 @@
     "bull_multiplier": 1.2,
     "rpo_pv": 0.0,
     "growth_option_pv": 0,
-    "alpha_uncapped": 1.490907283264887,
+    "alpha_uncapped": 1.4909072832648869,
     "per": 41.200005,
     "per_is_forward": false,
     "per_adjusted": 31.79,
@@ -386,7 +387,7 @@
     "max_eps_reliability": "HIGH"
   },
   "validation": {
-    "validated_at": "2026-08-29",
+    "validated_at": "2026-08-30",
     "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
@@ -537,17 +538,17 @@
   "risk_events": [
     {
       "type": "litigation",
-      "summary": "Antitrust lawsuit against Bentley Systems",
+      "summary": "Antitrust lawsuit",
       "impact": "high"
     },
     {
       "type": "regulatory",
-      "summary": "Ongoing SEC regulatory investigation",
+      "summary": "SEC investigation",
       "impact": "high"
     },
     {
       "type": "earnings",
-      "summary": "Earnings warning amid 2025-2026 competition risks",
+      "summary": "Earnings warning for 2025-2026",
       "impact": "mid"
     }
   ]

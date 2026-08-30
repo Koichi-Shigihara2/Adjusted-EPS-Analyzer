@@ -6,6 +6,7 @@
   "intrinsic_value_rf": 626.82,
   "upside_percent_rf": 1151.1,
   "v0": 1198494053406.1523,
+  "v0_note": "v0はβ込みCAPMベース（intrinsic_value_betaの参考値）。メインの理論株価計算根拠はdcf_components.v0_rm（market_return 10%固定・βなし）を参照すること。",
   "v0_adjusted": 1198494053406.1523,
   "alpha": 0.4,
   "alpha_was_capped": true,
@@ -44,7 +45,7 @@
     }
   },
   "upside_percent": 70.0,
-  "calculation_date": "2026-08-29T13:04:30+09:00",
+  "calculation_date": "2026-08-30T12:07:14+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -294,7 +295,7 @@
       39539000000
     ],
     "diluted_shares": 4154775202,
-    "roe_10yr_avg": 0.3022603029903173,
+    "roe_10yr_avg": 0.30226030299031725,
     "roe_years_used": 10,
     "roe_outlier_adj": false,
     "current_price": 50.099998474121094,
@@ -320,7 +321,7 @@
     "moat_fcf_margin_norm": 0.9137,
     "pv_high": 165213465043.02905,
     "pv_terminal": 1033280588363.1232,
-    "roe_used": 0.3022603029903173,
+    "roe_used": 0.30226030299031725,
     "fcf_floor_applied": 0.0,
     "fcf_growth_floor": 0.15,
     "fcf_growth_cap": 0.5,
@@ -328,7 +329,7 @@
     "bull_multiplier": 1.2,
     "rpo_pv": 0.0,
     "growth_option_pv": 0,
-    "alpha_uncapped": 1.2694932725593326,
+    "alpha_uncapped": 1.2694932725593324,
     "per": 12.8776045,
     "per_is_forward": false,
     "per_adjusted": 12.02,
@@ -355,7 +356,7 @@
     "max_eps_reliability": "MED"
   },
   "validation": {
-    "validated_at": "2026-08-29",
+    "validated_at": "2026-08-30",
     "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
@@ -498,18 +499,18 @@
   "risk_events": [
     {
       "type": "litigation",
-      "summary": "Antitrust lawsuit against Verizon Communications",
+      "summary": "Antitrust lawsuit ongoing against Verizon",
       "impact": "high"
     },
     {
       "type": "regulatory",
-      "summary": "SEC regulatory investigation ongoing",
+      "summary": "SEC regulatory investigation in progress",
       "impact": "mid"
     },
     {
       "type": "earnings",
-      "summary": "Earnings warning amid competition risks 2025-2026",
-      "impact": "high"
+      "summary": "Earnings warning issued for 2025-2026 amid competition",
+      "impact": "mid"
     }
   ]
 }

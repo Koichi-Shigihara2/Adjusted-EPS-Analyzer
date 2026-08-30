@@ -830,6 +830,17 @@ class KoichiValuationCalculator:
             "intrinsic_value_rf": round(float(_ivps_rf), 2),
             "upside_percent_rf": round(_upside_rf, 1),
             "v0": float(v0),
+            # [[V0-V0RM-CONFUSION-RISK-1]]対応（2026-08-30）: v0はβ込み
+            # CAPM WACCベースのDCF結果（intrinsic_value_betaの計算根拠、
+            # 参考①）であり、メインの理論株価（intrinsic_value_per_share）
+            # の計算根拠ではない。メイン計算根拠はdcf_components.v0_rm
+            # （market_return 10%固定・βなし）。latest.jsonを直接読む
+            # 外部AI・レビュアーがv0からIVを積み上げ検算しようとして
+            # 誤った根拠を使う罠を防ぐため、既存フィールド構成は変更せず
+            # （後方互換性を維持）注記フィールドのみ追加する。
+            "v0_note": "v0はβ込みCAPMベース（intrinsic_value_betaの参考値）。"
+                       "メインの理論株価計算根拠はdcf_components.v0_rm"
+                       "（market_return 10%固定・βなし）を参照すること。",
             "v0_adjusted": float(v0_adjusted),
             "alpha": float(alpha),
             "alpha_was_capped": alpha_result.was_capped,

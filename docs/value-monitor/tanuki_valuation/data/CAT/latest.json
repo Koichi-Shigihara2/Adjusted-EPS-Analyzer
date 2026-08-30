@@ -6,6 +6,7 @@
   "intrinsic_value_rf": 1694.98,
   "upside_percent_rf": 111.8,
   "v0": 99571649691.10674,
+  "v0_note": "v0はβ込みCAPMベース（intrinsic_value_betaの参考値）。メインの理論株価計算根拠はdcf_components.v0_rm（market_return 10%固定・βなし）を参照すること。",
   "v0_adjusted": 99571649691.10674,
   "alpha": 0.7,
   "alpha_was_capped": true,
@@ -44,7 +45,7 @@
     }
   },
   "upside_percent": -68.1,
-  "calculation_date": "2026-08-29T13:02:08+09:00",
+  "calculation_date": "2026-08-30T12:03:59+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -209,7 +210,7 @@
     "divergence_ratio": 0.0,
     "divergence_warning": "",
     "ma_addback_excluded": 0.0,
-    "ma_addback_detected_but_not_applied": 129823203.04531923
+    "ma_addback_detected_but_not_applied": 129823203.04531921
   },
   "software_system_reclassification": {
     "applicable": false,
@@ -319,7 +320,7 @@
       7654000000
     ],
     "diluted_shares": 459674889,
-    "roe_10yr_avg": 0.34139839247382436,
+    "roe_10yr_avg": 0.3413983924738244,
     "roe_years_used": 10,
     "roe_outlier_adj": false,
     "current_price": 800.25,
@@ -345,7 +346,7 @@
     "moat_fcf_margin_norm": 0.5059,
     "pv_high": 42904488352.39855,
     "pv_terminal": 56667161338.70818,
-    "roe_used": 0.34139839247382436,
+    "roe_used": 0.3413983924738244,
     "fcf_floor_applied": 0.0,
     "fcf_growth_floor": 0.15,
     "fcf_growth_cap": 0.5,
@@ -380,7 +381,7 @@
     "max_eps_reliability": "HIGH"
   },
   "validation": {
-    "validated_at": "2026-08-29",
+    "validated_at": "2026-08-30",
     "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
@@ -523,17 +524,17 @@
   "risk_events": [
     {
       "type": "litigation",
-      "summary": "Antitrust lawsuit ongoing against Caterpillar",
+      "summary": "Antitrust lawsuit against Caterpillar",
       "impact": "high"
     },
     {
       "type": "regulatory",
-      "summary": "SEC regulatory investigation active",
+      "summary": "Ongoing SEC regulatory investigation",
       "impact": "high"
     },
     {
       "type": "earnings",
-      "summary": "Earnings warning issued for 2025-2026",
+      "summary": "Earnings warning amid 2025-2026 competition",
       "impact": "mid"
     }
   ]

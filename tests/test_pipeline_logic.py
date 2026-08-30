@@ -3584,3 +3584,42 @@ class TestSkipRiskEventsPreserved:
         with open(os.path.join(ticker_dir, "latest.json"), encoding="utf-8") as f:
             saved = json.load(f)
         assert saved.get("risk_events") == []
+
+
+# ─────────────────────────────────────────────
+# 18. DCF-RELIABILITY-LABEL-MISMATCH-1: FCF_Base方式の非LOW表示語彙統一
+#
+#     _calc_dcf_reliability_policy_b()は常にLOW/NORMALのいずれかを返すが、
+#     report.txtの表示文言がFCF_Base方式ではHIGH・FCF_Conversion_Rate方式
+#     ではNORMALと分岐していた。2026-08-30、FCF_Base方式側もNORMALに統一。
+# ─────────────────────────────────────────────
+
+
+class TestDcfReliabilityLabelUnified:
+    """FCF_Base方式でPolicy Bが非LOWを返した場合、report.txtの表示が
+    NORMALに統一されており、旧HIGH表記が残っていないことを確認する"""
+
+    @staticmethod
+    def _make_normal_fcf_valuation(upside: float = 50.0) -> dict:
+        """実績FCFプラス・fcf_outlier未検出の新規銘柄（Policy B → NORMAL想定）"""
+        val = _minimal_valuation(upside=upside)
+        val["fcf_estimation"] = {"applied": False, "sector": "Technology"}
+        val["components"].update({
+            "fcf_base_used":     900_000_000,
+            "fcf_floor_applied": 0,            # floor未発火 → Policy A側はLOWにならない
+            "fcf_5yr_avg":       900_000_000,
+            "fcf_base_method":   "avg_5yr",
+            "fcf_list_raw":      [800e6, 850e6, 900e6],
+        })
+        val["fcf_outlier"] = {"detected": False}  # Policy B → NORMAL
+        val["rice"] = {"available": False, "note": ""}
+        return val
+
+    def test_dcf_reliability_normal_shown_for_positive_fcf_ticker(self, tmp_path):
+        pipe = _make_pipe(tmp_path)
+        pipe._eps_summary_cache = {}
+        val = self._make_normal_fcf_valuation()
+        score_data = {"score": "BUY", "funda_score": 60, "score_comment": "test"}
+        report = pipe._generate_report("NEWCO2", val, score_data, _minimal_extra())
+        assert "DCF_Reliability: NORMAL" in report
+        assert "DCF_Reliability: HIGH" not in report

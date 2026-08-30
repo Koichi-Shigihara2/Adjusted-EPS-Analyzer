@@ -6,6 +6,7 @@
   "intrinsic_value_rf": 92.18,
   "upside_percent_rf": 998.7,
   "v0": 918391646.7468016,
+  "v0_note": "v0はβ込みCAPMベース（intrinsic_value_betaの参考値）。メインの理論株価計算根拠はdcf_components.v0_rm（market_return 10%固定・βなし）を参照すること。",
   "v0_adjusted": 918391646.7468016,
   "alpha": 0.31048074337382264,
   "alpha_was_capped": false,
@@ -44,7 +45,7 @@
     }
   },
   "upside_percent": 63.7,
-  "calculation_date": "2026-08-29T13:01:38+09:00",
+  "calculation_date": "2026-08-30T12:03:16+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -374,7 +375,7 @@
     "max_eps_reliability": "HIGH"
   },
   "validation": {
-    "validated_at": "2026-08-29",
+    "validated_at": "2026-08-30",
     "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
@@ -525,17 +526,17 @@
   "risk_events": [
     {
       "type": "litigation",
-      "summary": "Antitrust lawsuit against TaskUs Inc.",
+      "summary": "Antitrust lawsuit",
       "impact": "high"
     },
     {
       "type": "regulatory",
-      "summary": "Ongoing SEC regulatory investigation",
+      "summary": "SEC investigation",
       "impact": "high"
     },
     {
       "type": "earnings",
-      "summary": "Earnings warning for 2025-2026 period",
+      "summary": "Earnings warning for 2025 2026",
       "impact": "mid"
     }
   ]

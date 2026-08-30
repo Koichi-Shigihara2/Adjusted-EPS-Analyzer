@@ -6,6 +6,7 @@
   "intrinsic_value_rf": 1189.29,
   "upside_percent_rf": 249.4,
   "v0": 32571613800.88462,
+  "v0_note": "v0はβ込みCAPMベース（intrinsic_value_betaの参考値）。メインの理論株価計算根拠はdcf_components.v0_rm（market_return 10%固定・βなし）を参照すること。",
   "v0_adjusted": 32571613800.88462,
   "alpha": 0.8,
   "alpha_was_capped": true,
@@ -44,7 +45,7 @@
     }
   },
   "upside_percent": -61.3,
-  "calculation_date": "2026-08-29T12:58:48+09:00",
+  "calculation_date": "2026-08-30T11:58:43+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -214,7 +215,7 @@
     "note": "生FCF安定(CV=0.14<0.3)かつ外れ値未検出のため推定を適用せず生FCFを採用",
     "divergence_ratio": 0.0,
     "divergence_warning": "",
-    "ma_addback_excluded": 28738924.168722056,
+    "ma_addback_excluded": 28738924.16872206,
     "ma_addback_detected_but_not_applied": 0.0
   },
   "software_system_reclassification": {
@@ -386,7 +387,7 @@
     "max_eps_reliability": "HIGH"
   },
   "validation": {
-    "validated_at": "2026-08-29",
+    "validated_at": "2026-08-30",
     "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
@@ -529,17 +530,17 @@
   "risk_events": [
     {
       "type": "litigation",
-      "summary": "Antitrust lawsuit against Cadence Design Systems",
+      "summary": "Antitrust lawsuit ongoing",
       "impact": "high"
     },
     {
       "type": "regulatory",
-      "summary": "SEC regulatory investigation",
+      "summary": "SEC regulatory investigation active",
       "impact": "high"
     },
     {
       "type": "earnings",
-      "summary": "Earnings warning amid competition in 2025-2026",
+      "summary": "Earnings warning amid 2025-2026 competition",
       "impact": "mid"
     }
   ]

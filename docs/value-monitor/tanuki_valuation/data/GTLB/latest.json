@@ -6,6 +6,7 @@
   "intrinsic_value_rf": 667.04,
   "upside_percent_rf": 1386.6,
   "v0": 12653692393.1725,
+  "v0_note": "v0はβ込みCAPMベース（intrinsic_value_betaの参考値）。メインの理論株価計算根拠はdcf_components.v0_rm（market_return 10%固定・βなし）を参照すること。",
   "v0_adjusted": 12653692393.1725,
   "alpha": 0.0,
   "alpha_was_capped": false,
@@ -44,7 +45,7 @@
     }
   },
   "upside_percent": 75.5,
-  "calculation_date": "2026-08-29T12:52:40+09:00",
+  "calculation_date": "2026-08-30T11:48:30+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -209,7 +210,7 @@
     "divergence_ratio": 0.63,
     "divergence_warning": "",
     "ma_addback_excluded": 0.0,
-    "ma_addback_detected_but_not_applied": 6252914.426073874
+    "ma_addback_detected_but_not_applied": 6252914.426073873
   },
   "software_system_reclassification": {
     "applicable": false,
@@ -378,7 +379,7 @@
     "max_eps_reliability": "HIGH"
   },
   "validation": {
-    "validated_at": "2026-08-29",
+    "validated_at": "2026-08-30",
     "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
@@ -528,7 +529,7 @@
   "risk_events": [
     {
       "type": "litigation",
-      "summary": "Antitrust lawsuit against GitLab Inc.",
+      "summary": "antitrust lawsuit",
       "impact": "high"
     },
     {
@@ -538,7 +539,7 @@
     },
     {
       "type": "earnings",
-      "summary": "Earnings warning amid 2025-2026 competition",
+      "summary": "earnings warning for 2025-2026",
       "impact": "mid"
     }
   ]

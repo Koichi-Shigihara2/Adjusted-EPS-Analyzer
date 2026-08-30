@@ -1259,11 +1259,14 @@ def _parse_report(text: str) -> dict:
             if m:
                 result["classification"] = m.group(1)
 
-        # DCF_Reliability（データ行: "DCF_Reliability: LOW ⚠️..." or "...HIGH"）
+        # DCF_Reliability（データ行: "DCF_Reliability: LOW ⚠️..." or "...NORMAL"）
+        # [[DCF-RELIABILITY-LABEL-MISMATCH-1]]対応（2026-08-30）: 表示語彙を
+        # NORMALへ統一する前はFCF_Base方式のみHIGHと表示していたが、この
+        # 正規表現自体はどちらの語彙でも影響を受けない（\wでそのまま捕捉）。
         if result["dcf_reliability"] is None:
             m = re.match(r'^DCF_Reliability:\s+(\w+)', line)
             if m:
-                result["dcf_reliability"] = m.group(1)  # "LOW" or "HIGH"
+                result["dcf_reliability"] = m.group(1)  # "LOW" or "NORMAL"
 
         # Matrix: （最初のマッチ）
         if result["matrix_type"] is None:

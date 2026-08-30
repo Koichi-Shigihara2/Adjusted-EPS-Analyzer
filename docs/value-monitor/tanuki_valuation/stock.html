@@ -72,6 +72,16 @@
     .tag.fcf { background: rgba(251,191,36,.12); color: var(--yellow); }
     .tag.go { background: rgba(74,222,128,.12); color: var(--green); }
     .tag.seg { background: rgba(148,163,184,.12); color: var(--mut); }
+    /* [[STOCK-HTML-CLASSIFICATION-MISSING-1]]対応（2026-08-30）: tanuki_score/index.htmlの
+       badge-*配色を踏襲し、Classification（BUY/WATCH/HOLD/GROWTH_PREMIUM/TRIM/SELL/PASS）を
+       stock.htmlにも表示する */
+    .tag.cls-BUY  { background: rgba(34,197,94,.12);  color: #22c55e; }
+    .tag.cls-WATCH{ background: rgba(234,179,8,.12);  color: #eab308; }
+    .tag.cls-HOLD { background: rgba(59,130,246,.12); color: #3b82f6; }
+    .tag.cls-GROWTH_PREMIUM { background: rgba(20,184,166,.12); color: #14b8a6; }
+    .tag.cls-TRIM { background: rgba(249,115,22,.12); color: #f97316; }
+    .tag.cls-SELL { background: rgba(239,68,68,.10);  color: #ef4444; }
+    .tag.cls-PASS { background: rgba(71,85,105,.10);  color: #475569; }
 
     .value-display { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
     .value-box {
@@ -899,6 +909,19 @@ function render(d) {
   const dcfTag = dcfType === 'three_stage' ? '3段階DCF' : '2段階DCF';
   const fcfTag = fcfBaseMethod === 'recent_2yr' ? '直近2年平均' : '5年平均';
   const segTag = growthSource === 'segment_weighted' ? 'セグメント加重' : '';
+  // [[STOCK-HTML-CLASSIFICATION-MISSING-1]]対応（2026-08-30）: TANUKI SCORE
+  // Classification（BUY/WATCH/HOLD/GROWTH_PREMIUM/TRIM/SELL/PASS）。
+  // アイコン・配色はtanuki_score/index.htmlのCAT_METAと同一。
+  const CLS_META = {
+    BUY:            { icon: '🟢', label: 'BUY' },
+    WATCH:          { icon: '🟡', label: 'WATCH' },
+    HOLD:           { icon: '🔵', label: 'HOLD' },
+    GROWTH_PREMIUM: { icon: '🟩', label: 'GROWTH_PREMIUM' },
+    TRIM:           { icon: '🟠', label: 'TRIM' },
+    SELL:           { icon: '🔴', label: 'SELL' },
+    PASS:           { icon: '⬛', label: 'PASS' },
+  };
+  const clsMeta = d.tanuki_score ? CLS_META[d.tanuki_score] : null;
 
   // ステップ番号（条件付き表示）
   let stepNum = 0;
@@ -930,6 +953,7 @@ function render(d) {
       <div class="ticker-header">
         <span class="ticker-symbol">${ticker}${companyNames[ticker] ? ` — ${companyNames[ticker]}` : ''}</span>
         <div class="ticker-tags">
+          ${clsMeta ? `<span class="tag cls-${d.tanuki_score}" title="${d.score_comment ? d.score_comment.replace(/"/g, '&quot;') : ''}">${clsMeta.icon} ${clsMeta.label}</span>` : ''}
           <span class="tag dcf">${dcfTag}</span>
           <span class="tag fcf">${fcfTag}</span>
           ${goCount > 0 ? `<span class="tag go">成長OPT ${goCount}件</span>` : ''}
@@ -1206,7 +1230,10 @@ function render(d) {
         const fcb     = fcfBaseUsed;
         const shs     = dilutedShares;
         const bsps    = bsNetCashPerShare;
-        const alpha   = d.alpha ?? 1.0;
+        // [[SENS-MATRIX-DUAL-IMPL-1]]対応（2026-08-30）: 宣言されているが
+        // calcSensIV()内で一度も参照されない死コードだったため削除
+        // （5×5マトリクスとbackend 3×3の統合方針自体は製品判断が必要な
+        // ため未着手のまま。詳細はBACKLOG.md参照）。
 
         function calcSensIV(g, r) {
           if (r <= tg) return null;
