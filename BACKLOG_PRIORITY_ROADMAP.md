@@ -8,6 +8,18 @@
 Koichiさんの指示「このレベルまでやって棚卸である」を受け、この方法論と
 実施計画をリポジトリに恒久記録として残す。
 
+**更新（2026-08-30、診断結論の再検証・全19ラウンド完了後）**: 事例17
+（CHAT_RULES.md）を踏まえ、168件（フェーズ1バッチAで8件完了済み分を
+除く160件相当）全件について「診断結論そのものの妥当性」を実コード・
+実データで再検証した。結果、2件が診断結論自体の陳腐化（登録当時は
+正しかったが後続の別対応で解消済み・BACKLOG本体への反映漏れ）と判明し
+BACKLOG_DONE.mdへ移設（`[[MP-TOOLTIP-1]]`・`[[MARKETDATA-AS-IS-AUDIT-
+PY-OMITTED-1]]`）。現存総数は**162件**（168−8完了−2移設+4疑義件を
+再カウント調整後の機械カウント値）。詳細はチャット履歴の全19ラウンド
+記録を参照。この再検証と合わせて、下記5節のクラスタ構成を「タイトル・
+カテゴリの類似性」ではなく「実際のコード上の隣接性」基準で再分析した
+（バッチAの教訓を踏まえた対応、5B節参照）。
+
 **このドキュメントの位置づけ:** 個別項目の詳細・最新状態は常に
 `BACKLOG.md`が正（このロードマップは2026-08-30時点のスナップショット）。
 新規登録項目や状態変化はBACKLOG.md側にのみ反映され、このロードマップは
@@ -154,6 +166,122 @@ Dのepic級設計課題が該当する。
 
 ---
 
+## 5B. コード場所ベースのクラスタリング再分析（2026-08-30）
+
+### 5B-1. 再分析の経緯
+
+バッチA（クラスタ1〜3、計11件）を実施した結果、「タイトル・カテゴリの
+類似性」で組んだクラスタのうち、実際に単一の根本原因を共有していたのは
+**半分未満**だった（クラスタ1の4件は3種の異なる原因・解消経路、
+クラスタ2の3件は1件のみが単純パターンに適合、他2件は異なる実装が必要と
+判明）。この教訓を受け、Koichiさんの承認のもと、162件全件について
+「本文に記載された対象ファイル・関数」を機械的に抽出し、**実際に
+同一ファイル・同一関数・同一の共有ロジックパスに触れるか**を基準に
+再分析した。
+
+**方法**: 各項目の本文からバックティック引用された`.py`/`.js`ファイル名・
+`関数名()`形式の文字列を正規表現で抽出し、2件以上で共有される
+ファイル・関数を機械的に洗い出した上で、各候補について実際に「同じ
+コード変更で複数項目が同時に解決するか」を個別に本文精読で確認した。
+`FIELD_DEFINITIONS.md`等の調査手法ドキュメント・`QUALITY-GATES-EPIC-1`
+等の広域参照epicは、「あらゆる項目から参照される」性質上クラスタリング
+のノイズになるため対象から除外した。
+
+### 5B-2. 確度：高（同一関数への同一パターンの変更で複数項目が解決する）
+
+**クラスタA: `dcf_validity_checker.py`統合系3件**
+`[[ANALYST-VS-IV-INTEGRATE-1]]`・`[[EPS-ANALYZER-INTEGRATE-1]]`・
+`[[RICE-INTEGRATE-1]]`。3件とも`common/screening/dcf_validity_checker.py`
+に「新規チェック関数を追加し、既存のIV乖離検知パターンを別の指標
+（アナリストコンセンサス・EPS Analyzerの乖離・RICE値）に適用する」という
+**同一の実装パターン**を提案しており、2026-08-30の診断結論再検証
+（ラウンド2）で3件とも実装内容が未着手のまま現存することを確認済み。
+1回のセッションで3関数を追加する形で一括対応可能。
+
+**クラスタB: `config/`読み込み失敗検知の横断バッチ（既存1項目内で
+既に3ファイル分の同一パターン）**
+`[[CONFIG-LOAD-SILENT-FALLBACK-1]]`単体。CHECK-34が確立した
+`_CONFIG_LOADER_REGISTRY`テーブル方式（`resolve_*_path()`切り出し＋
+レジストリへの1エントリ追記）を、残り3ファイル（`prompts.yaml`・
+`maturity_config.json`・`segment_config.json`/`growth_options_
+config.json`）に同一パターンで適用するだけで完結する。新規の設計判断
+不要、機械的な横展開。
+
+### 5B-3. 確度：中（同一サブシステム・関連する原因だが、個別に検証しつつ
+まとめて着手する価値がある）
+
+**クラスタC: `common/macro_data/fetcher.py`のCLI・追跡性改善2件**
+`[[MACRODATA-FETCH-FAILURE-VISIBILITY-GAP-1]]`（`fetch_status`
+フィールド追加）・`[[MACRODATA-FULL-HISTORY-DAILY-REFETCH-1]]`
+（`--start`引数追加）。いずれも同一ファイルの`fetch_series()`/
+`fetch_all_series()`/`update_series()`まわりのCLI・ログ機構改善で、
+実装が互いに干渉しない独立した追加のため一括実装しやすいが、対象関数が
+完全に同一ではないため確度は中。
+
+**クラスタD: TAIL KPIパイプライン小規模改善3件（旧クラスタ4の再評価）**
+`[[KPI-UNIT-HARDCODE-USD-1]]`（`xbrl_segment_fetcher.py`のunit固定値
+修正）・`[[TAIL-LAYER3-FORMULA-YOY-UNSUPPORTED-1]]`（同ファイルの
+`layer3_formula`ミニ構文拡張）・`[[TAILKPI-FIELD-VALIDATION-GAP-1]]`
+（`workflow_write.py`への個別フィールド検証追加）。いずれもTAIL KPI
+登録・取得パイプラインの独立した小規模改善で、ファイルは一部重複
+（前2件は`xbrl_segment_fetcher.py`）するが関数は別。**旧ロードマップの
+クラスタ4（TAIL-KPI-PROPOSER-CORE-ONLY-GATE-1・TAIL-XBRL-SEGMENT-
+FETCHER-NONDIMENSIONED-GAP-1・TAIL-THESIS-KPIS-EMPTY-ADBE-APGE-1・
+TAIL-LAYER3-FORMULA-YOY-UNSUPPORTED-1という4件構成は、再検証の結果
+半分は既に別々に進展していたため訂正する**（`[[TAIL-KPI-PROPOSER-
+CORE-ONLY-GATE-1]]`のゲート撤廃自体は2026-08-19に実装完了済み、残る
+「値取得ブロック」問題は`[[TAIL-XBRL-SEGMENT-FETCHER-NONDIMENSIONED-
+GAP-1]]`と同一原因でLayer3振替により実務上ほぼ解消済み。
+`[[TAIL-THESIS-KPIS-EMPTY-ADBE-APGE-1]]`は`quarterly_review_
+generator.py`の別関数〈`_build_kpi_status_table()`〉が原因で、
+この2件とは独立したバグのため別対応が妥当）。
+
+**クラスタE: 登録フロー改善2件**
+`[[REGISTER-FLOW-REDESIGN-1]]`・`[[TICKER-AUDIT-1]]`。`TICKER-AUDIT-1`
+は`REGISTER-FLOW-REDESIGN-1`が診断した`registration_validator.py`の
+P1/P4チェック構造的欠陥と同一の根本原因（登録プロセスの原子性・検証の
+強制力不足）に対する具体的な実装候補の一つとして位置づけられる
+（`REGISTER-FLOW-REDESIGN-1`本文でも統合先として言及済み）。
+
+### 5B-4. 確度：低（表面的な類似性のみ、個別対応を維持すべき）
+
+以下は同一ファイルまたは同一カテゴリを共有するが、実際の修正内容・
+根本原因が異なるため、**無理にクラスタ化せず個別対応候補として残す**:
+
+- **`_resolve_bs_entity_mixing()`周辺の4件**（`[[LAYER3-FETCHER-
+  SELECTION-PHILOSOPHY-MISMATCH-1]]`〈確定済み設計判断、対応不要〉・
+  `[[PARSER-STOCKHOLDERS-EQUITY-CROSS-YEAR-MISSELECT-1]]`・
+  `[[SPAC-SHELL-MAINTAINED-FIELDS-FREEZE-CONSIDERATION-1]]`〈将来
+  検討〉・`[[TTM-DATA-DRIFT-BEHIND-PIPELINE-1]]`）: 調査時の文脈として
+  同じ関数に言及しているだけで、修正対象・修正内容は互いに独立
+- **`_extract_values_best_candidate()`周辺の3件**（`[[ANOMALY-
+  PATTERN-CATALOG-1]]`〈カタログ文書、実装対象ではない〉・
+  `[[PARSER-MERGED-TAG-MIXING-RISK-1]]`〈別関数`_extract_values_
+  merged()`の話〉・`[[VRT-REVENUE-2018-MISSING-1]]`〈VRT個別の
+  タグ取得失敗〉）: 3件は互いに独立した課題
+- **Discover表示4件**（旧クラスタ6のまま維持するが確度は低〜中）:
+  `catalyst.py`/`collect.py`/`index.html`と関わるファイルは一部
+  重複するが、`[[DISCOVER-UTCJST-DATE-MISMATCH-1]]`（日付処理）・
+  `[[DISCOVER-IMPACT-PRED-GAPS-1]]`（表示連携・実行依存関係）・
+  `[[DISCOVER-PRECISION-GAPS-1]]`（部分文字列マッチ・鮮度表示）・
+  `[[UI-DISCOVER-1]]`（未確定の一般的UI改善）は具体的な修正箇所が
+  それぞれ別。「Discover改善セッション」としてまとめて着手する運用上の
+  価値はあるが、1コミットで一括解決できる技術的根拠はない
+- **FCF-CONVRATEクラスタ3件**（旧クラスタ5）: `[[FCF-CONVRATE-
+  DESIGN-LIMIT-1]]`は既に残課題が`[[TRUST-SUMMARY-EPIC-1]]`へ吸収
+  済みで実質完了に近い。`[[FCF-CONVRATE-LOWER-DIVERGENCE-1]]`（29
+  銘柄への`FCF_CYCLICAL_VOLATILITY_TICKERS`拡張）と`[[AMZN-
+  CONVRATE-OVERRIDE-REVIEW-1]]`（AMZN単体の再較正要否検討）は
+  `fcf_conversion_config.json`という同一設定ファイルを触るが、
+  変更の性質（汎用ルール追加 vs 個別銘柄の数値見直し）が異なるため
+  同一PRでの一括対応には向かない
+- **report_consistency_check.py共有9件**: 9件全てが同一ファイルを
+  参照するが、各WARN/CHECKは独立したロジックのため、ファイル共有
+  だけを根拠にクラスタ化する意味は薄い（`[[CONFIG-LOAD-SILENT-
+  FALLBACK-1]]`のみクラスタBとして別途高確度扱い）
+
+---
+
 ## 6. 運用ルール
 
 - BACKLOG.mdへ新規項目が登録された際は、この168件分の判定結果を起点に、
@@ -165,3 +293,12 @@ Dのepic級設計課題が該当する。
 - 全5ラウンドの詳細な検証記録（各項目の陳腐化判定根拠・BACKLOG_DONE.md
   への移設理由等）はチャット履歴側に残るが、このドキュメントはその
   「到達点」のみを恒久記録として要約したものである
+- BACKLOG.md項目を🗑️誤診断等でクローズ・BACKLOG_DONE.mdへ移設する際は、
+  その項目IDを本文中で参照している他のBACKLOG.md項目がないか確認し、
+  ある場合はその参照先項目の記述（前提・依存関係の説明等）が古いままに
+  ならないよう更新すること。2026-08-30の棚卸しで、クローズ済み項目を
+  依然として未解決の依存先として参照したままの記述が3件見つかった
+  （`SEC-DATA-REDESIGN-OPERATIONAL-POLICY-1`・
+  `LAYER3-UNEXPLAINED-SINGLE-TICKER-DIFFS-1`・
+  `LAYER3-ANNUAL-CLASSIFICATION-DROPS-DATA-1`）ことが本ルール追加の
+  契機である
