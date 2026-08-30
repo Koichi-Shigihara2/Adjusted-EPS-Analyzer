@@ -1,7 +1,7 @@
 CEG INTEGRATED INVESTMENT REPORT
-Generated: 2026-08-30T11:42:45+09:00
+Generated: 2026-08-31T00:38:11+09:00
 Price: $276.75
-Validation_Status: PASS (品質ゲート: 全チェック通過)
+Validation_Status: FAIL ⚠️ (要注意チェック: anomaly_detection)
 
 ⚠️ CIK断絶(構造的境界): 2022年2月ExelonからのスピンオフによりConstellation Energy Corp発足。スピンオフ以前のデータは親会社連結からの区分推定値であり接続していません。
 
@@ -10,10 +10,10 @@ Classification: WATCH
 Classification_Pre_Rounding: TRIM
 Funda_Score: 65/100
 Timing_Score (components):
-  Deviation_Rate: -97.8%
+  Deviation_Rate: -100.2%
   MA200_Deviation: -7.1%
   HypeCore_Phase: Phase4 (期待剥落期)
-  Analyst_Consensus: Buy | Target: $342 median ($290-$441) | 20 analysts | vs IV: +5443.9%
+  Analyst_Consensus: Buy | Target: $342 median ($290-$441) | 20 analysts | vs IV: +75016.7%
 Comment: DCF信頼性LOW(FCF_Conversion_Rate方式・要注意フラグ)のためupside依存判定を抑制→WATCH
 Definition:
 
@@ -36,7 +36,7 @@ Matrix: ②収益性系
 Quadrant: 左下
 Label: 割高×低ROE
 Key_Metric_Y: ROE_avg (5yr) = 11.2%
-Deviation_Rate: -97.8%
+Deviation_Rate: -100.2%
 Thresholds:
   RICE_Threshold: 3.0/1.0/0 (>=3.0=high, 1.0-3.0=medium, 0-1.0=low, <0=undefined OCF-negative)
   ROE_Threshold: 15% (above=high profitability)
@@ -61,31 +61,24 @@ Positive deviation = undervalued (intrinsic > current)
 
 [3. TANUKI VALUATION]
 Current_Price: $276.75
-Intrinsic_Value_BASE: $6.16
-Deviation_BASE: -97.8%
+Intrinsic_Value_BASE: $-0.46
+Deviation_BASE: -100.2%
 Scenarios:
-BEAR: Growth=6.8%, IV=$1.33, Deviation=-99.5%
-BASE: Growth=9.7%, IV=$6.16, Deviation=-97.8%
-BULL: Growth=11.6%, IV=$9.52, Deviation=-96.6%
-Return_Outlook(BASE): 1年後: $6.75 (-97.6%) / 3年後: $8.12 (-97.1%) / 5年後: $8.62 (-96.9%)
-  5yr_Annualized_Return: -50.0%/yr
+BEAR: Growth=6.8%, IV=$-5.28, Deviation=-101.9%
+BASE: Growth=9.7%, IV=$-0.46, Deviation=-100.2%
+BULL: Growth=11.6%, IV=$2.90, Deviation=-99.0%
+Return_Outlook(BASE): 1年後: $-0.50 (-100.2%) / 3年後: $-0.61 (-100.2%) / 5年後: $-0.64 (-100.2%)
+  5yr_Annualized_Return: -76.0+17.5j%/yr
 Growth_Rate_Rec: 8.4% (recommended)
 TTM_YoY_Growth: 23.4%
 (DCF Base vs TTM actual: -13.7pt discount)
 Discount_Rate_Primary: 10.00% (DCF discount rate used)
 WACC_CAPM_Reference: 10.69%
-  参考①β込みWACC_IV: $0.16 (Deviation: -99.9%)
-  参考②Rf理論上限_IV: $299.92 (Deviation: +8.4%)
+  参考①β込みWACC_IV: $-6.46 (Deviation: -102.3%)
+  参考②Rf理論上限_IV: $293.30 (Deviation: +6.0%)
 Terminal_Growth_Rate: 3.0%
 Beta: 1.121
-Valuation_Gap_Analysis:
-  DCF_IV:           $6 (保守的FCFベース・現在実力値)
-  Market_Price:     $277
-  Gap:              -98% (市場が将来成長を先取り)
-  Implied_FCF_2030: $8.11B (現在株価を正当化するために必要な5年後FCF)
-  Current_FCF:      $1.34B
-  Required_Growth:  43%/yr (現在FCFから必要成長率を逆算)
-FCF_TTM_End: 2026-03-31 (FCF/RICE算出に用いたTTM期末日)
+FCF_TTM_End: 2026-06-30 (FCF/RICE算出に用いたTTM期末日)
 FCF_Conversion_Rate: 0.45 (Industry: Power_Utility)
   [FCF_Conv: Adj_NI × rate = estimated FCF. Conservative conversion from
    adjusted net income; differs from OCF→FCF conversion rate.]
@@ -98,31 +91,31 @@ DCF_Reliability: LOW ⚠️ (FCF_Conversion_Rate方式: 要注意フラグ検出
   [Policy B: LOW時はBUY/TRIM/HOLD/WATCHをWATCHへ丸め。SELL/PASSは維持。
    fcf_outlier未解消（一過性費用で説明不可）または推定FCFが生FCFから
    大幅乖離（eps_invalid）のため、IVは参考値扱い。]
-   [DCF-REL-SYNC-1: FCF実績が5年平均から126%乖離]
+   [DCF-REL-SYNC-1: FCF実績が5年平均から107%乖離]
 DCF_FCF_PV: $3.99B (3yr discounted FCF sum, pre-alpha, Rm=10%)
 DCF_TV_PV:  $19.49B (terminal value present value, pre-alpha, Rm=10%)
 DCF_v0:     $23.48B (= FCF_PV + TV_PV, Rm=10% enterprise value)
 Alpha_Premium: 0.4706 (HypeCore expectation premium; Rm basis)
 RPO_PV: $0
 Growth_Option_PV: $0
-Equity_Value: $2.18B (= v0 + RPO_PV + GO_PV + Net_Cash $-21.30B)
+Equity_Value: $-0.16B (= v0 + RPO_PV + GO_PV + Net_Cash $-23.64B)
 Shares_Used: 354.3M (source: yf_implied)
-→ Intrinsic_Value: $6.16 (= Equity_Value ÷ Shares_Used)
+→ Intrinsic_Value: $-0.46 (= Equity_Value ÷ Shares_Used)
 Sensitivity_Matrix (WACC×成長期間 → IV/share):
   WACC\Years  2yr  3yr  4yr
-  9.0%       $13.09  $17.32  $21.58
-  10.0%       $2.60  $6.16  $9.71
-  11.0%       $-5.27  $-2.21  $0.82
+  9.0%       $6.47  $10.70  $14.96
+  10.0%       $-4.02  $-0.46  $3.10
+  11.0%       $-11.89  $-8.82  $-5.80
 Financial_Health:
-  Net_Debt: $+21.30B (negative=net cash)
-  Total_Debt: $22.10B  Cash: $0.80B
-  Net_Debt_Period: 2026Q1
+  Net_Debt: $+23.64B (negative=net cash)
+  Total_Debt: $24.34B  Cash: $0.70B
+  Net_Debt_Period: 2026Q2
   SBC_TTM: $385M
   Dilution_3yr_Annual: -1.54%/yr  自社株買いによる株主還元 ✅
   Dilution_Comment: 株式数が減少し1株あたり価値が向上している。
   ⚠️ 期中に大規模な株式発行の可能性（+12.8%乖離: yf=354M vs SEC=314M）
   Next_Earnings_Date: 2026-11-09
-  DuPont_ROE: 純利益率12.7% × 資産回転率0.31x × 財務レバレッジ2.89x = ROE11.3%
+  DuPont_ROE: 純利益率11.1% × 資産回転率0.32x × 財務レバレッジ3.07x = ROE10.8%
 FCF_History:
   2021: $-2.67B (FCF_Margin: -13.6%)
   2022: $-4.04B (FCF_Margin: -16.5%)
@@ -350,7 +343,7 @@ Note: Uses ForwardEPS from yfinance (analyst consensus).
 Short_Report_Target: no
 Short_Interest: 3.3%
 Institutional_Ownership: N/A (not in data source)
-Analyst_Consensus: Buy | Target: $342 median ($290-$441) | 20 analysts | vs IV: +5443.9%
+Analyst_Consensus: Buy | Target: $342 median ($290-$441) | 20 analysts | vs IV: +75016.7%
 Insider_Activity: Buy優勢 | 買い1件 / 売り0件 | 直近90日
 Runway_Months: N/A (profitable or not in STONKS)
 Revenue_Growth_YoY: 23.4%
@@ -374,9 +367,9 @@ based on recent 4Q linear trend. Rough estimate only.
 
 [9. RISK EVENTS]
 Source: Grok web search (直近3ヶ月)
-  [high] litigation: Antitrust lawsuit
-  [high] regulatory: SEC investigation
-  [mid] earnings: Earnings warning for 2025 2026
+  [high] litigation: Antitrust lawsuit against Constellation Energy
+  [high] regulatory: Ongoing SEC regulatory investigation
+  [mid] earnings: Earnings warning amid 2025-2026 competition
 
 ==============================================
 DISCLAIMER: This report is generated automatically

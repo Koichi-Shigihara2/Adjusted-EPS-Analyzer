@@ -1,17 +1,18 @@
 PM INTEGRATED INVESTMENT REPORT
-Generated: 2026-08-30T12:06:32+09:00
+Generated: 2026-08-31T00:47:58+09:00
 Price: $191.89
 Validation_Status: PASS (品質ゲート: 全チェック通過)
 
 [1. TANUKI SCORE]
-Classification: HOLD
+Classification: WATCH
+Classification_Pre_Rounding: HOLD
 Funda_Score: 55/100
 Timing_Score (components):
-  Deviation_Rate: -50.5%
+  Deviation_Rate: -54.1%
   MA200_Deviation: +10.5%
   HypeCore_Phase: Phase2 (期待拡大期)
-  Analyst_Consensus: None | Target: $210 median ($175-$225) | 15 analysts | vs IV: +121.1%
-Comment: 割高(-50%超)、FCF黒字、売上安定成長
+  Analyst_Consensus: None | Target: $210 median ($175-$225) | 15 analysts | vs IV: +138.2%
+Comment: DCF信頼性LOW(FCF_Conversion_Rate方式・要注意フラグ)のためupside依存判定を抑制→WATCH
 Definition:
 
 Funda_Score: Composite score of financial health,
@@ -33,7 +34,7 @@ Matrix: ②収益性系
 Quadrant: 左下
 Label: 割高×低ROE
 Key_Metric_Y: ROE = N/A (負債超過)
-Deviation_Rate: -50.5%
+Deviation_Rate: -54.1%
 Thresholds:
   RICE_Threshold: 3.0/1.0/0 (>=3.0=high, 1.0-3.0=medium, 0-1.0=low, <0=undefined OCF-negative)
   ROE_Threshold: 15% (above=high profitability)
@@ -58,52 +59,63 @@ Positive deviation = undervalued (intrinsic > current)
 
 [3. TANUKI VALUATION]
 Current_Price: $191.89
-Intrinsic_Value_BASE: $94.99
-Deviation_BASE: -50.5%
-Growth_Rate_Original: 15.0% (TTM実績)
+Intrinsic_Value_BASE: $88.16
+Deviation_BASE: -54.1%
+Growth_Rate_Original: 19.7% (TTM実績)
 Growth_Rate_Adjusted: 7.9% (推奨値・中央値ベース)
 Scenarios:
-BEAR: Growth=5.5%, IV=$76.60 （推奨値ベース）
-BASE: Growth=7.9%, IV=$94.99 （推奨値ベース）
-BULL: Growth=9.5%, IV=$108.98 （推奨値ベース）
-Return_Outlook(BASE): 1年後: $102.49 (-46.6%) / 3年後: $119.30 (-37.8%) / 5年後: $138.87 (-27.6%)
-  5yr_Annualized_Return: -6.3%/yr
+BEAR: Growth=5.5%, IV=$71.21 （推奨値ベース）
+BASE: Growth=7.9%, IV=$88.16 （推奨値ベース）
+BULL: Growth=9.5%, IV=$101.06 （推奨値ベース）
+Return_Outlook(BASE): 1年後: $95.12 (-50.4%) / 3年後: $110.72 (-42.3%) / 5年後: $128.89 (-32.8%)
+  5yr_Annualized_Return: -7.7%/yr
 TTM_YoY_Growth: 8.1%
 (DCF Base vs TTM actual: -0.2pt discount)
 Discount_Rate_Primary: 10.00% (DCF discount rate used)
 WACC_CAPM_Reference: 6.63%
-  参考①β込みWACC_IV: $218.60 (Deviation: +13.9%)
-  参考②Rf理論上限_IV: $680.65 (Deviation: +254.7%)
+  参考①β込みWACC_IV: $202.12 (Deviation: +5.3%)
+  参考②Rf理論上限_IV: $628.12 (Deviation: +227.3%)
 Terminal_Growth_Rate: 3.0%
 Beta: 0.408
 Valuation_Gap_Analysis:
-  DCF_IV:           $95 (保守的FCFベース・現在実力値)
+  DCF_IV:           $88 (保守的FCFベース・現在実力値)
   Market_Price:     $192
-  Gap:              -50% (市場が将来成長を先取り)
-  Implied_FCF_2030: $23.32B (現在株価を正当化するために必要な5年後FCF)
-  Current_FCF:      $9.35B
-  Required_Growth:  20%/yr (現在FCFから必要成長率を逆算)
-FCF_TTM_End: 2026-03-31 (FCF/RICE算出に用いたTTM期末日)
-FCF_Base: $9,351.25M (4yr平均)
-DCF_Reliability: NORMAL  (FCF実績プラス: 通常判定適用)
-DCF_FCF_PV: $76.50B (9yr discounted FCF sum, pre-alpha, Rm=10%)
-DCF_TV_PV:  $115.60B (terminal value present value, pre-alpha, Rm=10%)
-DCF_v0:     $192.10B (= FCF_PV + TV_PV, Rm=10% enterprise value)
+  Gap:              -54% (市場が将来成長を先取り)
+  Implied_FCF_2030: $23.02B (現在株価を正当化するために必要な5年後FCF)
+  Current_FCF:      $8.62B
+  Required_Growth:  22%/yr (現在FCFから必要成長率を逆算)
+FCF_TTM_End: 2026-06-30 (FCF/RICE算出に用いたTTM期末日)
+FCF_Conversion_Rate: 0.7 (Industry: Tobacco)
+  [FCF_Conv: Adj_NI × rate = estimated FCF. Conservative conversion from
+   adjusted net income; differs from OCF→FCF conversion rate.]
+DCF_FCF_Base: $8,622M (= Adj_NI $12,317M × FCF_Conv 0.7)
+ℹ️ 買収・統合関連加算$846Mを検出したが未控除
+   [控除すると生FCFを下回る（過小推定側）と判定されたため、方向性
+    ガードにより調整済み純利益をそのまま採用しています。詳細は
+    BACKLOG_DONE.md [[FCF-EST-DIRECTION-GUARD-1]]参照。]
+DCF_Reliability: LOW ⚠️ (FCF_Conversion_Rate方式: 要注意フラグ検出, IV参考値)
+  [Policy B: LOW時はBUY/TRIM/HOLD/WATCHをWATCHへ丸め。SELL/PASSは維持。
+   fcf_outlier未解消（一過性費用で説明不可）または推定FCFが生FCFから
+   大幅乖離（eps_invalid）のため、IVは参考値扱い。]
+   [DCF-REL-SYNC-1: FCF実績が5年平均から30%乖離]
+DCF_FCF_PV: $70.53B (9yr discounted FCF sum, pre-alpha, Rm=10%)
+DCF_TV_PV:  $106.58B (terminal value present value, pre-alpha, Rm=10%)
+DCF_v0:     $177.11B (= FCF_PV + TV_PV, Rm=10% enterprise value)
 Alpha_Premium: 0.0000 (HypeCore expectation premium; Rm basis)
 RPO_PV: $0
 Growth_Option_PV: $0
-Equity_Value: $148.05B (= v0 + RPO_PV + GO_PV + Net_Cash $-44.05B)
+Equity_Value: $137.40B (= v0 + RPO_PV + GO_PV + Net_Cash $-39.71B)
 Shares_Used: 1558.6M (source: yf_implied)
-→ Intrinsic_Value: $94.99 (= Equity_Value ÷ Shares_Used)
+→ Intrinsic_Value: $88.16 (= Equity_Value ÷ Shares_Used)
 Sensitivity_Matrix (WACC×成長期間 → IV/share):
   WACC\Years  5yr  9yr  13yr
-  9.0%       $98.70  $117.01  $134.59
-  10.0%       $80.19  $94.99  $108.68
-  11.0%       $66.33  $78.54  $89.43
+  9.0%       $91.58  $108.46  $124.67
+  10.0%       $74.52  $88.16  $100.78
+  11.0%       $61.73  $72.99  $83.03
 Financial_Health:
-  Net_Debt: $+44.05B (negative=net cash)
-  Total_Debt: $49.50B  Cash: $5.45B
-  Net_Debt_Period: 2026Q1
+  Net_Debt: $+39.71B (negative=net cash)
+  Total_Debt: $45.71B  Cash: $6.00B
+  Net_Debt_Period: 2026Q2
   SBC_TTM: N/A
   Dilution_3yr_Annual: +0.13%/yr  許容範囲内 ✅
   Dilution_Comment: 希薄化はほぼ無視できるレベル。
@@ -168,8 +180,8 @@ market-priced future potential.
 
 [4. 成長率根拠]
 Phase1成長率 : 7.9% (DCF適用値・推奨成長率)
-元成長率      : 15.0% (推奨適用前)
-成長モデル: 中央値モデル（CAGR_max=15.0%のため中央値モデル適用）  HypePhase=2
+元成長率      : 19.7% (推奨適用前)
+成長モデル: 中央値モデル（CAGR_max=19.7%のため中央値モデル適用）  HypePhase=2
 推奨成長率内訳:
   中央値ベース:          7.9%
   最終推奨値:            7.9%
@@ -331,7 +343,7 @@ Note: Uses ForwardEPS from yfinance (analyst consensus).
 Short_Report_Target: no
 Short_Interest: 1.1%
 Institutional_Ownership: N/A (not in data source)
-Analyst_Consensus: None | Target: $210 median ($175-$225) | 15 analysts | vs IV: +121.1%
+Analyst_Consensus: None | Target: $210 median ($175-$225) | 15 analysts | vs IV: +138.2%
 Insider_Activity: 中立 | 買い0件 / 売り0件 | 直近90日
 Runway_Months: N/A (profitable or not in STONKS)
 Revenue_Growth_YoY: 8.1%
@@ -357,7 +369,7 @@ based on recent 4Q linear trend. Rough estimate only.
 Source: Grok web search (直近3ヶ月)
   [high] litigation: Antitrust lawsuit
   [high] regulatory: SEC regulatory investigation
-  [mid] earnings: Earnings warning for 2025-2026
+  [mid] earnings: Earnings warning amid 2025-2026 competition
 
 ==============================================
 DISCLAIMER: This report is generated automatically

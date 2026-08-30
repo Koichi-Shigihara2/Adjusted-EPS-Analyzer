@@ -1,5 +1,5 @@
 NET INTEGRATED INVESTMENT REPORT
-Generated: 2026-08-30T11:52:38+09:00
+Generated: 2026-08-31T00:41:41+09:00
 Price: $299.84
 Validation_Status: PASS (品質ゲート: 全チェック通過)
 
@@ -59,22 +59,22 @@ Positive deviation = undervalued (intrinsic > current)
 
 [3. TANUKI VALUATION]
 Current_Price: $299.84
-Intrinsic_Value_BASE: $82.87
+Intrinsic_Value_BASE: $82.86
 Deviation_BASE: -72.4%
 Growth_Rate_Original: 31.6% (TTM実績)
 Growth_Rate_Adjusted: 38.1% (推奨値・中央値ベース)
 Scenarios:
-BEAR: Growth=26.7%, IV=$52.01 （推奨値ベース）
-BASE: Growth=38.1%, IV=$82.87 （推奨値ベース）
-BULL: Growth=45.8%, IV=$111.55 （推奨値ベース）
-Return_Outlook(BASE): 1年後: $114.47 (-61.8%) / 3年後: $218.43 (-27.2%) / 5年後: $416.78 (+39.0%)
+BEAR: Growth=26.7%, IV=$52.00 （推奨値ベース）
+BASE: Growth=38.1%, IV=$82.86 （推奨値ベース）
+BULL: Growth=45.8%, IV=$111.54 （推奨値ベース）
+Return_Outlook(BASE): 1年後: $114.46 (-61.8%) / 3年後: $218.40 (-27.2%) / 5年後: $416.73 (+39.0%)
   5yr_Annualized_Return: +6.8%/yr
 TTM_YoY_Growth: 29.8%
 (DCF Base vs TTM actual: +8.3pt premium)
 Discount_Rate_Primary: 10.00% (DCF discount rate used)
 WACC_CAPM_Reference: 13.76%
-  参考①β込みWACC_IV: $49.42 (Deviation: -83.5%)
-  参考②Rf理論上限_IV: $751.87 (Deviation: +150.8%)
+  参考①β込みWACC_IV: $49.41 (Deviation: -83.5%)
+  参考②Rf理論上限_IV: $751.86 (Deviation: +150.8%)
 Terminal_Growth_Rate: 3.5%
 Beta: 1.66
 Valuation_Gap_Analysis:
@@ -84,7 +84,7 @@ Valuation_Gap_Analysis:
   Implied_FCF_2030: $6.65B (現在株価を正当化するために必要な5年後FCF)
   Current_FCF:      $0.37B
   Required_Growth:  78%/yr (現在FCFから必要成長率を逆算)
-FCF_TTM_End: 2026-03-31 (FCF/RICE算出に用いたTTM期末日)
+FCF_TTM_End: 2026-06-30 (FCF/RICE算出に用いたTTM期末日)
 FCF_Conversion_Rate: 0.7 (Industry: Software - Infrastructure)
   [FCF_Conv: Adj_NI × rate = estimated FCF. Conservative conversion from
    adjusted net income; differs from OCF→FCF conversion rate.]
@@ -97,30 +97,31 @@ DCF_Reliability: LOW ⚠️ (FCF_Conversion_Rate方式: 要注意フラグ検出
   [Policy B: LOW時はBUY/TRIM/HOLD/WATCHをWATCHへ丸め。SELL/PASSは維持。
    fcf_outlier未解消（一過性費用で説明不可）または推定FCFが生FCFから
    大幅乖離（eps_invalid）のため、IVは参考値扱い。]
-   [DCF-REL-SYNC-1: FCF実績が5年平均から70%乖離]
+   [DCF-REL-SYNC-1: FCF実績が5年平均から69%乖離]
 DCF_FCF_PV: $5.34B (6yr discounted FCF sum, pre-alpha, Rm=10%)
 DCF_TV_PV:  $23.27B (terminal value present value, pre-alpha, Rm=10%)
 DCF_v0:     $28.61B (= FCF_PV + TV_PV, Rm=10% enterprise value)
 Alpha_Premium: 0.0000 (HypeCore expectation premium; Rm basis)
 RPO_PV: $0
 Growth_Option_PV: $0
-Equity_Value: $29.51B (= v0 + RPO_PV + GO_PV + Net_Cash $0.90B)
+Equity_Value: $29.50B (= v0 + RPO_PV + GO_PV + Net_Cash $0.89B)
 Shares_Used: 356.1M (source: yf_implied)
-→ Intrinsic_Value: $82.87 (= Equity_Value ÷ Shares_Used)
+→ Intrinsic_Value: $82.86 (= Equity_Value ÷ Shares_Used)
 Sensitivity_Matrix (WACC×成長期間 → IV/share):
   WACC\Years  3yr  6yr  9yr
-  9.0%       $47.73  $99.68  $205.41
-  10.0%       $40.55  $82.87  $166.67
-  11.0%       $35.29  $70.61  $138.69
+  9.0%       $47.72  $99.67  $205.40
+  10.0%       $40.54  $82.86  $166.66
+  11.0%       $35.28  $70.60  $138.68
 Financial_Health:
-  Net_Debt: $-0.90B (negative=net cash)
-  Total_Debt: $3.27B  Cash: $0.93B  ST_Invest: $3.23B
-  Net_Debt_Period: 2026Q1
+  Net_Debt: $-0.89B (negative=net cash)
+  Total_Debt: $3.27B  Cash: $1.66B  ST_Invest: $2.50B
+  Net_Debt_Period: 2026Q2
   SBC_TTM: $451M
   Dilution_3yr_Annual: +2.21%/yr  許容範囲内 ✅
   Dilution_Comment: 希薄化はほぼ無視できるレベル。
   Next_Earnings_Date: 2026-10-30
-  DuPont_ROE: 純利益率-3.7% × 資産回転率0.38x × 財務レバレッジ4.04x = ROE-5.7%
+  DuPont_ROE: 純利益率-8.2% × 資産回転率0.39x × 財務レバレッジ4.00x = ROE-12.7%
+    ⚠️ DuPont_Reliability: LOW (単四半期NI集中（一過性要因の可能性）)
 FCF_History:
   2021: $-0.03B (FCF_Margin: -4.3%)
   2022: $-0.02B (FCF_Margin: -2.1%)
@@ -128,7 +129,7 @@ FCF_History:
   2024: $0.20B (FCF_Margin: 11.7%)
   2025: $0.29B (FCF_Margin: 13.3%)
 Segment_Breakdown:
-  General: $2.3B (100%, YoY 38%)
+  General: $2.5B (100%, YoY 38%)
   Segment_Weighted_Growth: 38.1% (推奨値・中央値を自動適用)
   (= basis for TANUKI forward growth rate G)
 Definition:
@@ -346,7 +347,7 @@ Short_Report_Target: yes
 Short_Interest: 3.5%
 Institutional_Ownership: N/A (not in data source)
 Analyst_Consensus: Buy | Target: $355 median ($160-$400) | 31 analysts | vs IV: +328.4%
-Insider_Activity: Sell優勢 | 買い0件 / 売り342件 | 直近90日
+Insider_Activity: Sell優勢 | 買い0件 / 売り337件 | 直近90日
 Runway_Months: N/A (profitable or not in STONKS)
 Revenue_Growth_YoY: 29.8%
 Next_Earnings_Date: 2026-10-30
@@ -371,7 +372,7 @@ based on recent 4Q linear trend. Rough estimate only.
 Source: Grok web search (直近3ヶ月)
   [high] litigation: Antitrust lawsuit against Cloudflare
   [high] regulatory: Ongoing SEC regulatory investigation
-  [mid] earnings: Earnings warning due to competition in 2025-2026
+  [mid] earnings: Earnings warning impacting 2025-2026 outlook
 
 ==============================================
 DISCLAIMER: This report is generated automatically

@@ -1,5 +1,5 @@
 IONQ INTEGRATED INVESTMENT REPORT
-Generated: 2026-08-30T11:48:45+09:00
+Generated: 2026-08-31T00:40:10+09:00
 Price: $39.20
 Validation_Status: PASS (品質ゲート: 全チェック通過)
 
@@ -8,10 +8,10 @@ Classification: WATCH
 Classification_Pre_Rounding: GROWTH_PREMIUM
 Funda_Score: 100/100
 Timing_Score (components):
-  Deviation_Rate: -34.9%
+  Deviation_Rate: -34.3%
   MA200_Deviation: -11.9%
   HypeCore_Phase: Phase4 (期待剥落期)
-  Analyst_Consensus: None | Target: $65 median ($45-$100) | 13 analysts | vs IV: +154.6%
+  Analyst_Consensus: None | Target: $65 median ($45-$100) | 13 analysts | vs IV: +152.6%
 Comment: DCF信頼性LOW(実績FCF赤字)のためupside依存判定を抑制→WATCH
 Definition:
 
@@ -30,11 +30,11 @@ PASS: Funda<25, excluded from consideration
 
 
 [2. MATRIX POSITION]
-Matrix: ①投資効率系
+Matrix: ④キャッシュ創出力系
 Quadrant: 左下
-Label: 割高×N/A (OCF赤字)
-Key_Metric_Y: RICE = -1.039
-Deviation_Rate: -34.9%
+Label: 割高×低FCF
+Key_Metric_Y: FCF_Margin = -230.4%
+Deviation_Rate: -34.3%
 Thresholds:
   RICE_Threshold: 3.0/1.0/0 (>=3.0=high, 1.0-3.0=medium, 0-1.0=low, <0=undefined OCF-negative)
   ROE_Threshold: 15% (above=high profitability)
@@ -59,26 +59,26 @@ Positive deviation = undervalued (intrinsic > current)
 
 [3. TANUKI VALUATION]
 Current_Price: $39.20
-Intrinsic_Value_BASE: $25.53
-Deviation_BASE: -34.9%
+Intrinsic_Value_BASE: $25.74
+Deviation_BASE: -34.3%
 Growth_Rate_Original: 15.0% (TTM実績)
 Growth_Rate_Adjusted: 54.8% (推奨値・逓減モデル)
 Scenarios:
-BEAR: Growth=38.3%, IV=$21.29 （推奨値ベース）
-BASE: Growth=54.8%, IV=$25.53 （推奨値ベース）
-BULL: Growth=65.7%, IV=$28.70 （推奨値ベース）
-Return_Outlook(BASE): 1年後: $39.52 (+0.8%) / 3年後: $94.67 (+141.5%) / 5年後: $150.93 (+285.0%)
-  5yr_Annualized_Return: +30.9%/yr
+BEAR: Growth=38.3%, IV=$21.50 （推奨値ベース）
+BASE: Growth=54.8%, IV=$25.74 （推奨値ベース）
+BULL: Growth=65.7%, IV=$28.91 （推奨値ベース）
+Return_Outlook(BASE): 1年後: $39.84 (+1.6%) / 3年後: $95.45 (+143.5%) / 5年後: $152.17 (+288.2%)
+  5yr_Annualized_Return: +31.2%/yr
 TTM_YoY_Growth: 201.9%
 (DCF Base vs TTM actual: -147.1pt discount)
 Discount_Rate_Primary: 10.00% (DCF discount rate used)
 WACC_CAPM_Reference: 18.55%
-  参考①β込みWACC_IV: $13.83 (Deviation: -64.7%)
-  参考②Rf理論上限_IV: $119.49 (Deviation: +204.8%)
+  参考①β込みWACC_IV: $14.04 (Deviation: -64.2%)
+  参考②Rf理論上限_IV: $119.70 (Deviation: +205.4%)
 Terminal_Growth_Rate: 3.0%
 Beta: 2.5
-FCF_TTM_End: 2026-03-31 (FCF/RICE算出に用いたTTM期末日)
-FCF_Base: $225.06M (4yr平均 + R&D補正) [実績avg: $-179.6M]
+FCF_TTM_End: 2026-06-30 (FCF/RICE算出に用いたTTM期末日)
+FCF_Base: $225.06M (4yr平均 + R&D補正) [実績avg: $-204.8M]
 DCF_Reliability: LOW ⚠️ (FCF実績マイナス: revenue_floor適用, IV参考値)
   [Policy A: LOW時はBUY/TRIM/HOLD/WATCHをWATCHへ丸め。SELL/PASSは維持。
    FCF実績がマイナスのためIVはrevenue_floorベース推定値。IV絶対値より方向感参考用。]
@@ -92,24 +92,24 @@ DCF_v0:     $8.31B (= FCF_PV + TV_PV, Rm=10% enterprise value)
 Alpha_Premium: 0.0000 (HypeCore expectation premium; Rm basis)
 RPO_PV: $0
 Growth_Option_PV: $0
-Equity_Value: $10.34B (= v0 + RPO_PV + GO_PV + Net_Cash $2.03B)
+Equity_Value: $10.43B (= v0 + RPO_PV + GO_PV + Net_Cash $2.12B)
 Shares_Used: 405.1M (source: yf_implied)
-→ Intrinsic_Value: $25.53 (= Equity_Value ÷ Shares_Used)
+→ Intrinsic_Value: $25.74 (= Equity_Value ÷ Shares_Used)
 Sensitivity_Matrix (WACC×成長期間 → IV/share):
   WACC\Years  2yr  4yr  6yr
-  9.0%       $26.16  $49.55  $96.73
-  10.0%       $23.09  $42.67  $81.45
-  11.0%       $20.78  $37.52  $70.08
+  9.0%       $26.37  $49.77  $96.94
+  10.0%       $23.30  $42.88  $81.66
+  11.0%       $20.99  $37.73  $70.29
 Financial_Health:
-  Net_Debt: $-2.03B (negative=net cash)
-  Total_Debt: $0.00B  Cash: $0.49B  ST_Invest: $1.54B
-  Net_Debt_Period: Cash=2026Q1/Debt=FY2025
+  Net_Debt: $-2.12B (negative=net cash)
+  Total_Debt: $0.00B  Cash: $1.24B  ST_Invest: $0.88B
+  Net_Debt_Period: Cash=2026Q2/Debt=FY2025
   SBC_TTM: $312M
   Dilution_3yr_Annual: +12.34%/yr  高い希薄化 ⚠️ SBC・増資を確認
   Dilution_Comment: 継続なら1株価値を年率12.3%毀損。SBC・増資の内訳を確認。
   ⚠️ 期中に大規模な株式発行の可能性（+44.5%乖離: yf=405M vs SEC=280M）
   Next_Earnings_Date: 2026-11-05
-  DuPont_ROE: 純利益率174.9% × 資産回転率0.03x × 財務レバレッジ1.35x = ROE6.6%
+  DuPont_ROE: 純利益率-553.3% × 資産回転率0.04x × 財務レバレッジ2.04x = ROE-41.0%
     ⚠️ DuPont_Reliability: LOW (単四半期NI集中（一過性要因の可能性）)
 FCF_History:
   2021: $-0.03B (FCF_Margin: -1635.1%)
@@ -197,18 +197,17 @@ Industry benchmark: Damodaran 2025 fundgrEB.xls
 
 
 [5. RICE METRICS]
-Available: true
-Exclusion_Reason: N/A
-BEAR: RICE=-0.726
-BASE: RICE=-1.039
-BULL: RICE=-1.246
+Available: false
+Exclusion_Reason: Q計算不可（OCF/純利益データなし）
+BEAR: RICE=N/A
+BASE: RICE=N/A
+BULL: RICE=N/A
 Components (BASE scenario):
-G  = 54.8%  [TANUKI forward growth rate]
-Q  = -0.5462   [OCF / (NetIncome + SBC), 3yr avg]
-CF = 0.3472  [RevGrowth / InvestmentIntensity, 1yr lag, 3yr avg]
-CF_adj = 3.6799  [R&D除外・CapExのみ投資強度]
+G  = N/A
+Q  = 0.0   [OCF / (NetIncome + SBC), 3yr avg]
+CF = 0.0  [RevGrowth / InvestmentIntensity, 1yr lag, 3yr avg]
 WACC = 10.0%
-SBC_Adjusted: true
+SBC_Adjusted: false
 Definition:
 
 RICE measures reinvestment efficiency and compounding power
@@ -334,7 +333,7 @@ Note: Uses ForwardEPS from yfinance (analyst consensus).
 Short_Report_Target: yes
 Short_Interest: 12.7%
 Institutional_Ownership: N/A (not in data source)
-Analyst_Consensus: None | Target: $65 median ($45-$100) | 13 analysts | vs IV: +154.6%
+Analyst_Consensus: None | Target: $65 median ($45-$100) | 13 analysts | vs IV: +152.6%
 Insider_Activity: Sell優勢 | 買い0件 / 売り3件 | 直近90日
 Runway_Months: 95.8
 Revenue_Growth_YoY: 201.9%
@@ -358,9 +357,9 @@ based on recent 4Q linear trend. Rough estimate only.
 
 [9. RISK EVENTS]
 Source: Grok web search (直近3ヶ月)
-  [high] litigation: Antitrust lawsuit
-  [high] regulatory: SEC regulatory investigation
-  [mid] earnings: Earnings warning amid 2025-2026 competition
+  [high] litigation: Ongoing antitrust lawsuit against IonQ
+  [high] regulatory: Active SEC regulatory investigation
+  [mid] earnings: Earnings warning with competitive threats in 2025-2026
 
 ==============================================
 DISCLAIMER: This report is generated automatically

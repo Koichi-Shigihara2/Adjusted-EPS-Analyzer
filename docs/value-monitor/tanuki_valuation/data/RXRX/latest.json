@@ -1,51 +1,51 @@
 {
   "intrinsic_value_pt": 9104792968.31733,
-  "intrinsic_value_per_share": 18.950699191845665,
-  "intrinsic_value_beta": 18.17,
-  "upside_percent_beta": 443.9,
-  "intrinsic_value_rf": 100.75,
-  "upside_percent_rf": 2916.4,
+  "intrinsic_value_per_share": 18.752031013413735,
+  "intrinsic_value_beta": 17.97,
+  "upside_percent_beta": 438.0,
+  "intrinsic_value_rf": 100.55,
+  "upside_percent_rf": 2910.5,
   "v0": 9104792968.31733,
   "v0_note": "v0はβ込みCAPMベース（intrinsic_value_betaの参考値）。メインの理論株価計算根拠はdcf_components.v0_rm（market_return 10%固定・βなし）を参照すること。",
   "v0_adjusted": 9104792968.31733,
   "alpha": 0.0,
   "alpha_was_capped": false,
   "future_values": {
-    "1年後": 27.47,
-    "2年後": 39.82,
-    "3年後": 57.72,
-    "4年後": 59.45,
-    "5年後": 61.23
+    "1年後": 27.18,
+    "2年後": 39.4,
+    "3年後": 57.11,
+    "4年後": 58.82,
+    "5年後": 60.59
   },
   "return_metrics": {
     "1年後": {
-      "future_value": 27.47,
+      "future_value": 27.18,
       "value_growth_pct": 45.0,
-      "expected_return_pct": 722.5
+      "expected_return_pct": 713.8
     },
     "2年後": {
-      "future_value": 39.82,
+      "future_value": 39.4,
       "value_growth_pct": 110.1,
-      "expected_return_pct": 1092.2
+      "expected_return_pct": 1079.6
     },
     "3年後": {
-      "future_value": 57.72,
+      "future_value": 57.11,
       "value_growth_pct": 204.6,
-      "expected_return_pct": 1628.1
+      "expected_return_pct": 1609.9
     },
     "4年後": {
-      "future_value": 59.45,
+      "future_value": 58.82,
       "value_growth_pct": 213.7,
-      "expected_return_pct": 1679.9
+      "expected_return_pct": 1661.1
     },
     "5年後": {
-      "future_value": 61.23,
+      "future_value": 60.59,
       "value_growth_pct": 223.1,
-      "expected_return_pct": 1733.2
+      "expected_return_pct": 1714.1
     }
   },
-  "upside_percent": 467.4,
-  "calculation_date": "2026-08-30T11:55:13+09:00",
+  "upside_percent": 461.4,
+  "calculation_date": "2026-08-31T00:42:52+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -63,19 +63,19 @@
   "sensitivity": {
     "matrix": [
       [
-        16.42,
-        22.05,
-        29.54
+        16.22,
+        21.85,
+        29.34
       ],
       [
-        14.21,
-        18.95,
-        25.19
+        14.01,
+        18.75,
+        25.0
       ],
       [
-        12.56,
-        16.63,
-        21.95
+        12.36,
+        16.43,
+        21.75
       ]
     ],
     "wacc_values": [
@@ -106,15 +106,15 @@
   "scenario_valuations": {
     "bear": {
       "growth_rate": 0.315,
-      "intrinsic_value_per_share": 14.6
+      "intrinsic_value_per_share": 14.4
     },
     "base": {
       "growth_rate": 0.45,
-      "intrinsic_value_per_share": 18.95
+      "intrinsic_value_per_share": 18.75
     },
     "bull": {
       "growth_rate": 0.539,
-      "intrinsic_value_per_share": 22.33
+      "intrinsic_value_per_share": 22.13
     }
   },
   "growth_options": {
@@ -158,7 +158,7 @@
     "base_fcf": 5974480.0,
     "method": "avg_5yr",
     "fcf_5yr_avg": 5974480.0,
-    "fcf_2yr_avg": -356486000.0,
+    "fcf_2yr_avg": -368305000.0,
     "cv": 999.0,
     "cv_threshold": 0.5,
     "ratio": 999.0,
@@ -168,7 +168,7 @@
     "detected": true,
     "rule": "latest_negative",
     "fiscal_year": 2025,
-    "fcf_value": -320952000,
+    "fcf_value": -350481000,
     "threshold_pct": 0.0,
     "deviation_pct": null,
     "transient_evidence": {
@@ -197,7 +197,7 @@
       "total_transient_amount": 9836000.0
     },
     "action": "flagged",
-    "note": "FY2025 FCF($-321.0M)がマイナス。一過性費用の証拠はEPSアナライザーで確認されず。要確認。"
+    "note": "FY2025 FCF($-350.5M)がマイナス。一過性費用の証拠はEPSアナライザーで確認されず。要確認。"
   },
   "fcf_estimation": {
     "applied": false,
@@ -211,7 +211,7 @@
     "divergence_ratio": 0.0,
     "divergence_warning": "",
     "ma_addback_excluded": 0.0,
-    "ma_addback_detected_but_not_applied": 50274424.14662125
+    "ma_addback_detected_but_not_applied": 50274424.14662126
   },
   "software_system_reclassification": {
     "applicable": false,
@@ -241,27 +241,27 @@
   },
   "rpo_adjustment": {
     "rpo_pv": 0.0,
-    "rpo_raw": 114723000,
+    "rpo_raw": 112818000,
     "discount_rate": 0.15,
     "assumed_realization_years": 1.5,
     "applied": false,
     "application_rate": 0.0,
     "sector_category": "Healthcare",
     "rpo_incremental": 0.0,
-    "op_margin": -8.813230333694735,
+    "op_margin": -9.91723635037827,
     "exclusion_reason": ""
   },
   "bs_adjustment": {
-    "cash": 654473000.0,
+    "cash": 545683000.0,
     "short_term_investments": 0.0,
-    "long_term_debt": 7181000.0,
-    "short_term_debt": 9265000.0,
-    "net_cash": 638027000.0,
-    "net_cash_per_share": 1.1897471548750493,
+    "long_term_debt": 4753000.0,
+    "short_term_debt": 9443000.0,
+    "net_cash": 531487000.0,
+    "net_cash_per_share": 0.9910789764431212,
     "fiscal_year": 2025,
     "applied": true,
     "sector_guard": "none",
-    "net_debt_period": "2026Q1",
+    "net_debt_period": "2026Q2",
     "sti_approximated": false,
     "sti_residual_pct": null,
     "sti_estimated_zero": true,
@@ -285,28 +285,28 @@
     "note": "Q計算不可（OCF/純利益データなし）"
   },
   "fcf_source": "ttm_series",
-  "fcf_ttm_end": "2026-03-31",
+  "fcf_ttm_end": "2026-06-30",
   "fcf_ttm_periods": 4,
   "rice_data_source": "ttm_series",
   "components": {
-    "fcf_5yr_avg": -328822250.0,
-    "fcf_2yr_avg": -356486000.0,
+    "fcf_5yr_avg": -336057500.0,
+    "fcf_2yr_avg": -368305000.0,
     "fcf_base_used": 244131146.66666666,
     "fcf_base_method": "avg_5yr",
     "fcf_outlier_excl_avg": null,
     "fcf_list_raw": [
-      -320952000,
-      -392020000,
-      -330197000,
-      -272120000
+      -350481000,
+      -386129000,
+      -342163000,
+      -265457000
     ],
     "diluted_shares": 536271087,
-    "roe_10yr_avg": -0.5125061112141827,
+    "roe_10yr_avg": -0.5125061112141825,
     "roe_years_used": 5,
     "roe_outlier_adj": false,
     "current_price": 3.3399999141693115,
     "latest_revenue": 74681000.0,
-    "rpo": 114723000,
+    "rpo": 112818000,
     "beta": 1.054,
     "sector": "Healthcare",
     "industry": "Biotechnology",
@@ -318,17 +318,17 @@
     "high_growth_rate_used": 0.44955792713423254,
     "high_growth_years": 3,
     "terminal_growth_used": 0.03,
-    "moat_score": 0.0316,
+    "moat_score": 0.0193,
     "moat_score_source": "measured",
     "moat_score_n_present": 3,
     "moat_phase1_years": 3,
-    "moat_gross_margin_norm": 0.0789,
+    "moat_gross_margin_norm": 0.0482,
     "moat_roic_norm": 0.0,
     "moat_fcf_margin_norm": 0.0,
     "pv_high": 1296397164.2737005,
     "pv_terminal": 7808395804.04363,
-    "roe_used": -0.5125061112141827,
-    "fcf_floor_applied": 334796730.0,
+    "roe_used": -0.5125061112141825,
+    "fcf_floor_applied": 342031980.0,
     "fcf_growth_floor": 0.15,
     "fcf_growth_cap": 0.5,
     "bear_multiplier": 0.7,
@@ -356,18 +356,18 @@
     "insider_sell_count": 7,
     "insider_net_direction": "Sell優勢",
     "insider_latest_date": "2026-08-18",
-    "analyst_vs_iv": -63.1,
+    "analyst_vs_iv": -62.7,
     "max_eps": null,
     "max_eps_per": null,
     "max_eps_reliability": "LOW"
   },
   "validation": {
-    "validated_at": "2026-08-30",
+    "validated_at": "2026-08-31",
     "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
         "pass": true,
-        "detail": "(V₀ $9.52B + RPO $0.00B + GO $0.00B) / 0.536B + BS $+1.19/株 = $18.95 (差異0.00%、α=0.000は参考値・P_t未乗算)"
+        "detail": "(V₀ $9.52B + RPO $0.00B + GO $0.00B) / 0.536B + BS $+0.99/株 = $18.75 (差異0.00%、α=0.000は参考値・P_t未乗算)"
       },
       "dcf_components": {
         "pass": true,
@@ -392,7 +392,7 @@
   "timing_score": 50,
   "sell_reason": null,
   "pre_rounding_score": "BUY",
-  "pre_rounding_comment": "割安圏(467%)で買い余地大、FCFマイナス（投資フェーズ）、売上安定成長",
+  "pre_rounding_comment": "割安圏(461%)で買い余地大、FCFマイナス（投資フェーズ）、売上安定成長",
   "rounded_by_policy": "A",
   "matrix": {
     "matrix": "④キャッシュ創出力系",
@@ -430,14 +430,14 @@
     }
   ],
   "financial_health": {
-    "total_debt": 16446000.0,
-    "cash_and_equivalents": 654473000.0,
+    "total_debt": 14196000.0,
+    "cash_and_equivalents": 545683000.0,
     "short_term_investments": 0.0,
-    "long_term_debt": 7181000.0,
-    "short_term_debt": 9265000.0,
-    "net_debt": -638027000.0,
+    "long_term_debt": 4753000.0,
+    "short_term_debt": 9443000.0,
+    "net_debt": -531487000.0,
     "sbc_ttm": 111223000,
-    "net_debt_period": "2026Q1",
+    "net_debt_period": "2026Q2",
     "cash_missing": false,
     "sti_approximated": false,
     "sti_residual_pct": null,
@@ -453,18 +453,18 @@
     "shares_yr_now_label": "2025",
     "shares_yr_3ago_label": "2022"
   },
-  "computed_runway_months": 21.122934417764007,
-  "net_current_assets_ratio": 0.3237,
+  "computed_runway_months": 17.61176736380067,
+  "net_current_assets_ratio": 0.27,
   "dupont": {
-    "ni_ttm": -559776000,
-    "revenue_ttm": 66408000,
-    "total_assets": 1339522000,
-    "equity": 1024769000,
-    "net_margin": -8.4293,
-    "asset_turnover": 0.0496,
-    "financial_leverage": 1.3071,
-    "roe_decomposed": -0.5462,
-    "dupont_bs_period": "2026Q1"
+    "ni_ttm": -518884000,
+    "revenue_ttm": 54855000,
+    "total_assets": 1212668000,
+    "equity": 915003000,
+    "net_margin": -9.4592,
+    "asset_turnover": 0.0452,
+    "financial_leverage": 1.3253,
+    "roe_decomposed": -0.5671,
+    "dupont_bs_period": "2026Q2"
   },
   "next_earnings_date": "2026-11-04",
   "breakeven_estimate": 2027,
@@ -524,7 +524,7 @@
     },
     {
       "type": "earnings",
-      "summary": "Earnings warning amid 2025-2026 competition",
+      "summary": "Earnings warning for 2025 2026",
       "impact": "mid"
     }
   ]

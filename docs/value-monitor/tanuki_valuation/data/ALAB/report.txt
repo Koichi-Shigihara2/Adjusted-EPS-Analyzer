@@ -1,18 +1,17 @@
 ALAB INTEGRATED INVESTMENT REPORT
-Generated: 2026-08-30T11:38:56+09:00
+Generated: 2026-08-31T00:36:45+09:00
 Price: $289.47
 Validation_Status: PASS (品質ゲート: 全チェック通過)
 
 [1. TANUKI SCORE]
-Classification: WATCH
-Classification_Pre_Rounding: GROWTH_PREMIUM
+Classification: GROWTH_PREMIUM
 Funda_Score: 75/100
 Timing_Score (components):
-  Deviation_Rate: -40.2%
+  Deviation_Rate: -40.1%
   MA200_Deviation: +30.6%
   HypeCore_Phase: Phase3 (陶酔期)
-  Analyst_Consensus: Buy | Target: $425 median ($190-$500) | 23 analysts | vs IV: +145.5%
-Comment: DCF信頼性LOW(FCF_Conversion_Rate方式・要注意フラグ)のためupside依存判定を抑制→WATCH
+  Analyst_Consensus: Buy | Target: $425 median ($190-$500) | 23 analysts | vs IV: +144.9%
+Comment: 成長率が市場要求を上回る、割高(-40%超)、FCF黒字
 Definition:
 
 Funda_Score: Composite score of financial health,
@@ -33,8 +32,8 @@ PASS: Funda<25, excluded from consideration
 Matrix: ①投資効率系
 Quadrant: 左上
 Label: 割高×高効率
-Key_Metric_Y: RICE = 7.795
-Deviation_Rate: -40.2%
+Key_Metric_Y: RICE = 7.792
+Deviation_Rate: -40.1%
 Thresholds:
   RICE_Threshold: 3.0/1.0/0 (>=3.0=high, 1.0-3.0=medium, 0-1.0=low, <0=undefined OCF-negative)
   ROE_Threshold: 15% (above=high profitability)
@@ -59,57 +58,53 @@ Positive deviation = undervalued (intrinsic > current)
 
 [3. TANUKI VALUATION]
 Current_Price: $289.47
-Intrinsic_Value_BASE: $173.12
-Deviation_BASE: -40.2%
+Intrinsic_Value_BASE: $173.51
+Deviation_BASE: -40.1%
 Growth_Rate_Original: 15.0% (TTM実績)
 Growth_Rate_Adjusted: 54.8% (推奨値・逓減モデル)
 Scenarios:
-BEAR: Growth=38.4%, IV=$124.43 （推奨値ベース）
-BASE: Growth=54.8%, IV=$173.12 （推奨値ベース）
-BULL: Growth=65.8%, IV=$213.36 （推奨値ベース）
-Return_Outlook(BASE): 1年後: $268.00 (-7.4%) / 3年後: $642.23 (+121.9%) / 5年後: $1,539.05 (+431.7%)
+BEAR: Growth=38.4%, IV=$124.82 （推奨値ベース）
+BASE: Growth=54.8%, IV=$173.51 （推奨値ベース）
+BULL: Growth=65.8%, IV=$213.75 （推奨値ベース）
+Return_Outlook(BASE): 1年後: $268.60 (-7.2%) / 3年後: $643.68 (+122.4%) / 5年後: $1,542.52 (+432.9%)
   5yr_Annualized_Return: +39.7%/yr
 TTM_YoY_Growth: 104.2%
 (DCF Base vs TTM actual: -49.4pt discount)
 Discount_Rate_Primary: 10.00% (DCF discount rate used)
 WACC_CAPM_Reference: 18.55%
-  参考①β込みWACC_IV: $71.25 (Deviation: -75.4%)
-  参考②Rf理論上限_IV: $1,478.85 (Deviation: +410.9%)
+  参考①β込みWACC_IV: $71.64 (Deviation: -75.3%)
+  参考②Rf理論上限_IV: $1,479.25 (Deviation: +411.0%)
 Terminal_Growth_Rate: 3.5%
 Beta: 2.5
-FCF_TTM_End: 2026-03-31 (FCF/RICE算出に用いたTTM期末日)
+FCF_TTM_End: 2026-06-30 (FCF/RICE算出に用いたTTM期末日)
 FCF_Conversion_Rate: 0.85 (Industry: Semiconductor)
   [FCF_Conv: Adj_NI × rate = estimated FCF. Conservative conversion from
    adjusted net income; differs from OCF→FCF conversion rate.]
 DCF_FCF_Base: $292M (= Adj_NI $343M × FCF_Conv 0.85)
-DCF_Reliability: LOW ⚠️ (FCF_Conversion_Rate方式: 要注意フラグ検出, IV参考値)
-  [Policy B: LOW時はBUY/TRIM/HOLD/WATCHをWATCHへ丸め。SELL/PASSは維持。
-   fcf_outlier未解消（一過性費用で説明不可）または推定FCFが生FCFから
-   大幅乖離（eps_invalid）のため、IVは参考値扱い。]
-   [DCF-REL-SYNC-1: FCF実績が5年平均から135%乖離]
+DCF_Reliability: NORMAL  (FCF_Conversion_Rate方式: 通常判定適用)
 DCF_FCF_PV: $6.75B (6yr discounted FCF sum, pre-alpha, Rm=10%)
 DCF_TV_PV:  $22.09B (terminal value present value, pre-alpha, Rm=10%)
 DCF_v0:     $28.85B (= FCF_PV + TV_PV, Rm=10% enterprise value)
 Alpha_Premium: 0.1559 (HypeCore expectation premium; Rm basis)
 RPO_PV: $0
 Growth_Option_PV: $0
-Equity_Value: $30.03B (= v0 + RPO_PV + GO_PV + Net_Cash $1.18B)
+Equity_Value: $30.10B (= v0 + RPO_PV + GO_PV + Net_Cash $1.25B)
 Shares_Used: 173.5M (source: yf_implied)
-→ Intrinsic_Value: $173.12 (= Equity_Value ÷ Shares_Used)
+→ Intrinsic_Value: $173.51 (= Equity_Value ÷ Shares_Used)
 Sensitivity_Matrix (WACC×成長期間 → IV/share):
   WACC\Years  3yr  6yr  9yr
-  9.0%       $173.36  $501.31  $1,440.74
-  10.0%       $146.66  $413.65  $1,157.79
-  11.0%       $127.10  $349.82  $953.95
+  9.0%       $173.75  $501.70  $1,441.13
+  10.0%       $147.06  $414.04  $1,158.18
+  11.0%       $127.50  $350.22  $954.34
 Financial_Health:
-  Net_Debt: $-1.18B (negative=net cash)
-  Total_Debt: $0.00B  Cash: $0.15B  ST_Invest: $1.04B
-  Net_Debt_Period: Cash=2026Q1/Debt=FY2025
+  Net_Debt: $-1.25B (negative=net cash)
+  Total_Debt: $0.00B  Cash: $0.11B  ST_Invest: $1.14B
+  Net_Debt_Period: Cash=2026Q2/Debt=FY2025
   SBC_TTM: $160M
   Dilution_3yr_Annual: +73.85%/yr  極度の希薄化 🚨 IPO直後か継続増資か要確認
   Dilution_Comment: IPO後の株式発行が主因の可能性。継続なら1株価値を年率73.8%毀損。
   Next_Earnings_Date: 2026-11-04
-  DuPont_ROE: 純利益率26.7% × 資産回転率0.60x × 財務レバレッジ1.11x = ROE17.9%
+  DuPont_ROE: 純利益率30.7% × 資産回転率0.62x × 財務レバレッジ1.12x = ROE21.4%
 FCF_History:
   2021: N/A
   2022: $-0.04B (FCF_Margin: -49.8%)
@@ -117,7 +112,7 @@ FCF_History:
   2024: $0.10B (FCF_Margin: 25.8%)
   2025: $0.28B (FCF_Margin: 33.1%)
 Segment_Breakdown:
-  General: $1.0B (100%, YoY 55%)
+  General: $1.2B (100%, YoY 55%)
   Segment_Weighted_Growth: 54.8% (推奨値・中央値を自動適用)
   (= basis for TANUKI forward growth rate G)
 Definition:
@@ -199,15 +194,15 @@ Industry benchmark: Damodaran 2025 fundgrEB.xls
 [5. RICE METRICS]
 Available: true
 Exclusion_Reason: N/A
-BEAR: RICE=5.462
-BASE: RICE=7.795
-BULL: RICE=9.36
+BEAR: RICE=5.46
+BASE: RICE=7.792
+BULL: RICE=9.356
 Components (BASE scenario):
 G  = 54.8%  [TANUKI forward growth rate]
-Q  = 0.7668   [OCF / (NetIncome + SBC), 3yr avg]
-CF = 1.6195  [RevGrowth / InvestmentIntensity, 1yr lag, 3yr avg]
+Q  = 0.7555   [OCF / (NetIncome + SBC), 3yr avg]
+CF = 1.6429  [RevGrowth / InvestmentIntensity, 1yr lag, 3yr avg]
 CF_adj = 10.0000  [R&D除外・CapExのみ投資強度]
-RICE_adj = 48.135  [参考：R&D資本化想定]
+RICE_adj = 47.425  [参考：R&D資本化想定]
 WACC = 10.0%
 VC_Factor = 1.15  [RICE-1: clamp(ROIC/WACC,0.3,2.0)]
 ROIC_WACC_Ratio = 1.15  [NOPAT/InvestedCapital / 0.10]
@@ -338,7 +333,7 @@ Note: Uses ForwardEPS from yfinance (analyst consensus).
 Short_Report_Target: no
 Short_Interest: 7.3%
 Institutional_Ownership: N/A (not in data source)
-Analyst_Consensus: Buy | Target: $425 median ($190-$500) | 23 analysts | vs IV: +145.5%
+Analyst_Consensus: Buy | Target: $425 median ($190-$500) | 23 analysts | vs IV: +144.9%
 Insider_Activity: Sell優勢 | 買い0件 / 売り170件 | 直近90日
 Runway_Months: N/A (profitable or not in STONKS)
 Revenue_Growth_YoY: 104.2%
@@ -363,8 +358,8 @@ based on recent 4Q linear trend. Rough estimate only.
 [9. RISK EVENTS]
 Source: Grok web search (直近3ヶ月)
   [high] litigation: Antitrust lawsuit
-  [high] regulatory: SEC regulatory investigation
-  [mid] earnings: Earnings warning amid 2025-2026 competition
+  [high] regulatory: SEC investigation
+  [mid] earnings: Earnings warning for 2025-2026
 
 ==============================================
 DISCLAIMER: This report is generated automatically
