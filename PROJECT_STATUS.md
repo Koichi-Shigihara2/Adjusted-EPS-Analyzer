@@ -127,6 +127,45 @@
   実行サイクルに委ねる（今回はAPP/ASTS/NVDA・STONKS SILO全25銘柄のみ
   再生成）。
 
+- **2026-08-30**（🟢有効判定済み項目の診断結論再検証・棚卸しの再実行
+  〈全19ラウンド〉完了、Koichiさん承認の複数タスクを順次実施）:
+  1. **診断結論再検証・全19ラウンド完了**: 事例17（CHAT_RULES.md）に
+     基づき、BACKLOG.md全168件（フェーズ1バッチA完了8件除く160件相当）
+     について「診断結論そのものの妥当性」を2段階（表層的事実確認＋
+     診断結論の検証）で全数再検証し**162/162件（100%）完了**。2件が
+     診断結論自体の陳腐化と判明しBACKLOG_DONE.mdへ移設
+     （`[[MP-TOOLTIP-1]]`・`[[MARKETDATA-AS-IS-AUDIT-PY-OMITTED-1]]`）。
+  2. **SEC_Data_Update障害調査＋修正**: `SEC_Data_Update`ワークフローが
+     2026-08-16・08-23の2回連続でConsistency Check Gateに失敗し、
+     約3週間分（2026-08-09以降）のSEC EDGARデータ更新が本番に反映
+     されないまま放置されていたことを発見。原因はCIの依存パッケージ
+     インストール不足（`pandas`/`yfinance`欠落）と特定し
+     `.github/workflows/SEC_Data_Update.yml`を修正、`update.py`を
+     ローカル実行して105/105銘柄のデータを復旧した。
+  3. **コード場所ベースのクラスタリング再分析**: 旧来のタイトル・
+     カテゴリ類似ベースクラスタ（バッチA、的中率半数未満）を、実際の
+     コード配置基準で再分析し確度：高/中/低を明示して
+     `BACKLOG_PRIORITY_ROADMAP.md`5B節に記録した。
+  4. **データ鮮度監視の実装**: `[[DATA-FRESHNESS-MONITORING-FUTURE-
+     IDEA-1]]`をKoichiさん判断で優先度引き上げの上実装完了。
+     `common/system_health.py`に`check_j_workflow_runs()`を新設し、
+     GitHub Actions REST APIでcron定義済み全ワークフローの実行状況を
+     監視する（新規外部サービス連携なし）。
+  5. **フェーズ1バッチB（残り6件）**: `[[FCF-CAGR-YEARS-MISMATCH-1]]`・
+     `[[EPS-DISCREPANCY-FLAG-OVERLOAD-1]]`・
+     `[[HYPECORE-REALSTRONG-DUAL-IMPL-1]]`・`[[TVGROWTH-EXPLICIT-
+     DEFAULT-AMBIGUOUS-1]]`・`[[PARSER-STOCKHOLDERS-EQUITY-CROSS-YEAR-
+     MISSELECT-1]]`の5件を実装完了（**フェーズ1は10件中9件完了**）。
+     `[[PARSER-STOCKHOLDERS-EQUITY-CROSS-YEAR-MISSELECT-1]]`は
+     CRM型・VRT型を別ロジックで修正し、105銘柄シミュレーションで
+     副次発見したAVAV(2020, rpo)の同型バグも解消（AVGO/ENTGへの
+     意図しない副作用を検知・是正した経緯もコミットメッセージに記録）。
+     残る`[[RICE-ADJ-ASYMMETRIC-ZERO-1]]`1件のみ、表示数値そのものを
+     左右する製品判断でKoichiさんの設計判断待ちのため据え置き。
+  詳細はBACKLOG_DONE.md「2026-08-30（完了）」参照。新DB構築プロジェクトの
+  コード・データには変更なし。現存BACKLOG.md総数はブラッシュアップ後の
+  機械カウントで**156件**。
+
 ---
 
 更新日: 2026-08-15（**フェーズ3「導出データ層の管理方法検討」完了**。

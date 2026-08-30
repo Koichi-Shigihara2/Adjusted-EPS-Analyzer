@@ -330,8 +330,9 @@ V +16.2%（本線2由来）。TANUKI SCORE分類が変わったのはBKNG
 3. `[[MACRO-STYLE-FCF-ZERO-TRUTHY-EXCLUDE-1]]`（優先度低、現状実害
    ゼロの潜伏バグ、着手条件なし）
 4. `[[MACRO-TRUTHY-ZERO-BUG-1]]`・`[[RECESSION-SCORE-TRIPLE-CALC-1]]`・
-   `[[FCF-CAGR-YEARS-MISMATCH-1]]`・`[[HOLLOW-RALLY-DEAD-1]]`
-   （案2 Step Cで優先度維持と判定済みの既存課題群、着手条件なし）
+   `[[HOLLOW-RALLY-DEAD-1]]`（案2 Step Cで優先度維持と判定済みの既存
+   課題群、着手条件なし。`[[FCF-CAGR-YEARS-MISMATCH-1]]`は2026-08-30
+   実装完了・BACKLOG_DONE.md移設済みのためリストから削除）
 5. **グループB（エピック3件、`[[QUALITY-GATES-EPIC-1]]`・
    `[[TRUST-SUMMARY-EPIC-1]]`・`[[BACKTEST-SCORE-1]]`）は「記述の誤り」
    ではなく「未着手の大型設計項目」であり、次の着手先として選ぶ前に
