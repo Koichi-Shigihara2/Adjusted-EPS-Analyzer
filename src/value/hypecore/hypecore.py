@@ -782,25 +782,23 @@ def determine_stage(row: pd.Series, prev_stage: int = 2, s3_streak: int = 0, s4_
 
 
 
-def detect_substage(row: pd.Series, stage: int, stage_months: int) -> dict:
+def _v(val):
+    """pandas NaN を None に変換（NaN は is None で検出できないため）"""
+    return None if pd.isna(val) else val
+
+
+def compute_real_strong(row: pd.Series) -> bool:
+    """実体（売上・EPS）の強さ判定。detect_substage()の内部フェーズ判定と
+    JSON出力（{ticker}_poc.jsonのreal_strongフィールド）の双方から呼ばれる
+    唯一の実装（[[HYPECORE-REALSTRONG-DUAL-IMPL-1]]対応: 修正前はdetail.html
+    側`getRec()`が`(rev_yoy>30)&&(eps_surprise>0)`という別条件・別閾値の
+    簡略版を独自に再実装しており、サーバー側substageとクライアント側の
+    推奨表示が矛盾する組み合わせが起こり得た。JSON出力にreal_strongの
+    値自体を含め、クライアント側の再計算を廃止する形で解消する）。
     """
-    各ステージの内部フェーズ（入口・中盤・出口）を判定。
-    「今のステージはどこにいるか」「次に何が起きるか」を示す。
-    """
-    ma200  = row.get("ma200_dev_local", 0) or 0
-    fp     = row.get("from_peak",   0) or 0
-    rsi    = row.get("rsi",        50) or 50
-    mom3m  = row.get("price_mom3m", 0) or 0
-    ma200m = row.get("ma200_mom",   0) or 0
+    rev_yoy  = _v(row.get("rev_yoy"))
+    eps_surp = _v(row.get("eps_surprise"))
 
-    def _v(val):
-        """pandas NaN を None に変換（NaN は is None で検出できないため）"""
-        return None if pd.isna(val) else val
-
-    rev_yoy   = _v(row.get("rev_yoy"))
-    eps_surp  = _v(row.get("eps_surprise"))
-
-    # 実体の強さ判定
     # 条件A: 標準（売上>15% かつ EPSが大きくミスしていない、またはEPS黒字サプライズ）
     _real_standard = (
         (rev_yoy is not None and rev_yoy > 15 and (eps_surp is None or eps_surp > -5)) or
@@ -812,7 +810,24 @@ def detect_substage(row: pd.Series, stage: int, stage_months: int) -> dict:
         rev_yoy is not None and rev_yoy > 30 and
         (eps_surp is None or eps_surp > -30)
     )
-    real_strong = _real_standard or _real_growth
+    return bool(_real_standard or _real_growth)
+
+
+def detect_substage(row: pd.Series, stage: int, stage_months: int) -> dict:
+    """
+    各ステージの内部フェーズ（入口・中盤・出口）を判定。
+    「今のステージはどこにいるか」「次に何が起きるか」を示す。
+    """
+    ma200  = row.get("ma200_dev_local", 0) or 0
+    fp     = row.get("from_peak",   0) or 0
+    rsi    = row.get("rsi",        50) or 50
+    mom3m  = row.get("price_mom3m", 0) or 0
+    ma200m = row.get("ma200_mom",   0) or 0
+
+    rev_yoy   = _v(row.get("rev_yoy"))
+    eps_surp  = _v(row.get("eps_surprise"))
+
+    real_strong = compute_real_strong(row)
 
     if stage == 3:  # 陶酔期
         if ma200m < -5 and fp < -5:
@@ -991,6 +1006,10 @@ def _build_month_record(idx, row) -> dict:
         "substage_label":     row["substage"]["label"] if isinstance(row.get("substage"), dict) else None,
         "substage_watch":     row["substage"]["watch"] if isinstance(row.get("substage"), dict) else None,
         "substage_next":      row["substage"]["next"]  if isinstance(row.get("substage"), dict) else None,
+        # [[HYPECORE-REALSTRONG-DUAL-IMPL-1]]: サーバー側detect_substage()と
+        # 同一ロジック（compute_real_strong()）の判定結果をそのまま出力する。
+        # detail.html側は独自に再計算せずこの値を使う
+        "real_strong":        bool(row.get("real_strong", False)),
         # スコア
         "expectation_score":  safe(row.get("expectation_score")),
         "fundamental_score":  safe(row.get("fundamental_score")),
@@ -1027,6 +1046,7 @@ def run_poc(ticker: str = "PLTR") -> dict:
 
     # 内部フェーズ判定
     substages = []
+    real_strongs = []
     stage_months = 0
     prev_s = None
     for _, row in df.iterrows():
@@ -1036,8 +1056,10 @@ def run_poc(ticker: str = "PLTR") -> dict:
         else:
             stage_months += 1
         substages.append(detect_substage(row, s, stage_months))
+        real_strongs.append(compute_real_strong(row))
         prev_s = s
     df["substage"] = substages
+    df["real_strong"] = real_strongs
 
     # 低ベース効果検出: 前年(12ヶ月前)のrev_yoyがマイナスかつ今年が50%超
     df["prev_rev_yoy"] = df["rev_yoy"].shift(12)

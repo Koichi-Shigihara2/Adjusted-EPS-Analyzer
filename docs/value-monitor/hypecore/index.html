@@ -160,7 +160,9 @@ function detectLifecycle(data){
 
 function getRec(d,prev){
   const ma=d.ma200_dev_local??0,fp=d.from_peak??0,s=d.stage,ps=prev?.stage??s;
-  const real_strong=(d.rev_yoy!=null&&d.rev_yoy>30)&&(d.eps_surprise!=null&&d.eps_surprise>0);
+  // [[HYPECORE-REALSTRONG-DUAL-IMPL-1]]: サーバー側detect_substage()の
+  // real_strong判定結果をそのまま使う（独自の簡略版ANDのみ再実装は廃止）
+  const real_strong=d.real_strong??false;
   const ma200_shrinking=(d.ma200_mom??0)>-5;
   if(s===0&&ps===4)return{cat:'buy',text:'強い買い推奨'};
   if(s===1)return{cat:'buy',text:'買い推奨'};

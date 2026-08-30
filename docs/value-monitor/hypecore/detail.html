@@ -369,7 +369,9 @@ function buildRatio(d,lc,stage){
 
 function getRec(d,prev){
   const ma=d.ma200_dev_local??0,fp=d.from_peak??0,s=d.stage,ps=prev?.stage??s;
-  const real_strong=(d.rev_yoy!=null&&d.rev_yoy>30)&&(d.eps_surprise!=null&&d.eps_surprise>0);
+  // [[HYPECORE-REALSTRONG-DUAL-IMPL-1]]: サーバー側detect_substage()の
+  // real_strong判定結果をそのまま使う（独自の簡略版ANDのみ再実装は廃止）
+  const real_strong=d.real_strong??false;
   const ma200_shrinking=(d.ma200_mom??0)>-5;
   if(s===0&&ps===4)return{icon:'▲',title:'強い買い推奨',sub:'底値形成を確認。長期エントリーの好機。',c:sh(0)};
   if(s===1)return{icon:'↑',title:'買い推奨',sub:'期待覚醒フェーズ。モメンタム回復を確認後エントリー。',c:sh(1)};
