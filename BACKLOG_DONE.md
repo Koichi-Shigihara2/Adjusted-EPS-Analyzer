@@ -20114,3 +20114,25 @@ Gates: pytest 996 passed, audit.py exit 0, report_consistency_check NG=0。
 **分類:** 表示不整合 / TANUKI VALUATION
 **登録日:** 2026-07-23
 **発見:** `FIELD_DEFINITIONS.md`フェーズ8（依頼文名指し）
+
+### ✅ [MP-TOOLTIP-1] BUY/TAKE PROFITチェックリストのglossaryツールチップ未付与 — 2026-08-30、診断結論の検証で解消済みと確認し移設
+**状態:** 完了・陳腐化のため移設（2026-08-30、🟢有効判定項目の診断結論再検証ラウンド1）。
+本エントリは2026-06-26横断調査時点で、glossary.jsonに登録済みの
+buy_ma200・buy_hy_spread・buy_hindenburg・tp_ma200・tp_hy_spread・
+tp_hindenburgの6キーが、market-pulse/index.htmlのチェックリスト表示箇所
+（`renderBuyChecklist()`・`renderTakeProfit()`）にdata-info属性として
+配線されていないためツールチップが表示されない、と診断していた。
+
+2026-08-30の第2段階検証（診断結論の検証）で、実コードを直接確認した
+ところ、`renderBuyChecklist()`（`docs/market-monitor/market-pulse/
+index.html`）は`ITEMS`配列の各要素が`gloss:'buy_ma200'`等のキーを持ち、
+行生成部で`data-info="${item.gloss}"`として明示的にDOM属性へ配線
+済みであることを確認した。`renderTakeProfit()`も同様に`CHECK_KEYS`
+マップ経由で`data-info="${glossKey}"`が配線されている。6キー全てが
+実際にツールチップとして機能する状態になっており、登録時点で存在した
+「登録済み・未使用」のギャップは、その後の一般的なツールチップ整備
+作業（具体的なコミットは特定せず）で解消されていた。診断結論自体は
+登録当時は正しかったが、コード側の状況が変化し陳腐化した。
+**優先度:** 低→クローズ（陳腐化・解消済み）
+**分類:** UX / Market Pulse
+**登録日:** 2026-06-27（**発見:** 2026-06-26横断調査）

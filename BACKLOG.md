@@ -11296,24 +11296,6 @@ buildProfitPath()の凡例部分に「✅ 達成済（pill）= 直近四半期�
 
 ---
 
-### [MP-TOOLTIP-1] BUY/TAKE PROFITチェックリストのglossaryツールチップ未付与
-**優先度:** 低
-**分類:** UX / Market Pulse
-**発見:** 2026-06-26横断調査
-
-#### 問題
-glossary.jsonにbuy_ma200・buy_hy_spread・buy_hindenburg・
-tp_ma200・tp_hy_spread・tp_hindenburgの6キーが登録済みだが、
-market-pulse/index.htmlのチェックリスト表示箇所にdata-info属性が
-付与されていないため、ツールチップが表示されない。
-glossaryキーが「登録済み・未使用」の状態。
-
-#### 対応方針
-renderBuyChecklist()・renderTakeProfit()の各チェック項目ラベルに
-data-info="buy_ma200"等のdata-info属性を付与する。
-
----
-
 ### [TOOLTIP-INDEX-1] tanuki_valuation/index.html・catalyst.html・news_history.htmlへのinfo-tooltip未適用
 **優先度:** 低
 **分類:** UX / 全体
