@@ -9617,31 +9617,6 @@ SEC EDGARへの遡及登録時にrevenueタグが適切に紐付けられなか�
 #### 着手条件
 なし
 
-### [MARKETDATA-AS-IS-AUDIT-PY-OMITTED-1] INPUT_DATA_AS_IS.md 1-B節の「11ファイル」がcommon/sec_data/audit.pyを見落としていた
-**優先度:** 低（記録のみ、ドキュメント訂正で対応完了）
-**分類:** ドキュメント正確性 / 調査精度
-**登録日:** 2026-08-07
-**発見:** `common/market_data/`新設事前調査（チャット記録、2026-08-07）
-
-#### 内容
-`INPUT_DATA_AS_IS.md` 1-B節の調査方法は「`src/`配下でヒットする
-14ファイル」を起点にしており、`common/`配下は探索範囲外だった
-（`discover/`配下のSTONKS SILOは別途手当て済みだったが、同種の
-見落としが`common/`配下には残っていた）。`common/sec_data/audit.py`
-が`import yfinance`をローカルスコープで2箇所（`audit_beta_drift()`
-等）行っており、`SEC_Data_Audit.yml`（`workflow_run`で"SEC Data
-Update"完了後に連鎖実行、独立cronなし）から呼ばれる本番稼働中の
-診断ツールだが、11ファイルの母集団には含まれていなかった。
-
-#### 対応
-`INPUT_DATA_AS_IS.md` 1-B節に12番目のファイルとして追加、総数表記を
-11→12件に訂正（別途ドキュメント修正で対応）。
-
-#### 着手条件
-なし。
-
----
-
 ### [STOCKHTML-LAYER3-PUBLISH-PIPELINE-MISSING-1] stock.htmlのLayer3切替は新規公開パイプライン構築が前提だが、現時点で着手しない
 **優先度:** 低（対応不要、記録のみ）
 **分類:** アーキテクチャ上のブロッカー / 着手見送り
