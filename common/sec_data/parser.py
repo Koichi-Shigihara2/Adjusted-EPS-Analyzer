@@ -570,6 +570,12 @@ class SECParser:
                                         former_names=former_names or [],
                                         spac_detections_out=_spac_shell_detections)
 
+        # [[PARSER-STOCKHOLDERS-EQUITY-CROSS-YEAR-MISSELECT-1]] VRT型対応:
+        # stockholders_equityの本人データが皆無の年度のみ、total_assets/
+        # total_liabilitiesが共通採用したaccnの値で補う（欠損穴埋め型）
+        self._align_stockholders_equity_to_sibling_accn(extracted, us_gaap, fiscal_end_month,
+                                                          anchor_month, anchor_day, extra_anchors)
+
         # [[TOTAL-LIABILITIES-FALLBACK-TAG-DESIGN-FLAW-1]]: XBRL_MAPPING
         # ["total_liabilities"]の2番目の候補LiabilitiesAndStockholdersEquityが
         # 誤採用された年度（total_liabilities==total_assetsという数学的
@@ -818,6 +824,130 @@ class SECParser:
                     "nulled_fields": nulled_fields,
                     "triggered_by": "math_violation" if violation_now else "former_names_window",
                 })
+
+    def _align_stockholders_equity_to_sibling_accn(self, extracted: Dict[str, Any], us_gaap: dict,
+                                                     fiscal_end_month: int,
+                                                     anchor_month: Optional[int] = None,
+                                                     anchor_day: Optional[int] = None,
+                                                     extra_anchors: Optional[List[tuple]] = None) -> None:
+        """
+        [[PARSER-STOCKHOLDERS-EQUITY-CROSS-YEAR-MISSELECT-1]] VRT型（0アンカー）対応。
+
+        stockholders_equityにその年度の本人データ（is_own_data=True）が
+        一件も存在しない年度についてのみ、total_assets/total_liabilities
+        （BSの他フィールド）が共通して採用したaccnに、同一年度バケツに
+        属するstockholders_equity候補タグのエントリが存在すれば、そちらを
+        フォールバックの採用値より優先する（欠損穴埋め型の追加ステップ）。
+
+        _resolve_bs_entity_mixing()との関係: 同関数は「本人データを提供する
+        accnが単一に定まる年度（own_accns==1）」のみを対象とするのに対し、
+        本メソッドは「stockholders_equity自身の本人データが皆無の年度
+        （is_own_data==False）」のみを対象とし、適用条件が排他的（同一年度で
+        両方が同時に発火することはない）。呼び出し順は
+        _resolve_bs_entity_mixing()の直後（本メソッドは全く別のaccnから
+        値を補うだけで、_resolve_bs_entity_mixing()がNone化した値を復元
+        する意図はない）。
+
+        VRT(2017)実例: stockholders_equityの本人データが存在せず、フォール
+        バックは10-K/A（2021年、無関係な事業実体の比較列再表示、-$129.6M）
+        を誤って採用していたが、total_assets/total_liabilitiesが共通採用
+        したaccn（VRTのFY2018 10-K、2019-03-13提出）には正しい比較列値
+        （$23,724）が存在し、採用するとTA=TL+SEの恒等式が完全一致することを
+        確認済み。CWAN(2023)のような「正しいaccnにタグ自体が存在しない」
+        構造的必然パターンは本メソッドの対象外のまま変化しない（一致する
+        エントリが見つからなければ何もしない、安全側）。
+
+        適用範囲の限定（105銘柄シミュレーションで発見、2026-08-30）:
+        現在の採用値のaccnが既にanchor_accnと同じ場合は対象外とする
+        （AVGO(2017)実例参照）。この場合はVRT型の「別filingへの誤誘導」
+        ではなく、同一accn内での候補タグ選択（StockholdersEquity単体 vs
+        NCI込みタグ）という別問題であり、本メソッドで機械的に片方を
+        優先すると、TA=TL+SEの恒等式がNCI込み値でのみ完全一致する銘柄で
+        逆に恒等式を壊してしまうことが判明したため、意図的にスコープ外
+        とした。
+        """
+        se_field = extracted.get("stockholders_equity")
+        ta_field = extracted.get("total_assets")
+        tl_field = extracted.get("total_liabilities")
+        if se_field is None or ta_field is None or tl_field is None:
+            return
+
+        se_annual = se_field.get("annual", {})
+        se_prov = se_field.setdefault("_annual_provenance", {})
+        ta_prov = ta_field.get("_annual_provenance", {})
+        tl_prov = tl_field.get("_annual_provenance", {})
+
+        xbrl_keys = self.XBRL_MAPPING.get("stockholders_equity", [])
+
+        for year in list(se_annual.keys()):
+            prov = se_prov.get(year)
+            if prov is None or prov.get("is_own_data"):
+                continue  # 本人データが既に存在する年度は対象外（CRM型は別ロジックで対応済み）
+
+            ta_p = ta_prov.get(year)
+            tl_p = tl_prov.get(year)
+            if not ta_p or not tl_p:
+                continue
+            anchor_accn = ta_p.get("accn")
+            if not anchor_accn or anchor_accn != tl_p.get("accn"):
+                continue  # total_assets/total_liabilitiesが同一accnで一致する年度のみ対象
+
+            # 105銘柄シミュレーションで発見（2026-08-30）: stockholders_equity
+            # の現在の採用accnが既にanchor_accnと同じ場合は対象外とする。
+            # AVGO(2017)実例で判明: このケースは「0アンカー」（VRT型）ではなく
+            # 同一accn内でのタグ選択（StockholdersEquity単体 vs
+            # ...IncludingPortionAttributableToNoncontrollingInterest、NCI込み）
+            # の優劣という別問題であり、XBRL_MAPPINGの優先順位を機械的に
+            # 適用すると、TA=TL+SEの会計恒等式がNCI込み値でのみ完全一致する
+            # 銘柄（AVGO(2017)）で逆に恒等式を破壊してしまう
+            # （$54,418M=TL+SE〈NCI込み〉が完全一致、$51,517M=TL+SE〈NCI抜き〉
+            # は$2,901M＝AVGOのNCI相当分ずれる）。VRT型の本来の対象は
+            # 「現在の採用accnがanchor_accnと全く異なる」ケースに限定し、
+            # 同一accn内のタグ選択には踏み込まない（タグ選択自体は既存の
+            # フォールバック機構〈全体を通じた鮮度比較〉の判断に委ねる）。
+            existing_accn = prov.get("accn")
+            if existing_accn == anchor_accn:
+                continue
+
+            # anchor_accn内で、stockholders_equity候補タグのうちこの年度バケツに
+            # 属する年次エントリ（10-K/10-K/A・fp==FY）を探す。複数該当する場合は
+            # xbrl_keys（優先タグ順）→end_date新しい方の順で選ぶ
+            # （_extract_single_key()の年次候補採用条件と同一の絞り込み）。
+            best_entry = None
+            for key in xbrl_keys:
+                if key not in us_gaap:
+                    continue
+                for unit_type in ["USD", "shares", "USD/shares"]:
+                    for entry in us_gaap[key].get("units", {}).get(unit_type, []):
+                        if entry.get("accn") != anchor_accn:
+                            continue
+                        if entry.get("form") not in ("10-K", "10-K/A") or entry.get("fp") != "FY":
+                            continue
+                        end_date = entry.get("end", "")
+                        val = entry.get("val")
+                        if val is None or not end_date or len(end_date) < 10:
+                            continue
+                        try:
+                            end_dt = datetime.strptime(end_date, '%Y-%m-%d')
+                        except ValueError:
+                            continue
+                        if determine_fiscal_year(end_dt, fiscal_end_month, anchor_month, anchor_day,
+                                                  extra_anchors) != year:
+                            continue
+                        if best_entry is None or end_date > best_entry["end"]:
+                            best_entry = {"end": end_date, "val": val, "fy": entry.get("fy"),
+                                          "filed": entry.get("filed", "")}
+                if best_entry is not None:
+                    break  # xbrl_keys優先順位順: 先に見つかったタグを優先
+
+            if best_entry is None or best_entry["val"] == se_annual.get(year):
+                continue  # 一致するエントリがない、または値に変化がなければ何もしない
+
+            se_annual[year] = best_entry["val"]
+            se_prov[year] = {
+                "accn": anchor_accn, "filed": best_entry["filed"], "is_own_data": False,
+                "fy_tag": best_entry["fy"], "aligned_to_sibling_accn": True,
+            }
 
     def _backfill_gross_profit_from_revenue_cogs(self, extracted: Dict[str, Any]) -> None:
         """
@@ -1803,9 +1933,13 @@ class SECParser:
         """
         FYE-CHANGE-BOUNDARY-COLLISION-BLIND-1: 既存（フォールバック採用済み）側と
         本人データ候補側が「真の境界衝突」（決算期変更、RCAT型）とみなせるかを
-        判定する純関数。`_own_override_is_safe()`自体は変更せず、その呼び出し
-        前後で退避した既存側の情報と組み合わせて使う（_extract_values_merged/
-        _extract_values_best_candidate内の2箇所から呼び出される）。
+        判定する純関数。呼び出し前後で退避した既存側の情報と組み合わせて使う
+        （_extract_values_merged/_extract_values_best_candidate内の2箇所から
+        呼び出される）。同じexisting_fy_tag/own_fy_tagは
+        [[PARSER-STOCKHOLDERS-EQUITY-CROSS-YEAR-MISSELECT-1]]対応で
+        `_own_override_is_safe()`（_extract_values_best_candidate側の
+        呼び出しのみ、既存のexisting_fy_tag/own_fy_tagがNoneのデフォルトでは
+        従来通り無効化）にも渡すようになった。
 
         判定条件（すべて満たす場合のみTrue）:
         1. 既存側end_dateが存在する（フォールバックが実際に何かを採用済み）
@@ -1828,7 +1962,9 @@ class SECParser:
                                annual_accn: Dict[int, str], accn_reportdate: Dict[str, str],
                                anchor_month: Optional[int] = None, anchor_day: Optional[int] = None,
                                is_instant: bool = False,
-                               extra_anchors: Optional[List[tuple]] = None) -> bool:
+                               extra_anchors: Optional[List[tuple]] = None,
+                               existing_fy_tag: Optional[int] = None,
+                               own_fy_tag: Optional[int] = None) -> bool:
         """
         本人データによる上書きが安全か判定する。
 
@@ -1885,7 +2021,22 @@ class SECParser:
 
         existing_accn = annual_accn.get(year)
         if existing_accn is not None and accn_reportdate.get(existing_accn) == existing_end:
-            return False  # 既に別の本人データが採用済み → 上書きしない（タグ優先順位を尊重）
+            # [[PARSER-STOCKHOLDERS-EQUITY-CROSS-YEAR-MISSELECT-1]] CRM型対応:
+            # 既存エントリが自accnの本人データ（reportDateとend_dateが一致）で
+            # あっても、その生fyタグ〈existing_fy_tag〉がこのyearバケツ自体と
+            # 食い違っている場合（WARN-23と同種の「fyタグ裏取り不一致」）は、
+            # 本バケツにとっての正当な本人データとは限らない。CRM(2011)実例:
+            # end=2011-01-31（fy=2010タグ）がdetermine_fiscal_year()で偶然
+            # year=2011バケツに計算され、本来year=2011の本人データである別accn
+            # ・別タグの候補（own_fy_tag==2011で一致）を誤ってブロックしていた。
+            # own_fy_tag側がyearと一致する〈真にこのバケツ向けの本人データ〉場合
+            # に限り、この短絡判定をスキップして通常の安全確認へフォールスルー
+            # する（existing_fy_tag/own_fy_tag省略時は従来通りFalseを返す。
+            # WMT型〈existing_fy_tag==yearで自己整合〉はこの分岐に入らず、
+            # 従来通りFalseで保護され続ける）。
+            if not (existing_fy_tag is not None and existing_fy_tag != year
+                    and own_fy_tag is not None and own_fy_tag == year):
+                return False  # 既に別の本人データが採用済み → 上書きしない（タグ優先順位を尊重）
 
         existing_days = annual_durations.get(year)
         if existing_days is not None and 340 <= existing_days <= 380:
@@ -2268,7 +2419,9 @@ class SECParser:
                                                             winning_durations, winning_accns, accn_reportdate,
                                                             anchor_month, anchor_day,
                                                             is_instant=field_name in self.INSTANT_FACT_FIELDS,
-                                                            extra_anchors=extra_anchors)
+                                                            extra_anchors=extra_anchors,
+                                                            existing_fy_tag=_existing_fy_tag,
+                                                            own_fy_tag=own_fy_tag)
                 if (boundary_collisions_out is not None
                         and self._is_boundary_collision(_existing_end, _existing_fy_tag, own_end, own_fy_tag)):
                     boundary_collisions_out.append({
