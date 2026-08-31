@@ -1,6 +1,6 @@
 {
   "ticker": "LITE",
-  "last_updated": "2026-08-30T15:37:02.211104",
+  "last_updated": "2026-08-31T10:50:35.094024",
   "quarters": [
     {
       "gaap_eps": -96.00134048257372,
@@ -75,27 +75,27 @@
       "tax_expense": -237700000.0,
       "pretax_income": -7399400000.0,
       "ai_analysis": {
-        "health": "過大調整",
-        "comment": "主な調整であるsbcとamortization_intangiblesは恒常的に発生する非現金費用であり、リストラや異常貸倒引当の一過性項目に比べて調整の妥当性が低い。GAAP EPS(-96)がAdjusted EPS(-95)より大幅に悪化して見えるため、市場がGAAPベースで判断する場合に企業の実力(非現金費用の実態や将来キャッシュ生成力)が過小評価されるリスクがある。ただしSBCの株主希薄化や償却の経済的影響を考慮すると、調整EPSは業績を過大に見せている可能性もあり、過小評価リスクと過大評価リスクの両面が存在。投資家は調整項目の持続可能性とフリーキャッシュフローを重点的に検証すべき。",
+        "health": "調整中",
+        "comment": "調整項目の大部分を占めるsbcとamortization_intangiblesは恒常的に発生する項目（非現金だが事業運営上避けられないコスト）であり、loan_loss_provision_abnormalとrestructuringは一過性と判断できる。GAAP EPS(-96)がAdjusted EPS(-95)より大幅に悪いため、市場がGAAP中心に判断する場合に企業の実力（調整後ベースの損失縮小傾向）が見えにくくなり、過小評価のリスクがある。ただしSBCの希薄化効果などを考慮すると調整後実力も限定的であり、過大評価リスクも潜む。投資家はキャッシュフローと再発防止策に注目すべき。",
         "sources": [
           {
             "item": "sbc",
-            "snippet": "非現金費用だが毎期発生する恒常的な株式報酬費用であり経済的コストを伴う",
+            "snippet": "非現金費用だが毎期発生する恒常的な株式報酬コスト",
             "confidence": 0.2
           },
           {
             "item": "amortization_intangibles",
-            "snippet": "買収関連無形資産の償却で長期にわたって発生する恒常的費用",
+            "snippet": "買収関連無形資産の償却で継続発生する非現金費用",
             "confidence": 0.2
           },
           {
             "item": "loan_loss_provision_abnormal",
-            "snippet": "マクロ変動による一時的影響の異常貸倒引当金繰入",
-            "confidence": 0.75
+            "snippet": "マクロ変動による一時的影響の異常変動分",
+            "confidence": 0.8
           },
           {
             "item": "restructuring",
-            "snippet": "一過性の事業再編リストラ費用",
+            "snippet": "一過性の事業再編費用",
             "confidence": 0.8
           }
         ]
