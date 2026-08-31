@@ -2,7 +2,196 @@
 
 ---
 
-## 2026-08-30（完了）
+## 2026-08-31（完了）
+
+### ✅ [WORKFLOW-SEC-TANUKI-GAP-1] SEC_Data_UpdateとTANUKI_VALUATION_Updateの自動連携欠如 — 2026-08-31、2026-08-30サイクルでSECチェーンのworkflow_run連鎖発火を実地確認しクローズ
+**優先度:** 中
+**分類:** アーキテクチャ / GitHub Actions / 品質管理
+**登録日:** 2026-07-13
+**状態:** 実装完了（2026-08-22、[[TANUKI-VALUATION-PRICE-SCHEDULE-LAG-1]]と
+まとめて対応）。2026-08-26に実地確認を実施した結果、下流側
+（HypeCore/Adjusted_EPS_Data_Update→TANUKI_VALUATION_Update）の連鎖は
+確認できたが、本エントリの核心である`SEC_Data_Update`→3ワークフローの
+連鎖は2026-08-23の唯一の発火機会で証拠が見当たらず未確定。
+次回2026-08-30サイクルでの再確認待ち。未クローズだった）
+**発見:** [[WARN12-COHR-ONDS-1]]実態調査時
+
+#### 背景
+`config/workflow_dependencies.json`は`TANUKI_VALUATION_Update`が
+`SEC_Data_Update`に（HypeCore_Update/Adjusted_EPS_Update/Stonks_Silo_Update
+経由で）依存すると論理的に定義しているが、これは実際のGitHub Actions
+ワークフロートリガーとしては実装されていない（`workflow_run`等の連携なし。
+admin.htmlの手動一括更新ボタン用のメタデータに留まる）。
+
+実際のcronスケジュールは完全に独立している：
+- `SEC_Data_Update.yml`: 毎週**日曜12:00 UTC**（=JST21:00）
+- `TANUKI_VALUATION_Update.yml`: **平日**（月〜金）JST23:05のみ
+
+このため、日曜のSEC自動更新完了から次のTANUKI VALUATION自動更新
+（月曜23:05）までの**約26時間、SECデータは最新だがTANUKI VALUATIONの
+latest.json/report.txtは陳腐化したまま**という状態が構造的・恒常的に
+毎週発生しうる。[[WARN12-COHR-ONDS-1]]（COHR/ONDSのCash-STI期ズレ）は
+この構造的ギャップが2026-07-12に顕在化した実例（コード修正ではなく
+pipeline.py再実行のみで解消した）。
+
+#### 対応方針（未確定・次回セッションで判断）
+- 案①: `SEC_Data_Update`完了後に`TANUKI_VALUATION_Update`（および
+  HypeCore_Update/Adjusted_EPS_Update/Stonks_Silo_Update）を`workflow_run`
+  トリガーで自動連鎖させ、`config/workflow_dependencies.json`が定義する
+  論理的依存関係を実際のCI構成に反映する
+- 案②: 許容運用として現状維持する（日曜〜月曜のズレは
+  report_consistency_check.pyのWARN検知で拾えており、実害は小さいため）
+- 案①を採用する場合、既存の個別cronスケジュール（HypeCore週次・
+  EPS Analyzer等）との統合方法・実行時間帯の見直しが必要になる可能性がある
+
+#### 実装内容（2026-08-22、案①を採用）
+実装前に`config/workflow_dependencies.json`・各ワークフローの現行cronを
+実ファイルで再確認した上で着手（BACKLOG記載を鵜呑みにしない）。
+
+- `HypeCore_Update.yml`: `on`を独立cron（毎週日曜13:08 UTC）から
+  `workflow_run`（`workflows: ["SEC Data Update"]`, `types: [completed]`）
+  に変更。ジョブに`if: github.event_name != 'workflow_run' ||
+  github.event.workflow_run.conclusion == 'success'`を追加。旧cronは
+  削除し、安全網として月曜4:00 UTC（`SEC_Data_Update`日曜分完了後）の
+  週1回フォールバックcronのみ残した。`workflow_dispatch`は維持。
+- `Adjusted_Eps_Analyzer_update.yml`: 同様に独立cron（毎週月曜10:07 UTC）
+  を`workflow_run`（`SEC Data Update`）に置き換え、同じ`if`ガードを追加。
+  安全網として月曜4:10 UTCの週1回フォールバックcronのみ残した。本
+  パイプラインは`market_data`日次層に依存しないためSEC完了トリガーのみ
+  で鮮度要件を満たせると判断。`workflow_dispatch`（`branches: kaihatsu`
+  含む）は維持。
+- `Stonks_Silo_Update.yml`: `workflow_run`（`SEC Data Update`）を追加
+  トリガーとして新設したが、既存の平日日次cron（15:05 UTC）は**削除せず
+  維持**した。理由: `valuation_fetcher.py`が`common/market_data/daily/`の
+  日次終値にも依存しており、`SEC_Data_Update`（週次）だけをトリガーに
+  すると日次価格鮮度の要件を満たせなくなるため（案②寄りの判断、
+  「フォールバック」ではなく「別の鮮度要件を満たす並行トリガー」として
+  意図的に併存させた）。同じ`if`ガードを追加。**2026-08-31追記**:
+  この判断自体が`[[STONKS-SILO-PRICE-SCHEDULE-LAG-SUSPECT-1]]`の
+  真因であったと実データで確認され、同エントリで`workflow_run`対象に
+  `Market Data Daily Update`を追加・旧独立cronを低頻度フォールバックへ
+  置換する形に改めている（詳細は同エントリ参照）。
+- `TANUKI_VALUATION_Update.yml`: `workflow_run`の対象に上記3本に加え
+  `Market Data Daily Update`も含めた（[[TANUKI-VALUATION-PRICE-
+  SCHEDULE-LAG-1]]側の対応と統合実施のため）。詳細は同エントリ参照。
+- `config/workflow_dependencies.json`自体（`depends_on`グラフ）は
+  今回変更なし（既存定義が実装と一致することを確認済み。
+  `Market_Data_Daily_Update`ノードの追加は[[TANUKI-VALUATION-PRICE-
+  SCHEDULE-LAG-1]]側で実施）。`bulk_update_order`/`bulk_update_phases`/
+  `new_ticker_order`（admin.htmlの手動一括更新ボタンが参照）は意図的に
+  変更していない（手動トリガー経路への影響を避けるため）。
+
+#### 依存グラフ再確認結果（実装前、2026-08-22時点）
+`config/workflow_dependencies.json`の`depends_on`定義は本エントリの
+背景記載と完全に一致（`HypeCore_Update`/`Adjusted_EPS_Update`/
+`Stonks_Silo_Update`はいずれも`SEC_Data_Update`のみに依存、
+`TANUKI_VALUATION_Update`はこの3本に依存）。ただし
+`Market_Data_Daily_Update`は`TANUKI_VALUATION_Update`の依存先として
+論理的にも一切定義されていなかった（[[TANUKI-VALUATION-PRICE-
+SCHEDULE-LAG-1]]側で新規追加）。
+
+#### 同型の未対応ギャップ（今回のスコープ外・報告のみ）
+`Stonks_Silo_Update.yml`（cron 15:05 UTC）が`Market_Data_Daily_Update`
+（21:40 UTC完了）より先に発火するため、`valuation_fetcher.py`経由の
+日次終値参照が常に前営業日終値になっている可能性が高い
+（`TANUKI_VALUATION_Update`が抱えていたのと同型の問題）。今回は
+`TANUKI_VALUATION_Update`側の対応のみ実施し、`Stonks_Silo_Update`側は
+意図的にスコープ外とした。`[[STONKS-SILO-PRICE-SCHEDULE-LAG-
+SUSPECT-1]]`として新規登録（2026-08-31、実データ確認の上対応済み。
+BACKLOG.md該当エントリ参照）。
+
+#### 検証状況
+YAML構文（`yaml.safe_load`）・JSON構文（`json.load`）は確認済み。`gh`
+CLIが本セッション環境で利用不可（Bash/PowerShellとも`command not
+found`）のため、GitHub Actions側の実際の発火・連鎖動作は本セッションでは
+検証不能。次回発火サイクル（最短で次回日曜`SEC_Data_Update`実行後）に
+コミット履歴で`HypeCore_Update`等が連鎖起動されたか確認するまでは
+「未検証」として扱う。
+
+#### 2026-08-26 実地確認結果（SECチェーンは未確定・要再確認、TANUKIチェーンは確認済み）
+`gh`CLI・GitHub Actions APIとも本セッションで利用不可のため、
+コミット履歴のタイムスタンプ突合で代替検証した。
+
+**確認できたこと**: `HypeCore_Update`→`TANUKI_VALUATION_Update`・
+`Adjusted_EPS_Data_Update`→`TANUKI_VALUATION_Update`の下流側チェーンは
+2026-08-24（月）に実際に連鎖動作している証拠を確認した——
+「Update HypeCore - 2026-08-24 13:40 JST」の17分後に「Update TANUKI
+VALUATION - 2026-08-24 13:57 JST」、「Update EPS data - 2026-08-24
+05:07:54Z（=14:07:54 JST）」の14分後に「Update TANUKI VALUATION -
+2026-08-24 14:21 JST」と、いずれも数分〜十数分の遅延で追従している
+（[[TANUKI-VALUATION-PRICE-SCHEDULE-LAG-1]]側の`Market_Data_Daily_
+Update`→`TANUKI_VALUATION_Update`chain、2026-08-25・26の2日連続で
+確認できた約16分ラグと同型のパターン）。
+
+**確認できなかったこと（本エントリの核心部分）**: `SEC_Data_Update`
+（毎週日曜12:00 UTC=JST21:00）→`HypeCore_Update`/
+`Adjusted_EPS_Data_Update`/`Stonks_Silo_Update`の連鎖は、対象の
+唯一の発火機会だった2026-08-23（日）にコミット履歴上の証拠が
+見当たらない。日曜21:00 JST前後（18:00〜翌02:00 JSTの範囲で確認）に
+`SEC_Data_Update`自身のコミット（`Update SEC Data - ...`）も、
+`HypeCore_Update`/`Adjusted_EPS_Data_Update`のコミットも一切存在
+しない。一方、`HypeCore_Update`の実際の初回発火は2026-08-24（月）
+13:40 JST——新設したフォールバックcron（月曜4:00 UTC=13:00 JST、
++40分の待機列遅延は許容範囲内）の時刻と一致し、`Adjusted_EPS_Data_
+Update`も同日14:07:54 JST——フォールバックcron（月曜4:10 UTC=13:10
+JST）+57分の待機列遅延で説明がつく時刻だった。両者ともSEC完了直後の
+連鎖（本チェーンが機能していれば日曜21:00 JST台に発生するはず）とは
+時間帯が一致しない。
+
+**判断**: `SEC_Data_Update`→3ワークフローのchainが実際に発火した
+証拠は無く、代わりに安全網として残したフォールバックcronが意図通り
+機能して穴を埋めた可能性が高い（フォールバック自体は設計通りに機能して
+おり、これは「フォールバックがあって良かった」という結果ではあるが、
+本チェーンの動作確認としては不十分）。`05_events.csv`同様、
+`SEC_Data_Update`が「実行されたが差分が無くコミットが発生しなかった
+（`git diff --staged --quiet`で正常スキップ）」可能性と、「そもそも
+正常に完了しなかった」可能性を、現時点のコミット履歴だけからは
+区別できない。
+
+`CHAT_RULES.md`「まだ十分な発火サイクル数が経過していない、または
+連鎖が意図通り動いていないと判明した場合は、その旨を報告し、
+BACKLOGのエントリはクローズせず現状維持とする」に従い、2026-08-26時点
+では本エントリはクローズしなかった。次回日曜（2026-08-30）の
+`SEC_Data_Update`発火後、同様の手順（コミット履歴のタイムスタンプ突合、
+日曜21:00 JST台に`HypeCore_Update`/`Adjusted_EPS_Data_Update`の
+コミットが現れるか）で再確認することとしていた。
+
+#### 2026-08-31 実地確認結果（2026-08-30サイクル、SECチェーン発火を確認・クローズ）
+`gh`CLIは本セッションでも利用不可（Bash/PowerShellとも`command not
+found`）のため、引き続きコミット履歴のタイムスタンプ突合で検証した。
+
+**確認した証拠**（いずれも`git show -s --format="%an <%ae> | %ad | %s"`で
+コミッターが`github-actions[bot]`/`github-actions`であることも確認済み、
+手動コミットではない）:
+- `5f2da2ea6c` "Update SEC Data - 2026-08-31" — 2026-08-31 00:32:53 JST
+  （`SEC_Data_Update`自身、日曜12:00 UTC cronの実行結果）
+- `2d59afbdb0` "Update HypeCore - 2026-08-31 00:34 JST" —
+  2026-08-31 00:34:13 JST（SEC Data Update完了の**80秒後**）
+- `ce4e03b808` "Update Stonks Silo - 2026-08-31 00:34 JST" —
+  2026-08-31 00:34:50 JST（SEC Data Update完了の**117秒後**）
+- `0efff48849` "Update EPS data - 2026-08-30" —
+  2026-08-31 00:41:55 JST（SEC Data Update完了の**9分2秒後**）
+
+4本とも`SEC_Data_Update`完了から9分以内という極めて短い間隔で連続
+コミットしており、2026-08-26確認時のフォールバックcron発火パターン
+（+40分・+57分の待機列遅延を伴い、月曜13:00/13:10 JST台に着地）とは
+明確に異なる。念のため今回の対象サイクルである月曜（2026-08-31）
+13:00〜13:10 JST台のコミット履歴も確認したが、`HypeCore_Update`/
+`Adjusted_EPS_Data_Update`/`Stonks_Silo_Update`のコミットは存在せず、
+フォールバックcronが今回発火した形跡もないことを確認した（発火条件を
+満たさなかった、またはデータ差分なしで無言スキップしたかは区別
+できないが、いずれにせよ日曜21:00 JST台の`workflow_run`連鎖が既に
+役目を果たしていたことと矛盾しない）。
+
+**判断**: `SEC_Data_Update`→`HypeCore_Update`/`Adjusted_EPS_Data_
+Update`/`Stonks_Silo_Update`の`workflow_run`連鎖が、2026-08-30の
+発火機会で意図通り動作したことを実地確認できた。2026-08-23の
+発火機会では証拠不十分だったが、2026-08-30では明確な証拠（4本の
+極めて近接したタイムスタンプ、コミッターが全てbot、フォールバック
+cronの痕跡なし）が揃ったため、本エントリをクローズする。
+
+#### 着手条件
+なし（実装完了・2026-08-31実地確認によりクローズ）
 
 ### ✅ [DATA-FRESHNESS-MONITORING-FUTURE-IDEA-1] 各データパイプラインの「更新が一定時刻までに完了したか」を監視・通知する仕組み
 
