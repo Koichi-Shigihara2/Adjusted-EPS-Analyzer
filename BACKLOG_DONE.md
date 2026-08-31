@@ -4,6 +4,87 @@
 
 ## 2026-08-31（完了）
 
+### ✅ [TEST-STALE-IONQ-STINVEST-1] tests/test_pipeline_logic.py::TestSTInvestQuarterlyOverrideのIONQハードコード値がQ2 2026実データ到着で陳腐化 — 2026-08-31②、動的検証方式へ書き換えて解消
+**優先度:** 低（本番コードの回帰ではなく、テストの期待値が固定日付の
+実データを前提にしていたことによる陳腐化。実害なし）
+**分類:** テスト / データ鮮度
+**登録日:** 2026-08-31
+**完了日:** 2026-08-31②
+**発見:** `[[STONKS-SILO-PRICE-SCHEDULE-LAG-SUSPECT-1]]`実装後の
+pytest実行ゲートで発見
+
+#### 内容
+`test_ionq_st_invest_uses_quarterly_value`が失敗する
+（`IONQ ST_Invest=883M が年次値($1,361M)に近い`というアサーション
+メッセージだが、実際には年次値ではなく**より新しい四半期値**）。
+
+このテストは`BUG-NETDEBT-5`（2026-06-12完了）の回帰防止用で、「IONQの
+ST_Investが最新四半期bsから正しく上書きされること」を、2026-06-12
+時点で最新だった`quarterly_2026Q1.json`（ST_Invest=$1,539,932,000）を
+ハードコードした期待値（`> $1,400,000,000`）で検証していた。
+
+しかし`common/sec_data/data/IONQ/`には既に`quarterly_2026Q2.json`
+（ST_Invest=$883,240,000）が存在し、これが現在の「最新四半期」である。
+`docs/value-monitor/tanuki_valuation/data/IONQ/latest.json`の
+`financial_health.short_term_investments`は実際に`883,240,000`
+（=quarterly_2026Q2の値と完全一致）であり、**パイプラインは最新四半期
+値を正しく採用している**（BUG-NETDEBT-5の修正は機能している）。
+テスト側がQ1 2026時点の値をハードコードしたまま更新されておらず、
+Q2 2026データの到着（本テスト作成後にIONQが新しい10-Qを提出）で
+アサーションの前提が崩れただけと判断した。
+
+#### 2026-08-31② 実装内容（動的検証方式への書き換え、案②を採用）
+BACKLOG登録時に挙げた2案のうち「ハードコード値の更新のみ」ではなく、
+「latest.jsonの値が最新quarterlyの実際の値と一致することを動的に検証
+する」方式を採用した。理由: 値の更新のみだと将来IONQがQ3以降のデータを
+提出するたびに同じ陳腐化が再発するため、個別修正ではなく根本原因を
+系統的に解消する本プロジェクトの原則に沿う。
+
+実装前に、対象2テストが実際に現在失敗する（`test_ionq_net_debt_
+corrected`は現在のcash/total_debt側の実データの巡り合わせで偶然閾値を
+満たし合格していたが、`test_ionq_st_invest_uses_quarterly_value`は
+確実に失敗する）ことを再確認した上で着手（前回セッションの記載を
+鵜呑みにしない）。
+
+- `test_ionq_st_invest_uses_quarterly_value`: ハードコード閾値
+  （`> $1,400,000,000`）を廃止し、`common/sec_data/data/IONQ/`配下の
+  `quarterly_*.json`をglobでソートし最新ファイルを都度動的に読み直して
+  `latest.json`の値と**完全一致**することを検証する方式に変更
+  （既存の`test_ionq_quarterly_st_invest_exists_and_differs_from_
+  annual`と同じglobパターンを踏襲）。`sti_approximated`が`True`の場合
+  （NVDA-STI-TAG-UNIDENTIFIED-1、複数タグ合算近似値）は生のquarterly
+  bs値と完全一致しないため対象外としスキップするガードを追加。
+- `test_ionq_net_debt_corrected`: ハードコード閾値（`< -$1,900,000,000`）
+  を廃止し、`common/sec_data/reader.py::get_net_cash()`の定義
+  （`net_cash = (cash + short_term_investments) - (long_term_debt +
+  short_term_debt)`、`net_debt = -net_cash`）に基づき、
+  latest.json自身の`cash_and_equivalents`・`total_debt`と最新quarterly
+  の`short_term_investments`から期待値を動的に再計算し、実測値との
+  差が$1未満（浮動小数点誤差の範囲）であることを検証する方式に変更。
+  IONQの実測（cash=$1,235.7M、q_sti=$883.2M、total_debt=$0）で
+  期待値=実測値=-$2,118,969,000の完全一致を確認済み。
+
+修正後、対象3テスト（上記2件＋既存の前提確認テスト）が3件とも合格
+することを確認。pytest全体1025 passed（既知失敗0件）・audit.py NG=0
+（既存🟡警告9銘柄、変更なし）・report_consistency_check.py
+--fail-on-ng NG=0/WARN=93件（既存、変更なし）。
+
+**横断確認**: 同種のハードコード陳腐化パターン（`latest.json`等の
+継続更新される派生出力を、特定時点で「最新だった」固定の四半期・年度
+データの値でハードコード比較するテスト）が他に潜んでいないか
+`tests/`をgrepで軽く確認した。`docs/value-monitor/.../latest.json`を
+参照する他のテスト（`test_iv_formula.py`は既存の`[[TEST-STALE-IV-1]]`
+で対応済み、`test_report_txt_parser.py`は数値ハードコードなし）と、
+`test_pipeline_logic.py`内の隣接テスト（NVDA関連）を確認したが、後者は
+「特定の名前付き四半期ファイル（`quarterly_2027Q1.json`等）自身の生値」
+を検証する形（一度提出された10-Qは不変のため「最新」概念に依存せず
+陳腐化しない）か、真偽値フラグの検証であり、今回と同型の脆弱性は
+確認されなかった。本格的な横断監査（全テストファイル対象）はスコープ外
+のため実施していない。
+
+#### 着手条件
+なし（実装完了）
+
 ### ✅ [WORKFLOW-SEC-TANUKI-GAP-1] SEC_Data_UpdateとTANUKI_VALUATION_Updateの自動連携欠如 — 2026-08-31、2026-08-30サイクルでSECチェーンのworkflow_run連鎖発火を実地確認しクローズ
 **優先度:** 中
 **分類:** アーキテクチャ / GitHub Actions / 品質管理

@@ -9216,51 +9216,6 @@ None:`（921行）の条件が成立せずFRED取得がスキップされる。*
 
 ## 優先度：低（アイデア段階）
 
-### [TEST-STALE-IONQ-STINVEST-1] tests/test_pipeline_logic.py::TestSTInvestQuarterlyOverrideのIONQハードコード値がQ2 2026実データ到着で陳腐化
-**優先度:** 低（本番コードの回帰ではなく、テストの期待値が固定日付の
-実データを前提にしていたことによる陳腐化。実害なし）
-**分類:** テスト / データ鮮度
-**登録日:** 2026-08-31
-**発見:** `[[STONKS-SILO-PRICE-SCHEDULE-LAG-SUSPECT-1]]`実装後の
-pytest実行ゲートで発見（本タスクのスコープ外のため報告のみ、
-未実装。`CHAT_RULES.md`「調査中に発見した別バグの実装は別途依頼を
-待つ」に従う）
-
-#### 内容
-`test_ionq_st_invest_uses_quarterly_value`が失敗する
-（`IONQ ST_Invest=883M が年次値($1,361M)に近い`というアサーション
-メッセージだが、実際には年次値ではなく**より新しい四半期値**）。
-
-このテストは`BUG-NETDEBT-5`（2026-06-12完了、BACKLOG_DONE.md参照）
-の回帰防止用で、「IONQのST_Investが最新四半期bsから正しく上書き
-されること」を、2026-06-12時点で最新だった`quarterly_2026Q1.json`
-（ST_Invest=$1,539,932,000）をハードコードした期待値
-（`> $1,400,000,000`）で検証している。
-
-しかし`common/sec_data/data/IONQ/`には既に`quarterly_2026Q2.json`
-（ST_Invest=$883,240,000）が存在し、これが現在の「最新四半期」である。
-`docs/value-monitor/tanuki_valuation/data/IONQ/latest.json`の
-`financial_health.short_term_investments`は実際に`883,240,000`
-（=quarterly_2026Q2の値と完全一致）であり、**パイプラインは最新四半期
-値を正しく採用している**（BUG-NETDEBT-5の修正は機能している）。
-テスト側がQ1 2026時点の値をハードコードしたまま更新されておらず、
-Q2 2026データの到着（本テスト作成後にIONQが新しい10-Qを提出）で
-アサーションの前提が崩れただけと判断する。
-
-#### 対応方針（未着手）
-`test_ionq_st_invest_uses_quarterly_value`・
-`test_ionq_net_debt_corrected`の期待値をQ2 2026データ
-（ST_Invest=$883,240,000、対応するNet_Debtの実測値）に更新するか、
-またはハードコード比較ではなく「latest.jsonの値が最新quarterlyの
-実際の値と一致すること」を動的に検証する形（テスト前提確認用の
-`test_ionq_quarterly_st_invest_exists_and_differs_from_annual`と
-同様の設計）に書き換えることが想定される。同種のハードコード陳腐化が
-他の固定日付依存テストにも潜んでいないか横断確認する価値もある
-（`[[TEST-STALE-IV-1]]`と同型のパターン）。
-
-#### 着手条件
-なし
-
 ### [VRT-REVENUE-2018-MISSING-1] VRT FY2018のrevenue=0取得失敗（gross_profitと定義上矛盾）
 **優先度:** 低（実害はGP法入力整合性ガードで既に遮断済み、着手緊急性なし）
 **分類:** バグ / データ取得 / SEC EDGAR

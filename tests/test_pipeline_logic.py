@@ -2534,37 +2534,59 @@ class TestTTMTerminologyDistinction:
 class TestSTInvestQuarterlyOverride:
     """BUG-NETDEBT-5: ST_Investが最新四半期bsから上書きされること
 
-    IONQ FY2025 annual: ST_Invest=$1,361M
-    IONQ Q1 2026 quarterly: ST_Invest=$1,539M (→ 修正後の正値)
-    修正後 Net_Debt: -$1.85B → -$2.03B
+    [[TEST-STALE-IONQ-STINVEST-1]]対応（2026-08-31）: 当初
+    quarterly_2026Q1（ST_Invest=$1,539M）をハードコードして検証していたが、
+    その後IONQがquarterly_2026Q2（ST_Invest=$883M）を提出したことで
+    ハードコード値が陳腐化し誤検知した（本番コードは最新四半期値を正しく
+    採用していた）。将来同種の陳腐化が再発しないよう、固定値との比較では
+    なく、`common/sec_data/data/IONQ/`の最新quarterlyファイルを都度動的に
+    読み直して比較する方式に変更した。
     """
 
     def test_ionq_st_invest_uses_quarterly_value(self):
-        """IONQ: latest.json の ST_Invest が quarterly_2026Q1 の値 ($1,539M) であること"""
-        import json, os
+        """IONQ: latest.json の ST_Invest が最新quarterly SECファイルの値と一致すること"""
+        import json, os, glob as _glob
         latest_path = os.path.join(
             os.path.dirname(__file__), "..",
             "docs", "value-monitor", "tanuki_valuation", "data", "IONQ", "latest.json"
         )
+        sec_dir = os.path.join(
+            os.path.dirname(__file__), "..", "common", "sec_data", "data", "IONQ"
+        )
         if not os.path.exists(latest_path):
+            return
+        q_files = sorted(_glob.glob(os.path.join(sec_dir, "quarterly_*.json")))
+        if not q_files:
             return
         with open(latest_path, encoding="utf-8") as f:
             latest = json.load(f)
         fh = latest.get("financial_health", {})
+        if fh.get("sti_approximated"):
+            # NVDA-STI-TAG-UNIDENTIFIED-1: 複数タグ合算近似値の場合は
+            # 生のquarterly bs値と完全一致しないため対象外
+            return
+        with open(q_files[-1], encoding="utf-8") as f:
+            q_sti = json.load(f).get("bs", {}).get("short_term_investments", 0) or 0
         st_invest = fh.get("short_term_investments", 0) or 0
-        # quarterly_2026Q1 のST_Invest = $1,539,932,000
-        # annual_2025 のST_Invest      = $1,361,291,000 (旧バグ値)
-        assert st_invest > 1_400_000_000, (
-            f"IONQ ST_Invest={st_invest/1e6:.0f}M が年次値($1,361M)に近い。"
-            "BUG-NETDEBT-5: quarterly値($1,539M)で上書きされていない可能性"
+        assert st_invest == q_sti, (
+            f"IONQ ST_Invest={st_invest/1e6:.0f}M が最新quarterlyファイル"
+            f"({os.path.basename(q_files[-1])})の値({q_sti/1e6:.0f}M)と不一致。"
+            "BUG-NETDEBT-5: quarterly値で上書きされていない可能性"
         )
 
     def test_ionq_net_debt_corrected(self):
-        """IONQ: Net_Debt が -$2.03B 近辺 (旧バグ値 -$1.85B でないこと)"""
-        import json, os
+        """IONQ: Net_Debt が (cash + 最新quarterlyのST_Invest - total_debt) と整合すること
+
+        net_cash = (cash + short_term_investments) - (long_term_debt + short_term_debt)
+        （common/sec_data/reader.py::get_net_cash()の定義。net_debt = -net_cash）
+        """
+        import json, os, glob as _glob
         latest_path = os.path.join(
             os.path.dirname(__file__), "..",
             "docs", "value-monitor", "tanuki_valuation", "data", "IONQ", "latest.json"
+        )
+        sec_dir = os.path.join(
+            os.path.dirname(__file__), "..", "common", "sec_data", "data", "IONQ"
         )
         if not os.path.exists(latest_path):
             return
@@ -2572,11 +2594,20 @@ class TestSTInvestQuarterlyOverride:
             latest = json.load(f)
         fh = latest.get("financial_health", {})
         net_debt = fh.get("net_debt")
-        if net_debt is None:
+        if net_debt is None or fh.get("sti_approximated"):
             return
-        # 正しいNet_Debt ≈ -$2.03B (旧バグ値は -$1.85B)
-        assert net_debt < -1_900_000_000, (
-            f"IONQ Net_Debt={net_debt/1e9:.2f}B が -$1.9B より大きい。"
+        q_files = sorted(_glob.glob(os.path.join(sec_dir, "quarterly_*.json")))
+        if not q_files:
+            return
+        with open(q_files[-1], encoding="utf-8") as f:
+            q_sti = json.load(f).get("bs", {}).get("short_term_investments", 0) or 0
+        cash = fh.get("cash_and_equivalents") or 0
+        total_debt = fh.get("total_debt") or 0
+        expected_net_debt = -(cash + q_sti - total_debt)
+        assert abs(net_debt - expected_net_debt) < 1.0, (
+            f"IONQ Net_Debt={net_debt/1e9:.3f}B が期待値"
+            f"(-({cash/1e6:.0f}M+{q_sti/1e6:.0f}M-{total_debt/1e6:.0f}M)="
+            f"{expected_net_debt/1e9:.3f}B)と不一致。"
             "BUG-NETDEBT-5: ST_Invest期ズレが再発している可能性"
         )
 
