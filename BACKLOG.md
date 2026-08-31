@@ -9216,6 +9216,51 @@ None:`（921行）の条件が成立せずFRED取得がスキップされる。*
 
 ## 優先度：低（アイデア段階）
 
+### [TEST-STALE-IONQ-STINVEST-1] tests/test_pipeline_logic.py::TestSTInvestQuarterlyOverrideのIONQハードコード値がQ2 2026実データ到着で陳腐化
+**優先度:** 低（本番コードの回帰ではなく、テストの期待値が固定日付の
+実データを前提にしていたことによる陳腐化。実害なし）
+**分類:** テスト / データ鮮度
+**登録日:** 2026-08-31
+**発見:** `[[STONKS-SILO-PRICE-SCHEDULE-LAG-SUSPECT-1]]`実装後の
+pytest実行ゲートで発見（本タスクのスコープ外のため報告のみ、
+未実装。`CHAT_RULES.md`「調査中に発見した別バグの実装は別途依頼を
+待つ」に従う）
+
+#### 内容
+`test_ionq_st_invest_uses_quarterly_value`が失敗する
+（`IONQ ST_Invest=883M が年次値($1,361M)に近い`というアサーション
+メッセージだが、実際には年次値ではなく**より新しい四半期値**）。
+
+このテストは`BUG-NETDEBT-5`（2026-06-12完了、BACKLOG_DONE.md参照）
+の回帰防止用で、「IONQのST_Investが最新四半期bsから正しく上書き
+されること」を、2026-06-12時点で最新だった`quarterly_2026Q1.json`
+（ST_Invest=$1,539,932,000）をハードコードした期待値
+（`> $1,400,000,000`）で検証している。
+
+しかし`common/sec_data/data/IONQ/`には既に`quarterly_2026Q2.json`
+（ST_Invest=$883,240,000）が存在し、これが現在の「最新四半期」である。
+`docs/value-monitor/tanuki_valuation/data/IONQ/latest.json`の
+`financial_health.short_term_investments`は実際に`883,240,000`
+（=quarterly_2026Q2の値と完全一致）であり、**パイプラインは最新四半期
+値を正しく採用している**（BUG-NETDEBT-5の修正は機能している）。
+テスト側がQ1 2026時点の値をハードコードしたまま更新されておらず、
+Q2 2026データの到着（本テスト作成後にIONQが新しい10-Qを提出）で
+アサーションの前提が崩れただけと判断する。
+
+#### 対応方針（未着手）
+`test_ionq_st_invest_uses_quarterly_value`・
+`test_ionq_net_debt_corrected`の期待値をQ2 2026データ
+（ST_Invest=$883,240,000、対応するNet_Debtの実測値）に更新するか、
+またはハードコード比較ではなく「latest.jsonの値が最新quarterlyの
+実際の値と一致すること」を動的に検証する形（テスト前提確認用の
+`test_ionq_quarterly_st_invest_exists_and_differs_from_annual`と
+同様の設計）に書き換えることが想定される。同種のハードコード陳腐化が
+他の固定日付依存テストにも潜んでいないか横断確認する価値もある
+（`[[TEST-STALE-IV-1]]`と同型のパターン）。
+
+#### 着手条件
+なし
+
 ### [VRT-REVENUE-2018-MISSING-1] VRT FY2018のrevenue=0取得失敗（gross_profitと定義上矛盾）
 **優先度:** 低（実害はGP法入力整合性ガードで既に遮断済み、着手緊急性なし）
 **分類:** バグ / データ取得 / SEC EDGAR
@@ -11010,17 +11055,17 @@ OpenD常時起動という前提条件が既に満たされているため、「
 
 ---
 
-### [STONKS-SILO-PRICE-SCHEDULE-LAG-SUSPECT-1] Stonks_Silo_Updateも同種のcron実行順序ラグを抱えている疑い（真因の`[[STONKS-SILO-CLI-TICKERS-SHADOW-1]]`が2026-08-27に復旧、再検証待ち）
+### [STONKS-SILO-PRICE-SCHEDULE-LAG-SUSPECT-1] Stonks_Silo_Updateも同種のcron実行順序ラグを抱えている疑い — 2026-08-31、実データでラグを確認し`workflow_run`連鎖化を実装完了・次回発火サイクルでの実地確認待ち
 
-**優先度:** 低（`[[STONKS-SILO-CLI-TICKERS-SHADOW-1]]`復旧により
-`Stonks_Silo_Update`が正常稼働を再開したため、本項目の実データ検証が
-今回初めて可能になった。ただし本タスクは緊急復旧にスコープを限定して
-おり、cron順序ラグの再検証自体は次回セッションへ持ち越し）
+**優先度:** 中（実データでラグの実在を確認し、既存の承認済み解決パターン
+〈[[TANUKI-VALUATION-PRICE-SCHEDULE-LAG-1]]と同型〉の横展開として
+実装まで完了したため、「低・疑いの段階」から引き上げ）
 **分類:** アーキテクチャ / GitHub Actions / データ鮮度
 **登録日:** 2026-08-22
-**更新日:** 2026-08-27②（`[[STONKS-SILO-CLI-TICKERS-SHADOW-1]]`修正・
-全銘柄再生成完了。cronが正常に動き出したため、次回は本項目自体の
-実データ検証に着手できる状態になった）
+**更新日:** 2026-08-31（実データ検証で真因を確認、`Stonks_Silo_Update.yml`
+に`workflow_run: [..., "Market Data Daily Update"]`を追加し旧・独立平日
+cronを低頻度フォールバックに置換。次回発火サイクルでの実地確認待ち、
+本エントリはまだクローズしない）
 **発見:** [[TANUKI-VALUATION-PRICE-SCHEDULE-LAG-1]]・
 [[WORKFLOW-SEC-TANUKI-GAP-1]]実装時の依存グラフ点検で発見
 
@@ -11095,9 +11140,71 @@ LAG-1]]`と同じ手順——STONKS SILO対象銘柄の`results.json`側の価�
   `workflow_run: ["Market Data Daily Update"]`を追加する対応が
   想定される（既存の平日日次cronとの併存要否も含めて設計要）
 
+#### 2026-08-31 実データ検証結果（ラグを確認）
+`[[TANUKI-VALUATION-PRICE-SCHEDULE-LAG-1]]`確認時と同じ手順で、
+STONKS SILO対象25銘柄のうち4銘柄（ASTS/AVAV/BBAI/CRWV）を個別に
+突合した。`docs/value-monitor/stonks-silo/data/results.json`の
+`valuation.current_price`は`discover/stonks-silo/src/valuation_
+fetcher.py`が`common.market_data.reader.get_latest_price()`経由で
+`common/market_data/daily/<ticker>.json`から取得している（コード上で
+再確認済み、変更なし）。
+
+平日cron（`5 15 * * 1-5` UTC）で実行された2回のStonks Silo更新を検証：
+- コミット`4374447938`（generated_at 2026-08-28T00:17:30Z）:
+  ASTS `current_price=59.88`。同時刻に`common/market_data/daily/
+  ASTS.json`で入手可能だった最新値は`cf2d6f3d8e`時点（2026-08-27分の
+  Market Data Daily Updateがまだ未着地）の**2026-08-26終値**
+  （59.88）と完全一致——本来Market_Data_Daily_Updateが同日中に
+  2026-08-27分を確定させていれば（実際の着地は14:38 JST、Stonks
+  Silo実行9:17 JSTより後）、その値を参照できなかった構造。
+  AVAV（146.88=8/26終値）・BBAI（3.05=8/26終値）・CRWV
+  （88.01=8/26終値）も同時点のdaily/最新値と完全一致を確認。
+- コミット`63fa7fe396`（generated_at 2026-08-28T23:54:23Z）:
+  ASTS `current_price=61.44`は`081c342867`時点（Market Data Daily
+  Updateの2026-08-28分`6da721006b`はまだ未着地）の**2026-08-27終値**
+  と完全一致。
+
+**判断根拠**: `Stonks_Silo_Update`の平日cron（15:05 UTC）は`Market_
+Data_Daily_Update`の同日cron（21:25 UTC）より約6時間20分**先**に
+発火するスケジュール構造であり、同日分のMarket Data Daily Updateが
+（遅延なく）完了していたとしても、Stonks Siloの`current_price`は
+構造的に必ず前営業日終値を参照する（TANUKI-VALUATION-PRICE-
+SCHEDULE-LAG-1の旧設計と同型の順序関係）。実測でも4銘柄全てで
+「Stonks Silo実行時点で`daily/`にあった最新値」と完全一致しており、
+値そのものの誤りではなく、参照タイミングが常に1営業日遅れる構造的
+ラグであることを確認した。
+
+#### 2026-08-31 実装内容（案①、`[[TANUKI-VALUATION-PRICE-SCHEDULE-
+LAG-1]]`・`[[WORKFLOW-SEC-TANUKI-GAP-1]]`確立済みパターンの横展開）
+`TANUKI_VALUATION_Update.yml`の実装（`workflow_run`対象に`Market Data
+Daily Update`を追加・旧独立cronを低頻度フォールバックに置換）を参照し、
+同型のパターンを`Stonks_Silo_Update.yml`に適用した。
+
+- `on.workflow_run.workflows`に既存の`"SEC Data Update"`
+  （`[[WORKFLOW-SEC-TANUKI-GAP-1]]`実装分、維持）に加え
+  `"Market Data Daily Update"`を追加。
+- 旧・独立平日cron（`5 15 * * 1-5` UTC）は削除し、TANUKI_VALUATION_
+  Update.ymlの前例（金曜22:30 UTCフォールバック）と同型の低頻度
+  フォールバックのみ残した。10分ずらして金曜22:40 UTC（`40 22 * * 5`、
+  衝突回避。HypeCore/Adjusted_EPS_Data_Updateの月曜4:00/4:10 UTC
+  フォールバックと同じ10分ずらしの慣例に合わせた）。
+  `Market_Data_Daily_Update`金曜分の完了（21:25 UTC）より確実に
+  後になる時刻。
+- ジョブの`if: github.event_name != 'workflow_run' ||
+  github.event.workflow_run.conclusion == 'success'`ガードは
+  変更なし（複数`workflow_run`ソースいずれに対しても機能する）。
+- `workflow_dispatch`は変更なし。
+
+YAML構文（`yaml.safe_load`）で確認済み。`gh`CLIは本セッションでも
+利用不可のため、GitHub Actions側の実際の発火・連鎖動作は本セッションでは
+検証不能。次回発火サイクル（最短で次回平日のMarket Data Daily Update
+完了後）にコミット履歴のタイムスタンプ突合で実地確認するまでは
+「実装完了・未検証」として扱う。**本エントリはクローズしない**
+（`[[TANUKI-VALUATION-PRICE-SCHEDULE-LAG-1]]`の前例と同じ扱い）。
+
 #### 着手条件
-なし。`[[STONKS-SILO-CLI-TICKERS-SHADOW-1]]`復旧により実データ検証の
-前提が整ったため、次回セッションで上記手順により再検証すること
+なし（実装完了。`Stonks_Silo_Update.yml`の`workflow_run`連鎖の実地
+確認は2026-08-31時点で未検証。次回平日サイクル後に再確認すること）
 
 ---
 
