@@ -830,10 +830,6 @@
         </tbody>
       </table>
     </div>
-
-    <div class="divider"></div>
-    <h3 class="section-title">② 新規候補 — Grok発見銘柄</h3>
-    <div id="discoverCandidates" style="color:var(--mut);font-family:var(--mono);font-size:12px;padding:8px 0">接続後に表示されます</div>
   </div>
 
   <!-- ═══════════════════════════════════════ -->
@@ -3176,7 +3172,6 @@ async function runWorkflow(workflowFile, inputs, resultId) {
 // Discover設定タブ
 // ════════════════════════════════════
 const DISCOVER_CONFIG_PATH  = 'config/discover_config.json';
-const DISCOVER_REPORT_PATH  = 'docs/discover/data/daily_report.json';
 const DISCOVER_CATEGORIES   = ['保有中', '監視中', '様子見', '休眠'];
 
 let discoverConfig = null;
@@ -3184,9 +3179,8 @@ let discoverConfigSha = null;
 
 async function loadDiscoverTab() {
   try {
-    const [cfgRes, reportRes, yamlRes] = await Promise.allSettled([
+    const [cfgRes, yamlRes] = await Promise.allSettled([
       fetchFile(DISCOVER_CONFIG_PATH),
-      fetchFile(DISCOVER_REPORT_PATH),
       fetchFile(YAML_PATH),
     ]);
 
@@ -3206,14 +3200,6 @@ async function loadDiscoverTab() {
     }
 
     renderDiscoverTable(allTickers);
-
-    // Candidates from daily_report
-    let candidates = [];
-    if (reportRes.status === 'fulfilled') {
-      const report = JSON.parse(reportRes.value.content);
-      candidates = report.candidates || [];
-    }
-    renderDiscoverCandidates(candidates);
 
     document.getElementById('saveDiscoverBtn').disabled = false;
 
@@ -3248,49 +3234,6 @@ function renderDiscoverTable(allTickers) {
       </td>
     </tr>`;
   }).join('');
-}
-
-function renderDiscoverCandidates(candidates) {
-  const el = document.getElementById('discoverCandidates');
-  if (!candidates.length) {
-    el.innerHTML = '<span style="color:var(--mut)">候補データなし（次回Discover実行後に表示）</span>';
-    return;
-  }
-  el.innerHTML = `<div style="display:flex;flex-direction:column;gap:10px">` +
-    candidates.map(c => `
-      <div style="background:var(--sur);border:1px solid var(--bdr);padding:14px 16px;display:flex;align-items:flex-start;gap:14px">
-        <div style="flex:1">
-          <div style="font-family:var(--mono);font-size:15px;font-weight:700;color:#06b6d4">${escHtml(c.ticker||'?')}</div>
-          <div style="font-size:12px;color:var(--sub);margin-bottom:6px">${escHtml(c.company||'')} · ${escHtml(c.sector||'')}</div>
-          <div style="font-size:13px;color:var(--txt);margin-bottom:4px">${escHtml(c.reason||'')}</div>
-          ${c.risk ? `<div style="font-size:11px;color:var(--amb)">⚠️ ${escHtml(c.risk)}</div>` : ''}
-        </div>
-        <button class="btn success" onclick="addCandidateToWatch('${escAttr(c.ticker)}','${escAttr(c.company||'')}')">+ 監視リストに追加</button>
-      </div>
-    `).join('') + `</div>`;
-}
-
-async function addCandidateToWatch(ticker, company) {
-  if (!discoverConfig) return;
-  if (discoverConfig.tickers[ticker]) {
-    alert(`${ticker} はすでに登録されています`);
-    return;
-  }
-  discoverConfig.tickers[ticker] = { category: '監視中', memo: company };
-  discoverConfig.last_updated = new Date().toISOString().slice(0, 10);
-
-  try {
-    const content = JSON.stringify(discoverConfig, null, 2) + '\n';
-    // 2026-08-15: docs/側同期はDiscover_Config_Sync.ymlが自動実行するため
-    // dual-write不要、config/側のみへのcommitFileに簡素化
-    // （[[DISCOVER-CONFIG-DUAL-MGMT-1]]）
-    const result = await commitFile(DISCOVER_CONFIG_PATH, content, `feat(discover): 候補銘柄 ${ticker} を監視リストに追加`, discoverConfigSha);
-    discoverConfigSha = result.content.sha;
-    showResult('discoverMsg', 'success', `✓ ${ticker} を監視リストに追加しました`);
-    await loadDiscoverTab();
-  } catch(e) {
-    showResult('discoverMsg', 'error', `追加失敗: ${e.message}`);
-  }
 }
 
 async function saveDiscoverConfig() {
