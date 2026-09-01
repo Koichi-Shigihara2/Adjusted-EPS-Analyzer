@@ -1463,7 +1463,6 @@ pipeline.py              # 全銘柄を統合・TANUKI SCORE算出
 │    従来はpipeline.py独自にcommon/sec_data配下の生JSONを再読込しBS同一時点原則を
 │    別実装していたため、reader.py::get_net_cash()側のみが適用するセクターガードが
 │    反映されずV〈Visa〉で表示乖離が生じていた。二重読み込み自体も解消）
-├─ risk_fetcher.py   # Grok APIによる既知リスクイベント取得
 ├─ hypecore_history/{TICKER}.json生成
 │   （docs/value-monitor/hypecore/data/{TICKER}_poc.json を参照 →
 │    docs/value-monitor/tanuki_valuation/data/hypecore_history/ に出力）

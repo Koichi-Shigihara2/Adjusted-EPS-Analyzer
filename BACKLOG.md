@@ -5273,7 +5273,7 @@ CapEx・低転換率という二分法を前提としている。
 **登録日:** 2026-07-05
 
 #### 問題
-risk_fetcher.py等で使用中の `grok-3-mini`/`grok-3`/`grok-2-1212` が
+daily_pick.py等で使用中の `grok-3-mini`/`grok-3`/`grok-2-1212` が
 xAI現行価格表（docs.x.ai/developers/models）に存在せず、レガシーエイリアスとして
 `grok-4.3`（$1.25/M入力・$2.50/M出力）へ自動ルーティングされ、想定（旧grok-3-mini想定
 $0.30/M入力・$0.50/M出力）の4倍以上の価格で課金されている可能性がある

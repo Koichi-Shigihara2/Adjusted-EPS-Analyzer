@@ -2,6 +2,97 @@
 
 ---
 
+## 2026-09-01③（完了）
+
+### ✅ [RISK-EVENTS-REMOVAL-1] risk_fetcher.py（RISK EVENTS機能）の完全撤去
+**優先度:** 高（即日実装・即日完了）
+**分類:** アーキテクチャ / TANUKI VALUATION / 削除
+**登録日:** 2026-09-01
+**完了日:** 2026-09-01③
+**背景:** `[[DISCOVER-SUBSYSTEM-REMOVAL-1]]`（2026-09-01②実装完了）と
+同系統の方針。`risk_fetcher.py`（Grok web検索による簡易リスクイベント
+取得）は一次情報ではなくGrokの応答をそのまま採用しており信ぴょう性が
+低く、かつIV・DCF・TANUKI SCORE等の計算系のいずれにも使われておらず
+バリュエーション評価に無関係（表示専用）だったため撤去する。
+
+#### 実装内容
+1. **コード削除本体**: `src/value/tanuki_valuation/risk_fetcher.py`
+   全体削除。`pipeline.py`から配線一式を削除
+   （import・コンストラクタの`skip_risk`パラメータ・
+   `_pre_existing_risk_events`退避ロジック・risk_events取得/保存ロジック・
+   report.txt `[N. RISK EVENTS]`セクション生成・`--skip-risk`argparse引数）。
+   併せて未使用となった`import csv`も削除（risk_events取得ロジックの
+   CSV読み込みのみで使われていたため、削除の直接的な機械的帰結として
+   除去。依頼書には明記されていなかったが判断の余地がない単純な後始末）。
+   `tests/test_pipeline_logic.py`の`TestSkipRiskEventsPreserved`クラス
+   （`SKIP-RISK-EVENTS-WIPE-1`回帰テスト3件）を削除
+   （対象機能自体が消えるため）。
+2. **フロントエンド**: `docs/value-monitor/tanuki_valuation/stock.html`
+   の「既知リスクイベント」カード描画ブロック（IIFE）を削除。
+3. **スクリーニング連携**: `common/screening/report_txt_parser.py`の
+   `_parse_risk_events()`関数・`parsers`リストへの登録を削除
+   （他ファイルからの利用なしを確認済み、実害ゼロ）。
+4. **ドキュメント更新**: `CLAUDE_CODE_START.md`（`--skip-risk`運用注記
+   5行削除。この結果空になった見出し「### pipeline.py 実行時のAPI費用
+   管理」自体も、依頼書に明記はなかったが同様に単純な機械的後始末として
+   削除。本文中の別箇所`--skip-risk`言及も修正）・`SYSTEM_MAP.md`
+   （`risk_fetcher.py`のツリー表記1行を削除）・`BACKLOG.md`
+   `[[GROK-MODEL-PRICE-1]]`（Grok消費先の実例を`risk_fetcher.py`から
+   `daily_pick.py`へ差し替え、実際に同じ3モデルフォールバックを使用
+   していることを実コードで確認済み）。
+
+#### 変更しなかったもの（依頼書の指定通り）
+- `XAI_API_KEY`環境変数・GitHub Secrets（daily_pick.py等の他Grok消費箇所
+  が継続使用）
+- `BACKLOG_DONE.md`の`SKIP-RISK-EVENTS-WIPE-1`完了記録（過去の正しい
+  記録として現状維持）
+- `docs/architecture/new_data_platform/`配下のAS-IS-054関連記載
+  （既に「削除対象」で整合済みと実ファイルで確認、変更不要）
+- `BACKLOG.md`の過去セッション記録2件（1998行目・5573行目付近の
+  `--skip-risk`使用例）は当時の作業記録であり遡及訂正の対象外のため
+  現状維持
+
+#### [[REPORT-TXT-PARSER-CLEANUP-1]]の確認結果（クローズせず現状維持）
+独立エントリとしては既に存在せず、2026-08-03に`[[DEAD-CODE-AUDIT-
+BATCH-1]]`④として統合済みだった。④の論点は「`report_txt_parser.py`
+モジュール全体が孤立コード（テストからのみ使用）であり削除・統合・
+現状維持のいずれを取るか」という、本タスクが解決したrisk_events単体の
+話より広い未確定の設計判断であり、本タスクでは`_parse_risk_events()`
+という一機能を除去したのみで、その広い論点自体は解消していない。
+そのため`[[DEAD-CODE-AUDIT-BATCH-1]]`はクローズせず、記載の訂正も
+不要と判断した（④の内容にrisk_events由来の記述は含まれていなかった
+ため）。
+
+#### 検証結果
+- grep sweep: `risk_fetcher`/`risk_events`/`skip_risk`/`skip-risk`の
+  残存参照は想定通りの箇所のみ（BACKLOG.md/BACKLOG_DONE.mdの記録・
+  docs/architecture/new_data_platform/配下の過去AS-IS調査文書
+  〈スコープ外〉）。ソースコード側は完全にクリーン
+- サンプル銘柄（AAPL・NVDA）でpipeline.py実行→latest.jsonに
+  `risk_events`キーなし・report.txtに`[RISK EVENTS]`セクションなしを
+  確認。`--skip-risk`はargparseレベルで`unrecognized arguments`エラー
+  になることを確認
+- 実ブラウザ確認: AAPL（コード変更前に生成された`risk_events`データが
+  latest.jsonにまだ残っている状態）でstock.htmlを開き、「既知リスク
+  イベント」カードがDOM上に一切現れないこと・console エラー0件・
+  前後セクション（感応度分析→セグメント別売上構成）が正しく連続表示
+  されることを確認
+- pytest: 1012 passed / 0 failed（削除した3テスト分減、新規failなし）
+- audit.py: NG=0（既存🟡警告9銘柄は変更なし）
+- report_consistency_check.py --fail-on-ng: NG=0・WARN=93件
+  （regen前後で完全一致）
+- 全100銘柄（tanuki=true）フルパイプライン再生成: 成功100/失敗0。
+  before/after比較（浮動小数点誤差許容込み）で**risk_events削除と
+  calculation_date更新以外の実質的な差分は0件**と確認（CEG・LYFTの
+  `validation.overall=FAIL`は regen前から存在する既知の
+  `anomaly_detection`起因で、本タスクとは無関係と確認済み）
+
+コミット: 「コード削除本体」（データ再生成609ファイル含む）・
+「BACKLOG/ドキュメント更新」の2件に分割（`git log`参照）。push後
+`git status`で`up to date with origin/kaihatsu`を確認済み。
+
+---
+
 ## 2026-09-01②（完了）
 
 ### ✅ [DISCOVER-SUBSYSTEM-REMOVAL-1] Discoverサブシステムの削除
