@@ -2,6 +2,117 @@
 
 ---
 
+## 2026-09-01②（完了）
+
+### ✅ [DISCOVER-SUBSYSTEM-REMOVAL-1] Discoverサブシステムの削除
+**優先度:** 未定（着手タイミングはKoichiさん判断待ち）
+**分類:** アーキテクチャ / Discover / 削除
+**登録日:** 2026-09-01
+**完了日:** 2026-09-01②
+**背景:** risk_fetcher.py撤去と同時期の方針決定。一次情報でなく
+Grok生成コンテンツへの依存を減らす方針の一環として、Discover
+サブシステム全体を削除する。
+
+#### 対象範囲（事前調査済み、着手時は再確認すること）
+
+**削除対象ファイル:**
+- src/discover/catalyst.py
+- src/discover/collect.py
+- src/discover/impact_predictor.py
+- docs/discover/index.html
+- docs/discover/catalyst.html
+- docs/discover/news_history.html
+- docs/discover/admin.html
+- docs/discover/data/ 配下全ファイル
+  （catalyst.json・daily_report.json・impact_predictions_*.json・
+  macro_themes_history.json・news_history_*.json）
+
+**削除対象ワークフロー:**
+- .github/workflows/Discover_Update.yml
+- .github/workflows/Catalyst_Update.yml
+
+**要個別判断（単純削除できない）:**
+- .github/workflows/Discover_Config_Sync.yml・config/discover_config.json：
+  **削除対象に含めないこと**。discover_config.jsonはDiscoverサブシステム
+  固有のものではなく、registration_validator.py（新規銘柄登録フローの
+  P1-Step6・P4チェック）とdocs/portfolio/index.html（保有銘柄区分表示）
+  が参照する共有のティッカー区分設定ファイル。名称が紛らわしいが機能的
+  には別物であり、誤って削除しないよう特に注意すること
+- tests/test_collect_market_data_switch.py：collect.pyを直接importして
+  いる（L10・L24）。collect.py削除時にこのテスト自体の要否を判断する
+  こと
+
+**着手条件:** 着手可否・タイミングはKoichiさんの判断待ち。
+
+#### 実装内容（2026-09-01②完了）
+3コミットに分割して実施:
+1. **コード削除本体**（`ec4590fd6e`）: src/discover/3ファイル・
+   docs/discover/ディレクトリ全体（index.html・catalyst.html・
+   news_history.html・admin.html・data/配下全JSON）・
+   Discover_Update.yml・Catalyst_Update.yml・
+   tests/test_collect_market_data_switch.py。削除しないものは
+   実コードでgrep確認済みで変更なし
+2. **周辺修正**（`fbfa76b3ea`）: docs/common/site-nav.jsから
+   DISCOVER・ニュース履歴・カタリストの3ナビエントリを削除、
+   .gitattributesからdocs/discover/data/関連4行を削除、
+   docs/value-monitor/admin.htmlの「Discover設定」タブから
+   「②新規候補 — Grok発見銘柄」セクションのみ削除
+   （①銘柄区分・メモ管理は変更なし）
+3. **記録更新**（本コミット）: SYSTEM_MAP.md（システム一覧表の
+   DISCOVER行削除・DISCOVER-CONFIG-DUAL-MGMT-1説明文整理・
+   FLAG-CONSUMER-AUDIT-3説明文整理・データフロー依存関係マップの
+   DISCOVERセクション削除）・BACKLOG.md（GROK-MODEL-PRICE-1から
+   collect.py・catalyst.pyへの言及を削除、risk_fetcher.pyは残置）・
+   本エントリのBACKLOG_DONE.md移設
+
+**当初依頼になかった追加対応2件**（実装中に発見し、Koichiさんの承認を
+得た上で対応）:
+- `tests/test_flag_consumer_audit_3.py`: `TestCatalystFilterHypecoreTickers`
+  クラス（`src/discover/catalyst.py`を直接importする回帰テスト）が
+  catalyst.py削除によりpytest実行時にFileNotFoundErrorでfailすることを
+  検証ステップ5で発見。他2クラス（hypecore.py対象・EPS Analyzer対象）は
+  Discoverと無関係なため、該当クラスのみ削除しファイル冒頭docstringの
+  言及も整理。修正後5件全てPASSを確認
+- SYSTEM_MAP.mdの追加2箇所: 234行目（FLAG-CONSUMER-AUDIT-3のガード説明
+  内、catalyst.pyへの言及のみ削除）・1620〜1626行目（データフロー
+  依存関係マップのDISCOVERセクション全体を削除）。当初指定の2箇所
+  （システム一覧表・DISCOVER-CONFIG-DUAL-MGMT-1説明文）以外にも
+  削除済みファイルへの実参照が残っていたことをStep1のgrep調査で発見
+
+**検証結果**（全てpush前に実施）:
+- Step1 grep（`src/discover\|docs/discover\|src\.discover`）: 対象外
+  として残るのは想定通りの箇所のみ（Discover_Config_Sync.ymlのコメント・
+  BACKLOG.md/BACKLOG_DONE.mdの記録・CLAUDE_CODE_START.mdの明示的維持
+  箇所・docs/architecture/new_data_platform/配下の過去AS-IS調査文書
+  〈スコープ外のため未編集〉）。`discover/stonks-silo/`という無関係な
+  別ディレクトリ（STONKS SILOの実体、命名が紛らわしいだけ）の誤爆なしを
+  個別確認
+- Step2: 他ワークフローからDiscover_Update.yml・Catalyst_Update.ymlへの
+  依存なしを確認（該当0件）
+- Step3: ローカルHTTPサーバー（symlinkで`/On-a-journey/`ベースパスを
+  再現）でtanuki_valuation/index.htmlを実ブラウザ確認。ナビゲーション
+  からDiscover関連3項目が消え他11項目は正常表示、consoleエラー0件
+- Step4: 同様にdocs/value-monitor/admin.htmlの「Discover設定」タブを
+  実ブラウザで開き、①銘柄区分・メモ管理が正常動作（discoverConfigの
+  読み込み処理が最後まで完走・saveDiscoverBtn有効化を確認）、②新規候補
+  セクションはDOM上から完全に消失（`discoverCandidates`要素・
+  `renderDiscoverCandidates`/`addCandidateToWatch`関数・
+  `DISCOVER_REPORT_PATH`定数がいずれも存在しないことをJS評価で確認）、
+  consoleエラー0件。実際の保存ボタンクリック（GitHub API書き込み）は
+  意図的に回避し読み取り専用の範囲で確認した
+- Step5: pytest全体1015件PASS（fail 0件）
+- Step6: audit.py NG=0（既存🟡警告9銘柄は対象外・変更なし）、
+  report_consistency_check.py --fail-on-ng NG=0・WARN=93件（CHECK-32
+  discover_config_syncチェックのNGなしを含む）
+- Step7: registration_validator.py NVDA単体実行でNG=0/WARN=0、
+  discover_config.json参照部分が従来通り機能することを確認
+
+コミット: `ec4590fd6e`（コード削除本体）・`fbfa76b3ea`（周辺修正）・
+本エントリを含む記録更新コミット（3件目、`git log`参照）。push後
+`git status`で`up to date with origin/kaihatsu`を確認済み。
+
+---
+
 ## 2026-09-01（完了）
 
 以下7件は`[[DISCOVER-SUBSYSTEM-REMOVAL-1]]`（Discoverサブシステム削除の

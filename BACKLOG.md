@@ -5267,59 +5267,13 @@ CapEx・低転換率という二分法を前提としている。
 
 ---
 
-
----
-
----
-
-### [DISCOVER-SUBSYSTEM-REMOVAL-1] Discoverサブシステムの削除
-**優先度:** 未定（着手タイミングはKoichiさん判断待ち）
-**分類:** アーキテクチャ / Discover / 削除
-**登録日:** 2026-09-01
-**背景:** risk_fetcher.py撤去と同時期の方針決定。一次情報でなく
-Grok生成コンテンツへの依存を減らす方針の一環として、Discover
-サブシステム全体を削除する。
-
-#### 対象範囲（事前調査済み、着手時は再確認すること）
-
-**削除対象ファイル:**
-- src/discover/catalyst.py
-- src/discover/collect.py
-- src/discover/impact_predictor.py
-- docs/discover/index.html
-- docs/discover/catalyst.html
-- docs/discover/news_history.html
-- docs/discover/admin.html
-- docs/discover/data/ 配下全ファイル
-  （catalyst.json・daily_report.json・impact_predictions_*.json・
-  macro_themes_history.json・news_history_*.json）
-
-**削除対象ワークフロー:**
-- .github/workflows/Discover_Update.yml
-- .github/workflows/Catalyst_Update.yml
-
-**要個別判断（単純削除できない）:**
-- .github/workflows/Discover_Config_Sync.yml・config/discover_config.json：
-  **削除対象に含めないこと**。discover_config.jsonはDiscoverサブシステム
-  固有のものではなく、registration_validator.py（新規銘柄登録フローの
-  P1-Step6・P4チェック）とdocs/portfolio/index.html（保有銘柄区分表示）
-  が参照する共有のティッカー区分設定ファイル。名称が紛らわしいが機能的
-  には別物であり、誤って削除しないよう特に注意すること
-- tests/test_collect_market_data_switch.py：collect.pyを直接importして
-  いる（L10・L24）。collect.py削除時にこのテスト自体の要否を判断する
-  こと
-
-**着手条件:** 着手可否・タイミングはKoichiさんの判断待ち。
-
----
-
 ### [GROK-MODEL-PRICE-1] Grok呼び出しモデルの実価格確認
 **優先度:** 未定
 **分類:** コスト管理 / 全体
 **登録日:** 2026-07-05
 
 #### 問題
-collect.py・catalyst.py・risk_fetcher.py等で使用中の `grok-3-mini`/`grok-3`/`grok-2-1212` が
+risk_fetcher.py等で使用中の `grok-3-mini`/`grok-3`/`grok-2-1212` が
 xAI現行価格表（docs.x.ai/developers/models）に存在せず、レガシーエイリアスとして
 `grok-4.3`（$1.25/M入力・$2.50/M出力）へ自動ルーティングされ、想定（旧grok-3-mini想定
 $0.30/M入力・$0.50/M出力）の4倍以上の価格で課金されている可能性がある

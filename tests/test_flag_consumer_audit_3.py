@@ -1,9 +1,9 @@
 """
 tests/test_flag_consumer_audit_3.py
 
-FLAG-CONSUMER-AUDIT-3: hypecore.py --batch/単体指定・catalyst.py --ticker・
+FLAG-CONSUMER-AUDIT-3: hypecore.py --batch/単体指定・
 adjusted_eps_analyzer/pipeline.py --ticker が、CLI引数でticker明示指定時に
-対応フラグ（hypecore=true / hypecore=true / eps=true）を検証していなかった
+対応フラグ（hypecore=true / eps=true）を検証していなかった
 問題（tanuki_valuation/pipeline.pyのCLI引数パスと同型のギャップ）の回帰テスト。
 
 実行方法:
@@ -54,30 +54,6 @@ class TestHypecoreFilterTickers:
 
     def test_production_enb_excluded(self):
         """本番cik_lookup.csvのhypecore=false銘柄（ENB）が実際に除外されること"""
-        mod = self._mod()
-        from common.sec_data.tickers import get_hypecore_tickers
-        result = mod._filter_hypecore_tickers(["ENB"], get_hypecore_tickers())
-        assert "ENB" not in result
-
-
-class TestCatalystFilterHypecoreTickers:
-    """catalyst.py::_filter_hypecore_tickers()の回帰テスト"""
-
-    def _mod(self):
-        return _load_module(
-            "catalyst_flag_audit3",
-            os.path.join(_REPO_ROOT, "src", "discover", "catalyst.py"),
-        )
-
-    def test_excludes_ticker_not_in_hypecore_set(self, capsys):
-        mod = self._mod()
-        result = mod._filter_hypecore_tickers(["ENB", "PLTR"], ["PLTR", "NVDA"])
-        assert result == ["PLTR"]
-        captured = capsys.readouterr()
-        assert "ENB" in captured.out
-        assert "警告" in captured.out
-
-    def test_production_enb_excluded(self):
         mod = self._mod()
         from common.sec_data.tickers import get_hypecore_tickers
         result = mod._filter_hypecore_tickers(["ENB"], get_hypecore_tickers())

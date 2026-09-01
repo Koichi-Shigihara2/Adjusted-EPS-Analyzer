@@ -192,7 +192,6 @@ AutoTrade運用実体・OpenD前提を追記、report.txt統合レポートの�
 | MACRO PULSE | マクロ環境・景気後退リスク | docs/market-monitor/macro-pulse/ |
 | Market Pulse | 市場センチメント・資金フロー | docs/market-monitor/market-pulse/ |
 | Extreme Fear | 買付支援・TANUKI TOP10・投入額シミュレーター（Market Pulse配下） | docs/value-monitor/extreme-fear/ |
-| DISCOVER | 未発掘銘柄の発掘・ニュース収集 | docs/discover/ |
 | PORTFOLIO | 保有ポートフォリオ管理 | docs/portfolio/ |
 | AutoTrade | F&G×TQQQ自動売買 | C:\Users\shigi\AutoTrade\fg_level2\（リポジトリ外、運用中の実体。下記「AutoTrade/OpenD運用前提」参照） |
 
@@ -232,7 +231,7 @@ FLAG-CONSUMER-AUDIT-2/3で全面適用完了）:**
   `get_stonks_silo_tickers()`経由）。CLI引数明示指定時も`_filter_stonks_silo_tickers()`で検証
 - `hypecore=true` → `src/value/hypecore/hypecore.py --all`（`get_hypecore_tickers()`直接）。
   `--batch`/単体指定時も`_filter_hypecore_tickers()`で検証（2026-07-12まではノーガードだった、
-  FLAG-CONSUMER-AUDIT-3参照）。`src/discover/catalyst.py --ticker`も同型のガードを持つ
+  FLAG-CONSUMER-AUDIT-3参照）
 - `eps=true` → `src/value/adjusted_eps_analyzer/pipeline.py`の`run()`（引数なし＝通常の
   バッチ実行）が`get_eps_tickers()`を**直接使用**（旧SYSTEM_MAP記載の「使われない」は
   誤りだったため訂正）。`--ticker`明示指定時も`_filter_eps_tickers()`で検証（2026-07-12まで
@@ -476,7 +475,7 @@ DUAL-MGMT-1]]`参照。
 | 消費者の実態 | 唯一の正 | 解消方法 | 実例 |
 |---|---|---|---|
 | Pythonバックエンドの読み手がゼロ（フロントエンドのみが`fetch()`で読む） | `docs/`側 | `config/`側を削除し`docs/`側に一本化。admin.html等の書き込み経路もdocs/側へ変更 | `[[PORTFOLIO-CONFIG-DUP-1]]`（`config/portfolio.json`を削除、`docs/portfolio/data/portfolio.json`に統一） |
-| Pythonバックエンドの読み手が存在する（パイプライン本体の入力等） | `config/`側 | `config/`側は削除できない（削除すると本番パイプラインが壊れる）。`docs/`側は表示専用の自動追従コピーとして残し、`config/`への変更をトリガーに`docs/`へ自動同期するGitHub Actionsワークフローを新設する（書き手が複数存在する場合、書き手ごとに同期処理を分散実装せず1箇所に集約する） | `[[DISCOVER-CONFIG-DUAL-MGMT-1]]`（`config/discover_config.json`は`src/discover/collect.py`・`common/sec_data/registration_validator.py`が読むため削除不可。`Discover_Config_Sync.yml`新設で`docs/portfolio/data/`側を自動追従させる） |
+| Pythonバックエンドの読み手が存在する（パイプライン本体の入力等） | `config/`側 | `config/`側は削除できない（削除すると本番パイプラインが壊れる）。`docs/`側は表示専用の自動追従コピーとして残し、`config/`への変更をトリガーに`docs/`へ自動同期するGitHub Actionsワークフローを新設する（書き手が複数存在する場合、書き手ごとに同期処理を分散実装せず1箇所に集約する） | `[[DISCOVER-CONFIG-DUAL-MGMT-1]]`（`config/discover_config.json`は`common/sec_data/registration_validator.py`が読むため削除不可。`Discover_Config_Sync.yml`新設で`docs/portfolio/data/`側を自動追従させる） |
 
 **判断の初手は必ず「Pythonバックエンドの読み手を`grep -rn`で網羅的に
 洗い出す」こと。** `[[DISCOVER-CONFIG-DUAL-MGMT-1]]`は当初「読み手ゼロ」
@@ -1618,13 +1617,6 @@ check_dependency_map.py`に整備した（詳細は同ディレクトリのREADM
 7要素全て一致、consoleエラー0件を確認済み。次回以降、このマップの
 依存先を変更した際は本スクリプトで再確認すること。
 
-DISCOVER      ← Grok Web検索 / NewsAPI
-　　ニュース収集・分類: src/discover/collect.py → docs/discover/data/daily_report.json（日次）
-　　ニュース履歴: docs/discover/data/news_history_YYYY_MM.json（月別蓄積・翌日騰落率付き）
-　　カタリスト発掘: src/discover/catalyst.py → docs/discover/data/catalyst.json（週次）
-　　影響予測: src/discover/impact_predictor.py → docs/discover/data/impact_predictions_YYYY_MM.json
-　　（news_history/catalyst.jsonとは独立パイプライン。collect.py/catalyst.py実行後にそれぞれ
-　　呼び出し、news_history.html/catalyst.htmlがフロントエンドで結合表示。UI-DISCOVER-1 2026-07-05）
 PORTFOLIO     ← 手動入力 / 証券会社API
 TANUKI TAIL（docs/portfolio/tail/）← EDGAR RSS / Grok（KPI提案・四半期レビュー生成）
 　　内部統制評価: src/tail/sec_ctrl_fetcher.py → docs/portfolio/tail/data/ctrl/{TICKER}/{QUARTER}.json + latest.json
