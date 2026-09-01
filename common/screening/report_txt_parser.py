@@ -215,16 +215,6 @@ def _parse_stonks(sec8):
     return out, errs
 
 
-def _parse_risk_events(sec9):
-    if sec9 is None:
-        return None, ["セクション[9]が存在しない"]
-    events = [
-        {"type": m.group(1), "title": m.group(2).strip()}
-        for m in re.finditer(r"^\s*\[high\]\s*(\w+):\s*(.+)$", sec9, re.MULTILINE)
-    ]
-    return events, []
-
-
 def parse_report_text(ticker, text):
     """report.txtの生テキストをパースしてdictを返す"""
     sections = split_sections(text)
@@ -241,7 +231,6 @@ def parse_report_text(ticker, text):
         ("growth_rationale", _parse_growth, (3, 4)),
         ("hypecore", _parse_hypecore, (7,)),
         ("stonks_silo", _parse_stonks, (8,)),
-        ("risk_events_high", _parse_risk_events, (9,)),
     ]
     for key, fn, sec_nums in parsers:
         data, errs = fn(*[sections.get(n) for n in sec_nums])

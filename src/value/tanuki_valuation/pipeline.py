@@ -14,7 +14,6 @@ v2.2変更点:
     - cik_lookup.csv の tanuki 列対応（false の銘柄をスキップ）
 """
 
-import csv
 import json
 import os
 import sys
@@ -27,7 +26,6 @@ from core_calculator import KoichiValuationCalculator
 from validator import validate_calculation
 from growth_sanity import check_growth_sanity, calc_fundamental_growth
 import segment_config as _seg_cfg
-from risk_fetcher import fetch_risk_events
 
 _SCRIPT_DIR_FOR_IMPORT = os.path.dirname(os.path.abspath(__file__))
 _REPO_ROOT_FOR_IMPORT = os.path.dirname(os.path.dirname(os.path.dirname(_SCRIPT_DIR_FOR_IMPORT)))
@@ -160,10 +158,9 @@ def _dilution_severity_info(dil_pct: float | None) -> tuple:
 class TanukiValuationPipeline:
     """TANUKI VALUATION パイプライン"""
 
-    def __init__(self, output_dir: str = None, use_ai_validation: bool = True, skip_risk: bool = False):
+    def __init__(self, output_dir: str = None, use_ai_validation: bool = True):
         self.fetcher = TanukiDataFetcher()
         self.use_ai_validation = use_ai_validation
-        self.skip_risk = skip_risk
 
         if output_dir:
             self.output_dir = output_dir
@@ -714,21 +711,6 @@ class TanukiValuationPipeline:
         history_dir = os.path.join(ticker_dir, "history")
         os.makedirs(history_dir, exist_ok=True)
 
-        # SKIP-RISK-EVENTS-WIPE-1: --skip-risk実行時に既存risk_eventsを引き継ぐため、
-        # 本メソッド内で後にlatest.jsonが中間保存される（risk_events確定前に一度
-        # 書き込まれる）前に、真に「前回実行時点」のrisk_eventsを退避しておく。
-        # 中間保存後に読み直すと、自分自身が書いたrisk_events未設定の状態を
-        # 読んでしまい、常に空配列に見えてしまうため。
-        _pre_existing_risk_events: list = []
-        if self.skip_risk:
-            _existing_latest_path = os.path.join(ticker_dir, "latest.json")
-            try:
-                if os.path.exists(_existing_latest_path):
-                    with open(_existing_latest_path, encoding="utf-8") as _f:
-                        _pre_existing_risk_events = json.load(_f).get("risk_events", [])
-            except Exception:
-                pass
-
         # fcf_history等をスコア計算前に読み込み（fcf_latest判定のため）
         extra = self._load_extra_data(ticker, valuation)
 
@@ -1017,33 +999,6 @@ class TanukiValuationPipeline:
         latest_data["components"]["max_eps"]             = _max_eps_val
         latest_data["components"]["max_eps_per"]         = _max_eps_per_val
         latest_data["components"]["max_eps_reliability"] = _reliability_val
-
-        # リスクイベント取得（Grok web search）
-        risk_events = []
-        if not self.skip_risk:
-            try:
-                _cik_csv = os.path.join(self.repo_root, "config", "cik_lookup.csv")
-                _company_name = ""
-                if os.path.exists(_cik_csv):
-                    with open(_cik_csv, encoding="utf-8", newline="") as _f:
-                        for _row in csv.DictReader(_f):
-                            if _row.get("ticker", "").upper() == ticker.upper():
-                                _company_name = _row.get("name", "")
-                                break
-                risk_events = fetch_risk_events(ticker, _company_name)
-            except Exception as _re:
-                print(f"   [{ticker}] risk_events fetch error: {_re}")
-        else:
-            # SKIP-RISK-EVENTS-WIPE-1: --skip-risk実行時は既存risk_eventsを
-            # そのまま引き継ぐ（無条件で空配列に上書きしない）。本メソッド冒頭で
-            # 中間保存前に退避した_pre_existing_risk_eventsを使う（ここで
-            # latest_pathを読み直すと、line ~751-753の中間保存で既に自分自身が
-            # 書き込んだrisk_events未設定の状態を読んでしまい常に空になる）。
-            # 既存latest.jsonが存在しない（新規銘柄）・risk_eventsキーが
-            # 存在しない場合は従来通り空配列のまま。
-            risk_events = _pre_existing_risk_events
-        latest_data["risk_events"] = risk_events
-        extra["risk_events"] = risk_events
 
         with open(latest_path, "w", encoding="utf-8") as f:
             json.dump(latest_data, f, ensure_ascii=False, indent=2)
@@ -2442,22 +2397,6 @@ class TanukiValuationPipeline:
         L.append("Breakeven_Estimate: Projected year when adjusted EPS turns positive")
         L.append("based on recent 4Q linear trend. Rough estimate only.")
         L.append("")
-        risk_events = extra.get("risk_events", [])
-        if risk_events:
-            L.append("")
-            L.append(f"[{n+4}. RISK EVENTS]")
-            L.append("Source: Grok web search (直近3ヶ月)")
-            for ev in risk_events:
-                ev_type   = ev.get("type", "不明")
-                ev_sum    = ev.get("summary", "")
-                ev_impact = ev.get("impact", "不明")
-                L.append(f"  [{ev_impact}] {ev_type}: {ev_sum}")
-        else:
-            L.append("")
-            L.append(f"[{n+4}. RISK EVENTS]")
-            L.append("  N/A (Grok検索なし または イベントなし)")
-
-        L.append("")
         L.append("==============================================")
         L.append("DISCLAIMER: This report is generated automatically")
         L.append("from financial data for reference purposes only.")
@@ -3476,10 +3415,9 @@ def main():
     import argparse
     parser = argparse.ArgumentParser(description="TANUKI VALUATION Pipeline")
     parser.add_argument("tickers", nargs="*", default=None, help="処理する銘柄コード（省略時は全銘柄）")
-    parser.add_argument("--skip-risk", action="store_true", help="リスクイベント取得をスキップ（API節約用）")
     args = parser.parse_args()
 
-    pipeline = TanukiValuationPipeline(use_ai_validation=False, skip_risk=args.skip_risk)
+    pipeline = TanukiValuationPipeline(use_ai_validation=False)
     results = pipeline.run(args.tickers if args.tickers else None)
     sys.exit(0 if results else 1)
 
