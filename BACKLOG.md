@@ -5272,28 +5272,44 @@ CapEx・低転換率という二分法を前提としている。
 
 ---
 
-### [CATALYST-DEDUP-1] catalyst.jsonの重複排除なし無制限追記問題
-**優先度:** 未定
-**分類:** アーキテクチャ / Discover
-**登録日:** 2026-07-05
+### [DISCOVER-SUBSYSTEM-REMOVAL-1] Discoverサブシステムの削除
+**優先度:** 未定（着手タイミングはKoichiさん判断待ち）
+**分類:** アーキテクチャ / Discover / 削除
+**登録日:** 2026-09-01
+**背景:** risk_fetcher.py撤去と同時期の方針決定。一次情報でなく
+Grok生成コンテンツへの依存を減らす方針の一環として、Discover
+サブシステム全体を削除する。
 
-#### 問題
-`src/discover/catalyst.py` の `discover_catalysts()` は既存カタリストとの内容重複チェックを
-行わず、`process_ticker()` が既存分に新規発掘分を無条件で追記し続ける設計になっている
-（`next_id()` はID重複回避のみでコンテンツ重複は見ない）。週次実行のたびに1銘柄あたり
-約7件が積み増される現状ペースだと、年間3万件超に達する見込み。
+#### 対象範囲（事前調査済み、着手時は再確認すること）
 
-#### 対応方針
-重複排除ロジック（タイトル類似度判定・既存detailとの意味的重複チェック等）の導入を検討する。
+**削除対象ファイル:**
+- src/discover/catalyst.py
+- src/discover/collect.py
+- src/discover/impact_predictor.py
+- docs/discover/index.html
+- docs/discover/catalyst.html
+- docs/discover/news_history.html
+- docs/discover/admin.html
+- docs/discover/data/ 配下全ファイル
+  （catalyst.json・daily_report.json・impact_predictions_*.json・
+  macro_themes_history.json・news_history_*.json）
 
-#### 関連発見（2026-07-05・UI-DISCOVER-1影響予測機能の実API検証時）
-`discover_catalysts()` の母集団は「上振れ事象のみを発掘する」設計（プロンプトが黒字化転換・
-指数採用・大型契約獲得等の株価インパクト事象を列挙させる指示のため）。保有10銘柄への
-本実行1回（72件）に対しimpact_predictor.pyでdirection/thesis_effectを実測したところ、
-positive 71件・neutral 1件・negative 0件という極端な偏りが確認された。バグではなく
-catalyst.py側の設計上の性質だが、影響予測機能の表示が「常にpositive寄り」に見える点は
-将来のUI設計時の留意事項として残す（negative方向のカタリストが実質存在しないため、
-方向性フィルタ等を設ける場合は母集団の偏りを踏まえる必要がある）。
+**削除対象ワークフロー:**
+- .github/workflows/Discover_Update.yml
+- .github/workflows/Catalyst_Update.yml
+
+**要個別判断（単純削除できない）:**
+- .github/workflows/Discover_Config_Sync.yml・config/discover_config.json：
+  **削除対象に含めないこと**。discover_config.jsonはDiscoverサブシステム
+  固有のものではなく、registration_validator.py（新規銘柄登録フローの
+  P1-Step6・P4チェック）とdocs/portfolio/index.html（保有銘柄区分表示）
+  が参照する共有のティッカー区分設定ファイル。名称が紛らわしいが機能的
+  には別物であり、誤って削除しないよう特に注意すること
+- tests/test_collect_market_data_switch.py：collect.pyを直接importして
+  いる（L10・L24）。collect.py削除時にこのテスト自体の要否を判断する
+  こと
+
+**着手条件:** 着手可否・タイミングはKoichiさんの判断待ち。
 
 ---
 
@@ -6886,33 +6902,6 @@ overrideにも健全性チェックを適用する③許容範囲の基準を1�
 
 ---
 
-### [DISCOVER-UTCJST-DATE-MISMATCH-1] UTC/JST日付不整合によるmacro_themes.generated_atのズレ
-**優先度:** 中
-**分類:** バグ / Discover
-**登録日:** 2026-07-23
-**発見:** `FIELD_DEFINITIONS.md`フェーズ7（依頼文名指し）
-
-#### 内容
-`collect.py:249`の`today = date.today().isoformat()`はタイムゾーン非対応
-の素の日付（GitHub Actionsランナーの実行環境時刻、実質UTC）を使うのに
-対し、同じcollect.pyの他の箇所は明示的にJST変換している。collect.pyは
-「毎日JST 7:00」に実行される設計だが、JST 7:00は同日UTCではまだ前日22:00
-であり、`date.today()`はJSTの実行日より1日古い日付を返す。この結果
-`macro_themes[].generated_at`は同じレポート内の`daily_report.json.
-generated_at`より1日古い値になりうる。`catalyst.py`の同種の`date.today()`
-使用はUTC変換で日付を跨がないため実害が生じにくいが、同様にタイムゾーン
-非対応である点は同一の設計リスクとして残る。
-
-#### 対応方針
-`collect.py:249`を他の箇所と同様に`datetime.now(JST)`ベースに統一する。
-`catalyst.py`側も将来のスケジュール変更に備えて同様に統一しておくことを
-推奨する。
-
-#### 着手条件
-なし
-
----
-
 ### [SECDATA-STORAGE-FRAGMENTATION-1] common/sec_data内のraw/normalized/ttm3系統並存によるスキーマ分岐
 **優先度:** 中
 **分類:** アーキテクチャ / データ品質
@@ -7417,32 +7406,6 @@ and wacc > 0 else 0.0`と明示的にゼロフロアされるのに対し、直�
 
 ---
 
-
----
-
-### [DISCOVER-IMPACT-PRED-GAPS-1] 影響予測(AS-IS-248)のindex.html非表示・catalystモード新規分限定・様子見銘柄フォールバック欠如
-**優先度:** 中
-**分類:** 機能ギャップ / Discover
-**登録日:** 2026-07-23
-**発見:** `FIELD_DEFINITIONS.md`フェーズ7（AS-IS-248/AS-IS-250）
-
-#### 内容
-①`impact_predictor.py`が生成する影響予測（AS-IS-248）は
-`docs/discover/catalyst.html`・`news_history.html`では表示されるが、
-Discoverのメイン画面`index.html`は`impact_predictions_{ym}.json`を一切
-参照しない。②`run_catalyst()`は`first_detected==本日`のカタリストのみを
-予測対象とするため、ある日の`catalyst.py`実行後に`impact_predictor.py`の
-実行が漏れた場合、そのカタリストは未来永劫影響予測を持てない。
-③`collect.py:main()`の分岐は「様子見」カテゴリ銘柄をGrok web検索代替の
-対象から除外しており、NEWS APIで0件だった場合に無条件で空データになる。
-
-#### 対応方針
-①index.htmlに影響予測サマリーを追加表示する②catalyst実行と
-impact_predictor実行の依存関係をワークフロー上で保証する（同一
-ジョブ内での連続実行等）③「様子見」もGrok web検索代替の対象に含める。
-
-#### 着手条件
-なし
 
 ---
 
@@ -8255,27 +8218,6 @@ segment_config.json未登録のまま_default設定でDCF計算されている�
 
 ---
 
-### [REPORT-CATALYST-1] カタリスト（Discoverのアップサイド事象）がreport.txtに未統合
-**優先度:** 中
-**分類:** 機能追加 / TANUKI VALUATION・Discover
-**登録日:** 2026-07-10
-**発見:** サテライト投資候補91銘柄への前提妥当性チェック展開時
-
-#### 問題
-report.txtの `[9] RISK EVENTS` はGrok web検索由来のリスクイベント（ダウンサイド）
-のみを表示しており、`docs/discover/data/catalyst.json` 由来のカタリスト
-（アップサイド事象）が含まれない。銘柄の投資判断材料としてリスク・カタリストの
-双方を並列参照したい場面で、report.txt単体では片面（リスクのみ）の情報しか
-得られない。
-
-#### 対応方針
-`[9] RISK EVENTS` と並列で `[10] CATALYSTS` セクションを新設し、
-catalyst.json記載の直近カタリスト（重要度・確度付き）を表示する。
-catalyst.jsonのデータ鮮度・カタリスト件数の多さ（CATALYST-DEDUP-1参照）を
-踏まえた表示件数の絞り込み設計を含め、実装は別タスクとして着手する。
-
----
-
 ### [SPLIT-REALTIME-GAP-REVERSE-1] KULR/SPIRのリバース分割で同型の恒久固着ギャップ有無が未確認
 **優先度:** 低
 **分類:** データ品質 / EPS ANALYZER
@@ -8504,23 +8446,6 @@ SYSTEM_MAP.md「AutoTrade/OpenD運用前提」参照）。
 #### 影響
 実害は薄い（本番運用に影響しない陳腐化コードの残存）が、将来このモジュールを
 誤って参照・変更するリスクがあるため記録する。
-
----
-
-### [UI-DISCOVER-1] カタリスト・ニュース履歴のUI改善
-**優先度:** 中
-**分類:** UX / Discover
-**登録日:** 2026-06-27
-
-#### 問題
-catalyst.html・news_history.html のUIが使いづらく実用に耐えない。
-
-#### 対応方針
-現状のUI課題を洗い出してから設計する（次セッションで詳細ヒアリング）。
-
-#### 着手状況
-- ✅ 「連想・考察→影響予測」機能を追加（2026-07-05完了。詳細はBACKLOG_DONE.md参照）
-- [ ] その他のUI課題（次セッションで詳細ヒアリング）
 
 ---
 
@@ -9762,33 +9687,6 @@ BACKLOG_DONE.md「2026-08-27（完了）」参照）
 
 ---
 
-### [DISCOVER-PRECISION-GAPS-1] Discoverの精度上の軽微なギャップ（テーマ連続登場の文字列部分一致・macro_themesの見た目上の更新）
-**優先度:** 低
-**分類:** データ品質 / Discover
-**登録日:** 2026-07-23
-**発見:** `FIELD_DEFINITIONS.md`フェーズ7
-
-#### 内容
-①`themeStreakMap`（`docs/discover/index.html:452-457`）は今週と過去4週
-分のテーマ名を`hn.includes(name) || name.includes(hn)`という単純な部分
-文字列一致で比較する。テーマ名はGrokが毎週自由生成する20字以内の文字列
-のため、同一の実質的テーマでも表現が微妙に変わると継続と判定されず
-（偽陰性）、逆に無関係な2テーマが偶然共通の部分文字列を持つと誤って
-連続登場と判定される（偽陽性）リスクがある。②`collect.py:main()`は
-日曜以外`macro_themes`を前回`daily_report.json`から引き継ぐが、
-`daily_report.json`自体の`generated_at`は毎日更新されるため、ユーザーが
-「今日生成された最新のテーマ」と誤認するリスクがある。
-
-#### 対応方針
-①ID・埋め込みベースの意味的一致への変更を検討する②レポート全体の
-タイムスタンプとは別に各テーマオブジェクトの`generated_at`（週次生成日）
-を画面上でも明示する。
-
-#### 着手条件
-なし
-
----
-
 ### [MACRO-THRESHOLD-INCONSISTENCY-1] MACRO PULSEの閾値不一致・重複判定の軽微な構造的リスク（YC閾値3セット・dedupe_new_rows()のCFNAI/Sahm無条件適用）
 **優先度:** 低
 **分類:** データ品質 / MACRO PULSE
@@ -10923,90 +10821,23 @@ buildProfitPath()の凡例部分に「✅ 達成済（pill）= 直近四半期�
 
 ---
 
-### [TOOLTIP-INDEX-1] tanuki_valuation/index.html・catalyst.html・news_history.htmlへのinfo-tooltip未適用
+### [TOOLTIP-INDEX-1] tanuki_valuation/index.htmlへのinfo-tooltip未適用
 **優先度:** 低
-**分類:** UX / 全体
+**分類:** UX / TANUKI VALUATION
 **発見:** 2026-06-26横断調査
 
 #### 問題
 以下の画面でinfo-tooltip.jsがimportされておらずglossaryツールチップが使えない：
 - docs/value-monitor/tanuki_valuation/index.html
-- docs/discover/catalyst.html
-- docs/discover/news_history.html
 
 （stock.htmlはSTOCK-GLOSSARY-1として既登録）
 
+catalyst.html・news_history.html分は[[DISCOVER-SUBSYSTEM-REMOVAL-1]]により
+Discoverサブシステム自体が削除対象となったため対応不要と判定する。
+
 #### 対応方針
-各ファイルにinfo-tooltip.jsのimportを追加し、
+docs/value-monitor/tanuki_valuation/index.htmlにinfo-tooltip.jsのimportを追加し、
 説明が必要な要素にdata-info属性を付与する。
-
----
-
-### [DESIGN-16] Moomoo Skills Hub（情報検索・個別株ダイジェスト）のDISCOVER機能への組み込み検討
-**優先度:** 低（設計相談は完了・実装未着手）
-**分類:** 設計課題 / DISCOVER
-**登録日:** 2026-07-10
-**ステータス:** 保留（2026-07-10追記: OpenDは常時起動確認済み。ローカル定期実行での
-自動化を検討可能、詳細設計は別タスク）
-
-#### 背景
-moomoo証券が2026年5月にリリースした「Moomoo Skills Hub」には、Moomoo API Skill
-（既存BACKLOG「Moomoo API Skill 移行」参照）に加え、投資分析系の6Skillが追加された。
-うち以下2つがDISCOVER機能と関連しうるため調査した：
-- **情報検索Skill**: moomoo上のニュース・適時開示・レポートを横断検索
-- **個別株ダイジェストSkill**: 銘柄別に最新ニュース・市況を要約
-
-#### 調査結果①：現行DISCOVERの実行環境
-`src/discover/collect.py`（日次）・`catalyst.py`（週次）・`impact_predictor.py`は
-いずれもGitHub Actions（`.github/workflows/Discover_Update.yml` /
-`Catalyst_Update.yml`、`runs-on: ubuntu-latest`）上で完全自動実行されており、
-ローカルPC・OpenD等のローカル依存は一切ない。
-一方、Moomoo Skills Hubは（Moomoo API Skillと同様）ローカルゲートウェイ
-OpenDを介したセキュリティ設計（ローカルゲートウェイ＋パスワード＋監査ログの
-三層構成）を前提とする。
-
-**2026-07-10追記:** KoichiさんはAutoTrade運用のためOpenDを既に常時起動しており、
-「OpenD起動」という前提条件は実質的に満たされている。これにより、moomoo Skills Hub
-（情報検索Skill・個別株ダイジェストSkill）をローカルのタスクスケジューラ等で
-定期実行し、DISCOVERパイプラインの一部または代替として自動化できる可能性がある。
-ただし、GitHub Actions（クラウド、Koichiさんの端末状態に非依存）とローカル
-タスクスケジューラ（Koichiさんの端末稼働・OpenD接続状態に依存）では可用性の
-性質が異なる（PC自体の停止・再起動時はローカル側のみ止まる）ため、
-**完全な代替ではなく「補完」または「条件付き代替」として位置づける。**
-
-#### 調査結果②：データ範囲の比較
-| 観点 | 現行DISCOVER（Grok/NewsAPI） | Moomoo Skills Hub（情報検索・個別株ダイジェスト） |
-|---|---|---|
-| 対応市場 | 制約なし（Web検索ベース） | 日本語版は香港・米国・日本・シンガポール・マレーシアが対象 |
-| 保有・候補銘柄の対応可否 | ○ | ○（cik_lookup.csv登録銘柄はyfinance country確認済みの範囲で全て米国上場のため対応市場内） |
-| 実行形態 | 完全自動（スケジュール実行・GitHub Actions、Koichiさんの端末状態に非依存） | オンデマンド呼び出しに加え、OpenD常時起動済みのためローカルタスクスケジューラ等での定期実行も可能（ただしKoichiさんの端末稼働に依存） |
-| 機能の性質 | 発掘・分類・方向性予測（catalyst.py=上振れ事象発掘、impact_predictor.py=direction/magnitude予測） | 横断検索・要約（プル型の深掘り調査ツール） |
-| 重複/補完 | — | **補完、または条件付き代替**。継続的なバッチ発掘の完全な置き換えとしてはクラウド/ローカルの可用性特性が異なるため慎重な判断が必要だが、特定銘柄のオンデマンド深掘り（moomoo一次情報での裏取り）や、ローカル定期実行によるDISCOVER補助バッチとしての活用の両方に価値がある |
-
-#### 調査結果③：Koichiさん側の前提条件（Claude Codeが代行できない範囲）
-- moomoo証券口座の保有・開設
-- OpenDのローカル起動（**2026-07-10追記: AutoTrade運用のため既に常時起動済み、追加対応不要**）
-- Moomoo API利用規約への同意
-
-#### チャット側の推奨方針（2026-07-10改訂）
-OpenD常時起動という前提条件が既に満たされているため、「時期尚早」ではなく
-**ローカル定期実行での自動化（DISCOVER補助バッチ）を検討可能な段階**にある。
-ただし、GitHub Actions（クラウド・無人運用・端末状態非依存）と
-ローカルタスクスケジューラ（端末稼働・OpenD接続状態に依存）は可用性の性質が
-異なるため、DISCOVERパイプラインの完全な置き換えではなく、当面は
-「補完」または「条件付き代替」として位置づける。着手判断は以下の順で行う：
-1. 既存BACKLOG「Moomoo API Skill 移行」（signal.jsonバックテスト後に判断）の
-   結論と合わせて、Moomoo Skills Hub全体の導入要否を判断する
-2. 導入する場合の位置づけを設計する（案A: chat側オンデマンド利用のみ、
-   案B: ローカルタスクスケジューラでの定期実行によるDISCOVER補助バッチ化。
-   案Bを採る場合はPC停止・再起動時のデータ欠落をどう扱うか設計が必要）
-3. Moomoo API利用規約への同意状況を確認してから着手する
-
-#### 実装難易度
-低〜中（Skillのインストール自体は容易。ローカル定期実行を選ぶ場合は
-タスクスケジューラ設定・PC停止時のフォールバック設計が別途必要）
-
----
 
 ---
 
