@@ -2,9 +2,9 @@
   "intrinsic_value_pt": 8811802851.781872,
   "intrinsic_value_per_share": 21.73402976139844,
   "intrinsic_value_beta": 27.72,
-  "upside_percent_beta": 28.7,
+  "upside_percent_beta": 25.4,
   "intrinsic_value_rf": 175.47,
-  "upside_percent_rf": 714.6,
+  "upside_percent_rf": 694.0,
   "v0": 8811802851.781872,
   "v0_note": "v0はβ込みCAPMベース（intrinsic_value_betaの参考値）。メインの理論株価計算根拠はdcf_components.v0_rm（market_return 10%固定・βなし）を参照すること。",
   "v0_adjusted": 8811802851.781872,
@@ -21,31 +21,31 @@
     "1年後": {
       "future_value": 30.69,
       "value_growth_pct": 41.2,
-      "expected_return_pct": 42.5
+      "expected_return_pct": 38.9
     },
     "2年後": {
       "future_value": 43.34,
       "value_growth_pct": 99.4,
-      "expected_return_pct": 101.2
+      "expected_return_pct": 96.1
     },
     "3年後": {
       "future_value": 61.21,
       "value_growth_pct": 181.7,
-      "expected_return_pct": 184.2
+      "expected_return_pct": 177.0
     },
     "4年後": {
       "future_value": 86.45,
       "value_growth_pct": 297.8,
-      "expected_return_pct": 301.3
+      "expected_return_pct": 291.2
     },
     "5年後": {
       "future_value": 122.09,
       "value_growth_pct": 461.8,
-      "expected_return_pct": 466.8
+      "expected_return_pct": 452.4
     }
   },
-  "upside_percent": 0.9,
-  "calculation_date": "2026-08-31T20:04:06+09:00",
+  "upside_percent": -1.7,
+  "calculation_date": "2026-09-01T09:51:52+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + tapering DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "tapering",
   "growth": {
@@ -327,7 +327,7 @@
     "roe_10yr_avg": -0.2183403383548284,
     "roe_years_used": 5,
     "roe_outlier_adj": false,
-    "current_price": 21.540000915527344,
+    "current_price": 22.100000381469727,
     "latest_revenue": 1001278000.0,
     "rpo": 1700000000,
     "beta": 0.751,
@@ -361,11 +361,11 @@
     "alpha_uncapped": 0.0,
     "per": 46.05024,
     "per_is_forward": true,
-    "per_adjusted": 690.13,
+    "per_adjusted": 708.07,
     "peg": null,
     "ps": 6.694729,
     "ev_ebitda": null,
-    "ma200": 15.931699948310852,
+    "ma200": 15.955799946784971,
     "forward_eps": 0.46775,
     "analyst_target_median": 24.0,
     "analyst_target_mean": 23.80645,
@@ -385,7 +385,7 @@
     "max_eps_reliability": "LOW"
   },
   "validation": {
-    "validated_at": "2026-08-31",
+    "validated_at": "2026-09-01",
     "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
@@ -412,17 +412,17 @@
   "tanuki_score": "WATCH",
   "funda_score": 75,
   "score_comment": "DCF信頼性LOW(実績FCF赤字)のためupside依存判定を抑制→WATCH",
-  "timing_score": 25,
+  "timing_score": 30,
   "sell_reason": null,
-  "pre_rounding_score": "WATCH",
-  "pre_rounding_comment": "若干割安(1%)、FCF黒字、売上成長加速",
+  "pre_rounding_score": "HOLD",
+  "pre_rounding_comment": "フェアバリュー近辺、FCF黒字、売上成長加速",
   "rounded_by_policy": "A",
   "matrix": {
     "matrix": "④キャッシュ創出力系",
-    "quadrant": "右下",
-    "label": "割安×低FCF",
+    "quadrant": "左下",
+    "label": "割高×低FCF",
     "key_metric_y": "FCF_Margin = 7.6%",
-    "qx": true,
+    "qx": false,
     "qy": false
   },
   "fcf_history": [
@@ -477,7 +477,7 @@
     "shares_yr_3ago_label": "2023",
     "buyback_ttm": 49249000
   },
-  "net_current_assets_ratio": 0.0421,
+  "net_current_assets_ratio": 0.041,
   "dupont": {
     "ni_ttm": -340087000,
     "revenue_ttm": 1098704000,
@@ -530,24 +530,24 @@
     "fcf_margin_bear_multiplier": 1.0,
     "fcf_margin_note": null
   },
-  "erp": -0.0213,
-  "forward_earnings_yield": 0.0217,
+  "erp": -0.0218,
+  "forward_earnings_yield": 0.0212,
   "dilution_severity": "medium",
   "dilution_comment": "やや高い希薄化 ℹ️ 要注意",
   "risk_events": [
     {
       "type": "litigation",
-      "summary": "Antitrust lawsuit against SentinelOne",
+      "summary": "Antitrust lawsuit ongoing",
       "impact": "high"
     },
     {
       "type": "regulatory",
-      "summary": "Ongoing SEC regulatory investigation",
+      "summary": "SEC regulatory investigation",
       "impact": "high"
     },
     {
       "type": "earnings",
-      "summary": "Earnings warning impacting 2025-2026 outlook",
+      "summary": "Earnings warning with competition risks 2025-2026",
       "impact": "mid"
     }
   ]

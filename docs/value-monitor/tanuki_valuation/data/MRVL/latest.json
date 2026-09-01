@@ -2,9 +2,9 @@
   "intrinsic_value_pt": 18093628410.759377,
   "intrinsic_value_per_share": 42.40904545201009,
   "intrinsic_value_beta": 18.99,
-  "upside_percent_beta": -91.2,
+  "upside_percent_beta": -91.0,
   "intrinsic_value_rf": 364.45,
-  "upside_percent_rf": 68.2,
+  "upside_percent_rf": 72.2,
   "v0": 18093628410.759377,
   "v0_note": "v0はβ込みCAPMベース（intrinsic_value_betaの参考値）。メインの理論株価計算根拠はdcf_components.v0_rm（market_return 10%固定・βなし）を参照すること。",
   "v0_adjusted": 18093628410.759377,
@@ -21,31 +21,31 @@
     "1年後": {
       "future_value": 47.27,
       "value_growth_pct": 11.5,
-      "expected_return_pct": -78.2
+      "expected_return_pct": -77.7
     },
     "2年後": {
       "future_value": 52.68,
       "value_growth_pct": 24.2,
-      "expected_return_pct": -75.7
+      "expected_return_pct": -75.1
     },
     "3年後": {
       "future_value": 58.71,
       "value_growth_pct": 38.4,
-      "expected_return_pct": -72.9
+      "expected_return_pct": -72.3
     },
     "4年後": {
       "future_value": 65.43,
       "value_growth_pct": 54.3,
-      "expected_return_pct": -69.8
+      "expected_return_pct": -69.1
     },
     "5年後": {
       "future_value": 72.92,
       "value_growth_pct": 71.9,
-      "expected_return_pct": -66.3
+      "expected_return_pct": -65.5
     }
   },
-  "upside_percent": -80.4,
-  "calculation_date": "2026-08-31T20:02:07+09:00",
+  "upside_percent": -80.0,
+  "calculation_date": "2026-09-01T09:50:12+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -342,7 +342,7 @@
     "roe_10yr_avg": 0.02766879910027354,
     "roe_years_used": 10,
     "roe_outlier_adj": false,
-    "current_price": 216.6199951171875,
+    "current_price": 211.66000366210938,
     "latest_revenue": 8194600000.0,
     "rpo": 40100000.0,
     "beta": 2.246,
@@ -376,11 +376,11 @@
     "alpha_uncapped": 0.11620895622114884,
     "per": 79.93358,
     "per_is_forward": false,
-    "per_adjusted": 47.96,
+    "per_adjusted": 46.86,
     "peg": 1.4263,
     "ps": 20.600128,
     "ev_ebitda": 68.563,
-    "ma200": 148.64520011901857,
+    "ma200": 149.25685012817382,
     "forward_eps": 6.64435,
     "analyst_target_median": 275.0,
     "analyst_target_mean": 278.8919,
@@ -396,11 +396,11 @@
     "insider_latest_date": "2026-08-17",
     "analyst_vs_iv": 548.4,
     "max_eps": 3.5948,
-    "max_eps_per": 60.3,
+    "max_eps_per": 58.9,
     "max_eps_reliability": "HIGH"
   },
   "validation": {
-    "validated_at": "2026-08-31",
+    "validated_at": "2026-09-01",
     "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
@@ -427,7 +427,7 @@
   "tanuki_score": "WATCH",
   "funda_score": 65,
   "score_comment": "DCF信頼性LOW(FCF_Conversion_Rate方式・要注意フラグ)のためupside依存判定を抑制→WATCH",
-  "timing_score": 15,
+  "timing_score": 30,
   "sell_reason": null,
   "pre_rounding_score": "TRIM",
   "pre_rounding_comment": "割高(-80%超)、FCF黒字、売上成長加速",
@@ -492,7 +492,7 @@
     "shares_yr_3ago_label": "2023",
     "buyback_ttm": 1900100000
   },
-  "net_current_assets_ratio": 0.0278,
+  "net_current_assets_ratio": 0.0285,
   "dupont": {
     "ni_ttm": 2639900000,
     "revenue_ttm": 9450300000,
@@ -547,24 +547,24 @@
     "fcf_margin_bear_multiplier": 0.85,
     "fcf_margin_note": "FCFマージン悪化(20.0%→17.0%) BEAR補正係数=0.850"
   },
-  "erp": -0.0123,
-  "forward_earnings_yield": 0.0307,
+  "erp": -0.0116,
+  "forward_earnings_yield": 0.0314,
   "dilution_severity": "low",
   "dilution_comment": "許容範囲内 ✅",
   "risk_events": [
     {
       "type": "litigation",
-      "summary": "Antitrust lawsuit against Marvell Technology",
+      "summary": "Antitrust lawsuit ongoing against Marvell",
       "impact": "high"
     },
     {
       "type": "regulatory",
-      "summary": "Ongoing SEC regulatory investigation",
+      "summary": "SEC investigation into regulatory compliance",
       "impact": "high"
     },
     {
       "type": "earnings",
-      "summary": "Earnings warning amid competition risks for 2025-2026",
+      "summary": "Earnings warning amid competition pressures 2025-2026",
       "impact": "mid"
     }
   ]

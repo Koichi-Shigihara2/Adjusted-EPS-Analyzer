@@ -2,9 +2,9 @@
   "intrinsic_value_pt": 601804082.2264112,
   "intrinsic_value_per_share": 7.266005909451385,
   "intrinsic_value_beta": 6.07,
-  "upside_percent_beta": -28.5,
+  "upside_percent_beta": -29.3,
   "intrinsic_value_rf": 31.09,
-  "upside_percent_rf": 266.2,
+  "upside_percent_rf": 262.0,
   "v0": 601804082.2264112,
   "v0_note": "v0はβ込みCAPMベース（intrinsic_value_betaの参考値）。メインの理論株価計算根拠はdcf_components.v0_rm（market_return 10%固定・βなし）を参照すること。",
   "v0_adjusted": 601804082.2264112,
@@ -21,31 +21,31 @@
     "1年後": {
       "future_value": 11.27,
       "value_growth_pct": 55.0,
-      "expected_return_pct": 32.7
+      "expected_return_pct": 31.2
     },
     "2年後": {
       "future_value": 17.47,
       "value_growth_pct": 140.3,
-      "expected_return_pct": 105.8
+      "expected_return_pct": 103.4
     },
     "3年後": {
       "future_value": 27.07,
       "value_growth_pct": 272.4,
-      "expected_return_pct": 218.8
+      "expected_return_pct": 215.1
     },
     "4年後": {
       "future_value": 27.88,
       "value_growth_pct": 283.5,
-      "expected_return_pct": 228.4
+      "expected_return_pct": 224.6
     },
     "5年後": {
       "future_value": 28.72,
       "value_growth_pct": 295.0,
-      "expected_return_pct": 238.3
+      "expected_return_pct": 234.3
     }
   },
-  "upside_percent": -14.4,
-  "calculation_date": "2026-08-31T20:03:37+09:00",
+  "upside_percent": -15.4,
+  "calculation_date": "2026-09-01T09:51:30+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -284,7 +284,7 @@
     "roe_10yr_avg": -0.5152251275168697,
     "roe_years_used": 6,
     "roe_outlier_adj": true,
-    "current_price": 8.489999771118164,
+    "current_price": 8.59000015258789,
     "latest_revenue": 40729000.0,
     "rpo": 270,
     "beta": 1.349,
@@ -322,7 +322,7 @@
     "peg": null,
     "ps": 18.123102,
     "ev_ebitda": null,
-    "ma200": 10.96654995918274,
+    "ma200": 10.96614995956421,
     "forward_eps": -0.44,
     "analyst_target_median": 17.5,
     "analyst_target_mean": 18.33333,
@@ -342,7 +342,7 @@
     "max_eps_reliability": "LOW"
   },
   "validation": {
-    "validated_at": "2026-08-31",
+    "validated_at": "2026-09-01",
     "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
@@ -369,7 +369,7 @@
   "tanuki_score": "WATCH",
   "funda_score": 75,
   "score_comment": "DCF信頼性LOW(実績FCF赤字)のためupside依存判定を抑制→WATCH",
-  "timing_score": 10,
+  "timing_score": 25,
   "sell_reason": null,
   "pre_rounding_score": "HOLD",
   "pre_rounding_comment": "フェアバリュー近辺、FCF黒字、売上成長加速",
@@ -428,7 +428,7 @@
     "stdebt_estimated_zero": false,
     "stdebt_last_confirmed_zero_year": null
   },
-  "net_current_assets_ratio": 0.3058,
+  "net_current_assets_ratio": 0.3023,
   "dupont": {
     "ni_ttm": -97485000,
     "revenue_ttm": 71540000,
@@ -480,22 +480,22 @@
     "fcf_margin_bear_multiplier": 1.0,
     "fcf_margin_note": null
   },
-  "erp": -0.0948,
-  "forward_earnings_yield": -0.0518,
+  "erp": -0.0942,
+  "forward_earnings_yield": -0.0512,
   "risk_events": [
     {
       "type": "litigation",
-      "summary": "Antitrust lawsuit",
+      "summary": "Antitrust lawsuit against Red Cat Holdings",
       "impact": "high"
     },
     {
       "type": "regulatory",
-      "summary": "SEC investigation",
+      "summary": "Ongoing SEC regulatory investigation",
       "impact": "high"
     },
     {
       "type": "earnings",
-      "summary": "Earnings warning for 2025 2026",
+      "summary": "Earnings warning amid competition risks for 2025-2026",
       "impact": "mid"
     }
   ]

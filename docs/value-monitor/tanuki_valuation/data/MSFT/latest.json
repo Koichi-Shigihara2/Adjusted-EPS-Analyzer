@@ -2,9 +2,9 @@
   "intrinsic_value_pt": 3090230036296.1533,
   "intrinsic_value_per_share": 462.73139639891633,
   "intrinsic_value_beta": 421.28,
-  "upside_percent_beta": -18.0,
+  "upside_percent_beta": -17.0,
   "intrinsic_value_rf": 4312.15,
-  "upside_percent_rf": 739.7,
+  "upside_percent_rf": 750.0,
   "v0": 2997031701411.0674,
   "v0_note": "v0はβ込みCAPMベース（intrinsic_value_betaの参考値）。メインの理論株価計算根拠はdcf_components.v0_rm（market_return 10%固定・βなし）を参照すること。",
   "v0_adjusted": 2997031701411.0674,
@@ -21,31 +21,31 @@
     "1年後": {
       "future_value": 529.69,
       "value_growth_pct": 14.5,
-      "expected_return_pct": 3.1
+      "expected_return_pct": 4.4
     },
     "2年後": {
       "future_value": 606.33,
       "value_growth_pct": 31.0,
-      "expected_return_pct": 18.1
+      "expected_return_pct": 19.5
     },
     "3年後": {
       "future_value": 694.07,
       "value_growth_pct": 50.0,
-      "expected_return_pct": 35.2
+      "expected_return_pct": 36.8
     },
     "4年後": {
       "future_value": 794.5,
       "value_growth_pct": 71.7,
-      "expected_return_pct": 54.7
+      "expected_return_pct": 56.6
     },
     "5年後": {
       "future_value": 909.47,
       "value_growth_pct": 96.5,
-      "expected_return_pct": 77.1
+      "expected_return_pct": 79.3
     }
   },
-  "upside_percent": -9.9,
-  "calculation_date": "2026-08-31T20:02:18+09:00",
+  "upside_percent": -8.8,
+  "calculation_date": "2026-09-01T09:50:23+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + three_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "three_stage",
   "growth": {
@@ -422,7 +422,7 @@
     "roe_10yr_avg": 0.3397244832282938,
     "roe_years_used": 10,
     "roe_outlier_adj": false,
-    "current_price": 513.530029296875,
+    "current_price": 507.2900085449219,
     "latest_revenue": 331839000000.0,
     "rpo": 684000000000,
     "beta": 1.099,
@@ -456,11 +456,11 @@
     "alpha_uncapped": 1.4268428295588336,
     "per": 28.169502,
     "per_is_forward": false,
-    "per_adjusted": 26.15,
+    "per_adjusted": 25.83,
     "peg": 1.6402,
     "ps": 11.491237,
     "ev_ebitda": 19.899,
-    "ma200": 431.17564926147463,
+    "ma200": 431.1686993408203,
     "forward_eps": 23.57328,
     "analyst_target_median": 550.0,
     "analyst_target_mean": 569.4537,
@@ -471,16 +471,16 @@
     "dividend_yield": 0.007207065,
     "payout_ratio": 0.1983,
     "insider_buy_count": 0,
-    "insider_sell_count": 5,
+    "insider_sell_count": 4,
     "insider_net_direction": "Sell優勢",
     "insider_latest_date": "2026-08-17",
     "analyst_vs_iv": 18.9,
     "max_eps": 19.6826,
-    "max_eps_per": 26.1,
+    "max_eps_per": 25.8,
     "max_eps_reliability": "HIGH"
   },
   "validation": {
-    "validated_at": "2026-08-31",
+    "validated_at": "2026-09-01",
     "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
@@ -506,7 +506,7 @@
   "tanuki_score": "HOLD",
   "funda_score": 90,
   "score_comment": "フェアバリュー近辺、FCF黒字、売上安定成長",
-  "timing_score": 15,
+  "timing_score": 30,
   "sell_reason": null,
   "pre_rounding_score": null,
   "pre_rounding_comment": null,
@@ -571,7 +571,7 @@
     "shares_yr_3ago_label": "2023",
     "buyback_ttm": 22271000000
   },
-  "net_current_assets_ratio": 0.0101,
+  "net_current_assets_ratio": 0.0103,
   "dupont": {
     "ni_ttm": 133749000000,
     "revenue_ttm": 331839000000,
@@ -636,13 +636,13 @@
     "fcf_margin_bear_multiplier": 0.8115,
     "fcf_margin_note": "FCFマージン悪化(26.0%→21.1%) BEAR補正係数=0.811"
   },
-  "erp": 0.0029,
-  "forward_earnings_yield": 0.0459,
+  "erp": 0.0035,
+  "forward_earnings_yield": 0.0465,
   "dilution_severity": "positive",
   "dilution_comment": "自社株買いによる株主還元 ✅",
   "risk_events": [
     {
-      "type": "regulatory",
+      "type": "litigation",
       "summary": "Ongoing antitrust lawsuit",
       "impact": "high"
     },
@@ -652,9 +652,9 @@
       "impact": "mid"
     },
     {
-      "type": "earnings",
-      "summary": "Earnings warning amid 2025-2026 competition",
-      "impact": "high"
+      "type": "competitive",
+      "summary": "Competitive threats and earnings warning risks for 2025-2026",
+      "impact": "mid"
     }
   ]
 }

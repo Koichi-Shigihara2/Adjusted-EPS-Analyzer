@@ -2,9 +2,9 @@
   "intrinsic_value_pt": 6089938697.940022,
   "intrinsic_value_per_share": 23.066337625697777,
   "intrinsic_value_beta": 25.89,
-  "upside_percent_beta": 86.8,
+  "upside_percent_beta": 86.0,
   "intrinsic_value_rf": 124.37,
-  "upside_percent_rf": 797.3,
+  "upside_percent_rf": 793.5,
   "v0": 6089310622.125632,
   "v0_note": "v0はβ込みCAPMベース（intrinsic_value_betaの参考値）。メインの理論株価計算根拠はdcf_components.v0_rm（market_return 10%固定・βなし）を参照すること。",
   "v0_adjusted": 6089310622.125632,
@@ -21,31 +21,31 @@
     "1年後": {
       "future_value": 28.42,
       "value_growth_pct": 23.2,
-      "expected_return_pct": 105.1
+      "expected_return_pct": 104.2
     },
     "2年後": {
       "future_value": 35.02,
       "value_growth_pct": 51.8,
-      "expected_return_pct": 152.7
+      "expected_return_pct": 151.6
     },
     "3年後": {
       "future_value": 43.14,
       "value_growth_pct": 87.0,
-      "expected_return_pct": 211.3
+      "expected_return_pct": 209.9
     },
     "4年後": {
       "future_value": 53.16,
       "value_growth_pct": 130.4,
-      "expected_return_pct": 283.5
+      "expected_return_pct": 281.9
     },
     "5年後": {
       "future_value": 65.49,
       "value_growth_pct": 183.9,
-      "expected_return_pct": 372.5
+      "expected_return_pct": 370.5
     }
   },
-  "upside_percent": 66.4,
-  "calculation_date": "2026-08-31T20:07:48+09:00",
+  "upside_percent": 65.7,
+  "calculation_date": "2026-09-01T09:55:03+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -330,7 +330,7 @@
     "roe_10yr_avg": -0.08196893590374056,
     "roe_years_used": 5,
     "roe_outlier_adj": false,
-    "current_price": 13.859999656677246,
+    "current_price": 13.920000076293945,
     "latest_revenue": 838809000.0,
     "rpo": 680600000,
     "beta": 0.865,
@@ -364,11 +364,11 @@
     "alpha_uncapped": 0.0,
     "per": 21.65625,
     "per_is_forward": false,
-    "per_adjusted": 23.85,
+    "per_adjusted": 23.96,
     "peg": 0.6914,
     "ps": 4.000984,
     "ev_ebitda": 51.955,
-    "ma200": 10.153024995326996,
+    "ma200": 10.164424993991851,
     "forward_eps": 0.83319,
     "analyst_target_median": 14.0,
     "analyst_target_mean": 14.38462,
@@ -388,7 +388,7 @@
     "max_eps_reliability": "HIGH"
   },
   "validation": {
-    "validated_at": "2026-08-31",
+    "validated_at": "2026-09-01",
     "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
@@ -415,7 +415,7 @@
   "tanuki_score": "WATCH",
   "funda_score": 55,
   "score_comment": "DCF信頼性LOW(FCF_Conversion_Rate方式・要注意フラグ)のためupside依存判定を抑制→WATCH",
-  "timing_score": 50,
+  "timing_score": 65,
   "sell_reason": null,
   "pre_rounding_score": "BUY",
   "pre_rounding_comment": "割安圏(66%)で買い余地大、FCF黒字、売上安定成長",
@@ -480,7 +480,7 @@
     "shares_yr_3ago_label": "2022",
     "buyback_ttm": 366521000
   },
-  "net_current_assets_ratio": 0.1021,
+  "net_current_assets_ratio": 0.1017,
   "dupont": {
     "ni_ttm": 185195000,
     "revenue_ttm": 903868000,
@@ -525,24 +525,24 @@
     "fcf_margin_bear_multiplier": 1.0,
     "fcf_margin_note": null
   },
-  "erp": 0.0171,
-  "forward_earnings_yield": 0.0601,
+  "erp": 0.0169,
+  "forward_earnings_yield": 0.0599,
   "dilution_severity": "low",
   "dilution_comment": "許容範囲内 ✅",
   "risk_events": [
     {
       "type": "litigation",
-      "summary": "Antitrust lawsuit",
+      "summary": "Antitrust lawsuit against Freshworks",
       "impact": "high"
     },
     {
       "type": "regulatory",
-      "summary": "SEC investigation",
+      "summary": "Ongoing SEC regulatory investigation",
       "impact": "high"
     },
     {
       "type": "earnings",
-      "summary": "Earnings warning with competition risks 2025-2026",
+      "summary": "Earnings warning impacting 2025-2026 outlook",
       "impact": "mid"
     }
   ]

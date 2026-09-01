@@ -2,9 +2,9 @@
   "intrinsic_value_pt": 1846718108.1602201,
   "intrinsic_value_per_share": 28.541067626755556,
   "intrinsic_value_beta": 28.34,
-  "upside_percent_beta": -74.7,
+  "upside_percent_beta": -74.1,
   "intrinsic_value_rf": 149.76,
-  "upside_percent_rf": 33.6,
+  "upside_percent_rf": 36.8,
   "v0": 1846718108.1602201,
   "v0_note": "v0はβ込みCAPMベース（intrinsic_value_betaの参考値）。メインの理論株価計算根拠はdcf_components.v0_rm（market_return 10%固定・βなし）を参照すること。",
   "v0_adjusted": 1846718108.1602201,
@@ -21,31 +21,31 @@
     "1年後": {
       "future_value": 29.88,
       "value_growth_pct": 4.7,
-      "expected_return_pct": -73.3
+      "expected_return_pct": -72.7
     },
     "2年後": {
       "future_value": 31.29,
       "value_growth_pct": 9.6,
-      "expected_return_pct": -72.1
+      "expected_return_pct": -71.4
     },
     "3年後": {
       "future_value": 32.76,
       "value_growth_pct": 14.8,
-      "expected_return_pct": -70.8
+      "expected_return_pct": -70.1
     },
     "4年後": {
       "future_value": 34.3,
       "value_growth_pct": 20.2,
-      "expected_return_pct": -69.4
+      "expected_return_pct": -68.7
     },
     "5年後": {
       "future_value": 35.91,
       "value_growth_pct": 25.8,
-      "expected_return_pct": -68.0
+      "expected_return_pct": -67.2
     }
   },
-  "upside_percent": -74.5,
-  "calculation_date": "2026-08-31T19:58:21+09:00",
+  "upside_percent": -73.9,
+  "calculation_date": "2026-09-01T09:46:42+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + three_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "three_stage",
   "growth": {
@@ -365,7 +365,7 @@
     "roe_10yr_avg": 0.14630313403379497,
     "roe_years_used": 10,
     "roe_outlier_adj": true,
-    "current_price": 112.06999969482422,
+    "current_price": 109.48999786376953,
     "latest_revenue": 3751806000.0,
     "rpo": 212859000.0,
     "beta": 1.007,
@@ -399,11 +399,11 @@
     "alpha_uncapped": 0.6144731629419388,
     "per": 29.805851,
     "per_is_forward": false,
-    "per_adjusted": 26.77,
+    "per_adjusted": 26.16,
     "peg": 2.2445,
     "ps": 1.4383065,
     "ev_ebitda": 21.024,
-    "ma200": 67.05887487411499,
+    "ma200": 67.37697486877441,
     "forward_eps": 4.96161,
     "analyst_target_median": 93.0,
     "analyst_target_mean": 92.66667,
@@ -419,11 +419,11 @@
     "insider_latest_date": "2026-08-28",
     "analyst_vs_iv": 225.8,
     "max_eps": 4.1368,
-    "max_eps_per": 27.1,
+    "max_eps_per": 26.5,
     "max_eps_reliability": "HIGH"
   },
   "validation": {
-    "validated_at": "2026-08-31",
+    "validated_at": "2026-09-01",
     "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
@@ -449,7 +449,7 @@
   "tanuki_score": "WATCH",
   "funda_score": 65,
   "score_comment": "DCF信頼性LOW(FCF_Conversion_Rate方式・要注意フラグ)のためupside依存判定を抑制→WATCH",
-  "timing_score": 15,
+  "timing_score": 30,
   "sell_reason": null,
   "pre_rounding_score": "TRIM",
   "pre_rounding_comment": "割高(-74%超)、FCF黒字、売上安定成長",
@@ -514,7 +514,7 @@
     "shares_yr_3ago_label": "2023",
     "buyback_ttm": 41770000
   },
-  "net_current_assets_ratio": -0.0529,
+  "net_current_assets_ratio": -0.0541,
   "dupont": {
     "ni_ttm": 178616000,
     "revenue_ttm": 3877250000,
@@ -574,24 +574,24 @@
     "fcf_margin_bear_multiplier": 1.0,
     "fcf_margin_note": null
   },
-  "erp": 0.0013,
-  "forward_earnings_yield": 0.0443,
+  "erp": 0.0023,
+  "forward_earnings_yield": 0.0453,
   "dilution_severity": "positive",
   "dilution_comment": "自社株買いによる株主還元 ✅",
   "risk_events": [
     {
       "type": "litigation",
-      "summary": "Antitrust lawsuit against Cheesecake Factory",
+      "summary": "Antitrust lawsuit against Cheesecake Factory Inc",
       "impact": "high"
     },
     {
       "type": "regulatory",
-      "summary": "Ongoing SEC investigation",
+      "summary": "Ongoing SEC regulatory investigation",
       "impact": "high"
     },
     {
       "type": "earnings",
-      "summary": "Earnings warning amid 2025-2026 competition",
+      "summary": "Earnings warning impacting 2025 and 2026 outlook",
       "impact": "mid"
     }
   ]
