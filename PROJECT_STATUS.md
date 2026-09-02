@@ -166,6 +166,46 @@
   コード・データには変更なし。現存BACKLOG.md総数はブラッシュアップ後の
   機械カウントで**156件**。
 
+- **2026-09-01〜09-02**（指示書4件を順次実施、全てpush済み）:
+  1. **`[[DISCOVER-SUBSYSTEM-REMOVAL-1]]`**: Discoverサブシステム
+     （ニュース収集・カタリスト発掘・株価インパクト予測）本体を削除。
+     一次情報でなくGrok生成コンテンツへの依存を減らす方針の一環
+     （risk_fetcher.py撤去と同系統）。`config/discover_config.json`は
+     `registration_validator.py`・`docs/portfolio/index.html`が参照する
+     共有のティッカー区分設定ファイルと確認し削除対象外に明示的に除外。
+     関連する既存タスク7件（`CATALYST-DEDUP-1`等）もあわせてクローズ。
+  2. **`[[RISK-EVENTS-REMOVAL-1]]`**: `risk_fetcher.py`（Grok web検索に
+     よる簡易リスクイベント取得）を撤去。IV・DCF・TANUKI SCORE等の
+     計算系のいずれにも使われていない表示専用機能だったため。全100銘柄
+     フルパイプライン再生成でrisk_events削除以外の実質差分0件を確認。
+  3. **`[[MARKET-PULSE-LOCAL-DUAL-EXEC-1]]`**: Market Pulseの実際の
+     更新元がKoichiさんのローカル環境で稼働するWindowsタスク
+     スケジューラ（2026-05-06作成、リポジトリ管理外、FG_Level2向けの
+     目的で二重実行）だったと判明・削除。GitHub Actions単独化のため
+     `Market_Pulse_Update.yml`のcronをUTC21:25へ変更したところ、
+     `Market_Data_Daily_Update.yml`（同じくUTC21:25）と完全に同時刻に
+     なりpush競合リスクを一度作り込んでしまったことに気づき、
+     UTC21:35（2026-08-29時点の10分差設計）へ即座に是正した。
+  4. **`[[AVGO-CIK-HISTORY-WRONG-LEGACY-CIK-1]]`**: AVGOの旧CIK登録が
+     無関係な買収先企業（Broadcom Corporation）のデータを指す誤統合が
+     発覚。データ境界の是正ではなくAVGO自体をOn-a-journey管理対象から
+     除外する方針で解決（ポートフォリオ・TANUKI TAILいずれにも保有・
+     監視登録されていないことを確認済み）。既存の「銘柄削除時の必須
+     手順」に載っていない設定・データファイルが9件見つかり、Step 0
+     （削除前の全参照洗い出し）新設を含め手順書自体を恒久拡充した。
+
+  **副次発見**: `[[SEC-DATA-REDESIGN-OPERATIONAL-POLICY-1]]`の本文が
+  「残タスク（Stage 2〜3、未着手）」のまま2026-08-05時点から更新されて
+  おらず、実際にはStage 2・3・3a・3bまで全て実装完了していたという
+  陳腐化をAVGO対応の過程で発見・訂正。真の残タスクの精査中、
+  「MRVL/DELL旧CIK拡張データの粒度確認」が正式ID未採番のまま宙に
+  浮いていたことも発見し、`[[SECDATA-LEGACY-CIK-GRANULARITY-1]]`として
+  新規登録（優先度低〜未定）。
+
+  詳細はBACKLOG_DONE.md「2026-09-01（完了）」〜「2026-09-02②（完了）」
+  参照。新DB構築プロジェクトのコード・データには変更なし。現存
+  BACKLOG.md総数は機械カウントで**148件**。
+
 ---
 
 更新日: 2026-08-15（**フェーズ3「導出データ層の管理方法検討」完了**。

@@ -1,5 +1,75 @@
 # Claude Code 作業開始テンプレート
 
+最終更新: 2026-09-02（**セッション終了時ブラッシュアップ・
+2026-09-01〜09-02セッションサマリー**。指示書4件を順次実施した
+（全てpush済み）:
+
+1. `[[DISCOVER-SUBSYSTEM-REMOVAL-1]]`: Discoverサブシステム
+   （ニュース収集・カタリスト発掘・株価インパクト予測）本体を削除
+   （`src/discover/`3ファイル・`docs/discover/`一式・関連ワークフロー
+   2件・関連テスト）。一次情報でなくGrok生成コンテンツへの依存を
+   減らす方針の一環（risk_fetcher.py撤去と同系統）。
+   `config/discover_config.json`はDiscoverサブシステム固有ではなく
+   `registration_validator.py`・`docs/portfolio/index.html`が参照する
+   共有のティッカー区分設定ファイルと確認し削除対象外に明示的に除外。
+   関連する既存タスク7件（`CATALYST-DEDUP-1`・`DISCOVER-UTCJST-
+   DATE-MISMATCH-1`・`DISCOVER-IMPACT-PRED-GAPS-1`・`REPORT-
+   CATALYST-1`・`UI-DISCOVER-1`・`DISCOVER-PRECISION-GAPS-1`・
+   `DESIGN-16`）もあわせてクローズ。実装中に発見した`tests/test_flag_
+   consumer_audit_3.py`のcatalyst.py依存テスト1件・SYSTEM_MAP.mdの
+   追加陳腐化2箇所は承認を得た上で対応
+2. `[[RISK-EVENTS-REMOVAL-1]]`: `risk_fetcher.py`（Grok web検索による
+   簡易リスクイベント取得）を撤去。一次情報でなくGrok応答をそのまま
+   採用しており信ぴょう性が低く、IV・DCF・TANUKI SCORE等の計算系の
+   いずれにも使われていない表示専用機能だったため。`pipeline.py`の
+   配線一式・`stock.html`のカード表示・`report_txt_parser.py`の
+   パーサーを削除し、全100銘柄フルパイプライン再生成でrisk_events
+   削除以外の実質差分0件を確認
+3. `[[MARKET-PULSE-LOCAL-DUAL-EXEC-1]]`: 「朝7時頃に最新データを見たい」
+   という要望の調査中、Market Pulseの実際の更新元がGitHub Actions側の
+   cronではなく、Koichiさんのローカル環境で稼働するWindowsタスク
+   スケジューラ「MarketPulse_Update」（2026-05-06作成、リポジトリ
+   管理外）であることが判明。同スクリプトはFG_Level2（現在稼働して
+   いないシステム売買検討）向けの目的で二重実行されていた。ローカル
+   タスクはKoichiさんが別途削除し、GitHub Actions側`Market_Pulse_
+   Update.yml`のcronをUTC21:25へ変更して単独化。**その直後、
+   `Market_Data_Daily_Update.yml`（同じくUTC21:25）と完全に同時刻に
+   なり、両ワークフローとも末尾でgit push処理を持つためpush競合
+   リスクを一度作り込んでしまったことに気づき、UTC21:35（2026-08-29
+   時点の10分差設計）へ即座に是正した**
+4. `[[AVGO-CIK-HISTORY-WRONG-LEGACY-CIK-1]]`: AVGOの旧CIK登録
+   （`legacy_ciks=["1054374"]`）が無関係な買収先企業（Broadcom
+   Corporation）のデータを指しており、真の前身企業（Avago
+   Technologies LTD, CIK 1441634）と決算期が不一致という誤統合が
+   発覚。Koichiさんの判断により、データ境界の是正（CIK差し替え等）
+   ではなくAVGO自体をOn-a-journey管理対象から除外する方針で解決した。
+   ポートフォリオ・TANUKI TAILいずれにも保有・監視登録されていない
+   ことを確認済み。既存の「銘柄削除時の必須手順」を実際に適用する
+   過程で、手順に載っていない設定ファイル・データファイルが9件
+   （`maturity_config.py`・`growth_sanity.py`・`common/market_data/`
+   配下等）見つかり、Step 0（削除前の全参照洗い出し）新設を含め
+   手順書自体を恒久拡充した
+
+**副次発見**: `[[SEC-DATA-REDESIGN-OPERATIONAL-POLICY-1]]`の本文が
+「残タスク（Stage 2〜3、未着手）」のまま2026-08-05時点から更新されて
+おらず、実際にはStage 2・3・3a・3bまで全て実装完了していたという
+陳腐化をAVGO対応の過程で発見・訂正した。真の残タスクの精査中、
+「MRVL/DELL旧CIK拡張データの粒度確認」が正式ID未採番のまま宙に浮いて
+いたことも発見し、`[[SECDATA-LEGACY-CIK-GRANULARITY-1]]`として新規
+登録（優先度低〜未定）。
+
+詳細はBACKLOG_DONE.md「2026-09-01（完了）」〜「2026-09-02②
+（完了）」・PROJECT_STATUS.md参照。**次の本線は未定**。次セッションの
+着手候補:
+- `Market_Pulse_Update.yml`の次回平日サイクルでの実地確認（cron変更後
+  の完了時刻がJST7:00前か、次の土曜朝に金曜分データが反映されているか）
+- `[[SECDATA-LEGACY-CIK-GRANULARITY-1]]`（MRVL/DELL旧CIK拡張データの
+  粒度確認、優先度低〜未定、着手条件なし）
+- `[[SPAC-SHELL-MAINTAINED-FIELDS-FREEZE-CONSIDERATION-1]]`（優先度低、
+  意図的据え置き中）
+- `[[QUALITY-GATES-EPIC-1]]`（唯一の最高優先度エピック、Phase 4実装の
+  着手要否が複数セッションにわたり判断待ちのまま）
+
 最終更新: 2026-08-27（**セッション終了時ブラッシュアップ・本日
 セッションサマリー**。指示書5件を順次実施した（全てpush済み）:
 
