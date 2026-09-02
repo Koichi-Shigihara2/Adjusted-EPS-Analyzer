@@ -2,6 +2,88 @@
 
 ---
 
+## 2026-09-02（完了）
+
+### ✅ [MARKET-PULSE-LOCAL-DUAL-EXEC-1] Market Pulse更新のローカル/GitHub Actions二重実行の整理・GitHub Actions単独化
+**優先度:** 高（即日実装）
+**分類:** アーキテクチャ / Market Pulse / 運用
+**登録日:** 2026-09-02
+**完了日:** 2026-09-02
+**背景:** 「朝7時頃に最新データを見たい」という要望の調査中、Market
+Pulseの実際の更新元がGitHub Actions側のcronではなく、Koichiさんの
+ローカル環境で稼働するWindowsタスクスケジューラ「MarketPulse_Update」
+（2026-05-06作成、`C:\Users\shigi\AutoTrade\market_pulse_update\
+run_market_pulse.ps1`、リポジトリ管理外）であることが判明。同スクリプト
+は同じ処理（breadth_calculator.py→collect_and_send.py→git commit/
+push、コミットメッセージ書式もGitHub Actions側と同一）を毎日08:00・
+21:30 JSTの2回、土日含めて実行しており、GitHub Actions側のcronと
+実質的に重複していた。
+
+ローカルタスクの本来の設計意図（register_tasks_market_pulse.ps1の
+コメントより）: 08:00実行はGitHub Actions側の（当時の）遅延実態に
+合わせたもの、21:30実行はFG_Level2（システム売買検討、現在は稼働
+していない）の22:00 JSTシグナル生成に新鮮なデータを渡す目的だった。
+FG_Level2は検討段階で終了しており現在稼働していないため、21:30実行の
+存在意義も消滅している。
+
+現行cron（UTC21:35＝JST翌6:35頃想定）は実際には遅延（GitHub Actions
+基盤側の既知の混雑・障害により、観測範囲でUTC21:48〜翌05:32、最大約
+8時間の遅延実績あり）しており、7時台に間に合わないことが常態化して
+いた。このデータはダッシュボード閲覧用のみで自動売買等の判断には
+使われていない（Koichiさんに確認済み、システム売買検討は現在行って
+いない）ため、遅延に対する過度に保守的なバッファ設計は不要と判断。
+
+#### 対応内容
+1. Koichiさんがローカル側タスク・スクリプト一式を削除
+   （`Unregister-ScheduledTask`＋`C:\Users\shigi\AutoTrade\
+   market_pulse_update\`フォルダ削除、リポジトリ管理外のため
+   Claude Code側の対応不要）
+2. GitHub Actions側`Market_Pulse_Update.yml`のcronをUTC21:25へ変更
+   （`Market_Data_Daily_Update.yml`と同じ余裕設計に統一。
+   2026-08-29にUTC21:25へ調整済みの同ワークフローと同じ考え方で、
+   冬時間でも市場クローズ後の余裕を確保する設計）。土日については
+   月〜金（`1-5`）指定のままとし、UTC金曜21:25の発火がJST土曜06:25頃
+   の完了になるため土曜朝には金曜分のデータが自動反映される。日曜朝は
+   土曜が休場のため金曜分のまま据え置きとなるが、これは既存の
+   MP-BIZDAY-1の設計判断（市場休場中は前日比計算上も更新不要）通りで
+   あり変更不要
+3. MACRO PULSE（別サブシステム）の週次化も検討したが、Koichiさんの
+   最終判断により現状維持（対応不要）
+
+#### 確認事項
+このデータはダッシュボード閲覧用のみで自動売買等の判断には使われて
+いないため、GitHub Actions単独化に伴う遅延リスクは許容範囲と判断
+（Koichiさんに確認済み）。
+
+#### 検証結果
+- cron変更後、YAML構文エラーがないことを確認（PyYAMLで
+  `schedule.cron`の値が意図通り`"25 21 * * 1-5"`であることを確認）
+- 他ワークフローがこのワークフローの完了をworkflow_run等で待って
+  いないことを再確認（`grep -rln`全数確認、該当0件。
+  `Market_Data_Daily_Update.yml`のコメント内に本ワークフローの
+  cron時刻への言及が1箇所あるが、workflow_run等の機能的依存ではなく
+  「cron衝突回避の間隔」を説明するコメントのみ）
+- **申し送り（次回サイクル待ち）**: 以下2点は即日確認不可のため
+  次回サイクルでの確認が必要
+  1. 次回の平日実行（2026-09-02以降の初回平日）で、実際の完了時刻
+     （コミット履歴のタイムスタンプ）がJST7:00より前かを確認する
+  2. 次の土曜朝（JST）に、金曜分のデータが反映されていることを確認する
+
+#### 副次発見（対応せず報告のみ、判断不要な範囲拡大のため未着手）
+`.github/workflows/Market_Data_Daily_Update.yml`のcronコメント
+（11-14行目）が「Market_Pulse_Update.yml(21:35 UTC)との間隔は変更前
+5分→変更後10分に拡大」と記載しているが、本タスクの変更により両
+ワークフローのcronが完全に同時刻（UTC21:25）になったため、この
+間隔に関する記述が実態と食い違う状態になった。依頼書はMarket_Pulse_
+Update.yml単体の変更のみを指定しており、別ワークフローのコメント
+修正は範囲外と判断し、報告のみに留め変更していない。
+
+コミット: `4d53a51d55`（cron変更本体）・記録更新コミット（本エントリ、
+`git log`参照）。push後`git status`で`up to date with origin/kaihatsu`
+を確認済み。
+
+---
+
 ## 2026-09-01③（完了）
 
 ### ✅ [RISK-EVENTS-REMOVAL-1] risk_fetcher.py（RISK EVENTS機能）の完全撤去
