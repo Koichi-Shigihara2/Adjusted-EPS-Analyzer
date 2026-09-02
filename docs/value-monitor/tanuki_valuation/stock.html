@@ -821,6 +821,14 @@ function render(d) {
   const fcfCyclicalVolatility = FCF_CYCLICAL_VOLATILITY_TICKERS.has(ticker) && fcfEstimation.applied !== false;
   const fcfCyclicalDivergenceRatio = fcfEstimation.divergence_ratio;
 
+  // FCF-CONVRATE①（TRUST-SUMMARY-EPIC-1）: セクターがsector_conversion_rates
+  // に未収録のため、業種別の較正済みレートではなく汎用デフォルト値（0.70）が
+  // 機械的に使われている状態を検知・表示する。②と異なり固定ティッカーリストは
+  // 不要で、adjustments.py側で判定済みのrate_is_sector_defaultフラグのみで
+  // 判定する。②と同じ理由でappliedが明示的にFalseの間は表示しない。
+  const fcfRateIsSectorDefault = fcfEstimation.applied !== false && fcfEstimation.rate_is_sector_default === true;
+  const fcfConversionRateDisplay = fcfEstimation.conversion_rate;
+
   // GROWTH-STRUCTURAL-MISMATCH-CANDIDATES-1（TRUST-SUMMARY-EPIC-1骨子②）:
   // ハイパーグロース事業と成熟業種平均（Damodaran業種分類）との構造的
   // ミスマッチが原因分析で確定した銘柄の個別リスト。FCF_CYCLICAL_
@@ -977,6 +985,11 @@ function render(d) {
       <div style="margin-bottom:16px;padding:12px 16px;background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.4);border-radius:8px;font-size:13px;color:var(--yellow);line-height:1.6">
         ⚠️ <strong>FCF実力推定に注意（業績サイクル変動）</strong><br>
         <span style="font-size:12px">この銘柄は業界サイクルにより年度ごとのFCFが大きく変動するため、業種平均比率による推定値と実際の乖離が大きくなっています${fcfCyclicalDivergenceRatio ? `（直近乖離: ${fcfCyclicalDivergenceRatio}倍）` : ''}。</span>
+      </div>` : ''}
+      ${fcfRateIsSectorDefault ? `
+      <div style="margin-bottom:16px;padding:12px 16px;background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.4);border-radius:8px;font-size:13px;color:var(--yellow);line-height:1.6">
+        ⚠️ <strong>FCF転換率が未検証（セクター未収録）</strong><br>
+        <span style="font-size:12px">業種平均比率ではなくデフォルト値（${fcfConversionRateDisplay}）を使用しています。分類判定には使用しません。</span>
       </div>` : ''}
       ${fcfTransientItem ? `
       <div style="margin-bottom:16px;padding:12px 16px;background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.4);border-radius:8px;font-size:13px;color:var(--yellow);line-height:1.6">

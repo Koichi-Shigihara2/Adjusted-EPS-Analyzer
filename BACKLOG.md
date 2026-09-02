@@ -4316,7 +4316,8 @@ LRCX, ENTG, LYFT）。残り28銘柄はconversion_rateが計算・表示され�
 **①③の今後の扱い（2026-07-22訂正）**: 「②と同型に統合」という上記の
 方針は撤回し、3件に分けて設計し直す:
 - ①: FCFEstimationResultに`rate_is_sector_default`等のフラグを追加し、
-  機械的に検知・表示する設計（固定リスト不要）
+  機械的に検知・表示する設計（固定リスト不要） → **2026-09-02 実装完了**
+  （下記参照）
 - ③: ticker単位の表示ではなく、fcf_conversion_config.json側に
   セクターカテゴリ単位の開発者向けメタ情報として持たせる設計
   （画面表示は変更しない）
@@ -4324,7 +4325,8 @@ LRCX, ENTG, LYFT）。残り28銘柄はconversion_rateが計算・表示され�
   前提でネストされているが、stock.htmlはticker集合の所属のみで判定し
   applied状態を見ないため、LITE等でapplied=Falseの間、両者の表示が
   食い違う。独立バグとして修正要 → **2026-09-02 修正完了**（下記参照）
-①③は実装未着手。詳細は「次セッション着手順序」欄参照。
+③は実装未着手。詳細は「次セッション着手順序」欄参照。①も2026-09-02
+実装完了（下記参照）。
 
 **②の修正完了（2026-09-02）**: `docs/value-monitor/tanuki_valuation/
 stock.html`の`fcfCyclicalVolatility`判定に`fcfEstimation.applied !== false`
@@ -4336,9 +4338,44 @@ stock.html`の`fcfCyclicalVolatility`判定に`fcfEstimation.applied !== false`
 警告非表示に一致、SITM（applied=True・divergence_ratio=1.4）は両者とも
 警告表示（「直近乖離 1.4倍」）に一致。pytest 1031件全通過・
 `common/sec_data/audit.py`（🔴なし）・`report_consistency_check.py
---fail-on-ng`（NG=0）も確認済み。①（rate_is_sector_defaultフラグ追加）・
-③（fcf_conversion_config.jsonメタ情報追加）は本セッションでは対応せず、
-引き続き未着手のまま。
+--fail-on-ng`（NG=0）も確認済み。③（fcf_conversion_config.jsonメタ情報
+追加）は本セッションでは対応せず、引き続き未着手のまま。
+
+**①の実装完了（2026-09-02）**: `calculator/adjustments.py`の
+`FCFEstimationResult`に`rate_is_sector_default: bool = False`フィールドを
+追加。`estimate_fcf_from_eps()`のconversion_rate決定ロジック（ticker_
+override／ni_direct／sector）の`else`節を、sectorが`sector_conversion_
+rates`に実在するか`default`値（現状0.70）へのフォールバックかで分岐させ、
+フォールバック時のみTrueとする（固定ティッカーリストは不要、フラグの
+みで機械的に判定）。conversion_rate決定前の早期リターン（config不在・
+EPSデータなし等、計6箇所）ではフラグの意味が成立しないため明示設定せず
+dataclassデフォルトのFalseのままとした。conversion_rateの計算値自体は
+変更していない（`sector_rates.get(sector, sector_rates.get('default',
+0.70))`を分岐に書き換えたのみで返り値は同一）。
+
+report.txt（`pipeline.py`）・stock.htmlの両方に、②のFCF_CYCLICAL_
+VOLATILITY_TICKERSと同じスタイルで新規警告
+「⚠️ FCF転換率が未検証（セクター未収録）」を追加。表示条件は
+`fcf_estimation.applied`かつ`fcf_estimation.rate_is_sector_default`
+（appliedが明示的にFalseの間は表示しない。②の教訓を踏襲）。
+
+検証: sector未収録の実害範囲は2026-07-21調査時点の18銘柄から現時点の
+実データで**47銘柄**に拡大していた（当時未収録だったBROS/CAKE/CPRT/
+CSGP/ELF/HQY/LLY/SPIR/XOM等がsector値を持つが`sector_conversion_rates`
+に未収録、AAPL/ADBE/NVDA/TSLA等多数がsector値自体が空文字列のまま）。
+現行99銘柄の本番latest.jsonを全件スキャンし、新ロジックによる
+conversion_rateの期待値（sector一致／ticker_override／defaultの3分岐）
+と実データのconversion_rateを突合した結果、**全99銘柄で不一致0件**
+（＝conversion_rate計算値がフラグ追加により変化していないことを確認）。
+AAPL（sector=''→True）・SITM（Semiconductor収録→False）・GOOGL
+（ticker_override→False）・LITE（applied=False→False）の4銘柄で実際に
+`pipeline.py`を再実行し、report.txt/latest.jsonへの新フィールド・警告
+文言の反映を個別確認（conversion_rate/estimated_fcf/intrinsic_value_
+per_shareはAAPLで再実行前後バイト完全一致を確認）。この4銘柄の再生成
+データ（時価等が実行時点の値に更新される）はコミット対象外として
+revertし、コード変更のみをコミットしている。pytest 1031件全通過・
+`common/sec_data/audit.py`（🔴なし）・`report_consistency_check.py
+--fail-on-ng`（NG=0）も確認済み。
 
 **過去記録の不正確性（新規発見）**: [[FCF-CONVRATE-DESIGN-LIMIT-1]]
 （2026-07-14完了記録）の「oifcff.xlsとの突合でEBIT(1-t)/Revenue比率を

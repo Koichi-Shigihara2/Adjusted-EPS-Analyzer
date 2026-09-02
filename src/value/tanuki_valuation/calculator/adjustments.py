@@ -1368,6 +1368,13 @@ class FCFEstimationResult:
     ma_addback_excluded: float = 0.0  # CWAN-SNPS-MA-DISTORTION-1: 控除した「買収・統合関連」加算額
     ma_addback_detected_but_not_applied: float = 0.0  # FCF-EST-DIRECTION-GUARD-1: 方向性ガードにより
                                     # 控除しなかった「買収・統合関連」加算の検出額（0円なら未検出 or 控除適用済み）
+    rate_is_sector_default: bool = False  # TRUST-SUMMARY-EPIC-1①: conversion_rateが
+                                    # sector_conversion_ratesに未収録のセクターのため、
+                                    # 'default'値（現状0.70）へフォールバックした場合True。
+                                    # ticker_override・ni_direct・sector収録済みの場合はFalse。
+                                    # conversion_rate決定前の早期リターン（config不在・EPS
+                                    # データなし等）ではフラグの意味が成立しないためFalseのまま
+                                    # （デフォルト値をそのまま使用、明示設定しない）。
 
     def to_dict(self):
         return {
@@ -1383,6 +1390,7 @@ class FCFEstimationResult:
             "divergence_warning": self.divergence_warning,
             "ma_addback_excluded": self.ma_addback_excluded,
             "ma_addback_detected_but_not_applied": self.ma_addback_detected_but_not_applied,
+            "rate_is_sector_default": self.rate_is_sector_default,
         }
 
 
@@ -1688,12 +1696,21 @@ def estimate_fcf_from_eps(
     if ticker in ticker_overrides:
         conversion_rate = ticker_overrides[ticker]['conversion_rate']
         rate_source = f"ticker_override({ticker_overrides[ticker]['reason'][:30]})"
+        rate_is_sector_default = False
     elif use_ni_direct:
         # 保険・金融は調整後純利益をそのままFCFとして使用（転換率1.0）
         conversion_rate = 1.0
         rate_source = f"ni_direct({industry or sector})"
+        rate_is_sector_default = False
     else:
-        conversion_rate = sector_rates.get(sector, sector_rates.get('default', 0.70))
+        # TRUST-SUMMARY-EPIC-1①: sector_conversion_ratesに実在するセクターか、
+        # 'default'値（現状0.70）へのフォールバックかを区別して検知する。
+        if sector in sector_rates:
+            conversion_rate = sector_rates[sector]
+            rate_is_sector_default = False
+        else:
+            conversion_rate = sector_rates.get('default', 0.70)
+            rate_is_sector_default = True
         rate_source = f"sector({sector})"
 
     # ── EPSアナライザーから調整済みEPSを取得 ──
@@ -1869,4 +1886,5 @@ def estimate_fcf_from_eps(
         divergence_warning=divergence_warning,
         ma_addback_excluded=ma_addback_applied,
         ma_addback_detected_but_not_applied=ma_addback_skipped,
+        rate_is_sector_default=rate_is_sector_default,
     )

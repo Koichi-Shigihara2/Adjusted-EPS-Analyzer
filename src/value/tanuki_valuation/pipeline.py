@@ -1670,6 +1670,14 @@ class TanukiValuationPipeline:
                     L.append(f"⚠️ FCF実力推定に注意（業績サイクル変動）: 直近乖離 {_cyclical_dr}倍")
                     L.append("   [業界サイクルにより年度ごとのFCFが大きく変動するため、業種平均比率")
                     L.append("    による推定値と実際の乖離が大きくなっています。分類判定には使用しません。]")
+            # FCF-CONVRATE①（TRUST-SUMMARY-EPIC-1）: セクターがsector_conversion_rates
+            # に未収録のため、業種別の較正済みレートではなく汎用デフォルト値（0.70）が
+            # 機械的に使われている状態を検知・明示する。②（FCF_CYCLICAL_VOLATILITY_
+            # TICKERS）と異なり固定ティッカーリストは使わず、adjustments.py側で
+            # 判定済みのrate_is_sector_defaultフラグのみで判定する。
+            if fcf_est.get("rate_is_sector_default"):
+                L.append("⚠️ FCF転換率が未検証（セクター未収録）: 業種平均比率ではなく")
+                L.append(f"   デフォルト値（{fcf_conv}）を使用しています。分類判定には使用しません。")
             # FCF-CONVRATE②派生（KO-SPIR-CF-CAUSE-UNCONFIRMED-1）: 生FCFが銘柄固有の
             # 一過性項目（税務訴訟・M&A偶発対価の精算・事業売却益等）で押し下げられている
             # と10-K一次情報で確定した銘柄への注記。FCF_CYCLICAL_VOLATILITY_TICKERS
