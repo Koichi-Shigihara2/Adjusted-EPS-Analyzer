@@ -811,7 +811,14 @@ function render(d) {
   // 個別ティッカーの手動リストとする（自動化しない）。将来3件目以降を追加する場合も、
   // 業界サイクル起因かどうかの個別原因分析を経てから手動追加すること。
   const FCF_CYCLICAL_VOLATILITY_TICKERS = new Set(['SITM', 'LITE']);
-  const fcfCyclicalVolatility = FCF_CYCLICAL_VOLATILITY_TICKERS.has(ticker);
+  // TRUST-SUMMARY-EPIC-1②表示不一致バグ修正（2026-09-02）: 警告文言は
+  // 「業種平均比率による推定値と実際の乖離」というFCF_Conversion_Rate方式
+  // 固有の説明であり、fcf_estimation.applied=False（生FCFフォールバック
+  // 採用でconversion_rate方式自体が使われていない）の間は警告内容が実態と
+  // 一致しなくなる。report.txt側（pipeline.py）と同じ条件
+  // （`not fcf_est.get("applied", True)`の否定＝appliedが明示的にFalseで
+  // ない場合のみ表示）に統一する。
+  const fcfCyclicalVolatility = FCF_CYCLICAL_VOLATILITY_TICKERS.has(ticker) && fcfEstimation.applied !== false;
   const fcfCyclicalDivergenceRatio = fcfEstimation.divergence_ratio;
 
   // GROWTH-STRUCTURAL-MISMATCH-CANDIDATES-1（TRUST-SUMMARY-EPIC-1骨子②）:

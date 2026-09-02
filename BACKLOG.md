@@ -4323,8 +4323,22 @@ LRCX, ENTG, LYFT）。残り28銘柄はconversion_rateが計算・表示され�
 - ②表示不一致バグ（新規発見）: report.txtはfcf_estimation.applied=True
   前提でネストされているが、stock.htmlはticker集合の所属のみで判定し
   applied状態を見ないため、LITE等でapplied=Falseの間、両者の表示が
-  食い違う。独立バグとして修正要
-いずれも実装未着手。詳細は「次セッション着手順序」欄参照。
+  食い違う。独立バグとして修正要 → **2026-09-02 修正完了**（下記参照）
+①③は実装未着手。詳細は「次セッション着手順序」欄参照。
+
+**②の修正完了（2026-09-02）**: `docs/value-monitor/tanuki_valuation/
+stock.html`の`fcfCyclicalVolatility`判定に`fcfEstimation.applied !== false`
+条件を追加し、report.txt（`pipeline.py`）側の
+`not fcf_est.get("applied", True)`ゲートと同一条件に統一した（appliedが
+明示的にFalseでない場合のみ警告表示）。修正はreport.txt/stock.html間の
+選択肢1（report.txt側を正としてstock.htmlを合わせる）で実施。
+実データでの検証: LITE（applied=False）はreport.txt・stock.htmlとも
+警告非表示に一致、SITM（applied=True・divergence_ratio=1.4）は両者とも
+警告表示（「直近乖離 1.4倍」）に一致。pytest 1031件全通過・
+`common/sec_data/audit.py`（🔴なし）・`report_consistency_check.py
+--fail-on-ng`（NG=0）も確認済み。①（rate_is_sector_defaultフラグ追加）・
+③（fcf_conversion_config.jsonメタ情報追加）は本セッションでは対応せず、
+引き続き未着手のまま。
 
 **過去記録の不正確性（新規発見）**: [[FCF-CONVRATE-DESIGN-LIMIT-1]]
 （2026-07-14完了記録）の「oifcff.xlsとの突合でEBIT(1-t)/Revenue比率を
