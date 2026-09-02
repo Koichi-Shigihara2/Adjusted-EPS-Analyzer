@@ -2,8 +2,11 @@ name: Market_Pulse_Update
 
 on:
   schedule:
-    - cron: "25 21 * * 1-5"  # UTC21:25=JST翌6:25頃、月〜金のみ
-                              # （Market_Data_Daily_Updateと同じ余裕設計）
+    - cron: "35 21 * * 1-5"  # UTC21:35=JST翌6:35頃、月〜金のみ
+                              # （2026-09-02: Market_Data_Daily_Update
+                              # と同時刻〈21:25〉に揃えたところpush競合
+                              # リスクが再発したため、元の10分差に復元。
+                              # 7時台閲覧目標には引き続き十分な余裕あり）
   workflow_dispatch:
     branches:
       - kaihatsu
