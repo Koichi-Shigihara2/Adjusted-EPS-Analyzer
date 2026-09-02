@@ -82,6 +82,30 @@ Update.yml単体の変更のみを指定しており、別ワークフローの�
 `git log`参照）。push後`git status`で`up to date with origin/kaihatsu`
 を確認済み。
 
+#### 続き（2026-09-02②、cron重複解消）
+上記「副次発見」で報告した通り、本タスクの変更（Market_Pulse_Update.yml
+のcronをUTC21:25へ変更）により`Market_Data_Daily_Update.yml`（同じく
+UTC21:25）と完全に同時刻になり、両ワークフローとも末尾でgit pull
+--rebase→pushを行うため2026-08-29に意図的に設けていた10分差（push競合
+回避）が消滅していたことが即座に問題として顕在化し、即日で修正した。
+
+**対応**: `Market_Pulse_Update.yml`のcronを`"25 21 * * 1-5"`→
+`"35 21 * * 1-5"`（UTC21:35、2026-08-29時点の10分差設計に復元）へ
+変更。`Market_Data_Daily_Update.yml`のcron（21:25）自体は変更せず。
+同ファイルのコメント（「Market_Pulse_Update.yml(21:35 UTC)との間隔は
+変更前5分→変更後10分に拡大」）は、Pulse_Update側が21:35 UTCに戻った
+ことで記述内容が再び実態と一致するため変更不要と判断（依頼書の
+「必要なら文言を整理する」の判断として、今回は整理不要）。
+
+**検証**: 両ファイルのcron値をPyYAMLで確認
+（Daily_Update=`25 21 * * 1-5`・Pulse_Update=`35 21 * * 1-5`）。
+YAML構文エラーなし。21:35 UTC=JST翌6:35頃は7時台閲覧目標に引き続き
+十分な余裕あり（10分ずらしても目標に影響なし）。
+
+コミット: `19326420b5`（cron復元本体）・記録更新コミット（本追記、
+`git log`参照）。push後`git status`で`up to date with origin/kaihatsu`
+を確認済み。
+
 ---
 
 ## 2026-09-01③（完了）
