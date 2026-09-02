@@ -2,6 +2,909 @@
 
 ---
 
+## 2026-09-02③（完了）
+
+### ✅ [MARKETDATA-LAYER-CONSTRUCTION-1] common/market_data/新設（yfinance統合層）— 全12ファイル＋collect_asset_flow()6資産とも切替完了（低優先度3件は判断保留）
+**優先度:** 高（新DB構築プロジェクト フェーズ1の本線、`common/sec_data`
+統合が2026-08-07に実質完了したことに伴う次の優先タスク）
+**状態:** 本番消費者8＋診断ツール2＋周辺ツール2の全12ファイルに加え、
+`collect_and_send.py::collect_asset_flow()`のSHV等6資産
+（SHV/GLD/TLT/LQD/HYG/SPY）も`common.market_data.reader`経由へ切替完了
+（`[[MARKETDATA-COLLECT-ASSET-FLOW-UNTRACKED-1]]`、2026-08-13解消）。
+低優先度3件（`[[MARKETDATA-CWAN-FROZEN-DATA-SUSPECT-1]]`・
+`[[MARKETDATA-SP500-SCRAPE-INVALID-TICKERS-1]]`・`[[MARKETDATA-VIX9D-
+DATA-GAP-1]]`）は引き続き判断保留中
+**分類:** アーキテクチャ / 新DB構築プロジェクト フェーズ1
+**登録日:** 2026-08-07（本来は事前調査着手時点で登録すべきだったが
+未登録のまま3回の投資調査を実施していたため、本エントリで遡って
+正式登録する）
+**更新日:** 2026-08-12（着手順序6-2`backfill_tech_pulse.py`（QQQ/SPY
+取得）が**完了**。前提作業として`reader.py`へ`get_price_series_as_of()`
+（任意過去基準日起点のトレイリングウィンドウ取得、共通実装
+`_price_series_ending_at()`へ`get_price_series()`ともリファクタ）を
+新規追加した上で本体切替。「実行時点で1回だけ取得し全エントリで使い回す」
+旧設計思想は維持。51件のmissingエントリ全件で`--dry-run`実行・旧実装との
+`tp_score`/`tp_label`突合を実施し、`_tp_label()`バケット判定のクロスは
+0件と確認。詳細・検証結果はBACKLOG_DONE.md「2026-08-12（完了）」着手順序
+6-2参照（コミット`4a864bc1c`）。**これにより着手順序4〜6（本番消費者8＋
+診断ツール2＋周辺ツール2の全12ファイル）が完了し、`common/market_data/`
+構築プロジェクト自体が完了**。一連の切替作業中に発見した別課題群を
+`[[MARKETDATA-CWAN-FROZEN-DATA-SUSPECT-1]]`・`[[MARKETDATA-SP500-
+SCRAPE-INVALID-TICKERS-1]]`・`[[MARKETDATA-VIX9D-DATA-GAP-1]]`・
+`[[STONKS-SILO-CLI-TICKERS-SHADOW-1]]`として登録済み（本線外・低優先度、
+未対応）。誤って「バグ」登録した`[[MARKETDATA-DAILY-UNADJUSTED-PRICE-
+DIVIDEND-DRIFT-1]]`は事実確認調査により前提の誤りが判明し訂正・クローズ
+済み。詳細は下記「着手順序」参照）
+**更新日:** 2026-08-13（新DB構築プロジェクト フェーズ1〜3総点検の結果、
+`collect_and_send.py::collect_asset_flow()`のSHV等6資産
+（DGS3MO以外の全6資産）が`_fetch_hist_legacy()`＝yfinance直接呼び出しの
+まま未切替であり、かつBACKLOG.md本体に専用エントリが存在しない
+「追跡漏れ」だったことが判明。`[[MARKETDATA-COLLECT-ASSET-FLOW-
+UNTRACKED-1]]`として新規登録した。見出し・状態欄を「実装完了（全12
+ファイル完了）」から実態に合わせて訂正。実装コード変更なし）
+**更新日:** 2026-08-13（`[[MARKETDATA-COLLECT-ASSET-FLOW-
+UNTRACKED-1]]`の切替実装が完了し**解消**（コミット`d021216e8`）。
+`SHV`を`fetcher.py::INDEX_ETF_COMMODITY_SYMBOLS`へ追加・バックフィル
+（他資産と同じ1,408件、2021-01-04〜）した上で、`collect_asset_flow()`の
+SHV/GLD/TLT/LQD/HYG/SPY6資産を`fetch_recent_records()`経由に切替。
+唯一の呼び出し元だった`_fetch_hist_legacy()`・`import yfinance as yf`も
+削除し、`collect_and_send.py`から外部API直接呼び出しが完全に排除
+された。6資産全数で切替前後の出力が完全一致（`value`/`change_pct`/
+`date`のdiff 0件）することを確認済み、pytest回帰なし。低優先度3件
+（CWAN/SP500スクレイピング/VIX9D）は本対応のスコープ外のため引き続き
+判断保留のまま残る。詳細はBACKLOG_DONE.md「2026-08-13（完了）」
+`[[MARKETDATA-COLLECT-ASSET-FLOW-UNTRACKED-1]]`参照。見出しから
+「collect_asset_flow()6資産・低優先度3件は未解決」を削除し解消を反映）
+**発見:** `common/market_data/`新設事前調査・実装設計投資調査（チャット
+記録、2026-08-07）
+
+#### 背景・投資調査サマリー
+`INPUT_DATA_TOBE.md` 2-B（yfinance層設計）・`MIGRATION_CHECKLIST.md`
+Step1に基づき、3回の投資調査を実施済み：
+
+1. **使用実態洗い出し**：`INPUT_DATA_AS_IS.md`記載の「11ファイル」を
+   実コードで再確認した結果、`common/sec_data/audit.py`
+   （`audit_beta_drift()`）が見落とされており実際は**12ファイル**と
+   判明（`[[MARKETDATA-AS-IS-AUDIT-PY-OMITTED-1]]`、`INPUT_DATA_
+   AS_IS.md`・`INPUT_DATA_TOBE.md`とも訂正済み）。既知の重複取得
+   パターン（現在株価2系統・PER/PEG/PSR/EV_EBITDA3系統・
+   アナリストコンセンサス2系統・β3系統・`^GSPC`のMarket Pulse内
+   4重取得）を全て実データで再確認し、`^GSPC`4重取得は
+   `collect_and_send.py`内の4箇所（行292・652・682・750）と特定した。
+2. **3区分分類**（`MIGRATION_CHECKLIST.md`準拠）：本番消費者8
+   （`pipeline.py`・`data_fetcher.py`・`beta_fetcher.py`・
+   `hypecore.py`・`valuation_fetcher.py`・`collect_and_send.py`・
+   `breadth_calculator.py`・`collect.py`）・診断ツール2
+   （`score_verifier.py`・`audit.py`）・周辺ツール2
+   （`backfill_tech_pulse.py`・`extract_key_facts.py`）。
+3. **実装設計**：`data_fetcher.py`の`.info`単発呼び出しが抽出する
+   全フィールドを洗い出し3サブレイヤーへ仕分け、`fetcher.py`/
+   `reader.py`API設計案・リトライ機構統合の影響範囲・GitHub Actions
+   スケジュールとレート制限スタガリング案・`audit.py`の扱いを設計。
+
+#### 設計確定事項（2026-08-07、投資調査＋ユーザー判断）
+
+**保存構造・API設計**:
+```
+common/market_data/
+  fetcher.py・reader.py（sec_data/と同型構成）
+  daily/{SYMBOL}.json        # 日次価格層
+  attributes/{SYMBOL}.json   # 週次準静的属性層
+  analyst_history/{SYMBOL}.json  # イベント履歴層
+```
+`reader.py` API: `get_latest_price`・`get_price_series`・
+`get_ma_deviation`（`price_series`から都度計算、`twoHundredDayAverage`
+事前計算値は保存しない）・`get_attributes`・`get_analyst_events`・
+`get_calendar`・`get_index_series`・`get_sp500_constituents_prices`
+
+**取得方式（Step1案C採用）**:
+日次バッチ: `.history()`のみで株価・出来高取得→`daily/`へ
+週次バッチ: `.info`丸ごと取得→`attributes/`へ（PER/PEG/PSR/EV_EBITDA/
+β/セクター/業種/配当/株式数/Forward EPS/アナリスト目標株価コンセンサス
+を含む）
+
+**【重要・仕様変更】TANUKI VALUATION・STONKS SILOの株価仕様変更**:
+現状、`data_fetcher.py`・`valuation_fetcher.py`は市場取引時間中に
+リアルタイム株価を取得している（`TANUKI_VALUATION_Update.yml`平日
+14:05 UTC・`Stonks_Silo_Update.yml`平日15:05 UTC、いずれも米国市場
+取引時間中）。統合後は前日終値ベース（日次バッチ、市場クローズ後
+21:35 UTC付近に一本化）に仕様変更する。DCF計算・スコアリングに使用
+する株価の性質が「取引時間中の変動値」から「確定した前営業日終値」に
+変わる。ユーザー判断により決定（2026-08-07）。
+
+**`audit.py`（12番目消費者）の扱い**:
+`reader.get_attributes()["beta"]`経由に切替。`beta_fetcher.py`とは
+独立に`reader.py`を参照する（診断ツールが本番消費者ロジックに依存
+しない設計を維持）。
+
+#### 設計確定事項（続き、2026-08-08、未決定事項9件の最終確定）
+2026-08-07時点の未決定事項9件（3原則照合による追加6件＋既存3件）
+それぞれについて投資調査（チャット記録、2026-08-07）で具体案を提示し、
+以下の内容で全件確定した：
+
+1. 営業日連続性保証：`pandas_market_calendars`を新規依存として採用
+   （NYSE公式カレンダー準拠、正確性優先。既存の`src/market/
+   macro_pulse/05_main.py::us_holidays()`は米国連邦祝日〈Columbus
+   Day・Veterans Day含む、Good Friday除く〉でありNYSE取引カレンダー
+   とは異なるため流用不可と確認済み）。`get_price_series()`は
+   `nyse.valid_days()`と実際のレコード日付集合を突合し、説明のつかない
+   欠損があれば警告フラグ付きで返す。`get_ma_deviation(window=200)`
+   は200日分未満のデータしかない場合はNoneを返す。
+2. `attributes/{SYMBOL}.json`へ`fetched_at`（ISO8601 UTC）フィールドを
+   追加する。
+3. `daily/`・`attributes/`書き込みをアトミック化する（`tempfile`で
+   同一ディレクトリに一時ファイルを作成→`os.replace()`、Python標準
+   ライブラリのみで実装、外部依存不要）。
+4. 層またぎ再計算の禁止を`reader.py`のdocstringに明記する（実行時
+   強制は過剰設計と判断、コメントレベルの明記に留める）。
+5. 保存前検証ロジック（恒等式検証）:
+   - 時価総額乖離許容率: `abs(computed_mcap - reported_mcap) <=
+     max(reported_mcap * 0.02, 1_000_000)`（`common/sec_data/
+     parser.py`のBS恒等式検証`_BS_IDENTITY_TOL_REL = 0.02`の相対2%を
+     踏襲し、小型株向けに絶対フロア$1,000,000を追加）
+   - 52週高安の検証は日次バッチ実行時点でのみ行う（過去データの
+     都度再検証はしない、sec_data既存パターン〈CHECK29等〉と整合）
+   - 検証失敗時は警告フラグ付きで保存する（保存拒否はしない、
+     `_validation_warnings: [...]`フィールドを追加。理由:
+     `fy_collision_log.json`等の既存パターンと同じ「検知のみ・
+     自動修正なし・保存継続」方式を踏襲し、保存拒否による日次欠損が
+     項目1の連続性保証に穴を作る副作用を避けるため）
+   - 検証結果は`common/market_data/{SYMBOL}/
+     market_data_violations_log.json`（`fy_collision_log.json`型、
+     0件でも毎回書き込む）に記録する
+6. `audit.py`のβ乖離監査（`beta_config.json`との外部妥当性監視）と
+   `fetcher.py`保存前検証（同一スナップショット内の内部整合性
+   ゲート）は検証対象が異なるため、両方維持する（役割分担を設計
+   文書に明記）。
+7. `twoHundredDayAverage`は保存しない（`get_ma_deviation`が
+   `price_series`から都度計算する設計を最終確定。`[[HYPECORE-MISC-
+   NAMING-GAPS-1]]`③既知の別データソース問題を踏まえ独自計算へ
+   一本化）。アナリスト目標株価コンセンサス（`targetMeanPrice`等）は
+   `.info`由来のスナップショット値のため`attributes/`へ格納し、
+   アップグレード・ダウングレード等の真のイベントを扱う
+   `analyst_history/`とは明確に区別する。
+8. `workflow_run`連鎖トリガーを採用する：`Market_Data_Daily_
+   Update.yml`（市場クローズ後、21:35 UTC付近想定）完了後にTANUKI
+   VALUATION・STONKS SILOをworkflow_runでトリガーする（前日終値
+   ベース化に伴うレース条件〈日次バッチ未完了時に読みに行くリスク〉
+   回避のため）。週次`attributes/`バッチは本番消費者を待たせる必要が
+   ないため独立cronのまま維持する。
+9. `[[NETCASH-DUAL-CALC-1]]`とは独立タスクとして並行進行する。
+   market_data層の`attributes/`には`totalDebt`を含めるが、STONKS
+   SILOの`net_cash`計算をmarket_data経由の`totalDebt`に置き換える
+   新規実装は行わない（`[[NETCASH-DUAL-CALC-1]]`の既存対応方針＝
+   `SECReader.get_net_cash()`〈SEC XBRLベース〉への統一を優先する）。
+
+これにより未決定事項9件は全件解消した。
+
+#### 着手順序
+1. **【完了・2026-08-10】** `fetcher.py`新設（`.history()`・`.download()`
+   呼び出しの一元化、`pandas_market_calendars`依存追加含む）。
+   `common/market_data/fetcher.py`に`fetch_daily_prices()`（`daily/`）・
+   `fetch_weekly_attributes()`（`attributes/`）・`fetch_analyst_events()`
+   （`analyst_history/`）を実装。保存前検証（`validate_price_record()`・
+   `validate_attributes_record()`）・`{SYMBOL}/market_data_violations_log.json`
+   への毎回書き込み・`tempfile`→`os.replace()`アトミック書き込み・
+   `pandas_market_calendars`によるNYSE営業日判定（`is_trading_day()`）を
+   確定事項1〜7通りに実装済み。AAPL・IONQ（小型株）・`^GSPC`（指数）の
+   3層実データ取得動作確認・保存前検証の発火確認（正常系/異常系）・既知の
+   祝日/臨時休場日（感謝祭・独立記念日振替休場・ハリケーンサンディ2012・
+   9/11 2001）でのNYSEカレンダー認識確認・アトミック書き込みの中断耐性
+   確認まで完了。新規テスト`tests/test_market_data_fetcher.py`26件PASS、
+   pytest全体531 passed/2 known-failed（`[[TEST-STALE-IV-1]]`、無関係）。
+   既存消費者はまだ本モジュールを参照しないためシステムへの影響なし。
+   `reader.py`未実装のため`__init__.py`から`reader`は未import。
+2. **【完了・2026-08-10】** `reader.py`新設（API群の実装）。
+   `common/market_data/reader.py`に`get_latest_price`・`get_price_series`・
+   `get_ma_deviation`・`get_attributes`・`get_analyst_events`・
+   `get_calendar`・`get_index_series`・`get_sp500_constituents_prices`を
+   実装。`get_price_series()`は`pandas_market_calendars`で期待される
+   営業日集合と実レコード日付集合を突合し、欠損があれば`_gap: True`の
+   プレースホルダーで埋めて返す設計（確定事項1）。`get_ma_deviation()`は
+   window日分の実データ（欠損を除く）が揃わない場合`None`を返す
+   （`twoHundredDayAverage`等の事前計算値は保存せず都度計算、確定事項7）。
+   全APIのdocstringに層またぎ再計算禁止（確定事項4）を明記。
+   `get_calendar()`はfetcher.pyが次回決算日等を未取得のため現状常に
+   空dictを返す（将来`attributes/`に`calendar`キーが追加されれば
+   reader.py側の変更なしに対応する設計）。`__init__.py`に`fetcher`・
+   `reader`をexport。AAPL・IONQ・`^GSPC`の実データ（fetcher.py実行）＋
+   合成30営業日データ（欠損なし/欠損注入の両方）で全API動作確認・
+   未フェッチ銘柄への全API呼び出しが例外なくNone/空リスト/空dictを返す
+   ことを確認。新規テスト`tests/test_market_data_reader.py`27件PASS、
+   pytest全体558 passed/2 known-failed（`[[TEST-STALE-IV-1]]`、無関係）。
+   動作確認で生成したAAPL/IONQ/^GSPCの実データ（`daily/`・`attributes/`・
+   `analyst_history/`・`{TICKER}/market_data_violations_log.json`計12
+   ファイル）は手動テスト由来のため今回のコミットには含めず、本番
+   GitHub Actionsバッチが最初に生成する際に正式にコミットする方針とした
+   （`common/sec_data/data/`と同様、これらのディレクトリ自体は追跡対象
+   とすべきものであり`.gitignore`追加は行っていない）。
+3. **【完了・2026-08-10】** 定期実行ワークフロー新設。
+   `.github/workflows/Market_Data_Daily_Update.yml`（平日21:40 UTC、
+   `fetch_daily_prices()`を全銘柄実行し`daily/`＋violations logをコミット
+   ＆push）・`Market_Data_Weekly_Update.yml`（日曜13:20 UTC、
+   `fetch_weekly_attributes()`＋`fetch_analyst_events()`を全銘柄実行し
+   `attributes/`＋`analyst_history/`＋violations logをコミット＆push）の
+   2ファイルを新設。いずれも`SEC_Data_Update.yml`と同型構成、既存
+   ワークフローとのcron衝突なし（Market_Pulse_Update 21:35 UTC・
+   HypeCore_Update 13:08 UTCとそれぞれ5分・12分ずらして分散、設計
+   確定事項8）。設計確定事項8のworkflow_run連鎖（本ワークフロー完了後に
+   TANUKI VALUATION・STONKS SILOを起動）は、発火先の本番消費者切替
+   （着手順序4）が完了するまで無効のまま、`Market_Data_Daily_Update.yml`
+   内にコメントとして記法のみ準備した（`TANUKI_VALUATION_Update.yml`・
+   `Stonks_Silo_Update.yml`自体は今回変更していない）。
+
+   **push後の`workflow_dispatch`実行確認（Daily/Weekyとも完了）**:
+   push直後にDaily・Weeklyをほぼ同時に手動起動したところ、Dailyは成功
+   したがWeeklyは`git pull --rebase`で`add/add`コンフリクト
+   （両者が同一の新規ファイル`{TICKER}/market_data_violations_log.json`
+   にほぼ同時commitしたため）により失敗した。原因は
+   `common/market_data/`配下が`docs/market-monitor/`等の既存自動生成
+   データディレクトリと異なり`.gitattributes`の`merge=ours`対象に
+   未登録だったこと。**恒久対応として`.gitattributes`に
+   `common/market_data/daily/*.json`・`attributes/*.json`・
+   `analyst_history/*.json`・`*/market_data_violations_log.json`・
+   `_sp500_constituents_cache.json`の5パターンへ`merge=ours`を追加**
+   （コミット`4749fbd6f`）。追加後にWeeklyを単独で再実行し成功
+   （コミット`51cc6e38f`）。`{TICKER}/market_data_violations_log.json`に
+   `daily_price_validation`（Daily由来）・`attributes_validation`
+   （Weekly由来）の両セクションが正しく共存することを確認、
+   `attributes/`・`analyst_history/`の実データ生成（AAPL/IONQ/^GSPCの
+   3銘柄、AAPL analyst_history 969件等）も確認済み。
+   本番cronでは実行日自体が重ならない（平日 vs 日曜）ためこの衝突は
+   通常発生しない想定だが、手動再実行が重なる場合等への保険として
+   本対応を維持する。
+
+   Daily/Weeklyとも`workflow_dispatch`によるGitHub Actions上での実行
+   確認が完了し、生成された実データ（`daily/`・`attributes/`・
+   `analyst_history/`・violations log、AAPL/IONQ/^GSPCの3銘柄分）は
+   本番バッチ生成分としてそのままリポジトリに残している。
+4. 本番消費者8ファイルの段階的切替（TANUKI VALUATION本体から、フェーズD
+   と同様の優先順位を検討）。**【完了・2026-08-11】進捗 8/8（全数完了）。**
+
+   **優先順位案（2026-08-10時点、着手順序3完了時の提案）**
+   1. **【完了・2026-08-10】** `beta_fetcher.py`。詳細・検証結果は
+      BACKLOG_DONE.md「2026-08-11（完了）」`[[MARKETDATA-LAYER-
+      CONSTRUCTION-1]]着手順序4-1`参照（コミット`d0b9fefdf`）。
+   2. **【完了・2026-08-11】** `data_fetcher.py`（株価取得を前日終値ベースへ
+      仕様変更する本丸。TANUKI VALUATION本体のDCF計算に直結する消費者）。
+      前提条件（`attributes/`スキーマ拡張・日次価格層バックフィル）を
+      含め、詳細・検証結果はBACKLOG_DONE.md「2026-08-11（完了）」
+      `[[MARKETDATA-LAYER-CONSTRUCTION-1]]着手順序4-2前提条件`・
+      `着手順序4-2`参照（コミット`1b710759c`・`0d5dbd18c`・`94887bde6`）。
+      **ma200はget_ma_deviation()の乖離率を代数的に逆算する方式を採用し
+      pipeline.py側は無変更**、実データ100銘柄比較で97/100完全一致。
+   3. **【完了・2026-08-11】** `valuation_fetcher.py`（`discover/
+      stonks-silo/src/`、STONKS SILO対象25銘柄）。詳細・検証結果は
+      BACKLOG_DONE.md「2026-08-11（完了）」`[[MARKETDATA-LAYER-
+      CONSTRUCTION-1]]着手順序4-3`参照（コミット`40b20411c`）。
+      実データ25銘柄比較で24/25完全一致、`pipeline.py`側の`net_cash`・
+      PSR/EV_Sales算出ロジックは無変更（`[[NETCASH-DUAL-CALC-1]]`既存
+      方針と整合）。副次発見`[[STONKS-SILO-CLI-TICKERS-SHADOW-1]]`
+      （CLI引数実行の既存バグ）は本切替の範囲外のため未修正のまま
+      新規登録。
+   4. **【完了・2026-08-11】** `pipeline.py`（`.calendar`のみ、他フィールドは
+      着手順序4-2で対応済み）。詳細・検証結果はBACKLOG_DONE.md
+      「2026-08-11（完了）」`[[MARKETDATA-LAYER-CONSTRUCTION-1]]
+      着手順序4-4`参照（コミット`c6bfb83f6`）。実データ100銘柄比較で
+      next_earnings_date 100/100完全一致。
+   5. **【完了・2026-08-11】** `collect.py`（Discover参考株価）。詳細・
+      検証結果はBACKLOG_DONE.md「2026-08-11（完了）」
+      `[[MARKETDATA-LAYER-CONSTRUCTION-1]]着手順序4-5`参照
+      （コミット`dfd7e3ef2`）。実データ98銘柄比較で96/98完全一致。
+   6. **【完了・2026-08-11】** `collect_and_send.py`（Market Pulse）。
+      詳細・検証結果はBACKLOG_DONE.md「2026-08-11（完了）」
+      `[[MARKETDATA-LAYER-CONSTRUCTION-1]]着手順序4-6`参照
+      （コミット`4e95e23ce`）。sentiment_score・TAKE PROFIT/BUY判定
+      とも完全一致。副次発見`[[MARKETDATA-VIX9D-DATA-GAP-1]]`を新規登録。
+   7. **【完了・2026-08-11】** `breadth_calculator.py`（Market Pulse
+      breadth指標）。詳細・検証結果はBACKLOG_DONE.md「2026-08-11
+      （完了）」`[[MARKETDATA-LAYER-CONSTRUCTION-1]]着手順序4-7`参照
+      （コミット`e49ffb905`）。実データ502銘柄比較でrsp_spy_divergence
+      完全一致・breadth指標も軽微な乖離のみ。
+   8. **【完了・2026-08-11】** `hypecore.py`本体（daily/attributes/
+      analyst_historyの3層すべてが混在する最複雑の消費者）。前提作業
+      3件（daily/バックフィル拡張・attributes/7フィールド追加・
+      analyst_history/2系統追加）を含め、詳細・検証結果はBACKLOG_DONE.md
+      「2026-08-11（完了）」`[[MARKETDATA-LAYER-CONSTRUCTION-1]]
+      着手順序4-8前提作業1〜3`・`着手順序4-8`参照（コミット
+      `afa3c954b`・`223840d13`・`f223464f1`・`09d2151fd`）。HypeCore
+      対象104銘柄比較でanalyst_history 104/104完全一致。切替過程で
+      発見した`auto_adjust`不一致は、後続の事実確認調査で「旧実装の
+      調整済み終値使用の方が技術指標としては不適切だった」と判明し
+      訂正・クローズ（`[[MARKETDATA-DAILY-UNADJUSTED-PRICE-DIVIDEND-
+      DRIFT-1]]`、対応不要で確定）。
+
+5. 診断ツール2ファイルの切替（`score_verifier.py`・`audit.py`）。
+   **【完了・2026-08-12】進捗2/2（全数完了）。**
+   1. **【完了・2026-08-11】** `audit.py`（β乖離監査・カナダ企業判定）。
+      `audit_beta_drift()`のβ乖離監査（設計確定事項6通り
+      `reader.get_attributes()["beta"]`経由）・`audit_ticker()`の
+      カナダ企業判定（`attributes/`へ`country`フィールドを新規追加した
+      上で`reader.get_attributes()["country"]`経由）とも切替完了。
+      詳細・検証結果はBACKLOG_DONE.md「2026-08-11（完了）」
+      `[[MARKETDATA-LAYER-CONSTRUCTION-1]]着手順序5-1`参照（コミット
+      `be48054cc`）。副次発見: `SEC_Data_Audit.yml`は従来
+      `pip install requests`のみでyfinance未導入のため、旧カナダ判定は
+      import失敗のexcept節で本番自動実行時は常に無音スキップされ
+      事実上死んでいた。今回`pip install -r requirements.txt`への変更と
+      合わせ実際に機能するようになった。
+   2. **【完了・2026-08-12】** `score_verifier.py`（判定実績の事後検証、
+      `fetch_price_after()`）。前提作業として`reader.py`へ
+      `get_price_on_or_after(symbol, date)`を新規追加（date以降5日
+      ウィンドウで先頭値を採用、旧`fetch_price_after()`と同じクエリ形状を
+      daily/層に対して再現）した上で本体切替。詳細・検証結果は
+      BACKLOG_DONE.md「2026-08-12（完了）」`[[MARKETDATA-LAYER-
+      CONSTRUCTION-1]]着手順序5-2`参照（コミット`2668f3aaf`・
+      `bc0f6fb24`）。
+6. 周辺ツール2ファイル（`backfill_tech_pulse.py`・`extract_key_facts.py`）
+   の切替。**【完了・2026-08-12】進捗2/2（全数完了）。**
+   1. **【完了・2026-08-12】** `extract_key_facts.py`（株式数フォールバック④、
+      V等SEC全期間で希薄化後株式数タグ未申告の銘柄向け最終フォールバック）。
+      yfinance直接呼び出しを`reader.get_attributes()`経由（`shares_outstanding`
+      優先→`implied_shares_outstanding`フォールバック、既存優先順位パターン
+      維持）に切替。V実例での再現テストで切替前後の値が完全一致、EPS Analyzer
+      対象101銘柄中fallback④該当はV 1件のみと判明（他100銘柄は影響なし）。
+      詳細・検証結果はBACKLOG_DONE.md「2026-08-12（完了）」`[[MARKETDATA-
+      LAYER-CONSTRUCTION-1]]着手順序6-1`参照（コミット`212454681`）。
+   2. **【完了・2026-08-12】** `backfill_tech_pulse.py`（Tech Pulse履歴
+      バックフィル専用の一過性ツール、QQQ/SPY取得）。前提作業として
+      `reader.py`へ`get_price_series_as_of(symbol, as_of_date, days)`を
+      新規追加（任意過去基準日起点のトレイリングウィンドウ取得、共通実装
+      `_price_series_ending_at()`へ`get_price_series()`ともリファクタ）
+      した上で本体切替。「実行時点で1回だけ取得し全エントリで使い回す」
+      旧設計思想は維持。51件のmissingエントリ全件で`--dry-run`実行・
+      旧実装との`tp_score`/`tp_label`突合を実施し、`_tp_label()`バケット
+      判定のクロス0件を確認。詳細・検証結果はBACKLOG_DONE.md
+      「2026-08-12（完了）」`[[MARKETDATA-LAYER-CONSTRUCTION-1]]着手順序
+      6-2`参照（コミット`4a864bc1c`）。
+
+**これにより着手順序4〜6（本番消費者8＋診断ツール2＋周辺ツール2の
+全12ファイル）が完了し、`common/market_data/`構築プロジェクト自体が
+完了した。**
+
+**次セッションでの着手順序（2026-08-12時点、`[[MACRODATA-LAYER-
+CONSTRUCTION-1]]`完成を反映し訂正。旧内容は`common/macro_data/`実装設計
+着手を指示していたが同日中にプロジェクト自体が完成したため陳腐化、
+ブラッシュアップで発見し削除。詳細はBACKLOG_DONE.md
+`[[BACKLOG-STALE-NEXTSTEPS-BLOCK-MACRODATA-1]]`参照）**:
+最新の「次セッションでの着手順序」は`[[MACRODATA-LAYER-CONSTRUCTION-1]]`
+エントリ側（本ファイル内）を参照。
+
+#### hypecore.py切替の前提作業・本体切替（着手順序4-8、2026-08-11完了）
+事前調査で判明した3件の前提作業（daily/バックフィル期間拡張・
+attributes/7フィールド追加・analyst_history/2系統のスキーマ設計）を
+実装した上で本体切替まで完了。詳細・検証結果はBACKLOG_DONE.md
+「2026-08-11（完了）」`[[MARKETDATA-LAYER-CONSTRUCTION-1]]着手順序
+4-8前提作業1〜3`・`着手順序4-8`参照。副次発見（`__main__`フォールバック
+ticker配列の陳腐化、48銘柄ハードコードが実際の104銘柄と乖離。実害は
+限定的で対応不要）も記録済み。`ValueError`送出の改善（実データ完全
+欠如の場合のみ発火）は実装済み。
+
+#### 日次価格層バックフィル（着手順序4-2 data_fetcher.py切替の前提条件、2026-08-11完了）
+`daily/`の日次収集は2026-08-10開始のため、200営業日移動平均
+（`reader.get_ma_deviation(window=200)`）が自然蓄積で計算可能になるまで
+約10ヶ月かかる問題を、`backfill_daily_prices(symbols, period="1y")`
+（一過性ツール、`backfill_tech_pulse.py`型、定期cronには組み込まない、
+CLIの`--backfill`フラグ経由で手動実行）の新設により即時解消した。
+`period="1y"`で251営業日分取得（window=200に対し51日の余裕、window=50にも
+十分）を実測確認。全母集団570銘柄（`get_default_symbol_universe()`）で
+実行し全銘柄成功。AAPL等サンプルで`get_ma_deviation(window=200)`が実値
+（例: AAPL≒10.2%）を返すこと、既存の日次cron取得分（2026-08-10）が
+バックフィル後も消失せず保持されることを確認済み。新規テスト
+`tests/test_market_data_fetcher.py`（`TestMergeDailyRecords`・
+`TestBackfillDailyPrices`10件）。
+
+**バックフィル実行中に判明した2件の別課題**（本エントリとは独立、
+下記2件として新規登録・詳細はBACKLOG該当エントリ参照）:
+`[[MARKETDATA-CWAN-FROZEN-DATA-SUSPECT-1]]`（CWANのyfinanceデータが
+1日分・出来高0のフリーズ状態）・`[[MARKETDATA-SP500-SCRAPE-INVALID-
+TICKERS-1]]`（S&P500構成銘柄Wikipediaスクレイピングに`FDXF`/`HONA`/`Q`
+という不正銘柄が混入、正規の`FDX`/`HON`とは別に重複存在）。
+
+**注記（2026-08-11、再実装の経緯）**: 本バックフィル機能は一度実装・
+検証済みだったが、コミット前に作業ツリーの変更が失われ再実装が必要と
+なった（`[[MARKETDATA-LAYER-CONSTRUCTION-1]]`本体には影響なし、独立した
+作業ロスのみ）。今回は検証完了後直ちにコミット・pushを実施し再発を防止。
+
+**注記（2026-08-15、フィールド単位の切替完了確認）**: `FIELD_
+DEFINITIONS.md`499項目単位での新DB参照切替状況を集計する投資調査を
+実施した結果、`common/market_data/`（yfinance）由来の一次データ8件
+（AS-IS-032・262・312・320・321・322・325・362）が全件切替済みである
+ことを実コードで確認した（詳細は`PROJECT_STATUS.md`フェーズ3参照）。
+ファイル単位（本エントリの全12ファイル＋asset_flow）の切替完了に加え、
+フィールド単位でも本線タスクの完了を確認できた。
+
+#### 着手条件
+なし（未決定事項9件は全件確定済み、実装着手可能）。
+
+#### クローズの経緯（2026-09-02③）
+BACKLOG.md棚卸しの過程で、本エントリが「全12ファイル切替完了」「構築
+プロジェクト自体が完了」と明記済みであるにもかかわらず優先度「高」の
+アクティブなエントリとして残置されていたことが判明した。上記の通り
+着手順序4〜6（本番消費者8＋診断ツール2＋周辺ツール2の全12ファイル）・
+`collect_and_send.py::collect_asset_flow()`のSHV等6資産とも切替完了
+しており、未決定事項9件も全件確定済み。残る低優先度3件
+（`[[MARKETDATA-CWAN-FROZEN-DATA-SUSPECT-1]]`〈優先度低〉・
+`[[MARKETDATA-SP500-SCRAPE-INVALID-TICKERS-1]]`〈優先度低〉・
+`[[MARKETDATA-VIX9D-DATA-GAP-1]]`〈優先度中〉）はいずれも本エントリとは
+独立した既存BACKLOG登録として個別に存在しており、本エントリのクローズ
+後もそれぞれ独立して追跡される。本エントリ自体には他に未解決の残タスク
+なし。
+
+---
+
+### ✅ [MACRODATA-LAYER-CONSTRUCTION-1] common/macro_data/新設（FRED統合層）— 完成（本番消費者2ファイル＋周辺ツール1件とも切替完了、外部API直接呼び出し完全排除）
+**優先度:** 高（新DB構築プロジェクト フェーズ1の次コンポーネント、
+`common/market_data/`が2026-08-12に全12ファイル切替完了したことに伴う
+次の優先タスク）
+**分類:** アーキテクチャ / 新DB構築プロジェクト フェーズ1
+**登録日:** 2026-08-12（本来は事前調査着手時点で登録すべきだったが、
+`common/market_data/`と同様の経緯で未登録のまま投資調査を実施していた
+ため、本エントリで遡って正式登録する）
+**更新日:** 2026-08-12（本番消費者2ファイル（`05_main.py`・
+`collect_and_send.py`）を`common.macro_data.reader`経由へ全面切替し
+**完成**。重複3系列（`BAMLH0A0HYM2`・`T10Y2Y`・`VIXCLS`）は
+`get_financial_context()`・`daily`系列ループ・`update_liquidity_csv()`の
+いずれも同一の`reader.get_latest()`呼び出しへ集約し重複取得を解消。
+両ファイルから`Fred(`・`fred_latest(`等の外部API直接呼び出しを完全に
+排除（grep最終確認で残存0件）。切替前後で18項目の値突合を実施し
+**全項目完全一致**（差分0件）。詳細は下記「本番消費者切替完了」参照）
+**更新日:** 2026-08-13（新DB構築プロジェクト フェーズ1〜3総点検の結果、
+「完成（本番消費者切替完了）」の射程は`05_main.py`・
+`collect_and_send.py`の**本番消費者2ファイルに限定**されており、周辺
+ツール`backfill_tech_pulse.py`の`VXNCLS`取得（`Fred(api_key=
+FRED_API_KEY).get_series("VXNCLS", ...)`直接呼び出し）は射程外のまま
+未切替で残存し、かつBACKLOG.md本体に専用エントリがない「追跡漏れ」
+だったことが判明。`[[MACRODATA-BACKFILL-TECH-PULSE-VXNCLS-
+UNTRACKED-1]]`として新規登録した。見出しに射程の限定を明記。実装
+コード変更なし）
+**更新日:** 2026-08-13（`[[MACRODATA-BACKFILL-TECH-PULSE-VXNCLS-
+UNTRACKED-1]]`の切替実装が完了し**解消**（コミット`4930458e7`）。
+`backfill_tech_pulse.py`の`VXNCLS`取得も`Fred(`直接呼び出しから
+`common.macro_data.reader.get_series()`経由に切替済みとなり、
+本番消費者2ファイル＋周辺ツール1件のいずれからも外部API直接呼び出し
+が完全に排除された。51件のmissingエントリ全件で切替前後の出力が
+完全一致（`tp_score`/`tp_label`/`vxn_vs_ma50`等diff 0件）することを
+確認済み、pytest回帰なし。詳細はBACKLOG_DONE.md「2026-08-13
+（完了）」`[[MACRODATA-BACKFILL-TECH-PULSE-VXNCLS-UNTRACKED-1]]`参照。
+見出しから「周辺ツール1件は射程外で未切替」を削除し解消を反映）
+**発見:** `common/macro_data/`新設事前調査・FRED消費者洗い出し
+（`MIGRATION_CHECKLIST.md`Step1相当、チャット記録、2026-08-12）
+
+#### 背景・投資調査サマリー
+`common/market_data/`（yfinance統合層）の全12ファイル切替完了
+（`[[MARKETDATA-LAYER-CONSTRUCTION-1]]`）を受け、新DB構築プロジェクト
+フェーズ1の次コンポーネントとして`common/macro_data/`（FRED統合層）の
+着手前投資調査を実施した。`market_data`着手時の教訓（当初の「11ファイル」
+調査が`common/sec_data/audit.py`1件を見落としていた、
+`[[MARKETDATA-AS-IS-AUDIT-PY-OMITTED-1]]`）を踏まえ、探索範囲を`src/`
+配下に限定せず`common/`・`discover/`配下も含めリポジトリ全体をgrep等で
+網羅的に確認した。
+
+**FRED呼び出し箇所の特定（実コード確認）**:
+- FRED呼び出しは**2サブシステットのみ**（`src/market/macro_pulse/`・
+  `src/market/market_pulse/`）。`common/`・`discover/`配下には現状ゼロ
+  （`INPUT_DATA_AS_IS.md`の「実測2サブシステム」を実データで再確認）
+- MACRO PULSE本番: `05_main.py`（`INDICATOR_CONFIG`辞書12系列＋
+  `get_financial_context()`/`get_ff_current()`/`get_implied_cuts()`/
+  `get_sp500()`/`update_liquidity_csv()`が独自に追加系列を取得）
+- Market Pulse本番: `collect_and_send.py`（`VXNCLS`・`BAMLH0A0HYM2`・
+  `DGS3MO`、3関数がそれぞれ独立に`Fred()`インスタンスを生成）
+- 診断ツール: `05_audit.py`（FRED呼び出しなし、`05_events.csv`の
+  監査のみ、`common/macro_data/`切替の対象外）
+- 周辺ツール: `05_backfill_nfp_mom.py`（一過性、NFP履歴修正済み）・
+  `05_import_history.py`（一過性、独自`FRED_INDICATORS`辞書が現行
+  `INDICATOR_CONFIG`と乖離、`[[MACRODATA-IMPORT-HISTORY-CONFIG-
+  DRIFT-1]]`参照）・`backfill_tech_pulse.py`（`VXNCLS`のみ未切替、
+  QQQ/SPY部分は`[[MARKETDATA-LAYER-CONSTRUCTION-1]]`着手順序6-2で
+  切替済み）
+
+**重複取得パターンの実態確認**: `INPUT_DATA_TOBE.md`が指摘する
+`BAMLH0A0HYM2`重複取得「3箇所」を実データで再検証した結果、実際は
+`get_financial_context()`を含む**4箇所**（MACRO PULSE内部3箇所＋
+Market Pulse1箇所）。`T10Y2Y`・`VIXCLS`にも同型の未記載重複あり
+（詳細は`[[MACRODATA-AS-IS-DUPLICATION-UNDERCOUNT-1]]`参照）。
+
+**24系列台帳の正確性確認**: `INPUT_DATA_TOBE.md`のFRED系列台帳
+（`INPUT-A-024`〜`047`、24系列）は主要系列としては網羅的だったが、
+`FTSD`（`WTREGEN`フォールバック先）が1系列漏れていた
+（`[[MACRODATA-FTSD-MISSING-FROM-INVENTORY-1]]`、2026-08-12の設計確定
+作業で`INPUT-A-049`として追加し解消済み・BACKLOG_DONE.mdへ移動）。
+
+**取得頻度・エラーハンドリングの現状確認**:
+- cron: `MACRO_PULSE_Update.yml`（日次×2＋週次×2、4種類のcronが並存）・
+  `Market_Pulse_Update.yml`（平日日次）
+- メタ情報（`obs_to_release_lag`等）は`INDICATOR_CONFIG`辞書内に
+  フラットなキーとして直接埋め込み。専用configファイルは存在しない
+- リトライ機構があるのは`05_main.py::fetch_event_row()`・
+  `fred_release_dates()`と`05_import_history.py::_load_ctx_cache()`の
+  計3箇所のみ（3回リトライ＋指数バックオフ）。残り大半（`fred_latest()`
+  本体・`update_liquidity_csv()`・Market Pulse側3関数・
+  `backfill_tech_pulse.py`）はリトライなしの素朴なtry/except
+- 共有フェッチャー層は存在せず、各ファイルが個別に`Fred(api_key=...)`
+  クライアントを生成している状態（`market_data`着手前のyfinance分散
+  状態と同型）
+
+投資調査の過程で新規発見した4件をBACKLOG登録済み（記録のみ、
+実装なし）: `[[MACRODATA-AS-IS-DUPLICATION-UNDERCOUNT-1]]`（優先度：中、
+**2026-08-13、`[[FRED-HYSPREAD-TRIPLE-FETCH-1]]`と同型の理由で解消・
+BACKLOG_DONE.mdへ移動済み**）・
+`[[MACRODATA-SCHEDULED-SILENT-GAP-CSCICP-USALOL-1]]`（優先度：低〜中）・
+`[[MACRODATA-FTSD-MISSING-FROM-INVENTORY-1]]`（優先度：低、**2026-08-12
+の設計確定作業で解消・BACKLOG_DONE.mdへ移動済み**）・
+`[[MACRODATA-IMPORT-HISTORY-CONFIG-DRIFT-1]]`（優先度：低）。
+
+#### 設計確定事項（2026-08-12、投資調査完了を受けた確定）
+
+**保存形式・スキーマ**:
+- 保存形式は`common/macro_data/series/{SERIES_ID}.json`（系列ごとの
+  JSONファイル、観測日昇順のリスト）に確定。当初案のCSVではなく
+  `common/market_data/`（`daily/{SYMBOL}.json`等）と形式を揃える
+  （2つの新設データ層が別々の保存慣習を持つ状態を避けるため）。
+- 各エントリのスキーマは`INPUT_DATA_TOBE.md`2-D節のprovenance標準
+  （`value`/`as_of`/`fetched_at`/`source`/`source_detail`/
+  `fallback_used`）をそのまま適用。`source`は`"FRED"`固定、
+  `source_detail`に系列コードを含める。
+- 系列単位のメタ情報（`fred_release_id`/`obs_to_release_lag`等、現状
+  `INDICATOR_CONFIG`にフラット埋め込み）は`common/macro_data/
+  series_meta.json`へ切り出す。
+
+**fetcher.py/reader.py API**:
+- `fetcher.py::fetch_series(series_id, start=None)`を外部アクセスの
+  唯一の窓口とし、リトライ＋指数バックオフを全系列で統一する（現状は
+  `05_main.py::fetch_event_row()`/`fred_release_dates()`/
+  `05_import_history.py::_load_ctx_cache()`の3箇所のみ実装という
+  不統一を解消）。保存前に系列ごとの定義域チェック（比率系の範囲外
+  検知、前回値からの桁違い変化検知）を行い、`common/macro_data/
+  macro_data_violations_log.json`（0件でも毎回書き込む、
+  `market_data_violations_log.json`と同型）へ記録する
+  （`EXTRACTION_DESIGN_PRINCIPLES.md`原則3対応）。
+- `reader.py`: `get_latest(series_id)`・`get_series(series_id,
+  start=None, end=None)`・`get_value_as_of(series_id, date)`を提供。
+  `get_series`の返り値は観測日を含み、消費側（VXN50日MA等の「直近N件」
+  ロジック）が期間の連続性を自前で検証できるようにする
+  （`EXTRACTION_DESIGN_PRINCIPLES.md`原則1対応）。
+
+**重複3系列（`BAMLH0A0HYM2`・`T10Y2Y`・`VIXCLS`）の解消方式**:
+`05_main.py::get_financial_context()`・`INDICATOR_CONFIG`の`daily`系列
+ループ・`update_liquidity_csv()`、および`collect_and_send.py`側3関数の
+いずれも独自に`Fred()`を呼ぶのをやめ、全て`reader.py`経由に統一する
+ことで解消する（`TO_BE_FINAL_LIST.md`⑮-final「取得共通化・出力3件
+存続」に対応。出力項目自体は3件とも存続し削除しない）。
+
+**FTSD追加・機械的網羅性証明の再実行**: `FTSD`を`INPUT-A-049`として
+`INPUT_DATA_TOBE.md`・`INPUT_DATA_AS_IS.md`の両方へ追加。分類A件数は
+48件→49件、3分類合計は65件→66件に更新。機械的網羅性証明の再実行時、
+`INPUT-A-048`（税務・一過性項目タグ群52種）が`INPUT_DATA_AS_IS.md`側
+に反映漏れ（2026-07-24時点で発生していた既存の乖離、今回の再実行で
+発覚）していたことが判明したため同ファイルへ追加して解消し、
+再実行結果は両ファイルとも**66件・差分0件**を確認した。
+
+これらの確定事項はいずれもドキュメント記録のみで、実装コード変更・
+データ再生成は行っていない。
+
+#### 実装完了事項（fetcher.py/reader.py、2026-08-12）
+設計確定事項を踏まえ、`common/macro_data/`の新規モジュールを実装した
+（新規モジュール構築のみがスコープ、本番消費者切替・cronワークフロー
+新設・過去データ一括投入は次段階に分離し今回は一切変更していない）。
+
+**series_meta.json**: `INDICATOR_CONFIG`12系列＋流動性カード/FOMC/
+Market Pulse用13系列（`SP500`/`DGS1`/`DFEDTARU`/`DFEDTARL`/
+`FEDFUNDS`/`WALCL`/`WTREGEN`/`RRPONTSYD`/`WRBWFRBL`/`M2SL`/`FTSD`/
+`VXNCLS`/`DGS3MO`）を実コードから機械的に走査し、`INPUT-A-024`〜`049`
+の25系列全件を`{series_id: {input_id, fred_release_id,
+obs_to_release_lag, category, consumers}}`形式で生成。メタ情報が
+存在しない系列は`note`フィールドに明記、`consumers`には実際の参照
+関数名を記録（重複3系列は複数`consumers`を保持）。
+
+**fetcher.py**: `fetch_series(series_id, start=None)`（FRED外部アクセス
+の唯一の窓口、リトライ3回＋指数バックオフは`05_main.py::
+fetch_event_row()`のパターンを踏襲）・`update_series(series_id,
+start=None)`（日付単位upsert、`value`/`as_of`/`fetched_at`〈JST〉/
+`source`/`source_detail`を付与）・`fetch_all_series(series_ids=None)`
+（`series_meta.json`駆動のバッチ関数、cron配線自体は次段階）。保存前
+検証2項目（①バッチ内`as_of`重複②直前値比1桁以上の変化）を
+`macro_data_violations_log.json`へ0件でも毎回書き込み（単一の共有
+ログファイル、系列IDでセクション分割。`market_data_violations_
+log.json`が銘柄ごと別ファイルなのとは異なる設計）。fredapiクライアント
+はモジュールレベルで1つだけ生成し使い回す（現状の各ファイルが個別に
+`Fred()`を生成する設計は踏襲しない）。`FRED_API_KEY`環境変数名・
+`Fred(api_key=...)`初期化方法は`05_main.py::get_fred()`・
+`collect_and_send.py`側3関数を実コード確認の上で踏襲（新規の変数名は
+導入していない）。
+
+**reader.py**: `get_latest(series_id)`・`get_series(series_id,
+start=None, end=None)`（観測日昇順、観測日を含むため消費側が連続性を
+自前検証可能）・`get_value_as_of(series_id, date, lookback_days=45)`
+（指定日以前の直近値をルックバック窓内で探索、`market_data/reader.py::
+get_price_on_or_after()`系のAPIパターンを踏襲）。外部API呼び出しは
+一切行わない。
+
+**検証**: `tests/test_macro_data_fetcher.py`（リトライ・upsert・
+保存前検証・violations log・fetch_all_series・アトミック書き込み）・
+`tests/test_macro_data_reader.py`（get_latest/get_series/
+get_value_as_ofのルックバック境界含む）を新規追加、計43件。実データ
+（実際のFRED系列名）を使ったモック経由の手動スモークテストで
+upsert・重複検知・桁違い変化検知・ルックバック境界の動作を個別確認
+済み。pytest全体は既知失敗2件〈`[[TEST-STALE-IV-1]]`〉以外の回帰なし。
+
+#### 定期取得ワークフロー稼働開始（2026-08-12）
+
+**事前確認**: `common/market_data/`の`Market_Data_Daily_Update.yml`/
+`Market_Data_Weekly_Update.yml`を実コード確認し、エントリポイントが
+`fetcher.py`自身の`if __name__ == "__main__":`ブロック（argparse、
+`python common/market_data/fetcher.py [symbols] --layer daily`形式）
+であり、別ファイルの起動スクリプトは存在しないことを確認。同じ
+パターンを`common/macro_data/fetcher.py`にも踏襲し、`python
+common/macro_data/fetcher.py [series_ids]`で`fetch_all_series()`を
+呼ぶCLIを追加した。
+
+`.github/workflows/MACRO_PULSE_Update.yml`（`15 22 * * *`・
+`3 13 * * *`・`7 22 * * 6`・`11 22 * * 6`の4種）・
+`Market_Pulse_Update.yml`（`35 21 * * 1-5`）の実際のcronを再確認した
+結果、最速は`3 13 * * *`（UTC 13:03、毎日）。新設した
+`Macro_Data_Update.yml`は`0 10 * * *`（UTC 10:00、毎日）とし、最速の
+既存cronより3時間3分早く、他4件（21:35/22:07/22:11/22:15 UTC）より
+11時間以上早く設定した。
+
+**実装**: `.github/workflows/Macro_Data_Update.yml`新設（`workflow_
+dispatch`の`series_ids`入力対応、`market_data`の2ワークフローと同じ
+checkout/setup-python/pip install/commit・push/Summary構成）。
+`.gitattributes`へ`common/macro_data/series/*.json`・
+`macro_data_violations_log.json`のmerge=ours設定も追加。
+
+**動作確認（代替検証の経緯）**: GitHub Actions側でworkflow_dispatchを
+直接トリガーする手段（`gh` CLI・GitHubトークン）がこのセッション環境
+になかった（`gh: command not found`、`GITHUB_TOKEN`等の環境変数も
+未設定）。そのため、ワークフローが呼び出すのと**同一のエントリ
+ポイント**（`python common/macro_data/fetcher.py`）を、この環境に
+設定済みの実`FRED_API_KEY`を用いてローカルで直接実行し代替検証した
+（GitHub Actions環境そのものでの実行確認は別途ユーザー側で
+workflow_dispatchを手動トリガーする必要がある）。
+
+結果: 25系列中**24系列が成功**（更新レコード合計94,909件）、`FTSD`の
+みFRED API側で`Bad Request. The series does not exist.`（curlで
+`https://api.stlouisfed.org/fred/series?series_id=FTSD`を直接叩いても
+同一エラーを確認済み、fredapiライブラリ側の問題ではない）。`FTSD`は
+`05_main.py::update_liquidity_csv()`の`WTREGEN`フォールバック先として
+実装されているが、このフォールバックが発動する状況では実際には
+機能しない可能性が高いと判明したため`[[MACRODATA-FTSD-SERIES-ID-
+INVALID-1]]`として新規登録（05_main.py自体は今回変更しない）。
+
+`macro_data_violations_log.json`は255件の警告を記録（全件
+order-of-magnitude jump検知、duplicate as_of検知は0件）。内訳を
+サンプル確認した結果、近ゼロ値を横断する拡散指数（`GACDFSA066MSFRBPHI`
+36件・`CFNAI`70件・`SAHMCURRENT`3件）、2008年金融危機
+（`WRBWFRBL`・`DGS3MO`各1件）・2020年COVID急変（`FEDFUNDS`1件）・
+1980年代金利変動期（`T10Y2Y`7件）・2009-2011年のRRP制度低使用期
+（`RRPONTSYD`136件）等、いずれも実在する経済事象・近ゼロ交差による
+妥当な検知と判断した（データ品質問題ではない）。今回が全期間初回投入
+（`start`指定なし＝FRED提供する最古データから全件取得）だったため
+検知件数が多いが、これは想定内である。
+
+**副次発見（設計上の考慮事項）**: `fetch_series()`/`fetch_all_series()`
+は`start`未指定時に常に全期間履歴を再取得する設計であり、
+`common/market_data/fetcher.py`の`fetch_daily_prices()`（日次は直近
+のみ）と`backfill_daily_prices()`（全期間取得は一過性の別関数）という
+分離を踏襲していない。このため`Macro_Data_Update.yml`の日次cronが
+毎回全系列・全期間（合計約9.5万レコード・18MB）を再取得する非効率な
+状態のまま稼働開始する。実害は限定的（FRED APIへの負荷・実行時間の
+増加のみ、正確性への影響はupsertのため無し）だが、
+`[[MACRODATA-FULL-HISTORY-DAILY-REFETCH-1]]`として新規登録した
+（`--start`引数追加等の対応要否は次回判断）。
+
+#### 本番消費者切替完了（2026-08-12、MIGRATION_CHECKLIST.md Step1〜3）
+
+**Step1: 全消費者の洗い出し（実コードgrep結果）**
+
+`05_main.py`（`Fred(`・`fred_latest(`・`fred_latest_with_prev(`・
+`fred.get_series`を横断grep、想定箇所に加え2箇所を追加発見）:
+- `get_fred()`（674行）→ 削除（`Fred()`インスタンス生成そのもの）
+- `fred_latest()`（686行）→ `reader.get_latest()`ベースに全面書き換え
+- `fred_latest_with_prev()`（701行）→ `reader.get_series()`ベースに
+  全面書き換え（末尾2件を使用）
+- `get_ff_current()`: `DFEDTARU`・`DFEDTARL`・`FEDFUNDS`（フォールバック）
+- `get_implied_cuts()`: `DGS1`
+- `get_financial_context()`: `T10Y2Y`・`BAMLH0A0HYM2`・`VIXCLS`
+- `get_sp500()`: `SP500`（stooqフォールバックは維持）
+- `fetch_event_row()`: `INDICATOR_CONFIG`の`fred_id`（NFP=`PAYEMS`は
+  `fred_latest_with_prev`、他は`fred_latest`）＋3回リトライ＋指数
+  バックオフ削除
+- `refresh_monthly_indicators()`: `_MONTHLY_REFRESH_SET`7指標の
+  `fred_id`（想定リストになかった追加発見。`fetch_event_row()`と同一
+  指標を二重取得しうる構造だったが、切替後はローカルファイル読み取り
+  のため実害なし）
+- `update_liquidity_csv()`: `M2SL`・`WALCL`・`BAMLH0A0HYM2`・
+  `WTREGEN`（→`FTSD`フォールバック）・`RRPONTSYD`・`WRBWFRBL`
+- `update_fed_context()`: `get_zq_futures()`/`get_ff_current()`経由
+  （想定リストになかった追加発見）
+- `_load_sp500_cache()`（**追加発見**、`fred.get_series()`を`Fred\(`・
+  `fred_latest\(`のgrepパターンでは検出できず気づかなかった箇所）:
+  `fill_returns()`が複数日分のS&P500履歴を必要とするため、
+  `reader.get_series(start=, end=)`（日付範囲指定）ベースに書き換え
+- `fred_release_dates()`（458行）: **対象外**（`https://
+  api.stlouisfed.org/fred/release/dates`への直接`requests.get()`で
+  あり、fredapiクライアントの`Fred(`/`fred_latest(`とは別のAPI表面
+  〈将来の発表日カレンダー、observation値ではない〉。
+  `common/macro_data/`はカレンダー情報を持たないため切替対象外、
+  リトライロジックも維持）
+
+`collect_and_send.py`（3関数、想定通り）:
+- `fetch_vxn_from_fred()`: `VXNCLS`（直近120日→MA50計算のため
+  `reader.get_series(start=)`ベースに書き換え）
+- `fetch_hy_spread_from_fred()`: `BAMLH0A0HYM2`（直近120日→90日
+  min/max計算のため同上）
+- `fetch_fred_short_bond()`: `DGS3MO`（直近30日→末尾2件の変化率計算の
+  ため同上）
+
+**切替方針の実装上の判断**: 依頼文は「`reader.get_latest(series_id)`
+経由への統一」を主方針としていたが、実コード確認の結果、
+`fred_latest_with_prev()`（NFP前月比計算に前月値が必要）・
+`fetch_vxn_from_fred()`（MA50に50日分必要）・
+`fetch_hy_spread_from_fred()`（90日min/maxに90日分必要）・
+`fetch_fred_short_bond()`（前日比に前日値が必要）・
+`_load_sp500_cache()`（複数日の履歴が必要）の5箇所は単一最新値だけでは
+機能を維持できないと判明したため、これらのみ`reader.get_series()`
+（期間指定）を使用し、それ以外（単一最新値で足りる約15箇所）は
+`reader.get_latest()`を使用した。Step2の値突合で全項目一致を確認して
+おり、この判断による機能面の後退はない。
+
+**Step2: 切替前後の値突合（実施結果、2026-08-12実施）**
+
+切替前（live FRED直接呼び出し）と切替後（`reader`経由）を同一セッション
+内で実測比較した結果、**18項目全て完全一致（差分0件）**:
+
+| 系列/関数 | 旧実装（live FRED） | 新実装（reader経由） |
+|---|---|---|
+| T10Y2Y | 0.48 @ 2026-08-11 | 0.48 @ 2026-08-11 |
+| BAMLH0A0HYM2 | 2.7 @ 2026-08-10 | 2.7 @ 2026-08-10 |
+| VIXCLS | 15.46 @ 2026-08-10 | 15.46 @ 2026-08-10 |
+| DGS1 | 4.04 @ 2026-08-10 | 4.04 @ 2026-08-10 |
+| DFEDTARU/DFEDTARL | 3.75/3.5 | 3.75/3.5 |
+| FEDFUNDS | 3.63 @ 2026-07-01 | (フォールバック未使用、DFEDTARU/L成立のため) |
+| SP500 | 7728.2 @ 2026-08-11 | 7728.2 |
+| M2SL | 23155.2 @ 2026-06-01 | 23155.2 @ 2026-06-01 |
+| WALCL | 6748567.0 @ 2026-08-05 | 6748567.0 @ 2026-08-05 |
+| WTREGEN | 907324.0 @ 2026-08-05 | 907324.0 @ 2026-08-05 |
+| RRPONTSYD | 1.25 @ 2026-08-11 | 1.25 @ 2026-08-11 |
+| WRBWFRBL | 3002731.0 @ 2026-08-05 | 3002731.0 @ 2026-08-05 |
+| PAYEMS（now/prev） | 158858.0@07-01 / 158881.0@06-01 | 同一 |
+| get_ff_current() | 3.625 | 3.625 |
+| get_financial_context() | yc=0.48/hy=2.7/vix=15.46/ff=3.625 | 同一 |
+| get_sp500() | 7728.2 | 7728.2 |
+| VXN（latest/vs_ma50） | 23.04 / -15.29% | 23.04 / -15.29% |
+| HYスプレッド（current/min90/max90/expanding/contracting） | 2.7/2.63/2.87/False/False | 同一 |
+| DGS3MO（latest/change_pct） | 3.89 / +0.517% | 3.89 / +0.517% |
+
+差分0件だった理由: `common/macro_data/series/`のローカルストアが
+同日（2026-08-12、`Macro_Data_Update.yml`のworkflow_dispatch実行）に
+最新化されており、FRED日次系列は日中に再公表されないため、
+live直接呼び出しと数時間前に取得済みのローカルストアの値が完全一致した。
+
+`FTSD`（`WTREGEN`フォールバック先）は`reader.get_latest("FTSD")`が
+`None`を返すことを確認したが、これは`[[MACRODATA-FTSD-SERIES-ID-
+INVALID-1]]`で判明済みの通り旧実装でも`FTSD`自体がFRED上に存在せず
+同じく取得失敗していたため、**今回の切替による回帰ではない**
+（フォールバック構造自体は変更せず維持）。
+
+**Step3: 旧参照の最終確認（grep結果）**
+
+```
+grep -n "Fred(\|from fredapi\|fred\.get_series" src/market/macro_pulse/05_main.py
+→ 1件（`_load_sp500_cache()`のdocstring内、コメントで旧実装を説明する文言のみ）
+grep -n "Fred(\|from fredapi\|fred_api_key" src/market/market_pulse/collect_and_send.py
+→ 4件（いずれも切替を説明するdocstring/コメント内のみ）
+```
+実コード上の直接呼び出しは**0件**。両ファイルとも`fred`パラメータ・
+リトライ/指数バックオフロジック（`fetch_event_row()`の3回リトライ）も
+削除済み（`fred_release_dates()`は対象外のため維持）。
+
+**テスト**: `tests/test_macro_pulse_logic.py`の`TestFredLatestWithPrev`・
+`TestFetchEventRowNFPDiff`（計7件）が旧`_FakeFred`パターンで失敗した
+ため、`main05._md_reader.get_series`/`get_latest`をmonkeypatchする方式
+に更新（`[[MACRODATA-FTSD-MISSING-FROM-INVENTORY-1]]`等での
+`_get_market_data_attributes`monkeypatchパターンを踏襲）。pytest全体
+771 passed / 2 known-failed（`[[TEST-STALE-IV-1]]`）。
+
+これにより`common/macro_data/`（FRED統合層）は`fetcher.py`/`reader.py`
+実装・定期取得ワークフロー・本番消費者2ファイル全数切替が完了し、
+**`common/market_data/`と同じ「完成」状態に到達した**。
+
+#### 次セッションでの着手順序（2026-08-12時点、フェーズ3着手・分類C3件のBACKLOG整理完了を反映）
+1. `common/macro_data/`構築プロジェクト自体は完成。フェーズ1（一次
+   データ層の構築）・フェーズ2（過去データ移管）はいずれも完了:
+   - フェーズ1: `common/sec_data/`・`common/market_data/`・
+     `common/macro_data/`の3コンポーネントとも完成（`PROJECT_STATUS.md`
+     フェーズ1表参照）
+   - フェーズ2: `[[PHASE2-MIGRATION-POLICY-DECIDED-1]]`（移行方針確定）・
+     `[[MACRODATA-BAMLH0A0HYM2-HISTORY-EXCEPTION-1]]`（FRED、
+     `BAMLH0A0HYM2`のみ例外的移行を実装・実行完了、他23系列は対象外）・
+     `[[PHASE2-SECDATA-FULL-DEPTH-VERIFICATION-1]]`（SEC EDGAR、全105
+     銘柄精査完了・フェーズ2対象外と確定）・
+     `[[PHASE2-YFINANCE-REFETCH-DESIGN-1]]`（yfinance、投資調査の結果
+     移行作業不要・フェーズ2対象外と確定）・取得前提条件（当初調査
+     時点で対象外と判定済み）の4データソース全てに結論確定済み
+2. **フェーズ3（導出データ層の管理方法検討）着手済み**:
+   - 分類C14件のうち3件（設定ファイル配置・重複問題）をBACKLOG登録済み
+     （実装は未着手）: `[[PORTFOLIO-CONFIG-DUP-1]]`（`INPUT-C-008`、
+     Portfolio二重保持）・`[[TAILKPI-CONFIG-LOCATION-1]]`
+     （`INPUT-C-009`、`tail_kpi_map.json`のconfig外配置）・
+     `[[FCFCONFIG-LOCATION-1]]`（`INPUT-C-010`、
+     `fcf_conversion_config.json`のconfig外配置）
+   - `FIELD_DEFINITIONS.md`499項目の新DB参照への切替は未着手。次の
+     アクションは、まず対象件数（yfinance/FRED由来で`common/
+     market_data/`・`common/macro_data/`への参照に未更新の項目数）を
+     数える調査から（`common/sec_data/`は既に13箇所で参照済みと
+     フェーズ3投資調査で確認済み、`common/market_data/`・
+     `common/macro_data/`は0件）
+   - 分類C残り11件（`INPUT-C-001〜007`・`011〜014`）の管理方法検討は
+     未着手
+3. （本線外）SEC EDGAR全105銘柄精査で新規発見した異常ケース:
+   `[[SECDATA-ENB-NORMALIZATION-MISSING-1]]`（ENBの正規化データ
+   〈annual_*.json/quarterly_*.json〉が1件も生成されていない、原因調査
+   未着手）
+4. （本線外）今回発見した2件の対応要否判断:
+   `[[MACRODATA-FTSD-SERIES-ID-INVALID-1]]`（`FTSD`系列がFRED上に
+   存在しない、`05_main.py`側の対応要否）・`[[MACRODATA-FULL-HISTORY-
+   DAILY-REFETCH-1]]`（日次cronの全期間再取得の非効率、`--start`
+   引数追加等の対応要否）
+5. （本線外）新規発見のうち残る優先度中1件の対応要否判断:
+   `[[MACRODATA-SCHEDULED-SILENT-GAP-CSCICP-USALOL-1]]`（実データ確認が
+   着手条件）。`[[MACRODATA-AS-IS-DUPLICATION-UNDERCOUNT-1]]`は
+   2026-08-13、`[[FRED-HYSPREAD-TRIPLE-FETCH-1]]`と同型の理由で解消・
+   BACKLOG_DONE.mdへ移動済み
+6. （本線外）過去セッションで蓄積した低優先度課題群一式:
+   `[[MARKETDATA-CWAN-FROZEN-DATA-SUSPECT-1]]`・`[[MARKETDATA-SP500-
+   SCRAPE-INVALID-TICKERS-1]]`・`[[MARKETDATA-VIX9D-DATA-GAP-1]]`・
+   `[[STONKS-SILO-CLI-TICKERS-SHADOW-1]]`等（`[[MACRODATA-IMPORT-
+   HISTORY-CONFIG-DRIFT-1]]`・`[[NETCASH-DUAL-CALC-1]]`は解消済み・
+   BACKLOG_DONE.mdへ移動済み）
+
+**注記（2026-08-15、フィールド単位の切替完了確認）**: `FIELD_
+DEFINITIONS.md`499項目単位での新DB参照切替状況を集計する投資調査を
+実施した結果、`common/macro_data/`（FRED）由来の一次データ10件
+（AS-IS-190・192・194・197・199・200・210・211・212・352）が全件
+切替済みであることを実コードで確認した（詳細は`PROJECT_STATUS.md`
+フェーズ3参照）。ファイル単位（本番消費者2ファイル＋周辺ツール1件）の
+切替完了に加え、フィールド単位でも本線タスクの完了を確認できた。
+
+#### 着手条件
+なし（`common/macro_data/`本体・フェーズ1・フェーズ2はいずれも完了。
+フェーズ3は分類C3件のBACKLOG登録・`FIELD_DEFINITIONS.md`切替調査
+（2026-08-15完了）まで完了、残り11件の検討・ENB異常ケース・本線外
+課題群のみ残置）。
+
+#### クローズの経緯（2026-09-02③）
+BACKLOG.md棚卸しの過程で、本エントリが「完成（本番消費者2ファイル＋
+周辺ツール1件とも切替完了、外部API直接呼び出し完全排除）」と明記済み
+であるにもかかわらず優先度「高」のアクティブなエントリとして残置されて
+いたことが判明した。当初の依頼書は「本文が[[MACRODATA-IMPORT-HISTORY-
+CONFIG-DRIFT-1]]を『登録済み』であるかのように参照しているが、実際には
+BACKLOG.md・BACKLOG_DONE.mdいずれにも当該IDのエントリが存在しない
+（壊れた参照）」という前提だったが、この前提は誤りだったことが判明した。
+実際には`[[MACRODATA-IMPORT-HISTORY-CONFIG-DRIFT-1]]`は2026-08-12に
+登録・2026-08-15に完了（実装コミット`df9af528b`、pytest検証済み）して
+おり、本エントリ内の「解消済み・BACKLOG_DONE.mdへ移動済み」という記述
+はもともと正確だった。誤診断の原因は、依頼作成側の検索が
+`grep -n "^### \[MACRODATA-IMPORT-HISTORY-CONFIG-DRIFT-1\]"`という
+チェックマークなしのパターンのみで行われ、BACKLOG_DONE.mdの完了済み
+エントリの見出し形式`### ✅ [ID]`（チェックマーク付き）を検索対象に
+含めていなかったため、既に完了・移設済みだったエントリを「存在しない」
+と誤判定したことによる（過去の別タスク〈BACKLOG登録移設の検証時〉でも
+一度発生している同型の見落としパターンであり、今後「存在しない」と
+結論する前には`✅`付きパターンも含めて検索することを徹底する必要が
+ある教訓として記録する）。
+
+本エントリ自体は、フェーズ1（本番消費者2ファイル＋周辺ツール1件の
+切替）・フェーズ2（過去データ移管）とも完了しており、他に未解決の
+残タスクはなかった。フェーズ3（導出データ層の管理方法検討）の残り
+11件・SEC EDGAR全105銘柄精査で発見した本線外の異常ケース・優先度
+低〜中の周辺課題群（`[[MACRODATA-FTSD-SERIES-ID-INVALID-1]]`等）は
+いずれも本エントリとは独立した既存BACKLOG登録として個別に存在して
+おり、本エントリのクローズ後もそれぞれ独立して追跡される。
+
+---
+
 ## 2026-09-02②（完了）
 
 ### ✅ [AVGO-CIK-HISTORY-WRONG-LEGACY-CIK-1] AVGOの旧CIK登録が無関係な買収先企業（Broadcom Corp）を指しており、真の前身企業（Avago Technologies LTD, CIK 1441634）と決算期が不一致 — AVGO自体をOn-a-journey管理対象から除外する方針のためクローズ（データ是正ではなく除外で解決）
