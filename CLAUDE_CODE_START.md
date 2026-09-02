@@ -1636,7 +1636,39 @@ git push origin kaihatsu
 
 ### 削除手順
 
+> ⚠️ **本手順のファイルリストを過信しないこと（2026-09-02追記、
+> `[[AVGO-CIK-HISTORY-WRONG-LEGACY-CIK-1]]`クローズ〈AVGO除外〉実施時の
+> 教訓）**: AVGO削除を実際に適用した際、
+> 下記Step 2・Step 3のリストに載っていない設定ファイル・データファイルが
+> 9件（`maturity_config.py`・`growth_sanity.py`・
+> `docs/common/company_names.json`・`common/sec_data/data/_cik_cache.json`
+> ・`common/market_data/{daily,attributes,analyst_history}/[TICKER].json`
+> ・`common/market_data/[TICKER]/`・
+> `docs/common/sec_data/normalized/[TICKER]_quarterly_normalized.json`）
+> 追加で見つかった。新しいデータレイヤー（`common/market_data/`等）が
+> 追加されるたびに本リストが陳腐化する構造的リスクがあるため、**Step 1の
+> 前に必ずStep 0（下記）を実施し、本リストを機械的になぞるだけで済ませ
+> ないこと。**
+
 ```bash
+# Step 0: 削除前の全参照洗い出し（本リストを過信せず必ず実施）
+grep -rln "[TICKER]" . --include="*.py" --include="*.html" --include="*.js" \
+  --include="*.yml" --include="*.yaml" --include="*.json" --include="*.csv" \
+  --include="*.md" 2>/dev/null
+# ヒットしたファイルを1つずつ確認し、以下に分類する:
+#   a. このティッカー専用の生成データ（per-ticker JSON等）→ Step 3相当で削除
+#   b. 設定ファイル内のティッカーキー付きエントリ（辞書/dict型）→ Step 2相当で削除
+#   c. 過去の完了記録・アーカイブ文書（BACKLOG_DONE.md・CHAT_RULES.md・
+#      PROJECT_STATUS.md・SYSTEM_MAP.md・docs/architecture/配下等の日付
+#      ナラティブ）→ 過去の事実の記録のため編集しない
+#   d. 外部実体を反映したキャッシュ（S&P500構成銘柄リスト等、当該銘柄が
+#      実際に指数に含まれる場合）→ 我々の内部登録とは無関係のため編集しない
+#   e. コメント中の例示ティッカー・使用例（docstring・placeholder等）→
+#      任意（実害なし、着手者の判断で放置可）
+#   f. テストコードが実データを読む/登録リストを検証する箇所 → 該当テスト
+#      メソッドのみ削除するか、リストから対象ティッカーのみ除外する
+#      （テストファイル全体・無関係な他ティッカー分は変更しないこと）
+
 # Step 1: 削除対象を確認
 grep [TICKER] config/cik_lookup.csv
 grep [TICKER] config/discover_config.json
@@ -1647,13 +1679,15 @@ grep -v "^[TICKER]," config/cik_lookup.csv > /tmp/cik_tmp.csv
 mv /tmp/cik_tmp.csv config/cik_lookup.csv
 
 # beta_config.json から削除
+# 【重要】ensure_ascii=Falseを必ず指定すること（省略すると日本語コメント
+# が\uXXXXエスケープに化ける事故が発生する、2026-09-02実例で発覚）
 python3 -c "
 import json
-with open('config/beta_config.json') as f:
+with open('config/beta_config.json', encoding='utf-8') as f:
     d = json.load(f)
 d.get('overrides', {}).pop('[TICKER]', None)
-with open('config/beta_config.json', 'w') as f:
-    json.dump(d, f, indent=2)
+with open('config/beta_config.json', 'w', encoding='utf-8', newline='') as f:
+    json.dump(d, f, indent=2, ensure_ascii=False)
 "
 
 # discover_config.json から削除
@@ -1661,10 +1695,10 @@ with open('config/beta_config.json', 'w') as f:
 # （[[DISCOVER-CONFIG-DUAL-MGMT-1]]）
 python3 -c "
 import json
-with open('config/discover_config.json') as f:
+with open('config/discover_config.json', encoding='utf-8') as f:
     d = json.load(f)
 d['tickers'] = {k: v for k, v in d['tickers'].items() if k != '[TICKER]'}
-with open('config/discover_config.json', 'w', encoding='utf-8') as f:
+with open('config/discover_config.json', 'w', encoding='utf-8', newline='') as f:
     json.dump(d, f, ensure_ascii=False, indent=2)
 "
 
@@ -1679,6 +1713,32 @@ with open('config/monitor_tickers.yaml', 'w', encoding='utf-8') as f:
 print(f'{ticker} を monitor_tickers.yaml から削除しました')
 "
 
+# 以下4件は「該当する場合のみ」削除（全銘柄が登録されているとは限らない、
+# 各ファイルをgrepして存在確認してから対応すること）
+# - config/segment_config.json のティッカーキーエントリ
+# - config/split_history.yaml のティッカーキーエントリ（登録されている
+#   場合、tests/test_split_history_adjustments.pyの登録銘柄タプル・
+#   専用回帰テストメソッドも対応して削除すること）
+# - common/sec_data/fixed_registry.json のティッカーキーエントリ
+# - common/sec_data/cik_history.json のティッカーキーエントリ
+
+# 【重要】上記の日本語コメント付きJSON/YAMLファイルは、python json.dump
+# の全体再書き出しで既存のコンパクト配列表記（例: ["1234567"]）が
+# 多行表記に意図せず再整形される事故が発生しうる（2026-09-02実例で発覚、
+# common/sec_data/cik_history.jsonで無関係なDELLエントリの表記が変わって
+# しまった）。git diffで対象ティッカーの削除以外に差分がないことを
+# 必ず確認し、余分な差分が出た場合はEdit等によるテキストベースの
+# 部分削除に切り替えること。
+
+# 併せて確認・該当すれば削除する辞書エントリ（Pythonソース・小規模JSON）:
+# - src/value/tanuki_valuation/maturity_config.py の _TICKER_TV_G 辞書
+# - src/value/tanuki_valuation/growth_sanity.py の
+#   TICKER_INDUSTRY_OVERRIDES 辞書
+# - docs/common/company_names.json のティッカーキーエントリ
+# - common/sec_data/data/_cik_cache.json のティッカーキーエントリ
+#   （.gitignore対象のローカルキャッシュのため削除してもコミット不要、
+#   ローカル環境の整合性のためだけに実施する）
+
 # Step 3: データファイルを削除
 # （common/sec_data/raw/は2026-08-05にデッドコード除去のため廃止済み
 #   [[SECDATA-STORAGE-FRAGMENTATION-1]]、削除対象から除外）
@@ -1689,10 +1749,31 @@ rm -rf docs/value-monitor/tanuki_valuation/data/[TICKER]
 rm -f docs/value-monitor/hypecore/data/[TICKER]_poc.json
 rm -rf docs/value-monitor/adjusted_eps_analyzer/data/[TICKER]
 
-# Step 4: 健全性チェックで不整合がないことを確認
-python common/system_health.py
+# 2026-09-02追加: common/market_data/ レイヤー（[[MARKETDATA-LAYER-
+# CONSTRUCTION-1]]で新設、既存手順の対象外だったため見落とされていた）
+rm -f common/market_data/daily/[TICKER].json
+rm -f common/market_data/attributes/[TICKER].json
+rm -f common/market_data/analyst_history/[TICKER].json
+rm -rf common/market_data/[TICKER]
 
-# Step 5: コミット
+# 2026-09-02追加: docs/側の正規化データミラー
+rm -f docs/common/sec_data/normalized/[TICKER]_quarterly_normalized.json
+
+# Step 4: 健全性チェック・登録系チェッカーで不整合がないことを確認
+# （削除直後はdocs/value-monitor/tanuki_valuation/data/tickers.json等の
+# 派生ファイルが未更新のため、当該ティッカーの「欠損」警告が一時的に出る
+# ことがある。Step 5の全銘柄再生成後に再実行して解消することを確認する）
+python common/system_health.py
+python common/sec_data/audit.py
+python common/sec_data/report_consistency_check.py --fail-on-ng
+
+# Step 5: 全銘柄を再生成し、tickers.json等の派生ファイルを整合させる
+cd src/value/tanuki_valuation && python pipeline.py && cd -
+
+# Step 6: 削除したティッカーに依存するテストがないか確認
+pytest tests/ -q
+
+# Step 7: コミット
 git add -A
 git commit -m "chore: [TICKER] 銘柄削除"
 git pull --rebase origin kaihatsu
