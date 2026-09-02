@@ -321,19 +321,6 @@ class TestRealDataCrmVrt:
         prov = annual_2017.get("bs_provenance", {}).get("stockholders_equity")
         assert prov.get("aligned_to_sibling_accn") is True
 
-    def test_avgo_2017_accounting_identity_not_broken_by_fix(self):
-        """AVGO(2017): 105銘柄シミュレーションで発見した副作用の直接確認。
-        stockholders_equityは既にtotal_assets/total_liabilitiesと同一accn
-        （NCI込みタグ、$23,186M）を採用しており、TL+SE=TAの恒等式が完全
-        一致している。VRT型の新規ステップがこれをプレーンタグ（NCI抜き、
-        $20,285M）へ差し替えて恒等式を壊すことがないよう確認する。"""
-        parser = SECParser(data_dir=_DATA_DIR)
-        parsed = parser.parse_company_facts("AVGO")
-        annual_2017 = parsed["annual"].get(2017, {})
-        bs = annual_2017.get("bs", {})
-        assert bs.get("stockholders_equity") == 23_186_000_000
-        assert bs["total_liabilities"] + bs["stockholders_equity"] == bs["total_assets"]
-
     def test_cwan_2023_unaffected_by_vrt_type_fix(self):
         """CWAN(2023)は『正しいaccnにタグ自体が存在しない』構造的必然
         パターン（BACKLOG記載: 後続3つの異なるfilingで一貫して報告される

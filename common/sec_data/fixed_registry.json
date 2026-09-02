@@ -15679,44 +15679,6 @@
       "refreshed_reason": "[[OPERATING-INCOME-EXTRACTION-GAP-1]]: operating_incomeフィールドの新規追加backfill（fields_snapshot対象フィールドの値は変更なし、純粋追加のみ）に伴うsnapshot_hash再計算"
     }
   },
-  "AVGO": {
-    "2016": {
-      "fixed_at": "2026-08-05",
-      "fixed_by": "manual_verification",
-      "verified_against": {
-        "method": "SEC EDGAR companyconcept API直接照合（accn 0001730168-18-000084、ProfitLoss/OperatingIncomeLossタグ完全一致）",
-        "checks_passed": [
-          "revenue $13,240,000,000は10-K原本の真の年次値と完全一致確認",
-          "ProfitLossタグ $-1,861,000,000 とannual_2016.json値の完全一致確認（2026-08-05追加検証）"
-        ],
-        "verified_at": "2026-08-05"
-      },
-      "fields_snapshot": [
-        "revenue",
-        "net_income"
-      ],
-      "snapshot_hash": "sha256:68f942d967f2950941850fedf4b7acce052652fa31e8495070d63d5976134955",
-      "note": "[[PERIOD-LENGTH-VALIDATION-GAP-1]]（Stage 2登録、2026-08-05のSEC EDGAR一次情報追加検証込み）"
-    },
-    "2017": {
-      "fixed_at": "2026-08-05",
-      "fixed_by": "manual_verification",
-      "verified_against": {
-        "method": "SEC EDGAR companyconcept API直接照合（accn 0001730168-18-000084、ProfitLoss/OperatingIncomeLossタグ完全一致）",
-        "checks_passed": [
-          "revenue $17,636,000,000は10-K原本の真の年次値と完全一致確認",
-          "OperatingIncomeLossタグ $2,383,000,000 とannual_2017.json値の完全一致確認（2026-08-05追加検証）"
-        ],
-        "verified_at": "2026-08-05"
-      },
-      "fields_snapshot": [
-        "revenue",
-        "operating_income"
-      ],
-      "snapshot_hash": "sha256:df8e852d68d2a9f0aec25ec120e1169b8be3d6156ac785746d9329c9f3f6e0db",
-      "note": "[[PERIOD-LENGTH-VALIDATION-GAP-1]]（Stage 2登録、2026-08-05のSEC EDGAR一次情報追加検証込み）"
-    }
-  },
   "RCAT": {
     "2024": {
       "fixed_at": "2026-08-05",

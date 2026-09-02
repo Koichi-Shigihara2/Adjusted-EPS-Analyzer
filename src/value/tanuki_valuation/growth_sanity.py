@@ -201,7 +201,6 @@ TICKER_INDUSTRY_OVERRIDES = {
     "AAPL":  "Computers/Peripherals",             # SIC→Software_Internet デフォルトを上書き。indname.xls実態分類
     "ADBE":  "Software (System & Application)",   # Creative/Document Cloud SaaS
     "BKNG":  "Hotel/Gaming",                       # indname.xls実態分類（旧"Software (Internet)"はテストデータ。SECTOR-FCF-RATE-BROKEN-1）
-    "AVGO":  "Semiconductor",                     # AI ASIC+ネットワーク半導体
     "ADSK":  "Software (System & Application)",   # AEC/製造業向けSaaS
     "CDNS":  "Software (System & Application)",   # EDA半導体設計ツール
     "PAYS":  "Financial Svcs. (Non-bank & Insurance)",  # 小型FinTech・プリペイドカード

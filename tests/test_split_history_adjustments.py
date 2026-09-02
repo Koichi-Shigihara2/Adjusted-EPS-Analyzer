@@ -4,7 +4,7 @@ tests/test_split_history_adjustments.py
 src/value/adjusted_eps_analyzer/pipeline.py::load_split_history()/
 apply_split_adjustments() の回帰テスト（SPLIT-REALTIME-GAP-1）。
 
-config/split_history.yaml へのNVDA/AVGO/CPRT/WMT/LRCX/CELH/KLAC登録が、
+config/split_history.yaml へのNVDA/CPRT/WMT/LRCX/CELH/KLAC登録が、
 恒久固着していた分割前四半期を正しく遡及補正すること、KLACのように
 post-split四半期データがまだ存在しない銘柄は安全にno-opとなること、
 未登録銘柄・除外銘柄（RCAT）には一切影響しないことを確認する。
@@ -39,7 +39,7 @@ class TestLoadSplitHistory:
     def test_yaml_contains_all_registered_tickers(self):
         """config/split_history.yaml に本タスクで登録した8銘柄が存在すること"""
         history = pl.load_split_history()
-        for ticker in ("NVDA", "AVGO", "CPRT", "WMT", "LRCX", "CELH", "KLAC", "TSLA"):
+        for ticker in ("NVDA", "CPRT", "WMT", "LRCX", "CELH", "KLAC", "TSLA"):
             assert ticker in history, f"{ticker} not registered in split_history.yaml"
 
 
@@ -69,20 +69,6 @@ class TestApplySplitAdjustmentsRealData:
         assert by_end["2021-10-31"]["diluted_shares_used"] == 25_380_000_000
         # 既に分割調整済みの四半期は変更されない
         assert by_end["2023-07-30"]["diluted_shares_used"] == 24_994_000_000
-
-    def test_avgo_stuck_quarters_corrected(self):
-        quarters = [
-            _q("2022-07-31", 430_000_000),
-            _q("2023-01-29", 429_000_000),
-            _q("2023-04-30", 427_000_000),
-            _q("2023-07-30", 4_269_000_000),
-            _q("2023-10-29", 4_272_000_000, form="10-K"),
-            _q("2024-08-04", 4_663_000_000),  # real split date(2024-07-15)以降
-        ]
-        result = pl.apply_split_adjustments("AVGO", quarters, self.history)
-        by_end = {r["period_end"]: r for r in result}
-        assert by_end["2023-04-30"]["diluted_shares_used"] == 4_270_000_000
-        assert by_end["2023-07-30"]["diluted_shares_used"] == 4_269_000_000  # unchanged
 
     def test_cprt_single_split_corrected(self):
         """CPRTは2023-08-22の単一分割のみ登録（2022-11-04は分割ではなく
