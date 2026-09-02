@@ -4320,7 +4320,7 @@ LRCX, ENTG, LYFT）。残り28銘柄はconversion_rateが計算・表示され�
   （下記参照）
 - ③: ticker単位の表示ではなく、fcf_conversion_config.json側に
   セクターカテゴリ単位の開発者向けメタ情報として持たせる設計
-  （画面表示は変更しない）
+  （画面表示は変更しない） → **2026-09-02 実装完了**（下記参照）
 - ②表示不一致バグ（新規発見）: report.txtはfcf_estimation.applied=True
   前提でネストされているが、stock.htmlはticker集合の所属のみで判定し
   applied状態を見ないため、LITE等でapplied=Falseの間、両者の表示が
@@ -4376,6 +4376,63 @@ per_shareはAAPLで再実行前後バイト完全一致を確認）。この4銘
 revertし、コード変更のみをコミットしている。pytest 1031件全通過・
 `common/sec_data/audit.py`（🔴なし）・`report_consistency_check.py
 --fail-on-ng`（NG=0）も確認済み。
+
+**③の実装完了（2026-09-02）**: `config/fcf_conversion_config.json`に
+新規キー`_damodaran_comparison`を追加（既存の`_comment`等と同じく
+Pythonバックエンドからは読み込まれない開発者向け参考情報。
+`estimate_fcf_from_eps()`等の計算ロジックは変更していない）。
+
+STEP1（再計算、過去記述への依拠なし・依頼書の指示通りoifcff.xls・
+margin.xlsから独自に再計算）: `damodaran_cache/oifcff.xls`
+『Industry Averages』シートの『EBIT (1-t)』列・『FCFF』列（業種内$合計）
+と、`damodaran_cache/margin.xls`同シートの『Net Margin』列・
+『After-tax Unadjusted Operating Margin』列（対Sales比率、両ファイルで
+Number of firmsが一致し同一母集団と確認済み）から、
+`damodaran_derived_rate = (FCFF/EBIT(1-t)) ÷ (Net Margin/AT_Op_Margin)`
+（≈FCFF/NIの業種集計近似値）を現行10カテゴリ全件について算出した
+（`default`は単一のDamodaran業種に対応しないため対象外）。cache_meta.json
+記載のダウンロード日は2026-01-05（Damodaran 2025年版データ）。
+
+STEP2（config追記）: カテゴリごとにcalibrated_rate・damodaran_industry・
+damodaran_derived_rate・noteを記載。算出方法・使用列・計算式は
+`_methodology`キーに、集計方法の異なる2ファイルを跨ぐ近似であることの
+限界は`_caveat`キーに明記した。
+
+**主な算出結果**（2026-09-02再計算、過去のBACKLOG記述からの転記ではない）:
+Software_Internet・AdvertisingはNet Marginがゼロ近傍/僅かに負のため
+damodaran_derived_rateがそれぞれ21.31倍・-36.66倍（符号反転）に発散し
+使用不能。Software_System_Mature/SaaS/暫定値はDamodaran側が単一業種
+（Mature/SaaSを区別しない）のため3カテゴリとも同一値0.48となり、
+較正値のMature=1.00・SaaS=1.61との3.4倍差そのものが2026-07-14の
+Mature/SaaS分割の必要性を裏付ける形となった。Auto_Truckは較正値0.65に
+対しdamodaran_derived_rate=2.11と3倍超の乖離。Semiconductor（0.85→0.76）・
+Financial_NonBank（0.50→0.64）・Beverage_Soft（0.75→1.01）・
+Aerospace_Defense（0.55→0.62）は比較的近いオーダーだが、いずれも
+較正値を上書きするには根拠不十分と判断し、全カテゴリで較正値を維持
+（計算ロジックは変更なし）。2026-07-21時点の見送り判断（案A: 全面置換）
+の結論は、今回の独立した再計算でも再現された。
+
+検証: `config/fcf_conversion_config.json`がJSONとして正しくパース可能
+であることを確認（`json.load()`成功、全11カテゴリに対応する
+`_damodaran_comparison.categories`エントリが存在することを確認）。
+`estimate_fcf_from_eps()`をSITM/AAPL/PLTR/CWAN/LMT等の代表銘柄で実行し、
+conversion_rateが新キー追加前後で完全一致することを確認（計算ロジック
+自体は無変更のため差分0件）。pytest 1031件全通過・
+`common/sec_data/audit.py`（🔴なし）・`report_consistency_check.py
+--fail-on-ng`（NG=0）も確認済み。
+
+**①②③すべて実装完了、EPIC本体のクローズ可否について**: 骨子①②の
+観点で他に未対応の段階がないか確認した結果、2026-07-20時点で
+判断保留として残っていた4件のうち、GROWTH-SANITY-CLASS-SYNC-1は
+2026-07-19に、FY52WEEK-BS-NULL-SILENT-1（Phase A・B Stage1-3・C
+全て）・MRVL-2019-2020-NULL-1・EPS-ANALYZER-NORMALIZE-SCOPE-1は
+いずれも2026-07-20までにBACKLOG_DONE.mdへ完全移動済み（✅マーク付き
+見出しで確認済み）と判明した。段階0（FY52WEEK-BS-NULL-SILENT-1等）・
+段階1（GROWTH-SANITY-CLASS-SYNC-1・GROWTH-STRUCTURAL-MISMATCH-
+CANDIDATES-1）・段階2（FCF-CONVRATE①②③）のいずれも骨子①②の
+適用が完了しており、本EPIC内に残る未対応項目は確認できなかった。
+ただしEPIC自体のクローズはKoichiさんの判断事項のため、本セッションでは
+クローズを実施せず、この確認結果を報告するに留める。
 
 **過去記録の不正確性（新規発見）**: [[FCF-CONVRATE-DESIGN-LIMIT-1]]
 （2026-07-14完了記録）の「oifcff.xlsとの突合でEBIT(1-t)/Revenue比率を
