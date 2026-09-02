@@ -2,6 +2,134 @@
 
 ---
 
+## 2026-09-02②（完了）
+
+### ✅ [AVGO-CIK-HISTORY-WRONG-LEGACY-CIK-1] AVGOの旧CIK登録が無関係な買収先企業（Broadcom Corp）を指しており、真の前身企業（Avago Technologies LTD, CIK 1441634）と決算期が不一致 — AVGO自体をOn-a-journey管理対象から除外する方針のためクローズ（データ是正ではなく除外で解決）
+**優先度:** 中（2026-08-16、高→中へ訂正）
+**分類:** バグ疑い / CIK統合設計の誤り
+**登録日:** 2026-08-05
+**完了日:** 2026-09-02②
+**発見:** [[AVGO-2015-DATA-THIN-1]]原因調査（チャット記録）
+
+#### 内容（元の問題記述）
+`cik_history.json`のAVGO `legacy_ciks=["1054374"]`は、SEC EDGAR一次
+情報の決算期比較（現行CIK・真の前身候補CIK 1441634はいずれも10月末〜
+11月初決算、登録済み旧CIK 1054374は12月31日決算）により、無関係な
+買収先企業（Broadcom Corporation、2016年にAvago Technologies社に
+買収されBroadcomへ社名変更）のデータである可能性が高いと判明した。
+真の前身企業CIK 1441634「Avago Technologies LTD」は2016-02-08に
+Form 15-12B提出で消滅しており、`cik_history.json`に未登録。
+
+現状、2006-2014年の「AVGO」年次データは、Avago自身の実績ではなく
+Broadcom Corpの実績を表している可能性がある。2015年の欠落はこの
+誤りの副産物（真の前身CIKが未登録のためFY2015 10-Kが参照されない）。
+
+#### 実害（元の記述）
+現時点でゼロと確認済み（growth_sanity・roe_10yr_avgともに窓が届く
+範囲外、fixed_registry.jsonはAVGO 2016/2017のみ登録済みで無関係）。
+潜在リスクとして、将来ROE/CAGR窓が拡張された場合、または2006-2014年
+実績が直接参照された場合に誤ったデータを見せるリスクが残る。
+
+#### 対応方針の選択肢（元の記述、未実装のまま並記されていた）
+案A: 旧CIKを1441634へ差し替え・2006-2014年データ再生成（コスト中、
+決算期変更に伴う年度キー再検証が必要）
+案B: 現状維持＋警告表示のみ（コスト低、誤データ残存）
+案C: 2006-2014年データを削除・DELL型の「接続しない」構造的境界扱い
+（コスト低〜中）
+
+#### 優先度訂正の経緯（2026-08-16）
+案2 Step C（BACKLOG優先度中以上の棚卸し）で、本文の「#### 実害」欄に
+「現時点でゼロと確認済み」と明記されているにもかかわらず優先度が
+「高」のまま維持されている自己矛盾を発見した。潜在リスクは「将来
+ROE/CAGR窓が拡張された場合」「2006-2014年実績が直接参照された場合」
+という、いずれも未確定の仮定条件下でのみ顕在化するものであり、対応
+方針も3案並記のまま未決定。実害ゼロが確認済みという記述自体は正しく
+（データが誤っている可能性という事実認識は変えない）、優先度表記の
+みを「中」へ訂正する。
+
+#### クローズの経緯（2026-09-02②）
+案A〜Cのいずれも「データ境界の是正」を前提としていたが、Koichiさんの
+判断により方針転換: AVGO自体をOn-a-journey管理対象から除外することで、
+そもそも誤ったCIK統合データを
+抱える必要自体をなくす。ポートフォリオ・TANUKI TAILいずれにも保有・
+監視登録されていないことを確認済みで、除外の実害は限定的と判断された。
+
+実装内容: `config/cik_lookup.csv`・`beta_config.json`・
+`discover_config.json`・`monitor_tickers.yaml`からAVGO登録を削除、
+`common/sec_data/data/AVGO/`等の生成データ一式・
+`config/segment_config.json`・`config/split_history.yaml`・
+`common/sec_data/fixed_registry.json`・`common/sec_data/cik_history.json`
+（本エントリの発端となった`legacy_ciks=["1054374"]`誤統合の記載を含む）
+のAVGOエントリを削除。既存の削除手順に含まれていなかった9件
+（`maturity_config.py`・`growth_sanity.py`・`company_names.json`・
+`_cik_cache.json`・`common/market_data/`配下4件・docsミラー1件）も
+削除し、削除手順書自体（CLAUDE_CODE_START.md「銘柄削除時の必須手順」）
+を恒久的に拡充した。
+
+これにより、案A（CIK差し替え）・案B（現状維持）・案C（データ削除、
+今回採用した「銘柄自体を除外」と類似だが個別データのみの削除を想定
+していた）のいずれとも異なる「案D: 銘柄自体を除外」で解決した。
+
+既存の削除手順（Step 1〜2）に含まれていなかった9件の追加発見:
+`src/value/tanuki_valuation/maturity_config.py`（`_TICKER_TV_G`辞書）・
+`growth_sanity.py`（`TICKER_INDUSTRY_OVERRIDES`辞書）・
+`docs/common/company_names.json`・`common/sec_data/data/_cik_cache.json`
+（.gitignore対象のローカルキャッシュ）・`common/market_data/`配下4件
+（`daily/`・`attributes/`・`analyst_history/`・専用ディレクトリ、
+`[[MARKETDATA-LAYER-CONSTRUCTION-1]]`で新設され既存手順の対象外
+だった）・`docs/common/sec_data/normalized/`のdocsミラー1件。
+CLAUDE_CODE_START.md「銘柄削除時の必須手順」自体もStep 0（削除前の
+全参照洗い出し）新設・上記9件の追加・JSON書き込み時のensure_ascii/
+配列再整形事故の注意書きを加えて恒久的に拡充した。
+
+テスト2件への影響（承認を得て対応）:
+`tests/test_bs_field_cross_year_misselect.py::test_avgo_2017_
+accounting_identity_not_broken_by_fix`（`common/sec_data/data/AVGO/`
+実データ依存、削除で失敗）は該当メソッドのみ削除（同ファイル内の
+VRT・CWAN実データテストは無傷）。`tests/test_split_history_
+adjustments.py`（`config/split_history.yaml`のAVGOエントリ依存）は
+登録銘柄タプルからAVGOを除外・`test_avgo_stuck_quarters_corrected`
+メソッドを削除（他7銘柄のテストは無傷）。
+
+#### 検証結果
+- grep sweep: ソースコード側は完全にクリーン（残存するのは歴史的
+  ナラティブ記録・S&P500構成銘柄の外部リスト・.gitignore対象の
+  ローカルキャッシュ・コメント中の例示のみ、いずれもスコープ外と
+  確認済み）
+- pytest: 1009 passed / 0 failed（削除した2テストメソッド分減、
+  新規failなし）
+- `common/sec_data/audit.py`: 重大0件・警告9件（既存、変更なし）
+- `report_consistency_check.py --fail-on-ng`: NG=0・WARN=93件
+  （regen前後で同水準。config/discover_config.jsonの変更に伴い
+  `docs/portfolio/data/discover_config.json`をDiscover_Config_Sync.yml
+  と同じロジックで手動同期、CHECK-32 NG-32を解消）
+- `common/system_health.py`: AVGO関連の欠損表示（[B]ScoreHistory・
+  [C]Latest JSON・[A]SEC Data）は全て解消（99/99整合）。[H]Config
+  も整合OK（maturity_config.py等の孤立エントリなし）。残る2件
+  （[F]TailCtrl APGE不足・[G]HypeCore鮮度）はAVGOと無関係の既存課題
+  と確認済み
+- `registration_validator.py`: 全出力中にAVGOへの言及が0件
+  （新規登録時の逆＝銘柄消失によるエラーなし）。既存のNG12件/WARN10件
+  はAVGO削除前から存在した無関係な別課題（discover_config.json未登録
+  6銘柄等、削除前後で対象銘柄集合が完全一致することを確認済み）
+- 全99銘柄（tanuki=true、AVGO除く）フルパイプライン再生成:
+  成功99/失敗0。before/after比較（浮動小数点誤差許容込み）で
+  AVGO削除以外の実質的な差分は4銘柄のみ（うち2件はCI/ローカル環境差の
+  パス文字列、2件はCOHR/LITEのインサイダー取引新規開示という正当な
+  市場データ更新。CEG・LYFTの`validation.overall=FAIL`はregen前から
+  存在する既知の`anomaly_detection`起因で本タスクとは無関係と確認済み）
+- 派生ファイル3件（`.watcher_state.json`・`hypecore/data/tickers.json`・
+  `adjusted_eps_analyzer/data/summary.json`）はpipeline.py以外の別
+  スクリプトが管理するためフルパイプライン再生成では自動追従せず、
+  AVGOエントリが残存していたことを検知・個別に削除して解消
+
+コミット: `46cc39aa9`（コード削除本体、全99銘柄regen含む）・
+CLAUDE_CODE_START.md手順書更新コミット・BACKLOG更新コミット（本エントリ、
+`git log`参照）。push後`git status`で`up to date with origin/kaihatsu`を
+確認済み。
+
+---
+
 ## 2026-09-02（完了）
 
 ### ✅ [MARKET-PULSE-LOCAL-DUAL-EXEC-1] Market Pulse更新のローカル/GitHub Actions二重実行の整理・GitHub Actions単独化

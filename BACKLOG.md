@@ -3816,52 +3816,99 @@ Yahoo Finance自体が2026-07-13〜07-17の5件しか返さず、`period="5d"`�
 ---
 
 
-### [SEC-DATA-REDESIGN-OPERATIONAL-POLICY-1] common/sec_data再設計の運用方針確定（フィックス機構・銘柄数絞り込み・新規登録フロー）— Stage 2〜3残タスク
-**優先度:** 高
+### [SEC-DATA-REDESIGN-OPERATIONAL-POLICY-1] common/sec_data再設計の運用方針確定（フィックス機構・銘柄数絞り込み・新規登録フロー）— 真の残タスク2件（訂正済み）
+**優先度:** 低（Stage 1〜3b実装完了済み。残る2件はいずれも低優先度の
+個別調査、2026-09-02に本文訂正）
 **分類:** アーキテクチャ再設計 / 運用方針確定・実装
 **登録日:** 2026-08-04
-**更新日:** 2026-08-05（Stage 1完了。詳細はBACKLOG_DONE.md「2026-08-05
-（完了）」参照。以下はStage 2〜3の残タスクのみ記載）
+**更新日:** 2026-09-02（本文訂正。「残タスク（Stage 2〜3、未着手）」の
+記載が2026-08-05時点のまま更新されておらず、実際にはStage 2・3・3a・
+3bまで全て実装完了していた〈BACKLOG_DONE.md参照〉という陳腐化を
+[[AVGO-CIK-HISTORY-WRONG-LEGACY-CIK-1]]対応〈AVGO削除〉の過程で発見・
+訂正した。詳細は下記「真の残タスク」参照）
 **発見:** common/sec_data一次データ取得層 再設計 運用方針検討（chat記録）
 
-#### 内容（要約。運用方針・スキーマ設計・Stage 1実装の全詳細は
-BACKLOG_DONE.md「[[SEC-DATA-REDESIGN-OPERATIONAL-POLICY-1]] Stage 1」参照）
+#### 内容（要約。運用方針・スキーマ設計・Stage 1〜3b実装の全詳細は
+BACKLOG_DONE.md「[[SEC-DATA-REDESIGN-OPERATIONAL-POLICY-1]] Stage 1」
+〜「Stage 3b」の各エントリ参照）
 `common/sec_data/`再設計の運用方針3点（フィックス機構・銘柄数絞り込み
 基準・新規登録フロー）を確定し、フィックス機構（`fixed_registry.json`、
 銘柄×年度単位の差分適用方式）のスキーマ設計・`parser.py`/`utils.py`/
 `report_consistency_check.py`（CHECK-31/WARN-31）への実装・taxonomy属性
-①〜⑧非該当26銘柄・372銘柄×年度エントリのStage 1登録・検証（全105銘柄
-再パースで無変化確認、pytest 497 passed/2 known failed、NG=0確認）まで
-完了した（機能コミット`7c15b2a75`、BACKLOG更新コミット`ae88715c5`、
-いずれもpush済み）。
+①〜⑧非該当26銘柄・372銘柄×年度エントリのStage 1登録（機能コミット
+`7c15b2a75`）に続き、Stage 2（個別バグ調査で正しさ確定済みの12銘柄・
+17エントリ）・Stage 3（準備調査・記録訂正）・Stage 3a（MO/PM/LLY
+31エントリ）・Stage 3b（SCCO(2010-2019)・RDW(2020)・ASTS(2020)
+12エントリ）まで**全て実装・検証・push済み**（各Stageの詳細・
+コミットハッシュはBACKLOG_DONE.md該当エントリ参照）。
 
-**残タスク（Stage 2〜3、未着手）**: taxonomy属性①〜⑧該当58銘柄
-（AAPL, ABBV, APGE, ASTS, AVAV, AVGO, BBAI, BKNG, BROS, CAKE, CART,
-CAT, CELH, CEG, CIX, COHR, CON, CPRT, DELL, ELF, ESTC, FICO, GEV,
-GOOGL, HEI, HON, IONQ, JOBY, KLAC, LITE, LLY, LRCX, MO, MRVL, MSFT,
-NOW, NVDA, ONDS, PAYS, PLTR, PM, RCAT, RDW, RKLB, RMBS, SCCO, SN,
-SNPS, SOFI, SOUN, SPIR, TER, TSLA, V, VRT, VST, WST, XOM）のうち、
-BACKLOG_DONE.mdで個別バグ対応が完了・確認済みの年度をStage 2として
-`fixed_by: manual_verification`で登録する作業（次のアクション）。
-Stage 3（属性該当銘柄でOPEN課題が残る年度は保留のまま）も未着手。
+#### 真の残タスク（2026-09-02訂正、2件）
+Stage 3b完了時点の記録（BACKLOG_DONE.md、2026-08-05付）が残タスクとして
+3項目（`[[AVGO-2015-DATA-THIN-1]]`・MRVL/AVGO/DELL旧CIK拡張分の年度×
+フィールド粒度の個別確認・`[[SPAC-SHELL-MAINTAINED-FIELDS-FREEZE-
+CONSIDERATION-1]]`）を挙げていたが、本文側の更新が漏れ「Stage 2〜3
+未着手」という誤った記載のまま残っていた。実態は以下の通り:
 
-#### 対応方針
-次のステップとして、Stage 2対象銘柄×年度リストの生成（属性該当58銘柄の
-うちBACKLOG_DONE.mdで解消済み確認済みの年度の洗い出し）に着手する。
-Stage1〜2の対象範囲生成結果は差分としてユーザーに提示し、確認を経てから
-`fixed_registry.json`へ一括登録する運用（[[CHECK29-COHR-CROSS-ACCN-
-TEMPORARY-EQUITY-1]]の教訓「対象サブセットのみへのシミュレーションでは
-既解決集団への回帰を見逃す——常に全母集団で再シミュレーションすること」
-を踏襲）を継続する。
+1. `[[AVGO-2015-DATA-THIN-1]]`: 2026-08-30に既にクローズ済み（原因確定、
+   BACKLOG_DONE.md参照）
+2. MRVL/AVGO/DELL旧CIK拡張分の年度×フィールド粒度の個別確認:
+   AVGO分は本タスク（AVGO自体をOn-a-journey管理対象から除外）により
+   対象外。MRVL・DELL分は未対応のまま残っていたため、
+   `[[SECDATA-LEGACY-CIK-GRANULARITY-1]]`として新規に正式登録した
+   （下記参照）
+3. `[[SPAC-SHELL-MAINTAINED-FIELDS-FREEZE-CONSIDERATION-1]]`: 優先度低、
+   意図的据え置きのまま継続
+
+以上により、本エントリの真の残タスクは以下2件のみ:
+- `[[SECDATA-LEGACY-CIK-GRANULARITY-1]]`（MRVL・DELL旧CIK拡張データの
+  粒度確認、優先度低〜未定）
+- `[[SPAC-SHELL-MAINTAINED-FIELDS-FREEZE-CONSIDERATION-1]]`（優先度低、
+  意図的据え置き）
 
 #### 着手条件
-なし。優先度高（sec_data再設計の土台となる方針決定のため）。Stage 1は
-実装完了、Stage 2〜3が残タスク。
+なし。優先度低（土台となる方針決定・実装は完了済み、残る2件は
+いずれも個別調査レベルの低優先度課題）。
 
 #### 完了報告の必須項目
 - 反映されたコミットハッシュ
 
 ---
+
+### [SECDATA-LEGACY-CIK-GRANULARITY-1] MRVL・DELLの旧CIK拡張データの年度×フィールド粒度の個別確認未了
+**優先度:** 低〜未定（実害の有無が未確認のため要調査、保守的表現）
+**分類:** データ品質 / common/sec_data再設計 残課題
+**登録日:** 2026-09-02
+**発見:** `[[SEC-DATA-REDESIGN-OPERATIONAL-POLICY-1]]` Stage 3b完了記録
+（BACKLOG_DONE.md、2026-08-05付）内に残タスクメモとして記載されていた
+ものの、正式なBACKLOG IDが採番されないまま残っていた。今回の
+`[[AVGO-CIK-HISTORY-WRONG-LEGACY-CIK-1]]`対応（AVGO削除、2026-09-02）
+に伴い`[[SEC-DATA-REDESIGN-OPERATIONAL-POLICY-1]]`本文の「残タスク」欄
+を精査した際にこの未採番メモを発見し、正式にBACKLOG登録した。
+
+#### 内容
+2026-08-05付Stage 3残タスクメモは「MRVL/AVGO/DELL旧CIK拡張分（MRVL
+2007-2018・AVGO 2006-2014・DELL 2007-2013、フィールド別の詳細特定が
+必要）」の年度×フィールド粒度の個別確認を挙げていたが、Stage 3a・3bでは
+MO/PM/LLY・SCCO/RDW/ASTSのみ実装され、この項目自体は一度も対応されない
+まま残っていた。AVGO分は`[[AVGO-CIK-HISTORY-WRONG-LEGACY-CIK-1]]`対応
+（AVGO自体をOn-a-journey管理対象から除外）により対象外となったため、
+対象はMRVL・DELLの2銘柄に絞られる。
+
+`cik_history.json`にlegacy_ciks登録されたMRVL（旧CIK 1058057、
+2007-2018）・DELL（旧CIK 826083、2007-2013）の統合データについて、
+年度・フィールド単位で「本当に正しく統合されているか」の個別粒度確認が
+Stage 1〜3bのいずれの実装でも行われていない。AVGOで実際に旧CIK誤統合
+（無関係な買収先企業のデータ）が発覚した前例があるため、同型の問題が
+MRVL・DELLにも潜在する可能性はゼロではないが、現時点で実害が確認されて
+いるわけではない。
+
+#### 対応方針
+未定。MRVL（2007-2018）・DELL（2007-2013）それぞれの旧CIK拡張データを
+SEC EDGAR一次情報と突合し、AVGO型の誤統合がないかを確認する調査から
+着手する。
+
+#### 着手条件
+なし（優先度低、次回セッション以降で判断）
 
 ---
 
@@ -4402,60 +4449,6 @@ Excluding APIC」という名称通り簿価（CarryingAmount系と同種の測�
 497 passed/2 known failed（既知）を確認。詳細はBACKLOG_DONE.md該当
 エントリ参照。**`[[CHECK29-UNRESOLVED-23-MIXED-CAUSES-1]]`の「②許可
 リスト拡張で対応可能」2件（RDW/ASTS）が両方解消**。
-
----
-
----
-
-### [AVGO-CIK-HISTORY-WRONG-LEGACY-CIK-1] AVGOの旧CIK登録が無関係な買収先企業（Broadcom Corp）を指しており、真の前身企業（Avago Technologies LTD, CIK 1441634）と決算期が不一致
-**優先度:** 中（2026-08-16、高→中へ訂正。理由は下記「優先度訂正の経緯」参照）
-**分類:** バグ疑い / CIK統合設計の誤り
-**登録日:** 2026-08-05
-**発見:** [[AVGO-2015-DATA-THIN-1]]原因調査（チャット記録）
-
-#### 内容
-`cik_history.json`のAVGO `legacy_ciks=["1054374"]`は、SEC EDGAR一次
-情報の決算期比較（現行CIK・真の前身候補CIK 1441634はいずれも10月末〜
-11月初決算、登録済み旧CIK 1054374は12月31日決算）により、無関係な
-買収先企業（Broadcom Corporation、2016年にAvago Technologies社に
-買収されBroadcomへ社名変更）のデータである可能性が高いと判明した。
-真の前身企業CIK 1441634「Avago Technologies LTD」は2016-02-08に
-Form 15-12B提出で消滅しており、`cik_history.json`に未登録。
-
-現状、2006-2014年の「AVGO」年次データは、Avago自身の実績ではなく
-Broadcom Corpの実績を表している可能性がある。2015年の欠落はこの
-誤りの副産物（真の前身CIKが未登録のためFY2015 10-Kが参照されない）。
-
-#### 実害
-現時点でゼロと確認済み（growth_sanity・roe_10yr_avgともに窓が届く
-範囲外、fixed_registry.jsonはAVGO 2016/2017のみ登録済みで無関係）。
-潜在リスクとして、将来ROE/CAGR窓が拡張された場合、または2006-2014年
-実績が直接参照された場合に誤ったデータを見せるリスクが残る。
-
-#### 対応方針の選択肢（未実装のまま並記）
-案A: 旧CIKを1441634へ差し替え・2006-2014年データ再生成（コスト中、
-決算期変更に伴う年度キー再検証が必要）
-案B: 現状維持＋警告表示のみ（コスト低、誤データ残存）
-案C: 2006-2014年データを削除・DELL型の「接続しない」構造的境界扱い
-（コスト低〜中）
-
-#### 着手条件
-**充足済み（2026-08-13更新）**。着手条件だった「新DB構築フェーズ1
-完了」は、`common/sec_data`統合（フェーズD、2026-08-06実質完了）・
-`common/market_data/`・`common/macro_data/`（いずれも2026-08-13本線
-タスク完了）を含め満たされた。対応方針〈案A: 旧CIK差し替え・案B:
-現状維持＋警告表示・案C: 2006-2014年データ削除〉のいずれを採るかの
-判断が必要な状態（実装は未着手のまま）。
-
-#### 優先度訂正の経緯（2026-08-16）
-案2 Step C（BACKLOG優先度中以上の棚卸し）で、本文の「#### 実害」欄に
-「現時点でゼロと確認済み」と明記されているにもかかわらず優先度が
-「高」のまま維持されている自己矛盾を発見した。潜在リスクは「将来
-ROE/CAGR窓が拡張された場合」「2006-2014年実績が直接参照された場合」
-という、いずれも未確定の仮定条件下でのみ顕在化するものであり、対応
-方針も3案並記のまま未決定。実害ゼロが確認済みという記述自体は正しく
-（データが誤っている可能性という事実認識は変えない）、優先度表記の
-みを「中」へ訂正する。
 
 ---
 
