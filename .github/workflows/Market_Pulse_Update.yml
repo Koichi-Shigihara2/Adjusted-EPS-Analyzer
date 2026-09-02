@@ -2,7 +2,8 @@ name: Market_Pulse_Update
 
 on:
   schedule:
-    - cron: "35 21 * * 1-5"  # 月〜金のみ（土日スキップ）
+    - cron: "25 21 * * 1-5"  # UTC21:25=JST翌6:25頃、月〜金のみ
+                              # （Market_Data_Daily_Updateと同じ余裕設計）
   workflow_dispatch:
     branches:
       - kaihatsu
