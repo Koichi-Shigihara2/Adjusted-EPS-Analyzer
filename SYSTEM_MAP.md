@@ -326,6 +326,17 @@ HypeCore遷移確率サンプル数の4観点を機械判定。詳細はスク�
 赤字企業（cik_lookup.csv `stonks_silo=true`、2026-07-10時点25銘柄）を対象に、
 黒字化までの投資適合性を評価する。
 
+**`stonks_silo=false`の一般方針（2026-09-03追記、[[REGISTER-FLOW-
+REDESIGN-1]]方針4対応）**: `cik_lookup.csv`の`stonks_silo=false`は
+2026-09-03時点78銘柄と大多数を占めるが、これは個別銘柄ごとの判断では
+なく**「大型株・黒字企業全般はSTONKS SILO評価対象外」という設計方針**
+そのものである（STONKS SILOは上記の通り赤字企業の黒字化評価に特化した
+システムであり、`stonks_silo=true`側〈25銘柄〉が例外的に選定された赤字
+企業リスト）。そのため`cik_lookup.csv`の`exclusion_reason`列には、この
+一般方針に該当する78銘柄分は記入しない（個別の除外理由が存在する
+RKLB/ZS〈成長株のためSTONKS SILO評価が適切、tanuki側は対象外〉のような
+ケースのみ記入する設計）。
+
 **パイプライン:** `discover/stonks-silo/src/pipeline.py`（analyzer.py/fetcher.py/
 financial_trend_calculator.py/valuation_fetcher.pyで構成）→
 `docs/value-monitor/stonks-silo/data/results.json`
