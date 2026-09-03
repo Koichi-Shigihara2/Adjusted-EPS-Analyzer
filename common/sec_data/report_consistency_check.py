@@ -411,15 +411,38 @@ def _get_annual_period_end(ticker: str, ann: dict) -> Optional[str]:
     return None
 
 
-def _get_yf_operating_income(ticker: str, target_end: Optional[str]) -> Optional[float]:
+def _get_yf_financial_value(
+    ticker: str, target_end: Optional[str], yf_row_label: str
+) -> Optional[float]:
     """CHECK-35拡張（[[QUALITY-GATES-EPIC-1]]本線3、ゲート1第一歩、
-    2026-08-19）: yfinance income_stmtから、SECデータ側の対象年度と
-    **期末日が一致する列**のOperating Incomeを取得する。
+    2026-08-19。2026-09-03、CHECK-41新設に合わせ`_get_yf_operating_
+    income()`から汎用化——`yf_row_label`をパラメータ化し、
+    `income_stmt`の任意の行を同じ照合ロジックで取得できるようにした。
+    照合ロジック自体・関数のふるまいは変更していない）: yfinance
+    income_stmtから、SECデータ側の対象年度と**期末日が一致する列**の
+    `yf_row_label`行の値を取得する。
+
+    **`yf_row_label`の選定（2026-09-03実測確認）**: `income_stmt`の
+    行ラベルは想定と異なりうるため、実装前にAAPL/SITM/COHRの3銘柄で
+    `pl.revenue`/`pl.net_income`とyfinance各候補行を突合して確認した。
+    - revenue: `"Total Revenue"`（`"Operating Revenue"`も同値だが
+      SEC側`revenue`タグの語感に近い前者を採用）— 3銘柄とも完全一致
+    - net_income: `"Net Income"` — AAPL/SITMは候補4行（`Net Income`/
+      `Net Income Common Stockholders`/`Net Income Including
+      Noncontrolling Interests`/`Net Income From Continuing Operation
+      Net Minority Interest`）が全て同値で判別不能だったが、COHRで
+      `Net Income`=804,998,000のみがSEC`pl.net_income`
+      （`NetIncomeLoss`タグ由来）と完全一致し、他3行はNCI・優先株
+      配当等の調整後で乖離することを確認（`Net Income Common
+      Stockholders`=769,896,000・`Net Income Including
+      Noncontrolling Interests`=786,884,000）。`NetIncomeLoss`は
+      NCI控除前・優先株調整前の値のため`"Net Income"`が正しい対応
+    - operating_income: 従来通り`"Operating Income"`（変更なし）
 
     `common.yfinance_utils.safe_yf_ticker()`経由で呼び出す（リトライ・
     ログ出力の一元化を踏襲。既存のWARN-10/audit.pyのβ照合が使う
     `common.market_data.reader.get_attributes()`ローカルキャッシュには
-    operating_income相当のフィールドが存在しないため踏襲できず、単一
+    operating_income等の相当フィールドが存在しないため踏襲できず、単一
     ティッカーの直接取得に適したこちらの既存パターンを採用した。詳細は
     BACKLOG.md `[[QUALITY-GATES-EPIC-1]]`参照）。
 
@@ -441,9 +464,10 @@ def _get_yf_operating_income(ticker: str, target_end: Optional[str]) -> Optional
     許容窓とし、窓内で最も近い列を採用する。窓内に候補が無い場合は
     照合をスキップする（位置ベースの代理判定はしない）。
 
-    本関数はCHECK-35が既にNone/derived判定した銘柄（2026-08-19時点で
-    実測7銘柄前後）に対してのみ呼ばれるため、全105銘柄を毎回呼ぶ設計では
-    ない（レート制限への配慮）。取得失敗・データ不在・期間不一致時は
+    **呼び出し頻度の制御は呼び出し元の責務**: CHECK-35
+    （`_check_operating_income_reconstruction()`）はNone/derived判定
+    銘柄のみ、CHECK-41（`_check_revenue_net_income_reconciliation()`）
+    は全105銘柄を対象に呼ぶ。取得失敗・データ不在・期間不一致時は
     Noneを返し、呼び出し元は照合をスキップする。
     """
     if target_end is None:
@@ -457,9 +481,9 @@ def _get_yf_operating_income(ticker: str, target_end: Optional[str]) -> Optional
         if tk is None:
             return None
         fin = tk.income_stmt
-        if fin is None or fin.empty or "Operating Income" not in fin.index:
+        if fin is None or fin.empty or yf_row_label not in fin.index:
             return None
-        row = fin.loc["Operating Income"].dropna()
+        row = fin.loc[yf_row_label].dropna()
         if len(row) == 0:
             return None
         best_col = None
@@ -527,7 +551,7 @@ def _check_operating_income_reconstruction(ticker: str) -> list[str]:
         # 含め、operating_income=Noneの理由はここでは区別できない
         # （parser.py::_backfill_operating_income()のprovenance仕様、
         # 詳細はそちらのコードコメント参照）。
-        yf_oi = _get_yf_operating_income(ticker, target_end)
+        yf_oi = _get_yf_financial_value(ticker, target_end, "Operating Income")
         yf_str = ""
         if yf_oi is not None and yf_oi != 0:
             yf_str = f" yfinance実測: {yf_oi:,.0f}（有意値あり、要確認）"
@@ -542,7 +566,7 @@ def _check_operating_income_reconstruction(ticker: str) -> list[str]:
         source = oi_prov.get("source", "unknown")
         ratio = oi_prov.get("nonop_coverage_ratio")
         ratio_str = f" coverage_ratio={ratio:.2f}" if ratio is not None else ""
-        yf_oi = _get_yf_operating_income(ticker, target_end)
+        yf_oi = _get_yf_financial_value(ticker, target_end, "Operating Income")
         yf_str = ""
         if yf_oi is not None and yf_oi != 0:
             dev = (oi_val - yf_oi) / abs(yf_oi)
@@ -602,6 +626,71 @@ def _check_operating_income_reconstruction_scope(tickers: list[str]) -> list[str
             f"新たに複数銘柄で発生した可能性"
         ]
     return []
+
+
+def _check_revenue_net_income_reconciliation(ticker: str) -> list[str]:
+    """CHECK-41（[[QUALITY-GATES-EPIC-1]]ゲート1拡張、2026-09-03新設）:
+    `pl.revenue`（売上高）・`pl.net_income`（純利益）をyfinance
+    income_stmtと突合する。
+
+    CHECK-35（`_check_operating_income_reconstruction`）はNone/derived
+    判定による対象限定（実測7銘柄前後）だったが、revenue/net_incomeは
+    2026-09-03実測でNoneになる銘柄がほぼ皆無（revenue None 1件のみ、
+    net_income Noneは0件）だったため、同じ限定方式では実効性が出ない。
+    本チェックは**全105銘柄**を対象とし、値が存在する限り常にyfinance
+    突合を試みる設計とした。
+
+    **`yf_row_label`の選定根拠**は`_get_yf_financial_value()`の
+    docstring参照（revenue→`"Total Revenue"`、net_income→
+    `"Net Income"`、AAPL/SITM/COHR実測確認済み）。
+
+    **乖離率は情報提供のみでNG格上げは行わない**（CHECK-35と同じ判断。
+    revenue/net_incomeはoperating_incomeのような再構成〈GP法/pretax
+    調整法〉を経ないため、当初はoperating_income〈p95=81%〉より狭い
+    分布になると予想されたが、これは実装後の全105銘柄実測で検証し
+    `[[QUALITY-GATES-EPIC-1]]`に記録する）。
+    """
+    warn: list[str] = []
+    ticker_dir = os.path.join(SEC_DATA_DIR, ticker)
+    if not os.path.exists(ticker_dir):
+        return warn
+    years = sorted(
+        int(fn[7:11]) for fn in os.listdir(ticker_dir)
+        if fn.startswith("annual_") and fn.endswith(".json") and fn[7:11].isdigit()
+    )
+    if not years:
+        return warn
+    latest_year = years[-1]
+    path = os.path.join(ticker_dir, f"annual_{latest_year}.json")
+    try:
+        with open(path, encoding="utf-8") as f:
+            ann = json.load(f)
+    except Exception:
+        return warn
+
+    target_end = _get_annual_period_end(ticker, ann)
+    sec_revenue = ann.get("pl", {}).get("revenue")
+    sec_net_income = ann.get("pl", {}).get("net_income")
+
+    if sec_revenue is not None:
+        yf_revenue = _get_yf_financial_value(ticker, target_end, "Total Revenue")
+        if yf_revenue is not None and yf_revenue != 0:
+            dev = (sec_revenue - yf_revenue) / abs(yf_revenue)
+            warn.append(
+                f"  [WARN-41 revenue yfinance突合] FY{latest_year}: "
+                f"SEC={sec_revenue:,.0f} yfinance={yf_revenue:,.0f}（乖離{dev:+.1%}）"
+            )
+
+    if sec_net_income is not None:
+        yf_net_income = _get_yf_financial_value(ticker, target_end, "Net Income")
+        if yf_net_income is not None and yf_net_income != 0:
+            dev = (sec_net_income - yf_net_income) / abs(yf_net_income)
+            warn.append(
+                f"  [WARN-41 net_income yfinance突合] FY{latest_year}: "
+                f"SEC={sec_net_income:,.0f} yfinance={yf_net_income:,.0f}（乖離{dev:+.1%}）"
+            )
+
+    return warn
 
 
 def _check_moat_score_neutral_fallback(ticker: str, latest: dict) -> list[str]:
@@ -1355,6 +1444,11 @@ def check_ticker(ticker: str, whitelist: set) -> tuple[list, list]:
     # CHECK-35: operating_income再構成・取得不可の検知。CHECK-31と同様、
     # common/sec_data/側の検証でありreport.txtに依存しない。
     warn.extend(_check_operating_income_reconstruction(ticker))
+
+    # CHECK-41: revenue/net_incomeのyfinance突合（[[QUALITY-GATES-
+    # EPIC-1]]ゲート1拡張、2026-09-03新設）。CHECK-35と同様、
+    # common/sec_data/側の検証でありreport.txtに依存しない。
+    warn.extend(_check_revenue_net_income_reconciliation(ticker))
 
     text = _read_report(ticker)
     if text is None:
