@@ -63,6 +63,16 @@ class TestGetActiveTickers:
         ])
         assert tk.get_active_tickers("tanuki", csv_path) == ["AAA"]
 
+    def test_excludes_provisioning_status_even_if_flag_true(self, tmp_path):
+        """[[REGISTER-FLOW-REDESIGN-1]]方針2: statusがprovisioning
+        （登録処理中・Step 8のNG=0確認前）ならフラグがtrueでも対象外
+        とする（retired同様、中途半端な登録の本番混入防止）"""
+        csv_path = _write_csv(tmp_path, [
+            _row("AAA", tanuki="true", status="active"),
+            _row("BBB", tanuki="true", status="provisioning"),
+        ])
+        assert tk.get_active_tickers("tanuki", csv_path) == ["AAA"]
+
     def test_candidate_status_is_still_included(self, tmp_path):
         """status=candidateは既存の運用（WST/CON等）を壊さないため対象に含める"""
         csv_path = _write_csv(tmp_path, [
@@ -81,6 +91,34 @@ class TestGetActiveTickers:
              "status": " Active "},
         ])
         assert tk.get_active_tickers("tanuki", csv_path) == ["AAA"]
+
+
+class TestGetRegistrableTickers:
+    """get_registrable_tickers()がget_active_tickers()と異なり
+    provisioningを除外しない（retiredのみ除外する）こと
+    （[[REGISTER-FLOW-REDESIGN-1]]方針3、register_ticker.pyが
+    Step 3/5/5bで明示指定するprovisioningティッカーを処理できるように
+    するための専用関数）"""
+
+    def test_includes_provisioning_status(self, tmp_path):
+        csv_path = _write_csv(tmp_path, [
+            _row("AAA", tanuki="true", status="active"),
+            _row("BBB", tanuki="true", status="provisioning"),
+        ])
+        assert tk.get_registrable_tickers("tanuki", csv_path) == ["AAA", "BBB"]
+
+    def test_still_excludes_retired_status(self, tmp_path):
+        csv_path = _write_csv(tmp_path, [
+            _row("AAA", tanuki="true", status="active"),
+            _row("BBB", tanuki="true", status="retired"),
+        ])
+        assert tk.get_registrable_tickers("tanuki", csv_path) == ["AAA"]
+
+    def test_excludes_flag_false_even_if_provisioning(self, tmp_path):
+        csv_path = _write_csv(tmp_path, [
+            _row("AAA", tanuki="false", status="provisioning"),
+        ])
+        assert tk.get_registrable_tickers("tanuki", csv_path) == []
 
 
 class TestConvenienceWrappersUseActiveTickers:

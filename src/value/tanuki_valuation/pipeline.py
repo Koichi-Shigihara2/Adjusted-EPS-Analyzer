@@ -347,12 +347,22 @@ class TanukiValuationPipeline:
         （CLI引数・latest.json再スキャン等での対象選定）はフィルタを
         一切通らず、tanuki=falseへ変更済みの銘柄（ZS等）でも無条件に
         処理・再生成してしまっていた（tickers.json混入の実害を確認済み）。
+
+        `get_tanuki_tickers()`ではなく`get_registrable_tickers()`
+        （2026-09-03新設）を使う: 前者はstatus=provisioning（登録処理中、
+        [[REGISTER-FLOW-REDESIGN-1]]方針2）も除外するため、新規銘柄登録
+        オーケストレーション（`common/registration/register_ticker.py`
+        Step 3）がprovisioning中のティッカーを明示指定して実行できなく
+        なってしまう。デフォルト・バッチ経路（`tickers=None`）は
+        `_load_tickers_from_csv()`経由で引き続きprovisioningを除外する
+        ため、スケジュール実行等が登録処理中のティッカーを誤って
+        自動処理することはない。
         """
         if self.repo_root not in sys.path:
             sys.path.insert(0, self.repo_root)
         from common.sec_data import tickers as _tickers
 
-        tanuki_set = set(_tickers.get_tanuki_tickers())
+        tanuki_set = set(_tickers.get_registrable_tickers("tanuki"))
         excluded = [t for t in tickers if t.upper() not in tanuki_set]
         if excluded:
             print(

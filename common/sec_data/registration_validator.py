@@ -6,6 +6,14 @@ Usage:
     python common/sec_data/registration_validator.py          # 全銘柄
     python common/sec_data/registration_validator.py AAPL     # 単体
     python common/sec_data/registration_validator.py --summary # サマリーのみ
+    python common/sec_data/registration_validator.py AAPL --promote active
+        # 単体ティッカーのNG=0を確認し、cik_lookup.csvのstatusを
+        # provisioning等から指定値（active/candidate）へ昇格する
+        # （[[REGISTER-FLOW-REDESIGN-1]]方針2、2026-09-03新設）。
+        # --promoteは単一ティッカー指定時のみ使用可。NG判定は当該
+        # ティッカーに関するNGのみに絞り込む（P3等の全体チェックが
+        # 無関係な既存銘柄のNGを含みうるため、他銘柄のNGでは昇格を
+        # ブロックしない設計）。NG>0の場合は昇格せずexit 1。
 
 チェック項目:
     P1. 7ステップ登録完全性 (SEC/Beta/Valuation/HypeCore/Discover/Monitor)
@@ -13,6 +21,7 @@ Usage:
     P3. segment_config 整合性 (fiscal_year鮮度、weight合計、growth率)
     P4. Config 孤立エントリ (discover_config/cik_lookup の非監視残存)
     P5. 自動更新ワークフロー カバレッジ
+    P6. CIK断絶候補検知 (新規登録銘柄の法人再編疑い)
 """
 import csv
 import json
@@ -571,11 +580,108 @@ def _print_report(issues: Issues, n_tickers: int, summary_only: bool) -> None:
           f"(対象={n_tickers}銘柄  日付={TODAY})")
 
 
-if __name__ == "__main__":
-    args = [a for a in sys.argv[1:] if not a.startswith("--")]
-    summary_only = "--summary" in sys.argv
+# ═══════════════════════════════════════════════════════════════════════
+# --promote: provisioning状態からの昇格（[[REGISTER-FLOW-REDESIGN-1]]方針2）
+# ═══════════════════════════════════════════════════════════════════════
 
-    if args:
+_PROMOTABLE_STATUSES = {"active", "candidate"}
+
+
+def ticker_ng_items(issues: Issues, ticker: str) -> list[tuple[str, str]]:
+    """指定ティッカーに関するNG項目のみを抽出する。
+
+    P3（segment_config整合性）・P4/P5相当は`target_tickers`フィルタに
+    関わらずcik_lookup.csv/segment_config.json全体を毎回スキャンする
+    設計（run()内のコメント参照）のため、`result.count_ng()`の総数には
+    無関係な既存銘柄のNGが混入しうる。全NGメッセージが
+    `f"{ticker}: ..."`形式で統一されていることを前提に、メッセージ
+    先頭のプレフィックスで当該ティッカー分のみへ絞り込む
+    （他銘柄の既存NGで昇格がブロックされないようにするための設計）。
+    """
+    prefix = f"{ticker}: "
+    return [(cat, msg) for sev, cat, msg in issues.all() if sev == "NG" and msg.startswith(prefix)]
+
+
+def promote_ticker_status(ticker: str, new_status: str) -> str:
+    """cik_lookup.csvの該当ティッカーのstatus列のみを更新する。
+
+    他の列・他の行は一切変更しない（テキストベースの部分編集、
+    2026-09-02のJSON全体書き直し事故と同型のリスクを避ける設計方針を
+    CSVでも踏襲）。対象行1行のみcsv.reader/csv.writerで読み書きし、
+    他の行は元のテキストをそのまま保持する。
+
+    Returns:
+        昇格前のstatus値（ログ表示用）
+    Raises:
+        ValueError: tickerがcik_lookup.csvに見つからない場合
+    """
+    with open(CIK_CSV, encoding="utf-8", newline="") as f:
+        lines = f.readlines()
+
+    header_fields = next(csv.reader([lines[0]]))
+    status_idx = header_fields.index("status")
+
+    old_status = None
+    for i in range(1, len(lines)):
+        if not lines[i].strip():
+            continue
+        # ticker列は常に先頭フィールドでカンマ・引用符を含まないため、
+        # 対象行の特定自体は単純split(",",1)で安全に行える
+        # （値の書き換え自体はcsv.reader/writerで行い引用符ルールを保つ）。
+        if lines[i].split(",", 1)[0] != ticker:
+            continue
+        fields = next(csv.reader([lines[i]]))
+        old_status = fields[status_idx]
+        fields[status_idx] = new_status
+        import io
+        buf = io.StringIO()
+        csv.writer(buf, lineterminator="\n").writerow(fields)
+        lines[i] = buf.getvalue()
+        break
+
+    if old_status is None:
+        raise ValueError(f"{ticker} が {CIK_CSV} に見つかりません")
+
+    with open(CIK_CSV, "w", encoding="utf-8", newline="") as f:
+        f.writelines(lines)
+
+    return old_status
+
+
+if __name__ == "__main__":
+    raw_args = sys.argv[1:]
+
+    promote_status = None
+    if "--promote" in raw_args:
+        idx = raw_args.index("--promote")
+        if idx + 1 >= len(raw_args) or raw_args[idx + 1] not in _PROMOTABLE_STATUSES:
+            print(f"--promote には {'/'.join(sorted(_PROMOTABLE_STATUSES))} のいずれかを指定してください")
+            sys.exit(2)
+        promote_status = raw_args[idx + 1]
+        raw_args = raw_args[:idx] + raw_args[idx + 2:]
+
+    args = [a for a in raw_args if not a.startswith("--")]
+    summary_only = "--summary" in raw_args
+
+    if promote_status is not None:
+        if len(args) != 1:
+            print("--promote は単一ティッカー指定時のみ使用できます（例: registration_validator.py AAPL --promote active）")
+            sys.exit(2)
+        ticker = args[0]
+        result = run(target_tickers=args, summary_only=summary_only)
+        ng_for_ticker = ticker_ng_items(result, ticker)
+        if not ng_for_ticker:
+            old_status = promote_ticker_status(ticker, promote_status)
+            print(f"\n✅ {ticker}: NG=0（自ティッカー分）のためstatusを"
+                  f"'{old_status}' → '{promote_status}' へ昇格しました")
+            sys.exit(0)
+        else:
+            print(f"\n⏸️  {ticker}: 自ティッカー分のNGが{len(ng_for_ticker)}件残っているため"
+                  f"昇格を見送りました（statusは変更していません）")
+            for cat, msg in ng_for_ticker:
+                print(f"     [{cat}] {msg}")
+            sys.exit(1)
+    elif args:
         run(target_tickers=args, summary_only=summary_only)
     else:
         result = run(summary_only=summary_only)

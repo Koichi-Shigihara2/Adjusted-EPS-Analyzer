@@ -29,7 +29,7 @@ print("DEBUG: PROJECT_ROOT =", PROJECT_ROOT)
 # common.sec_data.tickers を importできるようにプロジェクトルートをパスに追加
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
-from common.sec_data.tickers import get_eps_tickers
+from common.sec_data.tickers import get_eps_tickers, get_registrable_tickers
 
 # ============================================
 # Alpha Vantage API 差分検知機能
@@ -698,7 +698,15 @@ def run(ticker_filter: str = None):
         for t in requested:
             if t not in monitor_tickers:
                 print(f"Warning: {t} は monitor_tickers.yaml に未登録ですが処理を続行します")
-        tickers = _filter_eps_tickers(requested, tickers)
+        # get_eps_tickers()ではなくget_registrable_tickers()を使う:
+        # 前者はstatus=provisioning（登録処理中、[[REGISTER-FLOW-
+        # REDESIGN-1]]方針2）を除外するため、新規銘柄登録
+        # オーケストレーション（common/registration/register_ticker.py
+        # Step 5b）がprovisioning中のティッカーを明示指定して実行
+        # できなくなってしまう（2026-09-03）。デフォルト・バッチ経路
+        # （ticker_filter未指定）は上のtickers=get_eps_tickers()の
+        # ままprovisioningを除外する。
+        tickers = _filter_eps_tickers(requested, get_registrable_tickers("eps"))
 
     with open(os.path.join(config_base, "adjustment_items.json"), 'r', encoding='utf-8') as f:
         adjustment_config = json.load(f)

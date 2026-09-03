@@ -1165,8 +1165,18 @@ if __name__ == "__main__":
     try:
         import sys as _sys
         _sys.path.insert(0, str(_REPO_ROOT / "common" / "sec_data"))
-        from tickers import get_hypecore_tickers
+        from tickers import get_hypecore_tickers, get_registrable_tickers
         ALL_TICKERS = get_hypecore_tickers()
+        # --batch/単体指定（明示ticker）の妥当性検証には
+        # get_registrable_tickers()を使う（get_hypecore_tickers()とは
+        # 異なりstatus=provisioningを除外しない）。新規銘柄登録
+        # オーケストレーション（[[REGISTER-FLOW-REDESIGN-1]]方針3、
+        # common/registration/register_ticker.py Step 5）が
+        # provisioning中のティッカーを明示指定して実行できるようにする
+        # ため（2026-09-03）。--all（ALL_TICKERS）は引き続きstatus
+        # フィルタ済みのまま——スケジュール実行等が登録処理中の
+        # ティッカーを誤って自動処理することはない。
+        REGISTRABLE_TICKERS = get_registrable_tickers("hypecore")
         print(f"[INFO] hypecore対象: {len(ALL_TICKERS)}銘柄 (cik_lookup.csv)")
     except Exception as _e:
         print(f"[WARN] tickers.py読み込み失敗、フォールバックリストを使用: {_e}")
@@ -1178,6 +1188,7 @@ if __name__ == "__main__":
             "RDW","RKLB","RXRX","S","SITM","SOFI","SOUN","SPIR","TSLA",
             "VRT","ZETA",
         ]
+        REGISTRABLE_TICKERS = ALL_TICKERS
 
     args = sys.argv[1:]
     if not args:
@@ -1185,9 +1196,9 @@ if __name__ == "__main__":
     elif args[0] == "--all":
         tickers = ALL_TICKERS
     elif args[0] == "--batch":
-        tickers = _filter_hypecore_tickers(args[1:], ALL_TICKERS) if len(args) > 1 else ["PLTR"]
+        tickers = _filter_hypecore_tickers(args[1:], REGISTRABLE_TICKERS) if len(args) > 1 else ["PLTR"]
     else:
-        tickers = _filter_hypecore_tickers([args[0]], ALL_TICKERS)
+        tickers = _filter_hypecore_tickers([args[0]], REGISTRABLE_TICKERS)
 
     success, failed = [], []
     for t in tickers:

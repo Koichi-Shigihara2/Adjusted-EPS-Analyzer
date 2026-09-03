@@ -68,6 +68,10 @@ _CIK_LOOKUP_DIRECT_PARSE_ALLOWED = {
     "src/tail/text_kpi_extractor.py",
     "src/value/tanuki_valuation/data_fetcher.py",
     "src/value/tanuki_valuation/pipeline.py",
+    # 新規銘柄登録オーケストレーション（[[REGISTER-FLOW-REDESIGN-1]]
+    # 方針3、2026-09-03新設）。単一ティッカー自身の行（status・4フラグ）を
+    # 参照するのみで、バッチ対象リスト構築ではない
+    "common/registration/register_ticker.py",
     # EPS ANALYZER独自パイプライン（common/sec_data/とは完全に独立と
     # SYSTEM_MAP.mdに明記済み）。CIKマッピング構築・ticker→name表示用・
     # eps_sector列参照のいずれもバッチ対象リスト構築ではない
