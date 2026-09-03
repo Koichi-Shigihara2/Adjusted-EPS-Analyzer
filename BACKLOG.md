@@ -2620,6 +2620,113 @@ STALE-1]]`はcore_calculator.py側のalpha_cap解決ロジックを
 統合し、`test_iv_formula.py`がそれをimportする設計で解消（pytest
 既知failed2件が解消、対象銘柄も5→100へ拡張）。詳細は各エントリ参照。
 
+#### ゲート1拡張: 売上高・純利益のyfinance突合＋週次化（2026-09-03）
+
+`operating_income`単体だった2026-08-19のゲート1第一歩を、損益計算書の
+残る中核2項目（売上高・純利益）へ横展開した。併せて、既存の
+operating_income側yfinance突合が「SECデータは週1回（SEC_Data_
+Update.yml、日曜）しか更新されないのに、yfinance突合自体は毎日
+（TANUKI_VALUATION_Update.yml経由）実行され続けている」という無駄を
+抱えていたことが判明したため、これも同時に是正した。
+
+**STEP1（実装前の実データ確認）**: yfinance `income_stmt`の行ラベルは
+想定と異なりうるため、AAPL/SITM/COHRの3銘柄で`pl.revenue`/
+`pl.net_income`とyfinance各候補行を実測突合した。
+- revenue: `"Total Revenue"`（3銘柄とも完全一致）
+- net_income: `"Net Income"`——AAPL/SITMでは`Net Income`/`Net Income
+  Common Stockholders`/`Net Income Including Noncontrolling
+  Interests`/`Net Income From Continuing Operation Net Minority
+  Interest`の4候補行が全て同値で判別不能だったが、COHRで`Net
+  Income`=804,998,000のみがSEC`pl.net_income`（`NetIncomeLoss`タグ
+  由来）と完全一致し、他3行はNCI・優先株配当等の調整後で乖離する
+  ことを確認（`Net Income Common Stockholders`=769,896,000・`Net
+  Income Including Noncontrolling Interests`=786,884,000）
+
+**STEP2（関数の一般化）**: `_get_yf_operating_income(ticker,
+target_end)`を`_get_yf_financial_value(ticker, target_end,
+yf_row_label)`へリファクタリング。期末日±10日許容窓によるマッチング
+ロジック・マッチ失敗時のNone返却は変更なし。
+
+**STEP3（CHECK-41新設）**: `_check_revenue_net_income_reconciliation()`
+を新設。CHECK-35（`_check_operating_income_reconstruction`）は
+None/derived判定による対象限定（実測7銘柄前後）だが、revenue/
+net_incomeは実測でNoneになる銘柄がほぼ皆無（**現存99銘柄**中、
+revenue None 1件のみ・net_income Noneは0件）だったため、同じ限定
+方式では実効性が出ないと判断し**全99銘柄**を対象にする設計とした
+（依頼書は「全105銘柄」と記載していたが、実際に`get_tanuki_
+tickers()`が返す対象は本タスク時点で99銘柄——AVGO除外
+〈`[[AVGO-CIK-HISTORY-WRONG-LEGACY-CIK-1]]`、2026-09-02〉等の累積
+減少によるものと推測され、依頼書の想定銘柄数自体が既に陳腐化して
+いた）。乖離率はCHECK-35と同様に情報提供のみでNG格上げは行わない。
+
+**全99銘柄の乖離率分布実測結果（当初の予想通り、operating_incomeより
+大幅に狭い分布）**:
+
+| 項目 | n（マッチ数） | p50 | p95 | max |
+|---|---|---|---|---|
+| revenue | 98/99 | 0.0% | 0.0% | 15.6%（MO） |
+| net_income | 98/99 | 0.0% | 0.0% | 88.4%（FCX） |
+
+（参考: operating_income側は2026-08-19実測でp95=81%・max=342%
+〈AVAV〉、再構成を経ない分だけ分布が大幅に狭いという依頼書の仮説が
+実測で裏付けられた）
+
+- revenue/net_incomeともp50=p95=0.0%——大多数の銘柄で完全一致する
+  一方、少数の外れ値は実在する会計上の差異であり実装上の不具合ではない
+  ことを個別確認した:
+  - MO（revenue 15.6%）: SEC=$23,279M vs yfinance=$20,139M。yfinance
+    側が物品税（excise tax）控除後の純額表示になっていると推測される
+    表示方針の違い（net_incomeは6,947Mで完全一致のため、単純な
+    マッチング誤りではない）
+  - FCX（net_income 88.4%）: SEC=$4,152M vs yfinance=$2,204M。FCXは
+    インドネシアPT-FI鉱山等でNCI（非支配持分）比率が高い企業であり、
+    `"Net Income"`行がyfinance側でNCI控除後の値を返しているケースが
+    あることを示唆（STEP1でCOHRとは逆方向の乖離——`"Net Income"`が
+    企業ごとに必ずしも同じ意味の値を返すとは限らない可能性が残る。
+    ただしCOHR/MO/FCXいずれも実在する会計上の差異であり、乖離率の
+    NG格上げを避けた本設計判断の妥当性を裏付ける実例）
+  - 未マッチ1銘柄（CWAN）: `yfinance.Ticker("CWAN").income_stmt`が
+    空DataFrameを返す（既存`[[MARKETDATA-CWAN-FROZEN-DATA-SUSPECT-1]]`
+    と同型のyfinanceデータ欠落、CHECK-41側の実装不具合ではない）
+
+**閾値設定の要否（依頼書の判断事項）**: 上記分布・原因確認の結果、
+NG格上げは見送りWARNのまま据え置く方針を維持する。p95=0.0%という
+分布はNG化の実益（誤検知リスクなし）を示唆する一方、MO/FCXのような
+「実在する会計上の差異」を持つ銘柄が今後も一定数存在しうるため、
+閾値を設けても「何%を境にするか」の恣意性が残る。当面はWARN据え置き
+で運用し、実際にWARN-41が問題の早期発見に寄与した実例が蓄積された
+時点で改めて判断する。
+
+**STEP4（週次化）**: `report_consistency_check.py`にCLIフラグ
+`--include-yfinance-checks`（デフォルトFalse）を新設し、
+`_get_yf_financial_value()`呼び出し（operating_income/revenue/
+net_income の3種）をこのフラグでゲートした。フラグFalse時は
+None/derived判定自体（CHECK-35のyfinance非依存部分）は従来通り毎日
+実行を維持し、yfinance呼び出し部分のみをスキップする。
+`.github/workflows/SEC_Data_Update.yml`（週1回、日曜）の
+`Consistency Check Gate`ステップのみフラグを追加し、他3ワークフロー
+（TANUKI_VALUATION_Update.yml・Adjusted_Eps_Analyzer_update.yml・
+Stonks_Silo_Update.yml、いずれも日次実行）は変更していない。
+
+**検証**: フラグなしでAAPL/SITM/COHRの3銘柄を実行し、yfinance呼び出し
+0回・所要0.85秒を確認（`safe_yf_ticker`呼び出し回数を実測カウント）。
+フラグありで同3銘柄を実行し、7回のyfinance呼び出し（revenue/
+net_income各1回×3銘柄＋COHRのoperating_income再構成分1回）・
+WARN-41が正しく発火することを確認。全99銘柄では`--fail-on-ng`が
+フラグなし/ありともNG=0（WARN=93件→289件、CHECK-41追加分+196件が
+内訳と一致）。pytest 1009 passed。YAML構文エラーなし
+（`PyYAML`で`schedule.cron`同様に`Consistency Check Gate`ステップの
+`run`を確認）。audit.py実行、既存の🟡警告9銘柄（本タスクと無関係の
+None値系警告）以外に新規の異常なし。
+
+**未実施（次回サイクル待ち）**: SEC_Data_Update.ymlの次回日曜実行
+（workflow_dispatchでの早期確認も可）で、実際にyfinance突合が発火し
+他3ワークフローの日次実行では発火しないことの実地確認は本タスクでは
+未実施。次回日曜サイクル後に確認すること。
+
+実装コミット: `297ba95523`（関数リファクタリング＋CHECK-41新設）・
+`6fa8c3905f`（週次化: フラグ新設・ワークフロー変更）。
+
 ---
 
 ## 優先度：高（早急に対応）
