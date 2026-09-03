@@ -1420,7 +1420,12 @@ BACKLOG変動時に更新する）
 
 ## 新規銘柄登録時の必須手順
 
-cik_lookup.csv に新規銘柄を追加した後、以下を必ず実行すること。
+**2026-09-03改訂（[[REGISTER-FLOW-REDESIGN-1]]方針2・3）**: Step 1〜8は
+`common/registration/register_ticker.py`が自動連続実行する。Step 0・0.5
+（下記）を手動で終えた後、このオーケストレーションスクリプトを実行する
+運用に切り替わった。Step 1〜8を個別に手動実行する旧手順は行わないこと
+（[[REGISTER-FLOW-REDESIGN-1]]方針5、「手動一括登録」の抜け道を塞ぐ
+構造的な理由による）。
 
 ```bash
 # Step 0: カナダ企業チェック（登録前に必ず実行）
@@ -1428,11 +1433,18 @@ python -c "import yfinance as yf; t = yf.Ticker('[TICKER]'); print(t.info.get('c
 # 出力が "Canada" の場合は登録を中止する。
 # カナダ企業はIFRS/40-Fのため TANUKI VALUATION・EPS Analyzerに非対応。
 
-# Step 0.5: 登録メタデータの記録（必須・Step 1の前に実施）
-# cik_lookup.csv の新規行に以下4項目を記録してからStep 1に進むこと：
-#   status: 指示書内で明示されていればその値を使用。
-#     明示がなければ status=candidate をデフォルトとし、
-#     「明示的にactiveへ変更する指示がない限りcandidateのまま」と報告に明記する。
+# Step 0.5: 登録メタデータの記録（必須・オーケストレーションスクリプト実行前に実施）
+# cik_lookup.csv の新規行に以下を記録してから実行すること：
+#   status: 常に provisioning で開始する（2026-09-03変更、[[REGISTER-
+#     FLOW-REDESIGN-1]]方針2）。common/sec_data/tickers.pyの
+#     _INVALID_STATUSESに含まれるため、Step 8でNG=0が確認され
+#     オーケストレーションスクリプトが昇格させるまでは4大パイプライン
+#     （TANUKI VALUATION/HypeCore/EPS Analyzer/STONKS SILO）いずれの
+#     自動対象にも含まれない。「指示書内で明示された本来のstatus
+#     （active/candidate）」は、後述する--target-statusへそのまま
+#     引き継ぐため別途メモしておくこと。
+#   tanuki/stonks_silo/eps/hypecore: 業態に応じた対象可否フラグ
+#   cik: SEC EDGARのCIK（10桁ゼロパディング）
 #   registered_date: 作業実行日（本日の日付、YYYY-MM-DD）
 #   registration_source: 指示書内で明示されていればその値を使用。
 #     不明な場合は manual_thesis をデフォルトとする。
@@ -1450,109 +1462,55 @@ python -c "import yfinance as yf; t = yf.Ticker('[TICKER]'); print(t.info.get('c
 # 既存値との齟齬が疑われる場合は、TICKER_RESTRICTIONSの適用要否を
 # 個別に検討すること。
 
-# Step 1: SEC データ取得
-python common/sec_data/update.py [TICKER]
-
-# Step 2: β を yfinance から自動取得して beta_config.json に登録
-python src/value/tanuki_valuation/beta_fetcher.py [TICKER]
-
-# Step 2.5: sectorが"Software_System"（未分類の広義エンタープライズソフトウェア）の
-# 新規銘柄は、前受収益比率でMature/SaaSサブグループを暫定判定する
-# （FCF-CONVRATE-DESIGN-LIMIT-1、2026-07-14追加）。
-# sectorをSoftware_Systemに設定した後（indname.xls照合等、手動 or 別ロジック）に実行:
-python src/value/tanuki_valuation/beta_fetcher.py [TICKER] --classify-software-system
-# DR/Rev（前受収益/売上高比率）0.40以上→Software_System_SaaS、未満→Software_System_Mature。
-# 0.30〜0.50の境界近傍は暫定判定として report.txt に要確認フラグが表示される
-# （実測FCF/調整済み純利益データが蓄積されると、calculator/adjustments.py::
-# check_software_system_reclassification() がpipeline.py実行のたびに自動で
-# 見直し推奨をチェックする。config自体の書き換えは行わない設計）。
-# common/sec_data/data/{TICKER}/company_facts.json（Step 1で取得済み）が必要。
-
-# Step 3: TANUKI VALUATION パイプライン実行
-python src/value/tanuki_valuation/pipeline.py [TICKER]
-
-# Step 3.5: セグメント設定（SEGMENT-1ルール準拠）
-# ASC 280 の formal operating segment 数を 10-K で確認し、以下のルールで判断する：
-#
-# LLY型（設定不要）: formal segment が1つ → General 100%のままでOK、このステップをスキップ
-# LMT型（設定対象）: formal segment が2つ以上 → 以下を実施：
-#   1. 10-K の "Segment Information"（ASC 280）セクションで各セグメントの売上比率を確認
-#   2. 各セグメントの過去YoYとガイダンスを参考にgrowth rateを設定
-#   3. config/segment_config.json に比率・成長率・根拠コメントを記録
-#   4. pipeline.py を再実行してIV before/afterを確認・記録
-#
-# 注意: 製品別・エンドマーケット別の disaggregated revenue（ASC 606）は
-#       formal segment ではないため使用しない（VST/CEGの失敗事例参照）
-
-# Step 4: データ品質確認（β設定含む）
-python common/sec_data/audit.py [TICKER] --check-beta
-
-# Step 5: HypeCore 実行
-python src/value/hypecore/hypecore.py --batch [TICKER]
-# --batch はスペース区切りで複数銘柄指定可（カンマ区切り不可）。
-# 失敗した場合はログを確認。データ不足銘柄（上場直後等）は失敗することがある。
-# docs/value-monitor/hypecore/data/tickers.json（index.html一覧表示の参照元）は
-# 実行のたびに実在するpoc.jsonから自動再生成される（HYPECORE-TICKERS-INDEX-1
-# 2026-07-09対応、手動更新不要）。
-
-# Step 5b: EPS Analyzer 実行（cik_lookup.csv の eps=true 銘柄のみ）
-python -m src.value.adjusted_eps_analyzer.pipeline --ticker [TICKER]
-# eps=false の銘柄はスキップ（XBRL非対応・上場直後等）
-# "データなし"で失敗する場合は cik_lookup.csv の eps 列を false に設定する
-
-# Step 6: Discover 監視リストに追加
-# 2026-08-15: docs/portfolio/data/discover_config.json への同期は
-# Discover_Config_Sync.yml が自動実行するため、shutil.copy()による
-# 手動コピーは不要（[[DISCOVER-CONFIG-DUAL-MGMT-1]]）。push後、数分内に
-# ワークフローが自動同期する。
-python3 -c "
-import json
-from datetime import date
-ticker = '[TICKER]'
-with open('config/discover_config.json', encoding='utf-8') as f:
-    config = json.load(f)
-if ticker not in config.get('tickers', {}):
-    config['tickers'][ticker] = {'category': '監視中', 'memo': '', 'themes': []}
-    config['last_updated'] = str(date.today())
-    with open('config/discover_config.json', 'w', encoding='utf-8') as f:
-        json.dump(config, f, ensure_ascii=False, indent=2)
-    print(f'{ticker} をDiscover監視リストに追加しました')
-else:
-    print(f'{ticker} はすでに登録済みです')
-"
-
-# Step 7: monitor_tickers.yaml に追加（SEC定期更新・EPS Analyzer・admin.html の対象）
-python3 -c "
-ticker = '[TICKER]'
-with open('config/monitor_tickers.yaml', encoding='utf-8') as f:
-    content = f.read()
-existing = {l.strip().lstrip('- ') for l in content.splitlines() if l.strip().startswith('- ')}
-if ticker not in existing:
-    with open('config/monitor_tickers.yaml', 'a', encoding='utf-8') as f:
-        f.write(f'  - {ticker}\n')
-    print(f'{ticker} を monitor_tickers.yaml に追加しました')
-else:
-    print(f'{ticker} はすでに登録済みです')
-"
-
-# Step 8: 登録パイプライン健全性チェック（必須）
-python common/sec_data/registration_validator.py [TICKER]
-# [TICKER] を必ず指定すること（引数なしで実行すると走査対象が
-# monitor_tickers.yaml登録済み銘柄のみになり、新規登録した当該ティッカーが
-# チェック対象から漏れて何も検出されない。2026-07-11の教訓）。
-# NG=0 を確認してからコミットする。
-# WARN は内容を確認して対処が必要なもののみ対応する（上場直後の SEC 件数不足は許容）。
-# なお[TICKER]を指定していればmonitor_tickers.yaml未登録はP1-Step7-Monitorで
-# NG（ブロッキング）として検出されるが、P1-Step5b-EPS（EPS analyzerデータなし）は
-# 「許容してよいWARN」ではなく実施漏れのサインのため必ず確認する
-# （2026-07-11 monitor_tickers.yaml同期漏れ6件の教訓。eps=trueの銘柄のみ対象）。
+# Step 1〜8: オーケストレーションスクリプトを実行
+# --target-statusには、Step 0.5でメモした「指示書内で明示された本来の
+# status」（active/candidate）をそのまま渡す。複数銘柄をまとめて登録する
+# 場合もスペース区切りで並べれば1銘柄ずつフルにStep 1〜8を実行する。
+python common/registration/register_ticker.py [TICKER] --target-status active
 ```
+
+このスクリプトはStep 1（SEC取得）・Step 2（β取得）・Step 3（TANUKI
+VALUATIONパイプライン実行）・Step 4（audit.py --check-beta）・Step 5
+（HypeCore、hypecore=trueのみ）・Step 5b（EPS Analyzer、eps=trueのみ）・
+Step 6（Discover登録）・Step 7（monitor_tickers.yaml追加）・Step 8
+（registration_validator.pyでNG=0を確認し、NG=0ならstatusを
+`--target-status`の値へ昇格）を自動連続実行する。各ステップはべき等
+（再実行しても安全）なので、失敗・一時停止したら原因に対処した上で
+**同じコマンドをそのまま再実行**すればよい（ロールバックは実装されて
+いない設計）。
+
+**Step 2.5・3.5は一時停止し、Claude Codeの判断を待つ**（risk_fetcher.py・
+Discoverサブシステム撤去と同じ「根拠不明の生成をそのまま採用しない」
+方針。スクリプトはこの2ステップを代行しない）：
+
+- **Step 2.5**（sectorが"Software_System"の場合のみ発生）: 10-Kの
+  前受収益（Deferred Revenue）関連の記述・事業内容をClaude Codeが確認し、
+  `config/beta_config.json`の`overrides.{TICKER}.sector`を
+  `Software_System_Mature`または`Software_System_SaaS`に設定してから
+  再実行する（参考値として`beta_fetcher.py [TICKER]
+  --classify-software-system --dry-run`でDR/Rev比率を確認できるが、
+  最終判断は10-K原文の確認に基づくこと）
+- **Step 3.5**（`tanuki=true`の銘柄は毎回発生。ASC 280正式セグメント数は
+  XBRLタグから機械的に判定できないため）: Claude Codeが10-Kの
+  "Segment Information"セクションを確認し、下記「新規銘柄のセグメント
+  設定判断ルール」に従ってLLY型/LMT型を判定した上で、
+  `common/sec_data/data/{TICKER}/segment_review.json`に
+  `{"reviewed": true, "formal_segments": N, "result": "...",
+  "note": "<10-Kの該当箇所の引用・確認内容>"}`を書き込んでから再実行する
+  （LMT型の場合はあわせて`config/segment_config.json`も設定する）
+
+**`common/sec_data/update.py`（Step 1本体）はstatusを見ない既知の
+ギャップ**: `config.py::get_all()`という別経路でティッカー一覧を取得
+するため、provisioning状態のティッカーもSEC取得自体は通常通り行われる
+（SEC取得は計算・表示に影響しないため実害小、[[REGISTER-FLOW-
+REDESIGN-1]]に記録済み）。
 
 **Step 8.5: 対象システム横断チェック（必須・XBRL-TAG-KLAC-1-FOLLOWUP 2026-07-09新設）**
 
 Step 1〜8はシステム個別の登録手順だが、「意図した通りに対象/対象外が
 振り分けられているか」を横断で確認する項目がなかったため、Step 5
-（HypeCore）の実行漏れが後から発覚する事例が発生した。以下を確認する：
+（HypeCore）の実行漏れが後から発覚する事例が発生した。オーケストレー
+ション化により実施漏れ自体は起きにくくなったが、以下は引き続き確認する：
 
 - [ ] TANUKI VALUATION（tanuki）/ HypeCore（hypecore）/
       EPS Analyzer（eps）/ STONKS SILO（stonks_silo）—
@@ -1567,14 +1525,16 @@ Step 1〜8はシステム個別の登録手順だが、「意図した通りに�
       （誤操作防止の注意書き。thesis.json等を新規登録手順の
       一環として作成しないこと）
 - [ ] monitor_tickers.yaml — cik_lookup.csvとの件数・銘柄突合を明示的に行う
-      （特に「複数銘柄の手動一括登録」ではStep 7・Step 8（[TICKER]指定での
-      個別実行）の両方が省略されやすい。Step 8を[TICKER]指定で実行していれば
-      P1-Step7-MonitorでNG検出されるはずだが、Step 8自体が未実施・または
-      引数なし実行だった場合はP1チェックの走査対象からも漏れる。この場合の
-      唯一のセーフティネットは`registration_validator.py`のP4-CIKOrphan
-      （cik_lookup.csv全体を無条件スキャン）だが、WARN止まりで非ブロッキングの
-      ため見落としやすい。2026-07-11 monitor_tickers.yaml同期漏れ6件の教訓・
-      [[TICKER-AUDIT-1]]・[[TICKER-SOURCE-UNIFY-1]]参照）
+      （2026-07-11当時は「複数銘柄の手動一括登録」でStep 7・Step 8
+      〈[TICKER]指定での個別実行〉の両方が省略される事例が6件発生し、
+      唯一のセーフティネットだった`registration_validator.py`の
+      P4-CIKOrphan〈cik_lookup.csv全体を無条件スキャン、WARN止まりで
+      非ブロッキング〉頼みで見落としやすかった。2026-09-03のオーケスト
+      レーション化〈[[REGISTER-FLOW-REDESIGN-1]]方針3・5〉により
+      Step 7・Step 8はスクリプトが常にセットで実行するため、この種の
+      省略は構造的に起きにくくなった——ただし旧手順の個別コマンドを
+      直接実行した場合は同じリスクが残るため、本チェックリスト自体は
+      残す。[[TICKER-AUDIT-1]]・[[TICKER-SOURCE-UNIFY-1]]参照）
 - [ ] EPS Analyzerデータ — eps=trueの銘柄でStep 5bの実施漏れがないか、
       `registration_validator.py`のP1-Step5b-EPS WARN「EPS Analyzer なし」が
       残っていないかを確認する（monitor_tickers.yamlへの登録だけでは
