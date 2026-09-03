@@ -43,11 +43,16 @@ jobs:
           fi
 
       - name: Consistency Check Gate
+        # --include-yfinance-checks: CHECK-35/41のyfinance突合（operating_
+        # income/revenue/net_income）を実行する。SECデータ更新は本ワーク
+        # フロー（週1回、日曜）でのみ発生するため、yfinance突合も同じ頻度に
+        # 揃える（[[QUALITY-GATES-EPIC-1]]、2026-09-03）。他3ワークフロー
+        # （TANUKI_VALUATION_Update.yml等、日次実行）ではこのフラグを付けない。
         run: |
           if [ -n "${{ github.event.inputs.tickers }}" ]; then
-            python common/sec_data/report_consistency_check.py --fail-on-ng --quiet --ticker "${{ github.event.inputs.tickers }}"
+            python common/sec_data/report_consistency_check.py --fail-on-ng --quiet --include-yfinance-checks --ticker "${{ github.event.inputs.tickers }}"
           else
-            python common/sec_data/report_consistency_check.py --fail-on-ng --quiet
+            python common/sec_data/report_consistency_check.py --fail-on-ng --quiet --include-yfinance-checks
           fi
 
       - name: Sync normalized data to docs/ (stock.html public copy)

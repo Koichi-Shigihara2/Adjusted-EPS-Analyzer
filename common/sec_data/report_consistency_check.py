@@ -467,8 +467,11 @@ def _get_yf_financial_value(
     **呼び出し頻度の制御は呼び出し元の責務**: CHECK-35
     （`_check_operating_income_reconstruction()`）はNone/derived判定
     銘柄のみ、CHECK-41（`_check_revenue_net_income_reconciliation()`）
-    は全105銘柄を対象に呼ぶ。取得失敗・データ不在・期間不一致時は
-    Noneを返し、呼び出し元は照合をスキップする。
+    は全105銘柄を対象に呼ぶ。2026-09-03、`--include-yfinance-checks`
+    フラグ新設によりこの関数の呼び出し自体を週次実行時のみに限定する
+    設計へ変更（[[QUALITY-GATES-EPIC-1]]、詳細はCLI引数の説明参照）。
+    取得失敗・データ不在・期間不一致時はNoneを返し、呼び出し元は照合を
+    スキップする。
     """
     if target_end is None:
         return None
@@ -503,7 +506,9 @@ def _get_yf_financial_value(
         return None
 
 
-def _check_operating_income_reconstruction(ticker: str) -> list[str]:
+def _check_operating_income_reconstruction(
+    ticker: str, include_yfinance: bool = False
+) -> list[str]:
     """CHECK-35: operating_income（営業利益）が標準タグ`OperatingIncomeLoss`
     以外から再構成されている、または再構成にも失敗しNoneのままの銘柄を
     検知する（[[OPERATING-INCOME-EXTRACTION-GAP-1]]）。
@@ -523,6 +528,14 @@ def _check_operating_income_reconstruction(ticker: str) -> list[str]:
     None/derived判定に定量情報を添える）が目的。yfinance取得失敗時
     （データ不在・ネットワーク不調とも）は照合をスキップし、既存の
     WARN-35単体の挙動をそのまま維持する。
+
+    **`include_yfinance`（2026-09-03、`--include-yfinance-checks`フラグ
+    新設）**: `False`（デフォルト）の場合はyfinance呼び出し自体を行わない
+    （`yf_str`は常に空文字）。None/derived判定ロジック自体はSECデータの
+    週次更新（SEC_Data_Update.yml、日曜）に依存する一方、本チェックは
+    従来毎日（TANUKI_VALUATION_Update.yml経由）実行され続けており、
+    yfinance側だけ日次で呼んでも照合対象が変わらない無駄があったため
+    是正した。詳細は[[QUALITY-GATES-EPIC-1]]参照。
     """
     warn: list[str] = []
     ticker_dir = os.path.join(SEC_DATA_DIR, ticker)
@@ -551,7 +564,7 @@ def _check_operating_income_reconstruction(ticker: str) -> list[str]:
         # 含め、operating_income=Noneの理由はここでは区別できない
         # （parser.py::_backfill_operating_income()のprovenance仕様、
         # 詳細はそちらのコードコメント参照）。
-        yf_oi = _get_yf_financial_value(ticker, target_end, "Operating Income")
+        yf_oi = _get_yf_financial_value(ticker, target_end, "Operating Income") if include_yfinance else None
         yf_str = ""
         if yf_oi is not None and yf_oi != 0:
             yf_str = f" yfinance実測: {yf_oi:,.0f}（有意値あり、要確認）"
@@ -566,7 +579,7 @@ def _check_operating_income_reconstruction(ticker: str) -> list[str]:
         source = oi_prov.get("source", "unknown")
         ratio = oi_prov.get("nonop_coverage_ratio")
         ratio_str = f" coverage_ratio={ratio:.2f}" if ratio is not None else ""
-        yf_oi = _get_yf_financial_value(ticker, target_end, "Operating Income")
+        yf_oi = _get_yf_financial_value(ticker, target_end, "Operating Income") if include_yfinance else None
         yf_str = ""
         if yf_oi is not None and yf_oi != 0:
             dev = (oi_val - yf_oi) / abs(yf_oi)
@@ -628,7 +641,9 @@ def _check_operating_income_reconstruction_scope(tickers: list[str]) -> list[str
     return []
 
 
-def _check_revenue_net_income_reconciliation(ticker: str) -> list[str]:
+def _check_revenue_net_income_reconciliation(
+    ticker: str, include_yfinance: bool = False
+) -> list[str]:
     """CHECK-41（[[QUALITY-GATES-EPIC-1]]ゲート1拡張、2026-09-03新設）:
     `pl.revenue`（売上高）・`pl.net_income`（純利益）をyfinance
     income_stmtと突合する。
@@ -649,8 +664,16 @@ def _check_revenue_net_income_reconciliation(ticker: str) -> list[str]:
     調整法〉を経ないため、当初はoperating_income〈p95=81%〉より狭い
     分布になると予想されたが、これは実装後の全105銘柄実測で検証し
     `[[QUALITY-GATES-EPIC-1]]`に記録する）。
+
+    **`include_yfinance`（`--include-yfinance-checks`フラグ）が
+    `False`（デフォルト）の場合は何もせず空リストを返す**——本チェック
+    はyfinance突合そのものが目的のため、フラグ無効時に実行する意味が
+    ない（CHECK-35のNone/derived判定部分のような「yfinance非依存の
+    基本チェック」を持たない）。
     """
     warn: list[str] = []
+    if not include_yfinance:
+        return warn
     ticker_dir = os.path.join(SEC_DATA_DIR, ticker)
     if not os.path.exists(ticker_dir):
         return warn
@@ -1428,10 +1451,14 @@ def _parse_report(text: str) -> dict:
 
 # ─── チェック本体 ─────────────────────────────────────────────
 
-def check_ticker(ticker: str, whitelist: set) -> tuple[list, list]:
+def check_ticker(ticker: str, whitelist: set, include_yfinance: bool = False) -> tuple[list, list]:
     """
     Returns (issues_ng, issues_warn)
     各要素は表示用文字列。
+
+    include_yfinance: `--include-yfinance-checks`フラグ（2026-09-03新設、
+    デフォルトFalse）。TrueのときのみCHECK-35/41のyfinance突合部分を
+    実行する。詳細はCLI引数の説明・[[QUALITY-GATES-EPIC-1]]参照。
     """
     ng: list[str]   = []
     warn: list[str] = []
@@ -1443,12 +1470,12 @@ def check_ticker(ticker: str, whitelist: set) -> tuple[list, list]:
 
     # CHECK-35: operating_income再構成・取得不可の検知。CHECK-31と同様、
     # common/sec_data/側の検証でありreport.txtに依存しない。
-    warn.extend(_check_operating_income_reconstruction(ticker))
+    warn.extend(_check_operating_income_reconstruction(ticker, include_yfinance))
 
     # CHECK-41: revenue/net_incomeのyfinance突合（[[QUALITY-GATES-
     # EPIC-1]]ゲート1拡張、2026-09-03新設）。CHECK-35と同様、
     # common/sec_data/側の検証でありreport.txtに依存しない。
-    warn.extend(_check_revenue_net_income_reconciliation(ticker))
+    warn.extend(_check_revenue_net_income_reconciliation(ticker, include_yfinance))
 
     text = _read_report(ticker)
     if text is None:
@@ -2050,6 +2077,19 @@ def parse_args():
         action="store_true",
         help="PASS行を表示しない（NGとWARNのみ出力）",
     )
+    parser.add_argument(
+        "--include-yfinance-checks",
+        action="store_true",
+        help=(
+            "CHECK-35/41のyfinance突合部分（operating_income/revenue/"
+            "net_income）を実行する（省略時デフォルトFalse＝yfinance呼び出し"
+            "をスキップ）。SECデータは週1回（SEC_Data_Update.yml）しか"
+            "更新されないため、このフラグはSEC_Data_Update.yml側でのみ"
+            "指定する想定。他のワークフロー（TANUKI_VALUATION_Update.yml等）"
+            "の日次実行では指定しない（2026-09-03新設、"
+            "[[QUALITY-GATES-EPIC-1]]）"
+        ),
+    )
     return parser.parse_args()
 
 
@@ -2060,6 +2100,7 @@ def run_checks(args=None) -> tuple[int, int]:
     whitelist = _load_rpo_whitelist()
     warn_ledger = load_warn_ledger()
     quiet = getattr(args, "quiet", False)
+    include_yfinance = getattr(args, "include_yfinance_checks", False)
     ticker_filter = None
     if args and args.ticker:
         ticker_filter = {t.strip().upper() for t in args.ticker.split(",")}
@@ -2088,7 +2129,7 @@ def run_checks(args=None) -> tuple[int, int]:
     flagged: list[tuple[str, list, list]] = []
 
     for ticker in tickers:
-        ng, warn = check_ticker(ticker, whitelist)
+        ng, warn = check_ticker(ticker, whitelist, include_yfinance)
         annotated_warn = []
         for w in warn:
             msg, is_new = annotate_warn(ticker, w, warn_ledger)

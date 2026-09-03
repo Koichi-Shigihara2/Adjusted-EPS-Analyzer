@@ -479,7 +479,7 @@ class TestRunChecksTickerScan:
 
         checked = []
 
-        def _fake_check_ticker(ticker, whitelist):
+        def _fake_check_ticker(ticker, whitelist, include_yfinance=False):
             checked.append(ticker)
             return [], []
 
@@ -505,7 +505,7 @@ class TestRunChecksTickerScan:
 
         checked = []
 
-        def _fake_check_ticker(ticker, whitelist):
+        def _fake_check_ticker(ticker, whitelist, include_yfinance=False):
             checked.append(ticker)
             return [], []
 
