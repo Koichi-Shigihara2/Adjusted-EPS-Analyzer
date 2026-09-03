@@ -1,5 +1,81 @@
 # Claude Code 作業開始テンプレート
 
+最終更新: 2026-09-03（**セッション終了時ブラッシュアップ・本日
+セッションサマリー**。9項目を順次実施した（全てpush済み）:
+
+1. `[[RISK-EVENTS-REMOVAL-1]]`・`[[DISCOVER-SUBSYSTEM-REMOVAL-1]]`:
+   前セッションからの続き（2026-09-01〜09-02にpush済み）。詳細は
+   下記の2026-09-02付ブロック参照
+2. `[[MARKET-PULSE-LOCAL-DUAL-EXEC-1]]`の実地確認（コミット
+   `1f92b9015e`）: cron変更後2営業日分（09-02完了JST08:31・09-03完了
+   JST08:30）を確認したところ、想定JST6:35頃に対し約1時間55分の遅延が
+   継続していた。2日分のみでは恒常的な傾向か一時的かの判断材料として
+   不十分なため、**判断は保留**とし次回確認を1週間程度後に設定
+   （申し送り、下記「次セッションの着手候補」参照）
+3. `[[AVGO-CIK-HISTORY-WRONG-LEGACY-CIK-1]]`: 前セッションで管理対象
+   除外により解決済み（詳細は下記の2026-09-02付ブロック参照）
+4. `[[MARKETDATA-LAYER-CONSTRUCTION-1]]`・`[[MACRODATA-LAYER-
+   CONSTRUCTION-1]]`クローズ（コミット`d6f854634c`）: 本文で「完了」
+   「完成」と明記済みなのに優先度「高」のアクティブなエントリとして
+   残置されていた2件をBACKLOG_DONE.mdへ移設。依頼文の「参照先が壊れて
+   いる」という前提を検証した結果、実際は既に完了・正しく存在して
+   いたと判明し前提を是正した上でクローズ
+5. `[[TRUST-SUMMARY-EPIC-1]]`クローズ（コミット`547736e376`・
+   `39e9eee08f`・`7167df09ae`、2026-09-02完了）: データ信頼性3段階
+   （入力完全性・成長率算出・FCF/DCF計算）を貫通する可視化EPIC。
+   FCF-CONVRATE①（rate_is_sector_defaultフラグ）②（report.txt/
+   stock.html表示不一致修正）③（fcf_conversion_config.jsonへ
+   Damodaran比較メタ情報追加）を実装完了。判断保留中だった4件
+   （GROWTH-SANITY-CLASS-SYNC-1・FY52WEEK-BS-NULL-SILENT-1・
+   MRVL-2019-2020-NULL-1・EPS-ANALYZER-NORMALIZE-SCOPE-1）が別セッション
+   で既に解消済みと確認した上でEPIC自体をクローズ
+6. `[[QUALITY-GATES-EPIC-1]]`ゲート1拡張（コミット`297ba95523`・
+   `6fa8c3905f`・`8aefa4ef2c`）: yfinance自動照合を`operating_income`
+   単体から売上高・純利益へ横展開（CHECK-41新設）。全99銘柄実測で
+   p50=p95=0.0%（operating_income側p95=81%より大幅に狭い分布、依頼書の
+   仮説を裏付け）。SECデータは週1回更新なのにyfinance突合が毎日実行
+   されていた無駄を`--include-yfinance-checks`フラグで是正し
+   `SEC_Data_Update.yml`（週1回）のみに限定
+7. ENB登録抹消・`exclusion_reason`列追加（コミット`62aa662102`・
+   `f0c4b18e09`・`c55505dae9`）: `[[QUALITY-GATES-EPIC-1]]`ゲート0対応・
+   `[[REGISTER-FLOW-REDESIGN-1]]`方針4。ENB（カナダのIFRS/40-F提出
+   企業、SEC annual data 0件のまま孤立登録）をBXと同じA案（登録抹消）
+   で解消。`cik_lookup.csv`に`exclusion_reason`列を新設しRKLB/ZS/SN/
+   APGEの4銘柄に除外理由を記入。`stonks_silo=false`78銘柄は個別判断
+   ではなく設計方針そのものと確認し`SYSTEM_MAP.md`に一般方針として
+   文書化
+8. `[[REGISTER-FLOW-REDESIGN-1]]`方針2・3（コミット`8bfab35919`・
+   `fc17699fd6`・`0b6bc3f211`・`488dd94640`）: `cik_lookup.csv`の
+   status列に`provisioning`（登録処理中）を追加し4大パイプラインの
+   バッチ対象から除外、`registration_validator.py --promote`でNG=0
+   確認後に昇格する仕組みを新設。`common/registration/register_
+   ticker.py`（新規銘柄登録オーケストレーションスクリプト）を新設し
+   Step 1〜8を自動連続実行、Step 2.5・3.5はClaude Codeの10-K確認を
+   前提に一時停止する設計とした。実装過程で`_INVALID_STATUSES`変更が
+   既存の安全弁（ZS-TICKERS-LEAK-1由来のCLI引数フィルタ）と衝突し
+   オーケストレータ自身がprovisioning中ティッカーを処理できなくなる
+   自己矛盾を実地検証（HIMS、一時ブランチ）で発見・`get_registrable_
+   tickers()`新設で解消。`[[REGISTER-FLOW-REDESIGN-1]]`対応方針5件が
+   全件完了・実質達成となった
+
+詳細は各BACKLOGエントリ・BACKLOG_DONE.md「2026-09-03（完了）」・
+PROJECT_STATUS.md参照。**次セッションの着手候補**:
+- `Market_Pulse_Update.yml`の実地確認継続（1週間程度分の遅延傾向蓄積・
+  土曜朝の金曜分データ反映確認）— 引き続き最優先の申し送り事項
+- `[[QUALITY-GATES-EPIC-1]]`ゲート0残り（`common/sec_data/update.py`が
+  statusを見ずSEC取得自体はprovisioning中でも行われる既知のギャップは
+  実害小のため対象外のまま。「登録時点でのsubmissions API照会による
+  機械的ブロック」自体は[[REGISTER-FLOW-REDESIGN-1]]の対応方針5件の
+  範囲外で未着手）
+- `[[SECDATA-LEGACY-CIK-GRANULARITY-1]]`（MRVL/DELL旧CIK拡張データの
+  粒度確認、優先度低〜未定、着手条件なし）
+- `[[SPAC-SHELL-MAINTAINED-FIELDS-FREEZE-CONSIDERATION-1]]`（優先度低、
+  意図的据え置き中）
+- `tests/test_flag_consumer_audit_3.py`のENB言及docstring
+  （`test_production_enb_excluded`、ENBが実際には未登録〈削除済み〉に
+  変わったための軽微な記述陳腐化。テスト自体は引き続き正しく通過して
+  おり機能への影響はない、着手要否は未定）
+
 最終更新: 2026-09-02（**セッション終了時ブラッシュアップ・
 2026-09-01〜09-02セッションサマリー**。指示書4件を順次実施した
 （全てpush済み）:

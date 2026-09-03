@@ -206,6 +206,50 @@
   参照。新DB構築プロジェクトのコード・データには変更なし。現存
   BACKLOG.md総数は機械カウントで**148件**。
 
+- **2026-09-03**（長時間セッション、9項目を順次実施・全てpush済み）:
+  1. **`[[MARKET-PULSE-LOCAL-DUAL-EXEC-1]]`実地確認**: cron変更後
+     2営業日分（09-02完了JST08:31・09-03完了JST08:30）を確認したところ
+     想定JST6:35頃に対し約1時間55分の遅延が継続。2日分のみでは恒常的
+     傾向か一時的かの判断材料として不十分なため判断は保留し、次回確認を
+     1週間程度後に設定
+  2. **`[[MARKETDATA-LAYER-CONSTRUCTION-1]]`・`[[MACRODATA-LAYER-
+     CONSTRUCTION-1]]`クローズ**: 本文で「完了」明記済みなのに優先度
+     「高」のアクティブなエントリとして残置されていた2件をBACKLOG_
+     DONE.mdへ移設。依頼文の「参照先が壊れている」という前提を検証した
+     結果、実際は既に完了・正しく存在していたと判明し前提を是正
+  3. **`[[TRUST-SUMMARY-EPIC-1]]`クローズ**: データ信頼性3段階（入力
+     完全性・成長率算出・FCF/DCF計算）を貫通する可視化EPIC。
+     FCF-CONVRATE①（rate_is_sector_defaultフラグ）②（report.txt/
+     stock.html表示不一致修正）③（Damodaran比較メタ情報追加）を実装完了
+     し、判断保留中だった4件の解消も確認した上でEPIC自体をクローズ
+  4. **`[[QUALITY-GATES-EPIC-1]]`ゲート1拡張**: yfinance自動照合を
+     `operating_income`単体から売上高・純利益へ横展開（CHECK-41新設、
+     全99銘柄実測p50=p95=0.0%）。`--include-yfinance-checks`フラグを
+     新設し、SECデータ更新頻度（週1回）に合わせて`SEC_Data_Update.yml`
+     のみでyfinance突合を実行するよう週次化
+  5. **ENB登録抹消・`exclusion_reason`列追加**: `[[QUALITY-GATES-
+     EPIC-1]]`ゲート0対応・`[[REGISTER-FLOW-REDESIGN-1]]`方針4。
+     ENB（カナダのIFRS/40-F提出企業、SEC annual data 0件のまま孤立
+     登録）をBXと同じA案（登録抹消）で解消。`cik_lookup.csv`に
+     `exclusion_reason`列を新設しRKLB/ZS/SN/APGEの4銘柄に除外理由を
+     記入
+  6. **`[[REGISTER-FLOW-REDESIGN-1]]`方針2・3**: `cik_lookup.csv`の
+     status列に`provisioning`（登録処理中）を追加し4大パイプラインの
+     バッチ対象から除外、`registration_validator.py --promote`でNG=0
+     確認後に昇格する仕組みを新設。`common/registration/register_
+     ticker.py`（新規銘柄登録オーケストレーションスクリプト）を新設し
+     Step 1〜8を自動連続実行、Step 2.5・3.5はClaude Codeの10-K確認を
+     前提に一時停止する設計とした。実装過程で既存の安全弁
+     （ZS-TICKERS-LEAK-1由来のCLI引数フィルタ）との衝突を実地検証
+     （HIMS、一時ブランチ）で発見・`get_registrable_tickers()`新設で
+     解消。対応方針5件が全件完了・実質達成となった
+
+  項目1〜3は前セッションからの続き（詳細はBACKLOG_DONE.md「2026-09-02
+  ④（完了）」以前参照）。項目4〜6は本セッションで新規に着手・完了
+  （詳細はBACKLOG_DONE.md「2026-09-03（完了）」・BACKLOG.md各エントリ
+  参照）。新DB構築プロジェクトのコード・データには変更なし。現存
+  BACKLOG.md総数は機械カウントで**151件**。
+
 ---
 
 更新日: 2026-08-15（**フェーズ3「導出データ層の管理方法検討」完了**。
