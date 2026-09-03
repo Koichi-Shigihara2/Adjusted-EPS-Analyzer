@@ -1,0 +1,443 @@
+#!/usr/bin/env python3
+"""
+common/registration/register_ticker.py
+新規銘柄登録オーケストレーションスクリプト
+-----------------------------------------------------------------------
+[[REGISTER-FLOW-REDESIGN-1]]方針3（2026-09-03新設）。CLAUDE_CODE_START.md
+「新規銘柄登録時の必須手順」のStep 1〜8を自動連続実行する。
+
+前提（Step 0.5、本スクリプトの対象外・事前に手動で完了させること）:
+    - config/cik_lookup.csv に対象ティッカーの行が既に存在し、
+      status=provisioning（方針2、common/sec_data/tickers.pyが
+      パイプライン対象外として扱う）・cik・各フラグ
+      （tanuki/stonks_silo/eps/hypecore）・registered_date・
+      registration_source・registration_note が記録済みであること
+    - Step 0（カナダ企業チェック）が完了していること
+
+Usage:
+    python common/registration/register_ticker.py TICKER --target-status active
+    python common/registration/register_ticker.py TICKER1 TICKER2 --target-status candidate
+        # 複数指定時も内部的に1銘柄ずつStep 1〜8をフル実行する
+        # （[[REGISTER-FLOW-REDESIGN-1]]方針5、「手動一括登録」の
+        # 抜け道を構造的に塞ぐ設計）。
+
+    --target-status {active,candidate}
+        Step 8でNG=0だった場合の昇格先。Step 0.5で決めた本来の意図を
+        CLIで明示指定させる（cik_lookup.csvのregistration_note等からの
+        自動判定は曖昧になりうるため、[[REGISTER-FLOW-REDESIGN-1]]方針2
+        着手時に明示指定方式を採用した）。
+
+    --dry-run
+        本スクリプト自身が行う書き込み（Step 6 discover_config.json・
+        Step 7 monitor_tickers.yaml・Step 8 promote）のみをスキップし、
+        「実行されたであろう内容」を表示する。Step 1/3/5/5b（update.py・
+        pipeline.py・hypecore.py・adjusted_eps_analyzer/pipeline.py）は
+        ネイティブなdry-runモードを持たないサブプロセス呼び出しのため、
+        本フラグでは抑止できない（実際にデータファイルへ書き込む）。
+        Step 2（beta_fetcher.py）のみネイティブ--dry-runへ引き継ぐ。
+        本番銘柄リストに影響させずに全体のフローを確認したい場合は、
+        検証手順にある通りテスト用の一時ブランチ・worktreeを使うこと。
+
+各ステップはべき等に設計されている（Step 1/2/3/4/5/5bはいずれも
+「取得・再生成して上書き」する既存スクリプトの挙動に依存、Step 6/7は
+CLAUDE_CODE_START.mdの既存インラインコードと同じ「既に存在すればスキップ」
+パターンを踏襲）。Step 2.5・3.5（下記）で一時停止した場合、Claude Codeが
+必要な確認・書き込みを行った後に同じコマンドを再実行すれば、完了済みの
+ステップは再実行されるだけで安全に続きから進められる（ロールバックは
+実装しない設計、[[REGISTER-FLOW-REDESIGN-1]]方針3依頼書の通り）。
+
+Step 2.5・3.5はいずれも本スクリプトが判定を代行しない（risk_fetcher.py・
+Discoverサブシステム撤去と同じ「根拠不明の生成をそのまま採用しない」
+方針）。一時停止し、Claude Code自身が10-K本文を読んで判断してから
+書き込み、再実行することを前提とする。
+
+common/sec_data/update.py（SEC取得本体）はconfig.py::get_all()という
+別経路でティッカー一覧を取得しており、statusを一切見ない（全銘柄を対象に
+する）。本スクリプトのStep 1もこの既存経路をそのまま呼ぶため、
+provisioning状態のティッカーもSEC取得自体は通常通り行われる
+（SEC取得は計算・表示に影響しないため実害小、既知のギャップとして
+[[REGISTER-FLOW-REDESIGN-1]]に記録済み）。
+"""
+
+from __future__ import annotations
+
+import argparse
+import csv
+import json
+import os
+import subprocess
+import sys
+import textwrap
+from datetime import datetime
+
+_SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+_REPO_ROOT = os.path.normpath(os.path.join(_SCRIPT_DIR, "..", ".."))
+sys.path.insert(0, _REPO_ROOT)
+
+# 標準出力がパイプ/リダイレクト先の場合、Pythonのprint()はデフォルトで
+# フルバッファリングされる。一方、subprocess.run()の子プロセス出力は
+# 共有fdへ直接書き込まれるため即時表示される。これにより、本スクリプト
+# 自身のprint()（Stepヘッダー・一時停止メッセージ等）が子プロセスの出力
+# より大幅に遅れて表示される（実行順序と表示順序が食い違う）事故が
+# 実地検証（2026-09-03、HIMSでのテスト登録）で発覚した。行バッファ化して
+# 子プロセス出力との時系列整合性を保つ。
+try:
+    sys.stdout.reconfigure(line_buffering=True)
+except Exception:
+    pass
+
+CIK_CSV      = os.path.join(_REPO_ROOT, "config", "cik_lookup.csv")
+BETA_CFG     = os.path.join(_REPO_ROOT, "config", "beta_config.json")
+DISCOVER_CFG = os.path.join(_REPO_ROOT, "config", "discover_config.json")
+MONITOR_YAML = os.path.join(_REPO_ROOT, "config", "monitor_tickers.yaml")
+SEC_DATA_DIR = os.path.join(_REPO_ROOT, "common", "sec_data", "data")
+
+PYTHON = sys.executable
+TARGET_STATUSES = ("active", "candidate")
+
+# 暫定分類のプレースホルダ値そのもの（FCF-CONVRATE-DESIGN-LIMIT-1）。
+# Software_System_Mature/SaaS等、既に解決済みのサブグループ名とは異なる。
+_SOFTWARE_SYSTEM_PLACEHOLDER = "Software_System"
+
+
+class PausedForReview(Exception):
+    """Step 2.5・3.5でClaude Codeの判断待ちのため一時停止する場合に送出する。"""
+
+
+# ─── cik_lookup.csv 読み取りヘルパー ────────────────────────────────────
+
+def _load_cik_row(ticker: str) -> dict | None:
+    with open(CIK_CSV, newline="", encoding="utf-8") as f:
+        for row in csv.DictReader(f):
+            if row.get("ticker", "").strip().upper() == ticker.upper():
+                return row
+    return None
+
+
+def _flag(row: dict, name: str) -> bool:
+    return row.get(name, "").strip().lower() == "true"
+
+
+# ─── サブプロセス実行ヘルパー ────────────────────────────────────────────
+
+def _run(cmd: list[str], label: str) -> int:
+    print(f"\n--- {label} ---")
+    print("  $ " + " ".join(cmd))
+    result = subprocess.run(cmd, cwd=_REPO_ROOT)
+    return result.returncode
+
+
+# ─── Step 1: SEC データ取得 ──────────────────────────────────────────────
+
+def step1_sec_data(ticker: str) -> bool:
+    rc = _run([PYTHON, "common/sec_data/update.py", ticker], "Step 1: SEC データ取得")
+    if rc != 0:
+        print(f"  ❌ Step 1 失敗（exit={rc}）。SEC取得に失敗したため以降を中断します。")
+        return False
+    return True
+
+
+# ─── Step 2: β取得 ───────────────────────────────────────────────────────
+
+def step2_beta(ticker: str, dry_run: bool) -> None:
+    cmd = [PYTHON, "src/value/tanuki_valuation/beta_fetcher.py", ticker]
+    if dry_run:
+        cmd.append("--dry-run")
+    rc = _run(cmd, "Step 2: β取得")
+    if rc != 0:
+        print("  ⚠️  Step 2 は非ブロッキング（raw yfinance値のまま続行、"
+              "market_data未生成の新規銘柄では正常にスキップされることがある）")
+
+
+def _get_sector(ticker: str) -> str | None:
+    if not os.path.exists(BETA_CFG):
+        return None
+    with open(BETA_CFG, encoding="utf-8") as f:
+        cfg = json.load(f)
+    return cfg.get("overrides", {}).get(ticker, {}).get("sector")
+
+
+def step2_5_software_system_gate(ticker: str) -> None:
+    """sectorが暫定カテゴリ"Software_System"のままなら一時停止する。
+
+    beta_fetcher.py --classify-software-system という既存の自動判定
+    （前受収益/売上高比率の閾値判定）は存在するが、本スクリプトは
+    これを代行呼び出ししない（依頼書の設計方針）。Claude Codeが10-K
+    本文を確認し、必要ならその参考値として上記コマンドを手動実行した
+    上で、最終的にconfig/beta_config.jsonへの書き込みを行うことを
+    前提とする。
+    """
+    sector = _get_sector(ticker)
+    if sector != _SOFTWARE_SYSTEM_PLACEHOLDER:
+        return
+    raise PausedForReview(textwrap.dedent(f"""\
+        ⏸️  Step 2.5: Software_System分類が必要です（一時停止）
+        {ticker} の sector が暫定カテゴリ "Software_System" のままです。
+
+        Claude Codeが10-Kの前受収益（Deferred Revenue）関連の記述・
+        事業内容を確認し、config/beta_config.json の
+        overrides.{ticker}.sector を Software_System_Mature または
+        Software_System_SaaS に設定してから、このコマンドを再実行して
+        ください。
+
+        （参考値としてDR/Rev比率を確認したい場合:
+          python src/value/tanuki_valuation/beta_fetcher.py {ticker} \\
+              --classify-software-system --dry-run
+          ただし最終判断は10-K原文の確認に基づきClaude Codeが行うこと。
+          このオーケストレーションスクリプトは判定を代行しません）
+    """))
+
+
+# ─── Step 3: TANUKI VALUATION パイプライン実行 ───────────────────────────
+
+def step3_pipeline(ticker: str) -> bool:
+    rc = _run([PYTHON, "src/value/tanuki_valuation/pipeline.py", ticker],
+              "Step 3: TANUKI VALUATION パイプライン実行")
+    if rc != 0:
+        print(f"  ❌ Step 3 失敗（exit={rc}）。latest.json が生成されなかった"
+              "可能性があるため以降を中断します。")
+        return False
+    return True
+
+
+def _segment_review_path(ticker: str) -> str:
+    return os.path.join(SEC_DATA_DIR, ticker, "segment_review.json")
+
+
+def step3_5_segment_config_gate(ticker: str) -> None:
+    """ASC 280の正式セグメント数はXBRLタグから機械的に判定できないため、
+    common/sec_data/data/{ticker}/segment_review.json に
+    {"reviewed": true, ...} が書き込まれるまで常に一時停止する。
+
+    Claude Codeが10-Kの"Segment Information"セクションを確認し、以下
+    いずれかを行った上でこのファイルを書き込む:
+    - LLY型（formal segmentが1つ）: 設定不要と判断し、その旨を記録するのみ
+    - LMT型（formal segmentが2つ以上）: config/segment_config.jsonに
+      比率・成長率・根拠コメントを書き込んだ上で、その旨を記録する
+    """
+    path = _segment_review_path(ticker)
+    if os.path.exists(path):
+        try:
+            with open(path, encoding="utf-8") as f:
+                review = json.load(f)
+        except Exception:
+            review = {}
+        if review.get("reviewed"):
+            print(f"  ✅ Step 3.5: セグメント確認済み（{path}）"
+                  f" — result={review.get('result', '?')}")
+            return
+
+    raise PausedForReview(textwrap.dedent(f"""\
+        ⏸️  Step 3.5: セグメント設定の確認が必要です（一時停止）
+        {ticker} のASC 280正式セグメント数はXBRLタグから機械的に判定
+        できないため、Claude Codeが10-Kの"Segment Information"
+        セクションを直接確認する必要があります（LLY型/LMT型判定ルールは
+        CLAUDE_CODE_START.md「新規銘柄のセグメント設定判断ルール」参照）。
+
+        確認後、{path} に以下いずれかの内容を書き込んでから
+        このコマンドを再実行してください（"note"には10-Kの該当箇所の
+        引用・確認内容を記録すること）:
+
+        - formal segmentが1つ（LLY型・設定不要）:
+          {{"reviewed": true, "formal_segments": 1,
+            "result": "no_segment_config_needed", "note": "<引用・根拠>"}}
+
+        - formal segmentが2つ以上（LMT型・要設定）:
+          config/segment_config.json に比率・成長率・根拠コメントを
+          設定した上で、
+          {{"reviewed": true, "formal_segments": <N>,
+            "result": "segment_config_written", "note": "<引用・根拠>"}}
+    """))
+
+
+# ─── Step 4: データ品質確認（β設定含む、非ブロッキング） ────────────────
+
+def step4_audit(ticker: str) -> None:
+    rc = _run([PYTHON, "common/sec_data/audit.py", ticker, "--check-beta"],
+              "Step 4: データ品質確認（β設定含む）")
+    if rc != 0:
+        print("  ⚠️  Step 4 は非ブロッキング（重大問題が出力された場合は"
+              "内容を確認すること。ゲートはStep 8のNG=0判定）")
+
+
+# ─── Step 5: HypeCore 実行（hypecore=true のみ） ─────────────────────────
+
+def step5_hypecore(ticker: str) -> None:
+    _run([PYTHON, "src/value/hypecore/hypecore.py", "--batch", ticker],
+         "Step 5: HypeCore 実行")
+    # hypecore.py の __main__ は個別ティッカーの失敗を捕捉して継続する
+    # 設計のため、プロセス自体のexit codeは常に0になる（例外なしで完走
+    # すれば）。実際の成否は生成物の有無で判定する（registration_
+    # validator.pyのP1-Step5-HypeCoreと同じ判定基準）。
+    docs_poc = os.path.join(
+        _REPO_ROOT, "docs", "value-monitor", "hypecore", "data", f"{ticker}_poc.json"
+    )
+    if not os.path.exists(docs_poc):
+        print(f"  ⚠️  Step 5 は非ブロッキング（{ticker}_poc.json 未生成、"
+              "yfinance依存のためデータ不足銘柄は失敗することがある）")
+
+
+# ─── Step 5b: EPS Analyzer 実行（eps=true のみ） ─────────────────────────
+
+def step5b_eps_analyzer(ticker: str) -> None:
+    _run([PYTHON, "-m", "src.value.adjusted_eps_analyzer.pipeline", "--ticker", ticker],
+         "Step 5b: EPS Analyzer 実行")
+    eps_dir = os.path.join(
+        _REPO_ROOT, "docs", "value-monitor", "adjusted_eps_analyzer", "data", ticker
+    )
+    if not os.path.exists(eps_dir):
+        print(f"  ⚠️  Step 5b は非ブロッキング（{ticker}のEPS Analyzerデータ"
+              "未生成。非US GAAP・NetIncomeLoss四半期データ欠損等の場合は"
+              "cik_lookup.csvのeps列をfalseに設定することを検討）")
+
+
+# ─── Step 6: Discover 監視リストに追加 ───────────────────────────────────
+
+def step6_discover_register(ticker: str, dry_run: bool) -> None:
+    print("\n--- Step 6: Discover 監視リストに追加 ---")
+    with open(DISCOVER_CFG, encoding="utf-8") as f:
+        config = json.load(f)
+    if ticker in config.get("tickers", {}):
+        print(f"  {ticker} はすでに登録済みです")
+        return
+    if dry_run:
+        print(f"  [dry-run] {ticker} をDiscover監視リストに追加します（実際には書き込みません）")
+        return
+    config.setdefault("tickers", {})[ticker] = {"category": "監視中", "memo": "", "themes": []}
+    config["last_updated"] = datetime.now().date().isoformat()
+    with open(DISCOVER_CFG, "w", encoding="utf-8") as f:
+        json.dump(config, f, ensure_ascii=False, indent=2)
+    print(f"  {ticker} をDiscover監視リストに追加しました")
+    print("  （docs/portfolio/data/discover_config.jsonへの同期はDiscover_Config_Sync.ymlが自動実行、"
+          "push後数分内に反映）")
+
+
+# ─── Step 7: monitor_tickers.yaml に追加 ─────────────────────────────────
+
+def step7_monitor_register(ticker: str, dry_run: bool) -> None:
+    print("\n--- Step 7: monitor_tickers.yaml に追加 ---")
+    with open(MONITOR_YAML, encoding="utf-8") as f:
+        content = f.read()
+    existing = {l.strip().lstrip("- ") for l in content.splitlines() if l.strip().startswith("- ")}
+    if ticker in existing:
+        print(f"  {ticker} はすでに登録済みです")
+        return
+    if dry_run:
+        print(f"  [dry-run] {ticker} を monitor_tickers.yaml に追加します（実際には書き込みません）")
+        return
+    with open(MONITOR_YAML, "a", encoding="utf-8") as f:
+        f.write(f"  - {ticker}\n")
+    print(f"  {ticker} を monitor_tickers.yaml に追加しました")
+
+
+# ─── Step 8: 登録パイプライン健全性チェック＋昇格 ────────────────────────
+
+def step8_validate_and_promote(ticker: str, target_status: str, dry_run: bool) -> bool:
+    cmd = [PYTHON, "common/sec_data/registration_validator.py", ticker]
+    if not dry_run:
+        cmd += ["--promote", target_status]
+    rc = _run(cmd, "Step 8: 登録パイプライン健全性チェック" + ("" if dry_run else "＋昇格"))
+    if dry_run:
+        print(f"  [dry-run] NG=0であれば status を '{target_status}' へ昇格します（実際には昇格しません）")
+        return rc == 0
+    return rc == 0
+
+
+# ─── メイン ──────────────────────────────────────────────────────────────
+
+def register_one(ticker: str, target_status: str, dry_run: bool) -> bool:
+    print(f"\n{'=' * 60}")
+    print(f"  {ticker} の登録処理を開始")
+    print(f"{'=' * 60}")
+
+    row = _load_cik_row(ticker)
+    if row is None:
+        print(f"❌ {ticker} は config/cik_lookup.csv に見つかりません。"
+              "Step 0.5（登録メタデータの記録）を先に実施してください。")
+        return False
+
+    print(f"現在のstatus: {row.get('status', '(不明)')}"
+          f" / tanuki={row.get('tanuki')} stonks_silo={row.get('stonks_silo')}"
+          f" eps={row.get('eps')} hypecore={row.get('hypecore')}")
+
+    tanuki_enabled = _flag(row, "tanuki")
+    hypecore_enabled = _flag(row, "hypecore")
+    eps_enabled = _flag(row, "eps")
+
+    if not step1_sec_data(ticker):
+        return False
+
+    step2_beta(ticker, dry_run)
+
+    if tanuki_enabled:
+        try:
+            step2_5_software_system_gate(ticker)
+        except PausedForReview as e:
+            print(str(e))
+            return False
+
+        if not step3_pipeline(ticker):
+            return False
+
+        try:
+            step3_5_segment_config_gate(ticker)
+        except PausedForReview as e:
+            print(str(e))
+            return False
+    else:
+        print("\n--- Step 3/2.5/3.5: スキップ（tanuki=false） ---")
+
+    step4_audit(ticker)
+
+    if hypecore_enabled:
+        step5_hypecore(ticker)
+    else:
+        print("\n--- Step 5: スキップ（hypecore=false） ---")
+
+    if eps_enabled:
+        step5b_eps_analyzer(ticker)
+    else:
+        print("\n--- Step 5b: スキップ（eps=false） ---")
+
+    step6_discover_register(ticker, dry_run)
+    step7_monitor_register(ticker, dry_run)
+
+    ok = step8_validate_and_promote(ticker, target_status, dry_run)
+
+    print(f"\n{'─' * 60}")
+    if ok:
+        print(f"✅ {ticker}: 登録処理が完了しました"
+              + ("（dry-run、実際の昇格なし）" if dry_run else f"（status → {target_status}）"))
+    else:
+        print(f"⏸️  {ticker}: NGが残っているため昇格せず終了しました。"
+              "内容を確認し、対処後に再実行してください。")
+    return ok
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(
+        description="新規銘柄登録オーケストレーションスクリプト（Step 1〜8を自動連続実行）"
+    )
+    parser.add_argument("tickers", nargs="+", help="登録対象ティッカー（複数指定可、1銘柄ずつフル実行）")
+    parser.add_argument(
+        "--target-status", required=True, choices=TARGET_STATUSES,
+        help="Step 8でNG=0だった場合の昇格先（Step 0.5で決めた本来の意図をここで明示指定する）",
+    )
+    parser.add_argument(
+        "--dry-run", action="store_true",
+        help="本スクリプト自身の書き込み（Step 6/7/8）のみ抑止する（Step 1/3/5/5bは対象外、docstring参照）",
+    )
+    args = parser.parse_args()
+
+    results = {t.upper(): register_one(t.upper(), args.target_status, args.dry_run) for t in args.tickers}
+
+    print(f"\n{'=' * 60}")
+    print("登録処理サマリー")
+    for t, ok in results.items():
+        print(f"  {'✅' if ok else '⏸️ '} {t}")
+
+    return 0 if all(results.values()) else 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())
