@@ -2,7 +2,56 @@
 
 ---
 
-## 2026-09-03（完了）
+## 2026-09-04（完了）
+
+### ✅ [STONKS-PILLAR-THRESHOLD-MISMATCH-1] pillarColor(70/45)とDEFICIT判定(65/35)の閾値不一致
+**状態:** ✅完了
+**優先度:** 中
+**分類:** 表示不整合 / STONKS SILO
+**登録日:** 2026-07-23
+**完了日:** 2026-09-04
+**発見:** `FIELD_DEFINITIONS.md`フェーズ8（AS-IS-141、依頼文名指し）
+
+#### 内容
+`index.html`の`pillarColor(s)`は`s>=70`緑・`s>=45`amber・それ未満赤だが、
+同じスコア値に対する`verdict`ラベル（AS-IS-141）は`>=65→GOOD_DEFICIT`・
+`>=35→WATCH`・それ未満`BAD_DEFICIT`で決まる。スコア65〜69点の銘柄は
+verdict="GOOD_DEFICIT"（好意的ラベル）なのに表示色はamber、スコア35〜44点
+の銘柄はverdict="WATCH"なのに表示色は赤、という不整合区間が存在する。
+
+#### 対応方針
+`pillarColor()`の閾値をverdict判定と同じ65/35に揃えるか、意図的に別基準
+とする理由を明示するかを判断する。
+
+#### 着手条件
+なし
+
+#### 実装（2026-09-04）
+事前調査で、`pillarColor()`を共有する他2つのスコア（s2=`ra.score`・
+s3=`pp.score`）はいずれも離散的なverdict→固定値マッピング
+（SAFE=100/WATCH=60/DANGER=20等、`discover/stonks-silo/src/
+analyzer.py`）であり70/45の境界と自然に整合しているため、この2つには
+同種の矛盾がないと確認済み。対応は`dq.score`（s1）専用に限定した：
+
+1. `dq.score`専用の色分け関数`deficitColor(s)`を新設（`index.html`）。
+   閾値をverdict判定と同じ65/35に揃えた（>=65緑・>=35amber・それ未満赤）
+2. `index.html`内でs1を描画している2箇所（`pm-score`セクション・
+   `pillar-score`セクション、いずれも`pillarColor(s1)`呼び出し）を
+   `deficitColor(s1)`に置き換え
+3. `pillarColor()`自体は変更せず、s2・s3の描画には引き続き使用
+
+**検証**: 本番`results.json`（25銘柄）を実測したところ、`dq.score`が
+旧不整合区間に該当する銘柄が実在した（IOT: score=65・verdict=
+GOOD_DEFICIT、JOBY: score=35・verdict=WATCH）。旧`pillarColor`ロジックで
+再現するとIOTはamber（本来green）・JOBYはred（本来amber）と、まさに
+本エントリの指摘通りの不整合を確認。ローカルサーバー経由でブラウザに
+実際にページを読み込み、`buildDetail()`が返すDOM上の実際の色を25銘柄
+全件について`dq.verdict`と突合した結果、不整合0件（旧ロジックでは
+IOT・JOBYの2件が不整合）。IOT・JOBYの2銘柄はブラウザで実際に画面を
+開いてスクリーンショットでも色を目視確認済み（IOT=green、JOBY=amber）。
+s2・s3の描画コード自体は変更していないため表示に変化なし。
+
+---
 
 ### ✅ [SECDATA-ENB-NORMALIZATION-MISSING-1] ENB（Enbridge）の正規化データ（annual_*.json/quarterly_*.json）が1件も生成されていない
 **状態:** ✅完了（対象消滅によりクローズ）

@@ -5726,28 +5726,6 @@ LITE単独、9年間持続。gross_profit自体はown-dataの正しい値を維�
 
 ---
 
-### [STONKS-PILLAR-THRESHOLD-MISMATCH-1] pillarColor(70/45)とDEFICIT判定(65/35)の閾値不一致
-**優先度:** 中
-**分類:** 表示不整合 / STONKS SILO
-**登録日:** 2026-07-23
-**発見:** `FIELD_DEFINITIONS.md`フェーズ8（AS-IS-141、依頼文名指し）
-
-#### 内容
-`index.html`の`pillarColor(s)`は`s>=70`緑・`s>=45`amber・それ未満赤だが、
-同じスコア値に対する`verdict`ラベル（AS-IS-141）は`>=65→GOOD_DEFICIT`・
-`>=35→WATCH`・それ未満`BAD_DEFICIT`で決まる。スコア65〜69点の銘柄は
-verdict="GOOD_DEFICIT"（好意的ラベル）なのに表示色はamber、スコア35〜44点
-の銘柄はverdict="WATCH"なのに表示色は赤、という不整合区間が存在する。
-
-#### 対応方針
-`pillarColor()`の閾値をverdict判定と同じ65/35に揃えるか、意図的に別基準
-とする理由を明示するかを判断する。
-
-#### 着手条件
-なし
-
----
-
 ### [BETA-FALLBACK-DESIGN-GAPS-1] β取得の3経路重複・0/負値無条件フォールバック・許容範囲の2基準並存
 **優先度:** 中
 **分類:** 設計不整合 / TANUKI VALUATION

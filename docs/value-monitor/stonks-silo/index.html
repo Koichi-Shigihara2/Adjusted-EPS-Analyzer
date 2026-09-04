@@ -864,6 +864,17 @@ function buildDetail(ticker, d) {
     return 'var(--red)';
   };
 
+  // dq.score（赤字品質スコア）専用の色分け。verdict判定（65/35閾値、
+  // discover/stonks-silo/src/analyzer.py）と揃える
+  // （[[STONKS-PILLAR-THRESHOLD-MISMATCH-1]]、pillarColorの70/45とは
+  // 意図的に別基準）
+  const deficitColor = s => {
+    if (typeof s !== 'number') return 'var(--txt)';
+    if (s >= 65) return 'var(--grn)';
+    if (s >= 35) return 'var(--amb)';
+    return 'var(--red)';
+  };
+
   // 営業CFトレンド 日本語ラベル（pillar用）
   const trendJa = {
     'ACCELERATING': '加速中', 'IMPROVING': '改善中',
@@ -1017,7 +1028,7 @@ function buildDetail(ticker, d) {
     <div class="conclusion-pillars">
       <div class="pillar-mini">
         <div class="pm-label">成長・投資力</div>
-        <div class="pm-score" style="color:${pillarColor(s1)}">${s1}</div>
+        <div class="pm-score" style="color:${deficitColor(s1)}">${s1}</div>
         <div class="pm-sub">${defLabelMap[dq.verdict]||'—'}</div>
       </div>
       <div class="pillar-mini">
@@ -1039,7 +1050,7 @@ function buildDetail(ticker, d) {
     <div style="background:var(--sur2)">
       <div class="pillar">
         <div class="pillar-title">① 赤字品質</div>
-        <div class="pillar-score" style="color:${pillarColor(s1)}">${s1}</div>
+        <div class="pillar-score" style="color:${deficitColor(s1)}">${s1}</div>
         <div class="pillar-max">/100</div>
         <div class="pillar-label">${deficitBadge(dq.verdict)}</div>
       </div>
