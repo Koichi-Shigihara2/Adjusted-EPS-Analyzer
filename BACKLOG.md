@@ -6841,6 +6841,16 @@ industry_g単独1件の場合のみ候補数閾値を緩和）が既存の実装
 候補件数が実際に2件を下回った場合（`report_consistency_check.py`等での
 継続監視、またはgrowth_sanity再確認時に検知）
 
+#### 定点確認（2026-09-04）
+対象7銘柄（JNJ・PM・XOM・CON・GEV・FLYW・PAYS）の`growth_sanity`実データを
+確認したところ、全銘柄で`floor_hit=False`。`recommended_g`算出候補数
+（rev_cagr_3yr/5yr・g_fundamental・industry_benchmarkのうち非None数）は
+2026-07-19登録時点（各2件）から増加していた: JNJ 4件・PM 3件・XOM 4件・
+CON 2件・GEV 2件・FLYW 3件・PAYS 3件。データ蓄積によりCAGR系候補
+（rev_cagr_3yr/5yr）が順次算出可能になったことによるもので、リスクは
+軽減方向にある。着手条件（候補1件以下への転落）は引き続き未発生のため
+対応不要、監視継続とする。
+
 ---
 
 
