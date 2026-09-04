@@ -447,10 +447,12 @@ XBRLタグ選定・accn選定・会計年度判定・CIK照合・SEC EDGAR取得
     (月,日)隣接年度の漂いを持つ7銘柄で誤検知（WARN-23型パターン、
     境界衝突ではない）。RCAT(2件)+LITE(1件)+WST(1件)を検出、後者2件は
     未確認のまま#61へ分離。
-61. **[[FYE-BOUNDARY-COLLISION-UNCONFIRMED-1]]** — OPEN。LITE/WSTの
-    WARN-24ヒット（`override_applied=true`、現状無害）だが、一回限りの
-    参考開示か真の未検知FYE変更かの一次情報確認は未実施。未対応
-    （優先度低）。
+61. **[[FYE-BOUNDARY-COLLISION-UNCONFIRMED-1]]** — DONE（2026-09-05）。
+    LITE/WSTのWARN-24ヒットを一次情報（SEC EDGAR原本）で確認。LITEは
+    2015年JDSUスピンオフに伴うPredecessor/Successor会計処理、WSTは
+    開示書類に表示されない非表示のXBRLタグ付けアーティファクト（古い
+    コンテキストの使い回し）と確定、いずれも真のFYE変更ではない。
+    `config/warn_acknowledged.json`へ登録の上クローズ。
 62. **[[FETCHER-10KT-10QT-FORM-EXCLUSION-1]]** — DONE。`fetcher.py`の
     `relevant_forms`集合が`10-KT`/`10-QT`（FYE変更後の移行期間報告書）
     を除外しており、`is_own_data`がこれらのaccnに対し恒久的にFalseと
@@ -916,11 +918,11 @@ UNIDENTIFIED-1)
 ### ⑧ 原因不明・現行ロジックでは説明できない銘柄
 **該当**: #4(BS-FIELD-NEWLY-MISSING-2026-1)・#22(SEC-XBRL-MISSING-
 START-ENTRY-1)・#27(HON-GROSSPROFIT-2009-RESIDUAL-DISCREPANCY-1)・
-#61(FYE-BOUNDARY-COLLISION-UNCONFIRMED-1)・[[CHECK29-UNRESOLVED-23-
-MIXED-CAUSES-1]]の残り7件（PLTR2019/CART2023-25/V2008/CELH2025/
-ASTS2019）
+[[CHECK29-UNRESOLVED-23-MIXED-CAUSES-1]]の残り7件（PLTR2019/
+CART2023-25/V2008/CELH2025/ASTS2019）（#61は2026-09-05の一次情報確認で
+原因確定・DONEのため本カテゴリから除外）
 
-**件数**: 4件＋CHECK29残り7件 = 実質11件規模。**現在の対応状況**:
+**件数**: 3件＋CHECK29残り7件 = 実質10件規模。**現在の対応状況**:
 「原因不明」であること自体が1つのパターンとして記録されている
 （HON-GROSSPROFIT-2009等）。共通する特徴: いずれも詳細な一次情報
 照合・網羅的タグ列挙を行っても標準的な会計恒等式では説明しきれない

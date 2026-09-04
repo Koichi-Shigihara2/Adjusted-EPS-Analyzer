@@ -240,6 +240,18 @@
       "ticker": "SOUN",
       "acknowledged_date": "2026-07-19",
       "comment": "BS項目遷移(有値→None)。対象フィールド: long_term_debt（FY2024→FY2025でNoneに遷移）。FY52WEEK-BS-NULL-SILENT-1一次情報調査で「生涯フェードアウト」（真の無借金継続、タグ申告停止による欠損ではない）と確認済み。"
+    },
+    {
+      "check": "WARN-24",
+      "ticker": "LITE",
+      "acknowledged_date": "2026-09-05",
+      "comment": "決算期変更境界バケツ競合（net_income、end=2015-08-01）。FYE-BOUNDARY-COLLISION-UNCONFIRMED-1一次情報調査でSEC EDGAR原本（FY2018 10-K、accn 0001633978-18-000108）を確認し、2015年8月1日のJDSUからのLumentumスピンオフに伴うPredecessor/Successor会計処理（GAAP標準の分割開示）と確定。決算期変更ではない。"
+    },
+    {
+      "check": "WARN-24",
+      "ticker": "WST",
+      "acknowledged_date": "2026-09-05",
+      "comment": "決算期変更境界バケツ競合（rpo、end=2013-06-30）。FYE-BOUNDARY-COLLISION-UNCONFIRMED-1一次情報調査でSEC EDGAR原本（FY2022 10-K、accn 0000105770-23-000012）を確認したところ、該当値は開示書類のどこにも表示されない非表示のXBRLタグ付けアーティファクト（2013年当時のDeferredRevenue用コンテキストがContractWithCustomerLiabilityへ誤って使い回された可能性）と確定。決算期変更ではない。"
     }
   ]
 }
