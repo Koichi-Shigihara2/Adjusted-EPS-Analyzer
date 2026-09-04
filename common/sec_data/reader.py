@@ -329,6 +329,14 @@ class SECReader:
             return {"rev_yoy": None, "rev_ttm": None, "op_margin": None, "rpo_series": []}
 
         # TTM Revenue（直近4四半期合計）
+        # 不変条件（[[RPO-REVTTM-GATE-SKIP-1]]、BACKLOG_DONE.md参照）: rev_yoyは
+        # このif len(rev_all)>=4ブロックの内側かつlen(rev_all)>=8を追加条件として
+        # 計算されるため、rev_yoyが非Noneならrev_ttmも必ず非Noneになる（逆は
+        # 成立しない）。adjust_rpo()の比率安全弁（adjustments.py）はrev_ttmの
+        # Noneチェックのみでゲートしているが、この依存関係によりrev_yoy取得済み・
+        # rev_ttm未取得という組み合わせは構造上発生し得ない。将来rev_yoy算出の
+        # 四半期数閾値（現在8）を変更する場合、rev_ttmの閾値（現在4）を下回る
+        # 値にしない・または両者の依存関係を崩さないよう注意すること。
         rev_all = get_quarterly_series(normalized, "Revenue")
         rev_ttm: Optional[float] = None
         rev_yoy: Optional[float] = None

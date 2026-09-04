@@ -5753,30 +5753,6 @@ overrideにも健全性チェックを適用する③許容範囲の基準を1�
 
 ---
 
-### [RPO-REVTTM-GATE-SKIP-1] RPO補正のrev_ttm未提供時に比率安全弁がスキップされる
-**優先度:** 中
-**分類:** バグ / TANUKI VALUATION
-**登録日:** 2026-07-23
-**発見:** `FIELD_DEFINITIONS.md`フェーズ6（AS-IS-024）
-
-#### 内容
-`adjust_rpo()`の比率条件ゲート（`adjustments.py:525`
-`if not via_whitelist and rev_ttm is not None and rev_ttm > 0`）は、
-`rev_ttm`が`None`の場合ゲート自体を素通りする。`rpo_incremental`の計算は
-`rpo_yago`と`rev_yoy`さえあれば`rev_ttm`なしでも非ゼロ値を返せるため、
-「`rpo_yago`/`rev_yoy`は取得できたが`rev_ttm`だけがNone」という組み合わせ
-では、RPO/Revenue比率が閾値（30%）未満でもRPO補正が適用されてしまう
-可能性がある。
-
-#### 対応方針
-`rev_ttm is None`の場合の代替チェック（例: 直近年次revenueで代用する等）
-を設計してから実装する。
-
-#### 着手条件
-なし
-
----
-
 （[[DISCOVER-CONFIG-DUAL-MGMT-1]]は2026-08-15実装完了、BACKLOG_DONE.md
 「2026-08-15（完了）」参照）
 

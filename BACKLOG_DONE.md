@@ -53,6 +53,60 @@ s2・s3の描画コード自体は変更していないため表示に変化な�
 
 ---
 
+### ✅ [RPO-REVTTM-GATE-SKIP-1] RPO補正のrev_ttm未提供時に比率安全弁がスキップされる
+**状態:** ✅完了（懸念シナリオが構造上発生し得ないと判明したためクローズ）
+**優先度:** 中
+**分類:** バグ / TANUKI VALUATION
+**登録日:** 2026-07-23
+**完了日:** 2026-09-04
+**発見:** `FIELD_DEFINITIONS.md`フェーズ6（AS-IS-024）
+
+#### 内容
+`adjust_rpo()`の比率条件ゲート（`adjustments.py:525`
+`if not via_whitelist and rev_ttm is not None and rev_ttm > 0`）は、
+`rev_ttm`が`None`の場合ゲート自体を素通りする。`rpo_incremental`の計算は
+`rpo_yago`と`rev_yoy`さえあれば`rev_ttm`なしでも非ゼロ値を返せるため、
+「`rpo_yago`/`rev_yoy`は取得できたが`rev_ttm`だけがNone」という組み合わせ
+では、RPO/Revenue比率が閾値（30%）未満でもRPO補正が適用されてしまう
+可能性がある。
+
+#### 対応方針
+`rev_ttm is None`の場合の代替チェック（例: 直近年次revenueで代用する等）
+を設計してから実装する。
+
+#### 着手条件
+なし
+
+#### 調査結果・クローズ（2026-09-04追記）
+懸念された「`rev_yoy`取得済み・`rev_ttm`未取得」の組み合わせは、
+`common/sec_data/reader.py::get_rpo_context()`の実装上、理論的に発生し
+得ないことが判明した。
+
+`rev_yoy`は`if len(rev_all) >= 4:`ブロックの内側で、かつ
+`len(rev_all) >= 8`を追加条件として計算される（4四半期揃わなければ
+`rev_ttm`自体を計算せず、8四半期揃わなければ`rev_yoy`は計算しない）。
+`rev_ttm`は同じ`if len(rev_all) >= 4:`ブロックの直下で無条件に計算
+される。すなわち`rev_yoy`算出の前提（8四半期）が`rev_ttm`算出の前提
+（4四半期）を包含する構造になっており、`rev_yoy`が非Noneであれば
+`rev_ttm`も必ず非Noneになる（逆は成立しない）。`adjust_rpo()`の
+呼び出し元（`core_calculator.py`）は`rev_yoy`・`rev_ttm`いずれも同一の
+`get_rpo_context()`呼び出し結果から取得しており、他の経路でこの2つの
+値が独立に供給されることはない。
+
+実データでも検証した。`common/sec_data/normalized/`配下の全103銘柄の
+`*_quarterly_normalized.json`に対し、`get_quarterly_series()`と同じ
+フィルタ（`is_annual`・`is_ytd`除外）を適用して`rev_yoy`・`rev_ttm`を
+再計算したところ、「`rev_yoy`非None・`rev_ttm`がNone」に該当する銘柄は
+**0件**だった（103銘柄中1銘柄は`rev_ttm`自体がNone、101銘柄は`rev_yoy`
+が非Noneだったが、いずれも該当パターンなし）。
+
+対応方針で挙げていた「代替チェックの設計・実装」は、懸念自体が
+構造上発生し得ないと判明したため不要と判断し、`get_rpo_context()`に
+将来の変更時向けの防御的コメント（コメントのみ、機能変更なし）を追加
+した上でクローズする。
+
+---
+
 ### ✅ [SECDATA-ENB-NORMALIZATION-MISSING-1] ENB（Enbridge）の正規化データ（annual_*.json/quarterly_*.json）が1件も生成されていない
 **状態:** ✅完了（対象消滅によりクローズ）
 **優先度:** 中（監視対象銘柄でありながら本番データが欠落しているため）
