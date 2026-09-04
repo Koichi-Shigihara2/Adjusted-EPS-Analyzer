@@ -9627,6 +9627,211 @@ warn_acknowledged.json的なホワイトリスト運用、またはSTONKS SILO U
 なし。ASTS/LRCX([[LAYER3-COGS-ASTS-LRCX-RECOVERABLE-FOLLOWUP-1]])の
 個別調査結果を踏まえてから全体方針を決めるのが望ましい。
 
+#### 残り10銘柄の一次情報裏取り調査（2026-09-04）
+CAKE・ASTS/LRCX以外で未実施だった一次情報裏取りを、対象からAPGE
+（意図的除外・stonks_silo=false）・ENB（登録抹消済み）を除いた
+NEVER_REPORTED型6銘柄（JOBY・CEG・FLYW・VST・V・XOM）・GAP型5銘柄
+（BKNG・CDNS・CPRT・INTU・VZ）、計11銘柄について実施した（依頼書は
+「10銘柄」としていたがNEVER_REPORTED側の実列挙が6件だったため実際は
+11銘柄。件数表記の誤りとして是正）。手法はASTS/LRCXと同じ：
+company_facts.json逆引き→最新10-K（FilingSummary.xml→該当R-file）を
+直接確認→標準タグ以外の開示有無の確認。全銘柄で対象期はFY2025（10-K
+提出済み）。
+
+**結果は当初の想定より大きく異なり、16銘柄全体が一様に「回収不可能」
+ではないことが判明した。** パターンは4種に分かれる:
+
+**① 完全回収可能（候補タグに未収録の"標準"タグを使用、company_facts.json
+に全期間存在）** — 3銘柄
+- **JOBY**: FY2025 10-K「Cost of Revenue」$29,328K（税引後）を標準タグ
+  `us-gaap:OtherCostAndExpenseOperating`で報告。company_facts.jsonに
+  2021年から全期間存在（2022-2024年は$0〜$67K、2025年に$29,328Kへ
+  急増、2026年上半期は$47,101K）。**2025年8月のBlade Urban Air
+  Mobility買収により実質的な原価が新規発生し、2022-2024年の「未報告」
+  （売上ほぼゼロのため元々報告する原価が存在しなかった）から状況が
+  一変している。** 当初のNEVER_REPORTED判定は2022-2024年時点では
+  正しかったが、現在は陳腐化している。
+- **CEG**: 「Purchased power and fuel」$14,681M（FY2025）を標準タグ
+  `us-gaap:CostDirectMaterial`で報告。company_facts.jsonにFY2020から
+  FY2025まで連続存在（スピンオフ前の遡及比較年度含む）。**NEVER_
+  REPORTED判定は誤りで、実際は一度も報告が途切れていない**——6候補
+  タグに`CostDirectMaterial`が含まれていなかっただけ。
+- **CPRT**: 「Cost of vehicle sales」$602,997K（FY2025）を同じ標準タグ
+  `us-gaap:CostDirectMaterial`で報告。company_facts.jsonにFY2018から
+  FY2025まで連続存在。**GAP判定（旧タグCostOfGoodsAndServicesSold
+  2019年・CostOfGoodsSold 2017年で停止と検知）も誤りで、実際は
+  FY2018に`CostDirectMaterial`へタグを切り替えただけで報告は継続
+  していた。**
+
+**② 部分回収可能（原価の一部のみ標準タグ・残りはカスタム拡張タグ）**
+— 1銘柄
+- **VST**: FY2025の原価に相当する行が2つ存在。「Fuel, purchased power
+  costs, and delivery fees」$9,101M（原価の約76%、最大コンポーネント）
+  はカスタム拡張タグ`vistra:CostOfFuelPurchasedPowerAndDelivery`
+  （company_facts.json非対応）。「Operating costs」$2,803M（約24%）は
+  標準タグ`us-gaap:OtherCostAndExpenseOperating`（JOBYと同じ、
+  company_facts.jsonにFY2017から全期間存在）。**候補タグ拡充のみでは
+  原価全体の24%相当しか回収できず、真のCOGSには届かない。**
+
+**③ 標準タグだが常にディメンション付き文脈でのみ開示（company_facts.json
+非対応の新パターン、LRCXとは別種）** — 2銘柄
+- **CDNS**: 「Product and maintenance cost of sales」$518,673K+
+  「Services cost of sales」$203,576K（FY2025合計$722,249K）。
+  MetaLinks.jsonで確認したところ、両者とも標準タグ`us-gaap:
+  CostOfGoodsAndServicesSold`（`ConsolidatedIncomeStatements`の
+  `CostsAndExpenses`直下の正式な計算関係）を使用しているが、
+  Product/Serviceのディメンション（セグメント軸）付きでしか開示されて
+  おらず、非ディメンション文脈の値が存在しないためcompany_facts.json
+  には一切登場しない（同タグの実測エントリ0件）。**タグ自体は完全に
+  標準的だが、SECのcompanyfacts一括APIがディメンション付き事実を
+  返さない制約により回収不可能。**
+- **INTU**: 「Service cost of revenue」$3,624M+「Product and Other
+  cost of revenue」$68M（FY2025合計$3,692M）。FY2020まではセグメント
+  非依存の値がCostOfGoodsAndServicesSold/CostOfGoodsSold/CostOfServices
+  で報告されていた（GAP判定はこれを検知）が、FY2021以降はService/
+  Product区分のディメンション付き開示のみとなり、company_facts.json
+  から消失。CDNSと同型の「標準タグ・ディメンション限定」パターン。
+
+**④ 一次データ側の制約で回収不可能（CAKE/ASTS/LRCX型、カスタム拡張
+タグまたは概念自体が存在しない）** — 5銘柄
+- **FLYW**: 「Payment processing services costs」$240,360K（FY2025）は
+  カスタム拡張タグ`flyw:PaymentProcessingServicesCosts`。company_
+  facts.jsonの'facts'直下にカスタム名前空間（flyw等）自体が存在せず
+  完全に非対応。
+- **XOM**: 「Crude oil and product purchases」$184,248M＋「Production
+  and manufacturing expenses」$42,424M（FY2025）はいずれもカスタム
+  拡張タグ`xom:CrudeOilAndProductPurchases`・`xom:
+  ProductionAndManufacturingExpenses`。company_facts.json非対応。
+- **VZ**: 「Cost of services」$27,789M＋「Cost of equipment and other」
+  $28,976M（FY2025合計$56,765M、Total Operating Expensesとの差分で
+  検算一致）はカスタムタグ（vz名前空間、正確なタグ名は未特定）。
+  標準タグ`us-gaap:CostOfGoodsAndServicesSold`はFY2015Q1報告分を
+  最後に本番データとして使用されなくなっており（company_facts.json
+  実測、81件中最新end=2015-03-31）、現行のFY2025 10-KのMetaLinks.json
+  にラベル定義自体は残るが実際の値タグとしては使われていない。
+  GAP判定（2014/2017年で停止）通り、開示方法の変更により標準タグでの
+  報告が実際に途絶えている。
+- **BKNG**: 「Sales and other expenses」$3,453M（FY2025）はカスタム
+  タグ`bkng:Salesandotherexpenses`。ただし公式ドキュメンテーション上も
+  「決済手数料・コールセンター委託費・チャージバック引当・貸倒引当・
+  保険金費用等の変動費バケット」と定義されており、**仮に回収できても
+  純粋なcost_of_revenue相当ではない**（GAP判定通り2017年以降は非分類
+  型PLへ構造変更済み）。
+
+**⑤ 業態的にCOGS概念自体が存在しない（判定は正しい、データ問題ではない）**
+— 1銘柄
+- **V（Visa）**: FY2025 10-K損益計算書を確認したが、Personnel/
+  Marketing/Network and processing/Professional fees/D&A/G&A/
+  Litigation provisionという非分類型の費用構成であり、原価
+  （cost of revenue/cost of sales）に相当する行自体が存在しない。
+  「Network and processing」$894Mも明示的に営業費用区分であり原価
+  ではない。**NEVER_REPORTED判定は正確——一次情報側の制約ではなく
+  Visaの事業モデル・PL表示方針そのものによるもの。**
+
+**まとめ**: 16銘柄中、CAKE・ASTS/LRCX（既存3件）に加え今回JOBY・CEG・
+CPRTが完全回収可能・VSTが部分回収可能と判明（実質的に4.24銘柄相当が
+改善余地あり）。CDNS・INTUは「標準タグだが恒久的にディメンション限定」
+という新しい制約パターンとして識別された。FLYW・XOM・VZ・BKNGは
+CAKE型（カスタム拡張タグ、回収不可能）、Vのみ「原価概念自体が存在
+しない」ため元々のNEVER_REPORTED判定が正確だった。実装（候補タグ
+`OtherCostAndExpenseOperating`・`CostDirectMaterial`の追加等）は
+別途[[LAYER3-COGS-CANDIDATE-TAG-EXPANSION-1]]で判断する（本タスクは
+調査のみ）。
+
+---
+
+### [LAYER3-COGS-CANDIDATE-TAG-EXPANSION-1] cost_of_revenue候補タグへOtherCostAndExpenseOperating/CostDirectMaterial追加でJOBY/CEG/CPRT完全回収・VST部分回収の見込み
+**優先度:** 中
+**分類:** データ品質 / common/sec_data抽出ロジック
+**登録日:** 2026-09-04
+**発見:** [[LAYER3-COGS-STRUCTURAL-GAP-16TICKERS-1]]残10銘柄一次情報
+裏取り調査
+
+#### 内容
+[[LAYER3-COGS-STRUCTURAL-GAP-16TICKERS-1]]の一次情報裏取り調査により、
+以下2つの標準us-gaapタグ（現行の6候補タグ`CostOfRevenue`・
+`CostOfGoodsAndServicesSold`・`CostOfGoodsAndServiceExcluding
+DepreciationDepletionAndAmortization`・`CostOfGoodsSold`・
+`CostOfServices`・`CostOfGoodsSoldExcludingDepreciationDepletion
+AndAmortization`のいずれにも含まれない）が、複数銘柄でcost_of_revenue
+相当の値を報告する際に使われていることが判明した：
+
+- **`us-gaap:OtherCostAndExpenseOperating`**: JOBY（FY2025「Cost of
+  Revenue」$29,328K、company_facts.jsonに2021年から全期間存在）・
+  VST（FY2025「Operating costs」$2,803M、原価の一部のみ・全体の
+  約24%相当、company_facts.jsonにFY2017から全期間存在）
+- **`us-gaap:CostDirectMaterial`**: CEG（FY2025「Purchased power and
+  fuel」$14,681M、company_facts.jsonにFY2020から全期間存在）・CPRT
+  （FY2025「Cost of vehicle sales」$602,997K、company_facts.jsonに
+  FY2018から全期間存在）
+
+いずれも標準タグかつcompany_facts.json（companyfacts API）で取得可能。
+JOBY・CEG・CPRTは3社とも該当年度の全期間が既にcompany_facts.jsonに
+存在するため、候補タグへの追加のみで完全回収できる見込み。VSTは
+原価の最大コンポーネント（「Fuel, purchased power costs, and delivery
+fees」$9,101M、約76%）がカスタム拡張タグ`vistra:
+CostOfFuelPurchasedPowerAndDelivery`のため、追加しても部分回収
+（約24%相当）にとどまる。
+
+#### 影響
+STONKS SILOのgross margin表示。現状JOBY/CEG/CPRTは恒久的にNoneの
+まま、VSTは実態の24%程度しか反映されない過小評価状態が続いている。
+
+#### 対応方針（未定・実装は要相談）
+`parser.py`の`XBRL_MAPPING["cost_of_revenue"]`（または`quarterly.py`の
+`_COGS_FALLBACKS`）へ`OtherCostAndExpenseOperating`・
+`CostDirectMaterial`を候補タグとして追加する案が考えられるが、以下を
+実装前に確認する必要がある：
+- 両タグは名称が汎用的（"Other Cost and Expense, Operating"・"Cost,
+  Direct Material"）なため、他銘柄で全く異なる会計項目（cost_of_
+  revenue以外の費用）に使われていないか、追加前に全銘柄横断で誤爆
+  チェックが必要
+- VSTのような部分回収銘柄で、実態の一部のみを「cost_of_revenue」と
+  して採用することがgross margin計算上ミスリードにならないか
+  （原価の76%を占めるFuel/Purchased Power分が欠落したまま
+  gross_profit・gross_marginを算出すると、実態より大幅に良好な
+  マージンを表示してしまうリスクがある）
+- JOBYは2025年Blade買収以降のみ有意な値を持つため、過去年度との
+  時系列比較（gross margin trend等）に不連続が生じる可能性
+
+#### 着手条件
+なし。実装要否・優先度はKoichiさんとの相談の上で判断する。
+
+---
+
+### [JOBY-BLADE-ACQUISITION-IMPACT-SCOPE-1] JOBYの2025年Blade買収による事業実態変化がCOGS以外の指標にも波及していないかの確認未了
+**優先度:** 中〜未定
+**分類:** データ品質 / 事業実態変化の反映確認 / TANUKI VALUATION
+**登録日:** 2026-09-04
+**発見:** [[LAYER3-COGS-STRUCTURAL-GAP-16TICKERS-1]]JOBY個別調査
+
+#### 内容
+JOBY（Joby Aviation）は2025年8月にBlade Urban Air Mobilityの旅客輸送
+事業を買収し、2022-2024年は売上ほぼゼロ（$0〜$103万）だった状態から
+FY2025売上$53,425K・2026年上半期はさらに増加という実質的な収益事業を
+新たに抱えるに至った。[[LAYER3-COGS-CANDIDATE-TAG-EXPANSION-1]]で
+判明した通りcost_of_revenue（原価）は`OtherCostAndExpenseOperating`
+タグで新規に発生・報告されているが、この事業実態の変化がCOGS以外の
+既存の指標・分類ロジックにも影響していないかは未確認のまま。
+
+具体的に確認が必要と考えられる観点（未調査、着手前の仮説レベル）:
+- revenue_growth系指標（rev_cagr_3yr/5yr等）が、売上ほぼゼロの期間
+  からの急増を「異常成長」として誤検知・誤処理していないか
+  （`growth_sanity.py`の外れ値検知ロジック等）
+- hype_phase判定・TANUKI SCOREの成長性評価が、事業実態の質的変化
+  （航空機開発企業→実運航収益企業への転換）を適切に反映できているか
+- 過去のJOBY関連の分類・前提（例:
+  [[FINTREND-SM-JOBY-NONE-1]]のSMフィールドNone化等）がBlade買収後の
+  データでも引き続き妥当か
+
+#### 対応方針（未定）
+上記観点について個別に実データを確認し、問題があれば当該指標ごとに
+別途BACKLOGへ切り出す。問題がなければ「確認済み・対応不要」として
+本エントリをクローズする。
+
+#### 着手条件
+なし。優先度は要調査（実害の有無が未確認のため中〜未定の保守的表現）。
+
 ---
 
 ### [LAYER3-VISA-EPS-TAG-MISSING-1] Visa(V)がEPS関連タグを一切報告せずeps_diluted経由のROEフォールバックが機能しない
