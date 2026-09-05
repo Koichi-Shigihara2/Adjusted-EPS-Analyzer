@@ -4,6 +4,132 @@
 
 ## 2026-09-05（完了）
 
+### ✅ [BREAKEVEN-FORECAST-METHOD-MISMATCH-1] 黒字化年予測の手法相違（TANUKI VALUATION vs STONKS SILO）
+**状態:** ✅完了
+**優先度:** 中
+**分類:** 設計不整合 / TANUKI VALUATION / STONKS SILO
+**登録日:** 2026-07-23
+**完了日:** 2026-09-05
+**発見:** `FIELD_DEFINITIONS.md`フェーズ7（AS-IS-051/AS-IS-162/163）
+
+#### 内容
+TANUKI VALUATION（AS-IS-051）は調整後EPS（四半期）4点のOLS単回帰、
+STONKS SILO（AS-IS-162/163）はマージン（OCF or NI÷Revenue）の直近2点
+線形外挿を優先しOLS絶対値回帰へフォールバックする2段階方式。同じ
+「黒字化時期の予測」という概念に対し、データ粒度・手法ともに独立した
+実装が並存している。
+
+#### 対応方針
+両者を統一すべきか（判定対象が異なるドメイン=DCF精度 vs 企業財務品質
+のため統一不要の可能性もある）を設計判断してから対応要否を決める。
+
+#### 着手条件
+なし
+
+#### 実装（2026-09-05）
+判定対象（TANUKI VALUATIONは調整後EPS・四半期粒度、STONKS SILOは
+マージン比率・年次粒度）はそれぞれの目的（DCF精度 vs 企業財務品質）に
+応じて維持し、**「何点使うか」「常にOLSか」という回帰のやり方のみ**を
+統一する方針で対応した。
+
+**統一方針**: 常に直近4点（データがあれば）のOLS回帰に統一。
+
+**TANUKI VALUATION側**（`pipeline.py::compute_eps_breakeven()`、旧
+`_load_extra_data()`内のインライン実装を単体テスト可能な独立関数へ
+切り出し）: 回帰の方式自体は元々「常に直近4四半期のOLS」だったため
+変更なし。STONKS SILO側が既に持つ安全策一式を新規追加した:
+- 理由コード（ACHIEVED/PREDICTED/NO_TREND/NO_DATA/TOO_FAR）を
+  `breakeven_reason`として新規記録（従来は黒字化見込みがない場合に
+  無言でNoneになっていた）
+- 既に黒字化している場合（直近四半期adjusted_eps>=0）のACHIEVED
+  早期判定を追加（STONKS SILO側の規約に倣いbreakeven_estimateは
+  Noneのまま、reasonのみで表す）
+- EPS異常値除外基準`EPS_MAGNITUDE_CAP=30`を新設。EPS Analyzer対象
+  100銘柄・全1723四半期の実データ分布から校正（正常範囲はp1=-1.35〜
+  p99=+8.72、mean=1.20、stdev=4.10。唯一の極端な外れ値はLITE
+  2026Q4のadjusted_eps=-95.0で、10-Kの通期実績が単一四半期として
+  誤抽出された別種のバグと判明・[[EPS-LITE-ANNUAL-AS-QUARTERLY-1]]
+  として別途新規登録。30という値は最大値+18.2〈HON/GEV〉に約65%の
+  余裕を残しつつLITEの異常値を確実に除外）
+- EPS傾き上限`EPS_SLOPE_CAP_PER_QUARTER=2.0`/四半期を新設。現在赤字の
+  16銘柄で実測した直近4四半期OLS傾きが、LITEの異常値混入分
+  （-28.73/四半期）を除けば最大でも±0.31/四半期（CRWV）だったため、
+  約6倍の余裕を持たせつつLITEの異常混入ケースは1桁以上下回り確実に
+  除外する値とした
+- [[EPS-LOAR-1]]のSHARE_STRUCTURE_MISMATCHフラグ付き四半期を回帰対象
+  から除外する防御的措置を追加（将来の別ティッカーのIPO直後シナリオ
+  への予防）
+- report.txtのBreakeven_Estimate行を理由コードに応じた表示に変更
+
+**STONKS SILO側**（`discover/stonks-silo/src/analyzer.py::
+_margin_breakeven()`・`_gaap_margin_breakeven()`）: 「直近2点の傾き
+優先→条件次第で絶対値ベース3点OLSへフォールバック」という2段階方式を
+廃止し、「常に直近4年（データがあれば）のマージン比率OLS回帰」に統一。
+対象指標をマージン比率から絶対値へ途中で切り替える設計は黒字化予測の
+一貫性を損なうため、絶対値ベースのフォールバックそのものを廃止した。
+- `_ols_slope_intercept()`共通ヘルパーを新設
+- 有効データ点のフィルタ（売上規模が直近年の10%未満の年を除外・
+  |マージン|>1000%除外・500pt/年超除外）は既存の校正値のまま変更なし
+  （マージン比率用に校正された値をEPS側へ転用しない、TANUKI側は
+  上記の通りEPS独自に校正した別の値を使用）
+- `_breakeven_estimate()`の戻り値`ols_used`（絶対値OLSフォールバック
+  使用時のみTrueという旧来の意味）を`any_predicted`に改称・意味変更
+  （PREDICTED/IMMINENTを実際に算出した場合のみTrue）。非連続成長
+  チェックのゲート条件もこれに追従
+- `docs/value-monitor/stonks-silo/index.html`: TANUKI VALUATION側の
+  新規`breakeven_reason`フィールドを「黒字転換目算」表示に反映
+  （breakeven_estimateがNoneでも理由〈達成済み/傾向なし/データ不足/
+  5年超〉を表示するよう変更）
+
+`docs/architecture/new_data_platform/FIELD_DEFINITIONS.md`の
+AS-IS-051/162/163・および両システムの手法相違を指摘していた既存の
+指摘事項を、新方式の記述・解決済みの記録へ更新した。
+
+#### 検証結果（2026-09-05）
+1. **TANUKI VALUATION**: EPS Analyzer対象100銘柄全件でcompute_eps_
+   breakeven()の新旧ロジックをシミュレーション比較した結果、
+   breakeven_estimateの**数値自体は1件も変化しなかった**（安全策は
+   純粋な追加機能のため）。反応内訳: ACHIEVED 85件・PREDICTED 6件・
+   NO_TREND 7件・TOO_FAR 2件・NO_DATA 0件。LITE・LOARを個別確認し、
+   LITEはBreakeven_Estimate表示が「N/A」→「黒字化：達成済み」に是正
+   （-95異常値の除外により正しく黒字と認識）、LOARは既存の
+   SHARE_STRUCTURE_MISMATCHフラグにより無影響であることを確認。
+   実際に赤字16銘柄＋黒字サンプル2銘柄（AAPL/NVDA）を本番再生成し
+   report.txtの表示（黒字化：達成済み/2026年頃（推定、reason=
+   PREDICTED）/黒字化予測不可（改善傾向なし）/5年超 等）を確認
+2. **STONKS SILO**: 全25銘柄を本番再生成した結果、**19銘柄で
+   ocf/gaap_breakeven_year・reasonが変化**（常時4点OLS化による意図
+   した差分）。個別に妥当性を確認: ASTS・JOBYは売上規模が直近年の
+   10%未満の年が続きマージンベースの有効データ点が実質1件以下となり
+   NO_DATAへ変化——旧実装はこの場合のみ売上規模フィルタを適用しない
+   絶対値OLSフォールバックで見かけ上の予測値（ASTS: 2027年PREDICTED、
+   JOBY: NO_TREND:-954%）を出していたため、統一後の方が保守的かつ
+   一貫した挙動と判断（フォールバックが暗黙にscale-filterを迂回して
+   いた設計上の粗さの解消）。残り17銘柄の変化も年・reasonともに
+   妥当な範囲内であることを確認（不正な値・コードなし）
+3. `report_consistency_check.py`のCHECK-14/15（EPS>株価検知、
+   quarterly.jsonの直近四半期のみ参照）はLITE等の異常値混入四半期を
+   元々発火要因にしておらず、本対応前後で挙動が変わらないことを
+   コードレベルで確認
+4. 新規テスト: `tests/test_tanuki_eps_breakeven_safety.py`（12件、
+   TANUKI側の安全策）・`tests/test_stonks_silo_breakeven_unify.py`
+   （16件、STONKS SILO側の統一）を新設、全pass
+5. pytest 1079 passed（既知失敗0件）・`audit.py`exit 0（既知警告9件の
+   みで変更前と同一）・`report_consistency_check.py --fail-on-ng`
+   NG=0・WARN=93件（変更前と同一件数）を確認
+
+副次的発見として、LITE FY2026Q4のadjusted_eps=-95.0異常値の原因が
+「10-K通期実績が単一四半期として誤抽出されている」という、本タスクの
+スコープ外の別バグと判明したため[[EPS-LITE-ANNUAL-AS-QUARTERLY-1]]
+として新規登録した（本タスクではEPS_MAGNITUDE_CAPによる実害の遮断
+のみ実施、根本原因の修正は別タスク）。
+
+コミット: `f9c22d08ac`（TANUKI VALUATION側の安全策追加）・
+`eea2b3a151`（STONKS SILO側の4点OLS統一）・`6fbaeabda6`（本番データ
+再生成）。
+
+---
+
 ### ✅ [EPS-LOAR-1] LOAR IPO前EPS異常値の表示対象外処理
 **状態:** ✅完了
 **優先度:** 中

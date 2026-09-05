@@ -6265,22 +6265,45 @@ and wacc > 0 else 0.0`と明示的にゼロフロアされるのに対し、直�
 
 ---
 
-### [BREAKEVEN-FORECAST-METHOD-MISMATCH-1] 黒字化年予測の手法相違（TANUKI VALUATION vs STONKS SILO）
+### [EPS-LITE-ANNUAL-AS-QUARTERLY-1] LITE FY2026第4四半期のEPSが通期実績の単一四半期誤抽出で異常値化
 **優先度:** 中
-**分類:** 設計不整合 / TANUKI VALUATION / STONKS SILO
-**登録日:** 2026-07-23
-**発見:** `FIELD_DEFINITIONS.md`フェーズ7（AS-IS-051/AS-IS-162/163）
+**分類:** データ品質 / EPS ANALYZER
+**登録日:** 2026-09-05
+**発見:** [[BREAKEVEN-FORECAST-METHOD-MISMATCH-1]]対応中、EPS閾値校正のための
+実データ分布調査（チャット記録）
 
 #### 内容
-TANUKI VALUATION（AS-IS-051）は調整後EPS（四半期）4点のOLS単回帰、
-STONKS SILO（AS-IS-162/163）はマージン（OCF or NI÷Revenue）の直近2点
-線形外挿を優先しOLS絶対値回帰へフォールバックする2段階方式。同じ
-「黒字化時期の予測」という概念に対し、データ粒度・手法ともに独立した
-実装が並存している。
+LITE（Lumentum）のEPS Analyzer quarterly.json、FY2026Q4（filing_date=
+2026-06-27、form=10-K）のadjusted_eps=-95.004（gaap_eps=-96.001、
+gaap_net_income=-$7,161,700,000）が、直前3四半期（+0.93/+1.62/+2.12）
+から見て明らかに桁違いの異常値となっている。
 
-#### 対応方針
-両者を統一すべきか（判定対象が異なるドメイン=DCF精度 vs 企業財務品質
-のため統一不要の可能性もある）を設計判断してから対応要否を決める。
+原因を確認したところ、当該レコードのrevenue=$3,014,000,000は
+Q3実績（$808.4M）・Q2実績（$665.5M）と比較して明らかにFY2026の
+**通期revenue**の規模であり、LITEの10-K（annual filing）における
+通期実績（Q4単体ではなくFY全体）がそのまま単一四半期のレコードとして
+誤抽出されていると判明。net_income=-$7.16Bも同様に通期の値と推測される
+（真のQ4単体revenue・net_incomeは、通期実績からQ1〜Q3累計を差し引く
+標準的な手法で導出する必要があるが未実施）。
+
+会計上・タグ付け自体に誤りがあるわけではなく（company_facts.jsonの値
+自体は正しい通期実績）、EPS Analyzer側の四半期抽出ロジック
+（`extract_key_facts.py`）が10-Kのfiscal Q4を「通期実績 − Q1〜Q3累計」
+で導出していない、あるいはこのケースで導出に失敗しフォールバックして
+いる可能性が高い。
+
+#### 影響
+[[BREAKEVEN-FORECAST-METHOD-MISMATCH-1]]対応の過程でTANUKI VALUATION側に
+EPS絶対値の異常値除外ガード（EPS_MAGNITUDE_CAP=30）を新設したため、
+黒字化予測への実害は解消済み（LITEは正しくACHIEVEDと判定される）。
+ただしEPS Analyzer自体の表示（stock.html・quarterly.json）には
+-95.004という誤った値がそのまま残っており、それを直接参照する他の
+指標（YoY成長率等）に波及している可能性がある。
+
+#### 対応方針（未確認・要調査）
+`extract_key_facts.py`のLITE（および他社の10-K）向け四半期導出ロジックを
+確認し、通期実績を単一四半期として誤って採用しているケースがLITE以外にも
+ないか横展開調査した上で、Q4=通期−Q1〜Q3累計の正しい導出に修正する。
 
 #### 着手条件
 なし
