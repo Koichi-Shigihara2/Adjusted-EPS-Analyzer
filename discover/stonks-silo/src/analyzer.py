@@ -602,14 +602,15 @@ class StonksAnalyzer:
         ocf_trend = self._ocf_trend(years, ocf_annual, ocf_yoy, ocf_accel)
 
         # 黒字化予測
-        gaap_be, ocf_be, hidden_already, gaap_reason, ocf_reason, reason, ols_used = self._breakeven_estimate(
+        gaap_be, ocf_be, hidden_already, gaap_reason, ocf_reason, reason, any_predicted = self._breakeven_estimate(
             years, records, ocf_annual, ocf_trend
         )
 
-        # 非連続成長の検出
+        # 非連続成長の検出（実際に将来年を予測〈PREDICTED/IMMINENT〉した
+        # 場合のみ、その予測の精度への影響を確認する）
         discontinuous_growth = False
         discontinuous_growth_note = ""
-        if ols_used and len(years) >= 2:
+        if any_predicted and len(years) >= 2:
             latest_yr = years[-1]
             prev_yr = years[-2]
             r_latest = records[latest_yr]["pl"].get("revenue_sanitized")
@@ -773,35 +774,39 @@ class StonksAnalyzer:
         ocf_trend: str,
     ) -> tuple[Optional[int], Optional[int], bool, str, str, str, bool]:
         """
-        2段階判定で黒字化年を予測。
-        Returns: (gaap_be_year, ocf_be_year, hidden_already, gaap_reason, ocf_reason, combined_reason, ols_used)
+        常に直近4年のマージン比率OLS回帰で黒字化年を予測する
+        （[[BREAKEVEN-FORECAST-METHOD-MISMATCH-1]]、2026-09-05統一）。
+        Returns: (gaap_be_year, ocf_be_year, hidden_already, gaap_reason, ocf_reason, combined_reason, any_predicted)
         reason codes: ACHIEVED / PREDICTED / IMMINENT / NO_TREND[:XX%→XX%] / NO_DATA / TOO_FAR
+        any_predicted: GAAP・OCFいずれかがPREDICTED/IMMINENT（実際に将来年を
+        算出）した場合のみTrue。非連続成長チェックのゲートに使う
+        （旧ols_used、絶対値OLSフォールバックの廃止に伴い意味を変更）。
         """
         net_incomes = {yr: records[yr]["pl"].get("net_income") for yr in years}
         latest_ni = net_incomes.get(years[-1])
-        ols_used_gaap = False
+        predicted_gaap = False
         if latest_ni is not None and latest_ni > 0:
             gaap_be = None
             gaap_reason = "ACHIEVED"
         else:
-            gaap_be, gaap_reason, ols_used_gaap = _gaap_margin_breakeven(years, net_incomes, records)
+            gaap_be, gaap_reason, predicted_gaap = _gaap_margin_breakeven(years, net_incomes, records)
 
         latest_ocf = ocf_annual.get(years[-1])
         hidden_already = latest_ocf is not None and latest_ocf > 0
-        ols_used_ocf = False
+        predicted_ocf = False
         if hidden_already:
             ocf_be = None
             ocf_reason = "ACHIEVED"
         else:
-            ocf_be, ocf_reason, ols_used_ocf = _margin_breakeven(years, ocf_annual, records)
+            ocf_be, ocf_reason, predicted_ocf = _margin_breakeven(years, ocf_annual, records)
 
         if ocf_trend == "DETERIORATING" and gaap_reason not in ("ACHIEVED", "PREDICTED", "IMMINENT"):
             gaap_be = None
             gaap_reason = "NO_TREND"
 
-        ols_used = ols_used_gaap or ols_used_ocf
+        any_predicted = predicted_gaap or predicted_ocf
         combined = f"{gaap_reason} | {ocf_reason}"
-        return gaap_be, ocf_be, hidden_already, gaap_reason, ocf_reason, combined, ols_used
+        return gaap_be, ocf_be, hidden_already, gaap_reason, ocf_reason, combined, any_predicted
 
     # ------------------------------------------------------------------
     # 総合スコア・サマリー
@@ -1055,6 +1060,19 @@ def _fmt_margin_trend(margin_data: list, scale: float = 1) -> str:
     return ""
 
 
+def _ols_slope_intercept(xs: list[float], ys: list[float]) -> tuple[Optional[float], Optional[float]]:
+    """単回帰OLSのslope・interceptを返す。分散ゼロ（全x同値）なら(None, None)。"""
+    n = len(xs)
+    x_mean = sum(xs) / n
+    y_mean = sum(ys) / n
+    ss_xx = sum((x - x_mean) ** 2 for x in xs)
+    if ss_xx == 0:
+        return None, None
+    slope = sum((xs[i] - x_mean) * (ys[i] - y_mean) for i in range(n)) / ss_xx
+    intercept = y_mean - slope * x_mean
+    return slope, intercept
+
+
 def _margin_breakeven(
     years: list[int],
     ocf_annual: dict[int, Optional[float]],
@@ -1063,10 +1081,20 @@ def _margin_breakeven(
 ) -> tuple[Optional[int], str, bool]:
     """
     OCFマージン（OCF/Revenue）の改善外挿で黒字化年を予測する。
-    Step 1: マージンベース（有効点2点以上かつ改善幅500pt/年以内）
-    Step 2: OLSフォールバック（絶対値ベース直近3年OLS回帰）
-    Returns: (year, reason, used_ols)
+
+    [[BREAKEVEN-FORECAST-METHOD-MISMATCH-1]]（2026-09-05）: 常に直近4年
+    （データがあれば）のマージン比率OLS回帰に統一した。旧実装は「直近2点の
+    傾き優先→条件次第で絶対値ベース3点OLSへフォールバック」という2段階
+    方式だったが、対象指標をマージン比率から絶対値へ途中で切り替える
+    設計は黒字化予測の一貫性を損なうため廃止し、TANUKI VALUATION側
+    （調整後EPS・常に4点OLS）と回帰の方式を揃えた。有効データ点の
+    フィルタ（売上規模が直近年の10%未満の年を除外・|マージン|>1000%を
+    除外）は既存の校正値のまま変更していない。
+
+    Returns: (year, reason, predicted)
     reason codes: ACHIEVED / PREDICTED / NO_TREND[:XX%→XX%] / NO_DATA / TOO_FAR
+    predicted: PREDICTED（実際に将来年を算出した場合）のみTrue。
+    呼び出し元の非連続成長チェックのゲートに使う。
     """
     latest_rev = None
     for yr in reversed(years):
@@ -1075,9 +1103,8 @@ def _margin_breakeven(
             latest_rev = r
             break
 
-    # Step 1: マージンベース外挿
     margin_data: list[tuple[int, float]] = []
-    for yr in years[-3:]:
+    for yr in years[-4:]:
         ocf = ocf_annual.get(yr)
         rev = records.get(yr, {}).get("pl", {}).get("revenue_sanitized")
         if ocf is not None and rev is not None and rev > 0:
@@ -1086,49 +1113,29 @@ def _margin_breakeven(
                 if abs(m) <= 10.0:  # abs(margin) ≤ 1000%
                     margin_data.append((yr, m))
 
-    if len(margin_data) >= 2:
-        (yr0, m0), (yr1, m1) = margin_data[-2], margin_data[-1]
-        if yr1 != yr0:
-            slope = (m1 - m0) / (yr1 - yr0)  # ratio/year
-            if slope * 100 <= 500:             # 改善幅 500pt/年以内
-                latest_yr, latest_m = margin_data[-1]
-                if latest_m >= 0:
-                    return latest_yr, "ACHIEVED", False
-                if slope > 0:
-                    years_to_be = -latest_m / slope
-                    be_year = max(int(latest_yr + years_to_be + 0.5), latest_yr)
-                    if be_year > latest_yr + horizon:
-                        return None, "TOO_FAR", False
-                    return be_year, "PREDICTED", False
+    if len(margin_data) < 2:
+        return None, "NO_DATA", False
 
-    # Step 2: OLSフォールバック（絶対値ベース）
-    valid = [(yr, v) for yr in years[-3:] if (v := ocf_annual.get(yr)) is not None]
-    if len(valid) < 2:
-        return None, "NO_DATA", True
+    latest_yr, latest_m = margin_data[-1]
+    if latest_m >= 0:
+        return latest_yr, "ACHIEVED", False
 
-    latest_yr, latest_val = valid[-1]
-    if latest_val > 0:
-        return latest_yr, "ACHIEVED", True
+    xs = [yr for yr, _ in margin_data]
+    ys = [m for _, m in margin_data]
+    slope, intercept = _ols_slope_intercept(xs, ys)
+    if slope is None:
+        return None, "NO_DATA", False
 
-    n = len(valid)
-    xs = [yr for yr, _ in valid]
-    ys = [v for _, v in valid]
-    x_mean = sum(xs) / n
-    y_mean = sum(ys) / n
-    ss_xx = sum((x - x_mean) ** 2 for x in xs)
-    if ss_xx == 0:
-        return None, "NO_DATA", True
-    slope_ols = sum((xs[i] - x_mean) * (ys[i] - y_mean) for i in range(n)) / ss_xx
-
-    if slope_ols <= 0:
+    # 傾き<=0（改善傾向なし）、または500pt/年超（信頼できない急変、既存の
+    # 校正値のまま）はいずれもNO_TRENDとして予測を出さない
+    if slope <= 0 or slope * 100 > 500:
         trend_str = _fmt_margin_trend(margin_data, scale=100)
         reason = f"NO_TREND:{trend_str}" if trend_str else "NO_TREND"
-        return None, reason, True
+        return None, reason, False
 
-    intercept = y_mean - slope_ols * x_mean
-    be_year = int(-intercept / slope_ols + 0.5)
+    be_year = max(int(-intercept / slope + 0.5), latest_yr)
     if be_year > latest_yr + horizon:
-        return None, "TOO_FAR", True
+        return None, "TOO_FAR", False
     return be_year, "PREDICTED", True
 
 
@@ -1140,10 +1147,16 @@ def _gaap_margin_breakeven(
 ) -> tuple[Optional[int], str, bool]:
     """
     純利益マージン（NI/Revenue × 100）の改善外挿でGAAP黒字化年を予測する。
-    Step 1: マージンベース（有効点2点以上かつ改善幅500pt/年以内）
-    Step 2: OLSフォールバック（絶対値ベース直近3年OLS回帰）
-    Returns: (year, reason, used_ols)
+
+    [[BREAKEVEN-FORECAST-METHOD-MISMATCH-1]]（2026-09-05）: `_margin_
+    breakeven()`と同様、常に直近4年のマージン比率OLS回帰に統一した
+    （旧: 2点傾き優先→絶対値3点OLSフォールバック）。フィルタの校正値
+    （売上規模10%未満除外・|マージン|>1000%除外・500pt/年超除外）は
+    変更していない。
+
+    Returns: (year, reason, predicted)
     reason codes: ACHIEVED / PREDICTED / IMMINENT / NO_TREND[:XX%→XX%] / NO_DATA / TOO_FAR
+    predicted: PREDICTED・IMMINENT（実際に将来年を算出した場合）のみTrue。
     """
     latest_rev = None
     for yr in reversed(years):
@@ -1152,9 +1165,8 @@ def _gaap_margin_breakeven(
             latest_rev = r
             break
 
-    # Step 1: マージンベース外挿
     margin_data: list[tuple[int, float]] = []
-    for yr in years[-3:]:
+    for yr in years[-4:]:
         ni = net_incomes.get(yr)
         rev = records.get(yr, {}).get("pl", {}).get("revenue_sanitized")
         if ni is not None and rev is not None and rev > 0:
@@ -1163,53 +1175,29 @@ def _gaap_margin_breakeven(
                 if abs(m) <= 1000:
                     margin_data.append((yr, m))
 
-    if len(margin_data) >= 2:
-        (yr0, m0), (yr1, m1) = margin_data[-2], margin_data[-1]
-        if yr1 != yr0:
-            slope = (m1 - m0) / (yr1 - yr0)  # pt/year
-            if slope <= 500:                   # 改善幅 500pt/年以内
-                latest_yr, latest_m = margin_data[-1]
-                if latest_m >= 0:
-                    return latest_yr, "ACHIEVED", False
-                if slope > 0:
-                    years_to_be = -latest_m / slope
-                    be_year = int(latest_yr + years_to_be + 0.5)
-                    if be_year <= latest_yr:
-                        return latest_yr + 1, "IMMINENT", False
-                    if be_year > latest_yr + horizon:
-                        return None, "TOO_FAR", False
-                    return be_year, "PREDICTED", False
+    if len(margin_data) < 2:
+        return None, "NO_DATA", False
 
-    # Step 2: OLSフォールバック（絶対値ベース）
-    valid = [(yr, v) for yr in years[-3:] if (v := net_incomes.get(yr)) is not None]
-    if len(valid) < 2:
-        return None, "NO_DATA", True
+    latest_yr, latest_m = margin_data[-1]
+    if latest_m >= 0:
+        return latest_yr, "ACHIEVED", False
 
-    latest_yr, latest_val = valid[-1]
-    if latest_val > 0:
-        return latest_yr, "ACHIEVED", True
+    xs = [yr for yr, _ in margin_data]
+    ys = [m for _, m in margin_data]
+    slope, intercept = _ols_slope_intercept(xs, ys)
+    if slope is None:
+        return None, "NO_DATA", False
 
-    n = len(valid)
-    xs = [yr for yr, _ in valid]
-    ys = [v for _, v in valid]
-    x_mean = sum(xs) / n
-    y_mean = sum(ys) / n
-    ss_xx = sum((x - x_mean) ** 2 for x in xs)
-    if ss_xx == 0:
-        return None, "NO_DATA", True
-    slope_ols = sum((xs[i] - x_mean) * (ys[i] - y_mean) for i in range(n)) / ss_xx
-
-    if slope_ols <= 0:
+    if slope <= 0 or slope > 500:
         trend_str = _fmt_margin_trend(margin_data, scale=1)
         reason = f"NO_TREND:{trend_str}" if trend_str else "NO_TREND"
-        return None, reason, True
+        return None, reason, False
 
-    intercept = y_mean - slope_ols * x_mean
-    be_year = int(-intercept / slope_ols + 0.5)
+    be_year = int(-intercept / slope + 0.5)
     if be_year <= latest_yr:
         return latest_yr + 1, "IMMINENT", True
     if be_year > latest_yr + horizon:
-        return None, "TOO_FAR", True
+        return None, "TOO_FAR", False
     return be_year, "PREDICTED", True
 
 

@@ -582,7 +582,7 @@ discover_config.json）は、バリデーションなしで直接GitHubにコミ
 | AS-IS-151 | STONKS SILO | revenue_outlier_years | `revenue_outlier_years` | `[yr for yr in years if revenue_is_outlier[yr]]`。`revenue_is_outlier`はAS-IS-129の2パス外れ値検出（`revenue_sanitized`と表裏の関係） | AS-IS-129（既定義・一次データ） | 導出データ |
 | AS-IS-152 | STONKS SILO | revenue_growth_pct | `revenue_growth_pct` | `revenue_growth_pct[yr] = (revenue_sanitized[yr]/revenue_sanitized[yr-1]-1)×100`（年次。前年が0以下または存在しない場合はNone） | AS-IS-129（既定義・一次データ） | 導出データ |
 | AS-IS-161 | STONKS SILO | ocf_trend | `_ocf_trend()` | `ocf_yoy[yr] = ocf_annual[yr]-ocf_annual[yr-1]`（**差分**、比率ではない）<br>`ocf_accel[yr] = ocf_yoy[yr]-ocf_yoy[yr-1]`（2階差分）<br>判定: 最新年ocf_yoy<=0→(ocf_annual>0なら"FLAT"、他"DETERIORATING")／ocf_yoy>0かつocf_accel>0→"ACCELERATING"／直近2年ともocf_yoy>0→"IMPROVING"／他→"FLAT" | AS-IS-156（既定義・前フェーズ） | 導出データ |
-| AS-IS-165 | STONKS SILO | discontinuous_growth | `discontinuous_growth` | 直近年revenue_sanitized YoY(`latest_yoy`)が200%以上、かつ過去1〜4年前ペアの平均YoYの3倍超の場合に`True`。黒字化予測でOLS回帰を使った場合（`ols_used`）のみ判定対象 | AS-IS-129（既定義、revenue_sanitized経由） | 導出データ |
+| AS-IS-165 | STONKS SILO | discontinuous_growth | `discontinuous_growth` | 直近年revenue_sanitized YoY(`latest_yoy`)が200%以上、かつ過去1〜4年前ペアの平均YoYの3倍超の場合に`True`。黒字化予測が実際に将来年を算出した場合（`any_predicted`、reason=PREDICTED/IMMINENT。2026-09-05 [[BREAKEVEN-FORECAST-METHOD-MISMATCH-1]]統一に伴い旧`ols_used`〈絶対値OLSフォールバック使用時のみTrue〉から改称・意味変更）のみ判定対象 | AS-IS-129（既定義、revenue_sanitized経由） | 導出データ |
 | AS-IS-166 | STONKS SILO | discontinuous_growth_note | `discontinuous_growth_note` | AS-IS-165が`True`の場合のみ`"直近売上が急拡大（+{latest_yoy:.0f}%）、予測精度が低下している可能性があります"`を設定 | AS-IS-165（本表参照） | 導出データ |
 | AS-IS-167 | STONKS SILO | incremental_margin | `incremental_margin` | `(gross_profit[yr]-gross_profit[yr-1]) / (revenue_sanitized[yr]-revenue_sanitized[yr-1]) × 100`（直近の年ペア。`prev_rev<latest_rev×10%`の年はスキップ、`rev_delta<=0`もスキップ） | AS-IS-129（既定義）＋ gross_profit(SEC EDGAR、カタログ対象外) | 導出データ |
 | AS-IS-168 | STONKS SILO | incremental_margin_prev | `incremental_margin_prev` | AS-IS-167と同一計算式の「1つ前の年ペア」版 | AS-IS-167（本表参照） | 導出データ |
@@ -931,13 +931,13 @@ TAIL stage2で確立した記載方法を踏襲）。
 | AS-IS ID(元) | サブシステム | 表示名 | プログラム名称 | 定義（最小単位まで分解、AI生成の場合は入力データ・生成方法） | データ取得元 | データ性質分類 |
 |---|---|---|---|---|---|---|
 | AS-IS-048 | TANUKI VALUATION | next_earnings_date | `pipeline.py:_load_extra_data()` | yfinance `Ticker.calendar["Earnings Date"]`から本日以降の最初の日付を採用。全て過去日の場合はリスト先頭（＝最も古い過去日）をそのまま採用する（**この場合「次回決算日」が実際には過去日になる、下記備考**） | yfinance calendar（カタログ対象外） | 導出データ |
-| AS-IS-051 | TANUKI VALUATION | breakeven_estimate | `pipeline.py:_load_extra_data()` | 対象は直近四半期`adjusted_eps<0`（赤字）銘柄のみ。直近4四半期の`adjusted_eps`（AS-IS-267、既定義・フェーズ4）にOLS単回帰（x=四半期インデックス、y=EPS）を適用し、回帰直線がゼロを横切る時点`x_zero=-intercept/slope`を四半期数に換算、`slope>0`かつ`0<quarters_until<20`の場合のみ`round(現在年+quarters_until/4)`で黒字化年を算出 | AS-IS-267（既定義・フェーズ4） | 導出データ |
+| AS-IS-051 | TANUKI VALUATION | breakeven_estimate/breakeven_reason | `pipeline.py:compute_eps_breakeven()` | 2026-09-05 [[BREAKEVEN-FORECAST-METHOD-MISMATCH-1]]統一: 直近4四半期の`adjusted_eps`（AS-IS-267、既定義・フェーズ4、うち`EPS-LOAR-1`のSHARE_STRUCTURE_MISMATCHフラグ付き・`\|adjusted_eps\|>30`〈EPS_MAGNITUDE_CAP、実データ校正〉の四半期は除外）にOLS単回帰を適用。直近有効値が非負なら`breakeven_reason=ACHIEVED`（yearはNone）。有効点2点未満なら`NO_DATA`。傾き<=0または傾き>2.0/四半期〈EPS_SLOPE_CAP_PER_QUARTER、実データ校正〉なら`NO_TREND`。ゼロ交差までの四半期数`quarters_until`が20（5年、STONKS SILOのhorizon=5年と統一）超なら`TOO_FAR`。それ以外は`round(現在年+quarters_until/4)`で黒字化年を算出し`PREDICTED`。STONKS SILO（AS-IS-162/163）と回帰の方式（常に直近N点のOLS、フォールバックなし）・安全策の考え方（理由コード）を統一したが、対象指標（四半期EPS vs 年次マージン比率）は据え置き | AS-IS-267（既定義・フェーズ4） | 導出データ |
 | AS-IS-104 | HypeCore | eps_surprise | `fetch_analyst_history()` | 優先順位: ①yfinance `earnings_history.surprisePercent`（四半期ごとの実績、月次前方補完、最大4ヶ月）②`quarterly_earnings["Surprise(%)"]`（フォールバック1）③`info.get("earningsGrowth")×100`（フォールバック2、欠損月のみ適用）。最終的に3ヶ月まで前方補完 | yfinance（カタログ対象外） | 導出データ |
 | AS-IS-105 | HypeCore | analyst_upgrade_rate | `fetch_analyst_history()` | yfinance `upgrades_downgrades`を月次集計し、`ToGrade`がBuy系（Buy/Strong Buy/Outperform等）なら`is_upgrade=1`、Sell系なら`is_downgrade=1`として月次件数を集計。`upgrade_rate = upgrades/(upgrades+downgrades+1e-9)`を3ヶ月移動平均で平滑化 | yfinance（カタログ対象外） | 導出データ |
 | AS-IS-106 | HypeCore | analyst_downgrade_rate | `fetch_analyst_history()` | AS-IS-105と同一集計の`downgrade_rate = downgrades/(upgrades+downgrades+1e-9)`（3ヶ月移動平均あり） | AS-IS-105と同じ（yfinance、カタログ対象外） | 導出データ |
 | AS-IS-108 | HypeCore | buy_hold_ratio | `fetch_analyst_history()` | yfinance `recommendations`の直近月（`period=="0m"`）行から`buy_ratio = (strongBuy+buy)/(strongBuy+buy+hold+sell+strongSell+1e-9)`。**名称は「buy_hold」だがholdは分子に含まれない、下記備考**。現時点値のみ本日の月に設定（過去月は未設定） | yfinance（カタログ対象外） | 導出データ |
-| AS-IS-162 | STONKS SILO | gaap_breakeven_year/gaap_breakeven_reason | `_gaap_margin_breakeven()` | 直近年`net_income>0`なら`ACHIEVED`。それ以外は2段階: Step1「純利益率(NI/Revenue×100)」の直近2点線形外挿（傾き≤500pt/年）でゼロ交差年を算出、`be_year<=latest_yr`なら`IMMINENT`、`>latest_yr+5年`なら`TOO_FAR`。Step1不成立ならStep2「直近3年の絶対値OLS回帰」にフォールバック（`NO_TREND`/`NO_DATA`/`PREDICTED`等）。`ocf_trend`（AS-IS-161、既定義・フェーズ5）が`DETERIORATING`の場合は最終的に`NO_TREND`へ上書き | AS-IS-129（既定義・一次データ、revenue_sanitized経由）＋ AS-IS-161（既定義・フェーズ5）＋ net_income（SEC EDGAR、カタログ対象外） | 導出データ |
-| AS-IS-163 | STONKS SILO | ocf_breakeven_year/ocf_breakeven_reason | `_margin_breakeven()` | 直近年`OCF>0`なら`ACHIEVED`（＝AS-IS-164）。それ以外はAS-IS-162と同型の2段階（OCFマージン=OCF/Revenueの2点線形外挿→3年絶対値OLSフォールバック）だが`IMMINENT`判定分岐はなくStep1不成立時は直ちにStep2へ | AS-IS-129（既定義）＋ AS-IS-156（既定義・フェーズ4、ocf_annual経由） | 導出データ |
+| AS-IS-162 | STONKS SILO | gaap_breakeven_year/gaap_breakeven_reason | `_gaap_margin_breakeven()` | 2026-09-05 [[BREAKEVEN-FORECAST-METHOD-MISMATCH-1]]統一: 直近年`net_income>0`なら`ACHIEVED`。それ以外は直近4年（データがあれば）の「純利益率(NI/Revenue×100)」に常にOLS回帰を適用（旧: 直近2点線形外挿を優先し不成立時のみ絶対値ベース3年OLSへフォールバックする2段階方式から統一、フォールバックは廃止）。有効データ点フィルタ（売上規模が直近年の10%未満の年を除外・\|マージン\|>1000%除外）は変更なし。傾き<=0または傾き>500pt/年（既存の校正値のまま）なら`NO_TREND`、有効点2点未満なら`NO_DATA`、ゼロ交差年`be_year<=latest_yr`なら`IMMINENT`、`>latest_yr+5年`なら`TOO_FAR`、それ以外`PREDICTED`。`ocf_trend`（AS-IS-161、既定義・フェーズ5）が`DETERIORATING`の場合は最終的に`NO_TREND`へ上書き | AS-IS-129（既定義・一次データ、revenue_sanitized経由）＋ AS-IS-161（既定義・フェーズ5）＋ net_income（SEC EDGAR、カタログ対象外） | 導出データ |
+| AS-IS-163 | STONKS SILO | ocf_breakeven_year/ocf_breakeven_reason | `_margin_breakeven()` | 2026-09-05統一: 直近年`OCF>0`なら`ACHIEVED`（＝AS-IS-164）。それ以外はAS-IS-162と同様、直近4年のOCFマージン（OCF/Revenue）に常にOLS回帰を適用（フォールバック廃止）。`IMMINENT`判定分岐はなく、ゼロ交差年は`max(計算値, latest_yr)`で下限を設ける | AS-IS-129（既定義）＋ AS-IS-156（既定義・フェーズ4、ocf_annual経由） | 導出データ |
 | AS-IS-164 | STONKS SILO | hidden_profit_already | `_breakeven_estimate()` | `latest_ocf = ocf_annual[直近年] > 0`の単純真偽判定（AS-IS-163のACHIEVED条件と同一式） | AS-IS-156（既定義・フェーズ4） | 導出データ |
 | AS-IS-243 | Discover | catalysts[].id | `next_id()` | `{ticker}-{年}-{連番3桁}`形式の決定論的な採番（既存IDと重複しないシーケンス番号）。AI生成ではない | システム内部（カタログ対象外） | 導出データ |
 | AS-IS-244 | Discover | catalysts[].title/detail/timing/importance/type/probability | `discover_catalysts()`→Grok | **AI生成**: `{ticker}について今後12ヶ月以内のカタリスト候補を幅広く列挙`というプロンプト（grok-3、web検索）。毎週日曜JST23:30、HypeCore対象銘柄（`get_hypecore_tickers()`）全件に対して実行。`importance`/`type`/`probability`は選択肢外の値ならデフォルト（中/不確定シナリオ/中）に丸められる | Grok API（grok-3、web検索、カタログ対象外） | 導出データ |
@@ -1058,13 +1058,16 @@ TAIL stage2で確立した記載方法を踏襲）。
   int、小数値（比率）はfloat」と値の型を使い分けている（コード自身が
   比率KPIの存在を認識している）にもかかわらず、`unit`フィールドは
   比率KPIであっても"USD"のままになる。
-- **「黒字化年予測」がTANUKI VALUATION（AS-IS-051）とSTONKS SILO
-  （AS-IS-162/163）で全く異なる手法を採る**: 前者は調整後EPS
-  （四半期）4点のOLS単回帰、後者はマージン（OCF or NI ÷ Revenue）の
-  直近2点線形外挿を優先しOLS絶対値回帰へフォールバックする2段階方式。
-  同じ「黒字化時期の予測」という概念に対し、データ粒度（四半期EPS vs
-  年次マージン）・手法（単純OLS vs 2段階外挿）ともに独立した実装が
-  並存している。
+- ~~**「黒字化年予測」がTANUKI VALUATION（AS-IS-051）とSTONKS SILO
+  （AS-IS-162/163）で全く異なる手法を採る**~~ **2026-09-05
+  [[BREAKEVEN-FORECAST-METHOD-MISMATCH-1]]で統一**: 「何点使うか・常に
+  OLSか」という回帰の方式のみを統一し（両者とも常に直近4点のOLS単回帰、
+  2段階フォールバック方式は廃止）、対象指標（TANUKI VALUATIONは調整後
+  EPS＝四半期粒度、STONKS SILOはマージン比率＝年次粒度）はそれぞれの
+  目的（DCF精度 vs 企業財務品質）に応じて据え置いた。TANUKI VALUATION
+  側にはSTONKS SILO由来の理由コード（ACHIEVED/PREDICTED/NO_TREND/
+  NO_DATA/TOO_FAR）・傾き上限・異常値除外を新規追加、STONKS SILO側は
+  絶対値ベースのOLSフォールバックを廃止した。
 - **macro_themes（AS-IS-258〜260）は日曜以外に「見た目上は毎日更新
   されているが中身は先週のまま」になりうる**: `collect.py:main()`は
   日曜以外`macro_themes`を前回`daily_report.json`からそのまま引き継ぐ
