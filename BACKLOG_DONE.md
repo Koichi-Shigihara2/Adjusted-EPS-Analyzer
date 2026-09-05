@@ -4,7 +4,7 @@
 
 ## 2026-09-05（完了）
 
-### [FYE-BOUNDARY-COLLISION-UNCONFIRMED-1] LITE/WSTの決算期変更境界バケツ競合が一次情報未確認のまま残存
+### ✅ [FYE-BOUNDARY-COLLISION-UNCONFIRMED-1] LITE/WSTの決算期変更境界バケツ競合が一次情報未確認のまま残存
 **状態:** ✅完了（判定1で確定・クローズ）
 **優先度:** 低〜未定
 **分類:** データ品質ゲート / 検知体制
