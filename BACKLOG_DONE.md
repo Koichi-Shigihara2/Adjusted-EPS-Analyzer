@@ -4,6 +4,87 @@
 
 ## 2026-09-05（完了）
 
+### ✅ [EPS-LOAR-1] LOAR IPO前EPS異常値の表示対象外処理
+**状態:** ✅完了
+**優先度:** 中
+**分類:** データ品質 / EPS ANALYZER
+**発見:** 2026-06-26横断調査
+**完了日:** 2026-09-05
+
+#### 問題
+LOAR（2024年4月IPO）の2023年以前のEPSが異常値を示している。
+- 2023Q4: adjusted_eps=106.37（diluted_shares=204,000）
+- 2023Q3: adjusted_eps=-20.995
+- 原因: IPO前の株式構造（20万4千株）がIPO後（約9,300万株）と根本的に別物
+- 計算自体はSECデータから正しく計算されているが、現在の株式数ベースでは意味をなさない
+
+#### 対応方針
+- EPS Analyzerの表示でIPO前データ（株式数が現在の1%未満等）を除外する処理を追加
+- または|EPS|>50等の閾値でグレーアウト・除外表示する
+- report_consistency_check.pyのCHECK-14/15（EPS>株価）との整合も確認
+
+#### 実装（2026-09-05）
+実データ再確認の結果、該当四半期は依頼書記載の「4四半期」ではなく
+**5四半期**（2023Q1〜Q4＋2024Q1、いずれもdiluted_shares=204,000）と
+判明（本文を是正）。adjusted_eps=11.29/106.37/-21.34/3.32/-36.50の
+5値全てを確認。|EPS|>50等の絶対値閾値では3.32等を見逃すため、依頼書の
+方針通り根本原因（株式数がIPO後と別物）に直結する**株式数基準**
+（直近＝最新四半期のdiluted_sharesの1%未満）を採用した。
+
+- `pipeline.py::apply_share_structure_filter()`新設。該当四半期に
+  `special_flags: ["SHARE_STRUCTURE_MISMATCH"]`を付与（削除はせず
+  既存special_flags機構に準拠、quarterly.jsonに残し監査可能性を維持）
+- `calculate_ttm()`: フラグ付き四半期を1件でも含む窓は`None`を返す
+  よう修正
+- `aggregate_annual()`: フラグ付き四半期を年度集計対象から除外
+  （除外後4四半期未満の年度は既存の`len(quarters) < 4`判定で自然に
+  スキップ）
+- `generate_summary()`: IPO直後ティッカーへの潜在的副作用に備え
+  防御的に対応（LOAR自体はlatest/YoY比較四半期が常に直近5件以内かつ
+  フラグ対象外のため実質無影響）
+- `stock.html`: quarterly.json読み込み直後にフラグ付き四半期を除去し、
+  以降`quarterlyData.quarters`を参照する全箇所（チャート・表・YoY
+  計算等）に自動反映される設計
+
+**副次的発見**: 実データ確認の過程で、TTM/annual集計もLOARのIPO境界を
+跨ぐ窓で汚染されていたことが判明（annual FY2024の平均株式数が
+68,265,250株という4半期混在の無意味な平均値、TTM 3件が204,000〜
+4500万株の混在平均値）。当初の問題認識はquarterly表示のみだったが、
+`calculate_ttm()`/`aggregate_annual()`の修正で併せて解消した。
+
+#### 検証結果（2026-09-05）
+1. **LOAR実データ再生成**: `pipeline.py --ticker LOAR`実行により
+   quarterly.json内の対象5四半期全てに`SHARE_STRUCTURE_MISMATCH`
+   フラグが付与され、残り9四半期（diluted_shares約89-96M）は無傷で
+   あることを確認。ttm.jsonは11件→6件（汚染された5窓を除去）、
+   annual.jsonは3件（FY2023/2024/2025）→1件（FY2025のみ）に変化。
+   ブラウザで実際に`stock.html?ticker=LOAR`を開き、
+   `quarterlyData.quarters`が9件（2024-06-30〜2026-06-30）のみに
+   なること・「全期間」表示でEPSレンジが0〜0.40程度の妥当な範囲に
+   収まることを目視確認
+2. **他銘柄への副作用確認**: EPS Analyzer対象100銘柄全件の
+   quarterly.jsonを静的スキャンし、この閾値（直近四半期比1%未満）で
+   新たに除外される四半期がLOAR以外に存在しないことを確認（大型自社株
+   買い等で株数が急減した前例も含めて該当なし）
+3. `report_consistency_check.py`のCHECK-14/15（直近四半期のみ参照）・
+   CHECK-16/17/19は元々LOARのIPO前四半期を発火要因にしておらず
+   （CHECK-14/15は常に真の最新四半期のみ参照、CHECK-16/17/19は
+   ゼロ株数・全ゼロEPS等の別条件で発火するためLOARのケースには
+   該当しない）、本修正前後で挙動が変わらないことをコードレベルで確認
+4. テスト: `tests/test_eps_share_structure_filter.py`新設（10ケース:
+   LOAR実データ相当パターンでの正しいフラグ付け・除外note・非回帰
+   〈通常ティッカー無影響〉・大型自社株買いとの区別・空/全ゼロ入力・
+   `calculate_ttm`/`aggregate_annual`のフラグ考慮）
+5. pytest 1051 passed（新規10件含む、既知失敗0件）・`audit.py`exit 0
+   （既知警告9件のみ、LOAR関連の新規警告なし）・
+   `report_consistency_check.py --fail-on-ng` NG=0・WARN=93件
+   （変更前と同一件数、LOAR関連の新規異常なし）を確認
+
+コミット: `ea44bfb081`（実装＋テスト）・`31746c64f5`（LOAR本番データ
+再生成）。
+
+---
+
 ### ✅ [ENTG-TER-SEGMENT-1] ENTG・TERのsegment_config.json未設定
 **状態:** ✅完了
 **優先度:** 中
