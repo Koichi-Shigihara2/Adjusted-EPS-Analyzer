@@ -4,6 +4,65 @@
 
 ## 2026-09-05②（完了）
 
+### ✅ [CHECK-COVERAGE-1] 新機能に対応するconsistency checkが未追加
+**状態:** ✅完了（moat_score検出分のみ。DuPont分解null検出分は[[CHECK-COVERAGE-2]]として切り出し継続）
+**優先度:** 低
+**分類:** 品質管理
+**発見:** 2026-06-26横断調査
+**完了日:** 2026-09-05
+
+#### 問題
+直近実装された以下の機能に対応するconsistency checkが未追加：
+- Moat Score（ALPHA-REDESIGN-1）: moat_scoreがNoneまたは範囲外（0〜1）の検出
+- DuPont分解（TANUKI-ROE-1）: dupont=nullの銘柄のうち負債超過でないものの検出
+- s4_streak（HYPE-1）: 内部変数のため対象外
+
+#### 対応方針（原案）
+report_consistency_check.pyに以下を追加：
+- CHECK-20: moat_scoreが存在しない、または0〜1範囲外の銘柄を検出
+- CHECK-21: dupont=nullかつstockholders_equity>0の銘柄を検出（除外ロジックの検証）
+
+#### 着手条件
+なし
+
+#### 実装（2026-09-05）
+2026-09-05の実装依頼ではmoat_score検出のみが対象範囲として明示された
+ため、本セッションではDuPont分解のnull検出（原案のCHECK-21相当）は
+実装せず、[[CHECK-COVERAGE-2]]として新規BACKLOGエントリに切り出して
+継続管理することとした（スコープの見失い防止）。
+
+moat_score側の実装にあたり、原案が指定していた「CHECK-20」「CHECK-21」
+はいずれも本エントリ登録後の別セッションで既に他の用途に使用済みで
+あることが判明した：
+- CHECK-20 = fcf_cagr floor値張り付き検出（[[GROWTH-FLOOR-VERDICT-1]]）
+- CHECK-21 = Revenue段差型急変検出（QUALITY-GATES-EPIC-1 Phase 2b-2）
+
+そのため`report_consistency_check.py`内の既存チェック番号を
+`grep -n "^\s*# CHECK-[0-9]*:"`で全件棚卸しし（1〜29, 31〜32, 34〜41が
+使用済み、30・33が欠番）、次に空いている**CHECK-42**として新規実装した。
+
+`_check_moat_score_validity(ticker, latest)`関数を新設し、
+`components.moat_score`がNone、または0〜1範囲外の場合に
+`[WARN-42 moat_score異常]`を出力する。挿入位置は既存の
+`_check_moat_score_neutral_fallback()`（CHECK-36、別の懸念＝中立
+フォールバック検知）の直後、`latest.json`由来のチェックをまとめている
+箇所とした。
+
+現行データでは全99銘柄が正常値（0件のNone・範囲外なし）のため、本チェックは
+現時点でWARN 0件（将来の回帰防止を目的とした防御的チェック）。
+
+#### 検証結果
+- `tests/test_report_consistency_check.py`に`TestCheckMoatScoreValidity`
+  クラスを新設し、`_check_moat_score_validity()`を直接呼び出す6ケース
+  （None／フィールド欠落／1.5／-0.2／0.5／境界値0・1）で意図的に
+  範囲外・正常値を与えて発火有無を確認、全件パス。
+- `python -m pytest -q`: 1085件全パス（新規6件含む）
+- `python common/sec_data/report_consistency_check.py --fail-on-ng`:
+  NG=0 / WARN=93件（ベースラインと同数。CHECK-42は実データ上0件発火の
+  ため既存WARN件数に増分なし）
+
+---
+
 ### ✅ [EPS-267-MIXED-PASSTHROUGH-1] AS-IS-267内でパススルー値と計算値が混在
 **状態:** ✅完了
 **優先度:** 低〜未定

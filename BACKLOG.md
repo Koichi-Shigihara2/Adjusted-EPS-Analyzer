@@ -8873,21 +8873,29 @@ admin.htmlにrpo_config.jsonの編集UIセクションを追加する。追加�
 
 ---
 
-### [CHECK-COVERAGE-1] 新機能に対応するconsistency checkが未追加
+### [CHECK-COVERAGE-2] DuPont分解のnull銘柄に対応するconsistency checkが未追加
 **優先度:** 低
 **分類:** 品質管理
-**発見:** 2026-06-26横断調査
+**登録日:** 2026-09-05
+**発見:** [[CHECK-COVERAGE-1]]完了時の切り出し（2026-09-05）
 
 #### 問題
-直近実装された以下の機能に対応するconsistency checkが未追加：
-- Moat Score（ALPHA-REDESIGN-1）: moat_scoreがNoneまたは範囲外（0〜1）の検出
-- DuPont分解（TANUKI-ROE-1）: dupont=nullの銘柄のうち負債超過でないものの検出
-- s4_streak（HYPE-1）: 内部変数のため対象外
+[[CHECK-COVERAGE-1]]は元々moat_score検出（CHECK-20相当）とDuPont分解の
+null検出（CHECK-21相当）の2件をまとめて提案していたが、2026-09-05の
+実装依頼ではmoat_score側のみが対象範囲として明示され、CHECK-42として
+実装・完了した（BACKLOG_DONE.md参照）。DuPont分解（TANUKI-ROE-1）の
+`dupont=nullの銘柄のうち負債超過でないものの検出`は未実装のまま残って
+いるため、スコープを見失わないよう本エントリとして独立登録する。
 
 #### 対応方針
-report_consistency_check.pyに以下を追加：
-- CHECK-20: moat_scoreが存在しない、または0〜1範囲外の銘柄を検出
-- CHECK-21: dupont=nullかつstockholders_equity>0の銘柄を検出（除外ロジックの検証）
+report_consistency_check.pyに新規チェックを追加する：
+`dupont=null`かつ`stockholders_equity>0`（負債超過ではない）の銘柄を
+検出しWARNを出す（除外ロジックが正しく負債超過銘柄のみを除外している
+ことの検証）。番号は着手時点の最新使用番号+1を採番する
+（2026-09-05時点の最新はCHECK-42。CHECK-20/21は既に別件で使用済み）。
+
+#### 着手条件
+なし
 
 ---
 

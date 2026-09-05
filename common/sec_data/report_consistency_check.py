@@ -741,6 +741,30 @@ def _check_moat_score_neutral_fallback(ticker: str, latest: dict) -> list[str]:
     return warn
 
 
+def _check_moat_score_validity(ticker: str, latest: dict) -> list[str]:
+    """CHECK-42: moat_scoreがNone、または0〜1の範囲外の銘柄を検知する
+    （[[CHECK-COVERAGE-1]]）。
+
+    ※BACKLOG原案では「CHECK-20」を指定していたが、CHECK-20/CHECK-21は
+    それぞれ別件（fcf_cagr floor値張り付き / Revenue段差型急変）で既に
+    使用済みのため、本チェックはCHECK-42として新規採番する。
+
+    calculate_moat_score()の戻り値は設計上0〜1に正規化される想定だが、
+    上流の計算ロジック変更やデータ欠損によりNone・範囲外値が紛れ込む
+    リグレッションを検知する防御的チェック（2026-09-04時点で全銘柄
+    正常値のためWARN発火0件、将来の回帰防止が目的）。
+    """
+    warn: list[str] = []
+    components = latest.get("components", {})
+    moat_score = components.get("moat_score")
+    if moat_score is None or not (0 <= moat_score <= 1):
+        warn.append(
+            f"  [WARN-42 moat_score異常] moat_score={moat_score!r} はNoneまたは"
+            f"0〜1範囲外 → calculate_moat_score()の異常値混入の可能性"
+        )
+    return warn
+
+
 # CHECK-36: ティッカー非依存の単発チェック用の基準件数。2026-08-16実装時点で
 # 中立フォールバック対象は2銘柄（BKNG/CPRT）。今後の推移を見て閾値は調整する。
 _MOAT_NEUTRAL_FALLBACK_BASELINE_COUNT = 4
@@ -1483,6 +1507,7 @@ def check_ticker(ticker: str, whitelist: set, include_yfinance: bool = False) ->
 
     latest  = _read_latest(ticker)
     warn.extend(_check_moat_score_neutral_fallback(ticker, latest))
+    warn.extend(_check_moat_score_validity(ticker, latest))
     parsed  = _parse_report(text)
 
     fcf_hist = parsed["fcf_history"]

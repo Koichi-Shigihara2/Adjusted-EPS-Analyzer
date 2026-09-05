@@ -725,3 +725,42 @@ class TestCheck28TransitionFormExclusion:
         ng, warn = rcc.check_ticker("TESTCO", whitelist=set())
         assert any("WARN-28" in w for w in warn)
         assert not any("WARN-24" in w for w in warn)
+
+
+class TestCheckMoatScoreValidity:
+    """CHECK-42: moat_scoreがNone、または0〜1の範囲外の銘柄を検知すること
+    （[[CHECK-COVERAGE-1]]）。
+
+    ※BACKLOG原案の「CHECK-20」はfcf_cagr floor値張り付き検知で既に使用済み
+    のため、本チェックはCHECK-42として実装されている。"""
+
+    def test_warn_42_fires_when_moat_score_is_none(self):
+        latest = {"components": {"moat_score": None}}
+        warn = rcc._check_moat_score_validity("TESTCO", latest)
+        assert any("WARN-42" in w for w in warn)
+
+    def test_warn_42_fires_when_moat_score_missing(self):
+        latest = {"components": {}}
+        warn = rcc._check_moat_score_validity("TESTCO", latest)
+        assert any("WARN-42" in w for w in warn)
+
+    def test_warn_42_fires_when_moat_score_above_one(self):
+        latest = {"components": {"moat_score": 1.5}}
+        warn = rcc._check_moat_score_validity("TESTCO", latest)
+        assert any("WARN-42" in w for w in warn)
+
+    def test_warn_42_fires_when_moat_score_below_zero(self):
+        latest = {"components": {"moat_score": -0.2}}
+        warn = rcc._check_moat_score_validity("TESTCO", latest)
+        assert any("WARN-42" in w for w in warn)
+
+    def test_no_warn_42_when_moat_score_in_range(self):
+        latest = {"components": {"moat_score": 0.5}}
+        warn = rcc._check_moat_score_validity("TESTCO", latest)
+        assert not any("WARN-42" in w for w in warn)
+
+    def test_no_warn_42_at_boundary_values(self):
+        for boundary in (0, 1, 0.0, 1.0):
+            latest = {"components": {"moat_score": boundary}}
+            warn = rcc._check_moat_score_validity("TESTCO", latest)
+            assert not any("WARN-42" in w for w in warn)
