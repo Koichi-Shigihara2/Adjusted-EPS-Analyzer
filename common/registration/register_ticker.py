@@ -14,6 +14,13 @@ common/registration/register_ticker.py
       registration_source・registration_note が記録済みであること
     - Step 0（カナダ企業チェック）が完了していること
 
+Step 0.5直後・Step 1実行前（[[QUALITY-GATES-EPIC-1]]ゲート0、
+[[PREFLIGHT-CHECK-1]]、2026-09-05新設）:
+    - common/registration/preflight_check.pyによるプリフライトチェック
+      （①上場後3年未満 ②直近提出書類が20-F等 ③収益系XBRLタグ不在）を
+      自動実行する。フラグが立っても処理は自動停止せず、警告表示のみ
+      で続行する（判断材料の提示に留め、Koichiさんの最終判断を妨げない）。
+
 Usage:
     python common/registration/register_ticker.py TICKER --target-status active
     python common/registration/register_ticker.py TICKER1 TICKER2 --target-status candidate
@@ -73,6 +80,10 @@ from datetime import datetime
 _SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 _REPO_ROOT = os.path.normpath(os.path.join(_SCRIPT_DIR, "..", ".."))
 sys.path.insert(0, _REPO_ROOT)
+
+from common.registration.preflight_check import (  # noqa: E402
+    run_preflight_check, print_preflight_report,
+)
 
 # 標準出力がパイプ/リダイレクト先の場合、Pythonのprint()はデフォルトで
 # フルバッファリングされる。一方、subprocess.run()の子プロセス出力は
@@ -359,6 +370,12 @@ def register_one(ticker: str, target_status: str, dry_run: bool) -> bool:
     print(f"現在のstatus: {row.get('status', '(不明)')}"
           f" / tanuki={row.get('tanuki')} stonks_silo={row.get('stonks_silo')}"
           f" eps={row.get('eps')} hypecore={row.get('hypecore')}")
+
+    # Step 0.5直後・Step 1実行前のプリフライトチェック（[[QUALITY-GATES-
+    # EPIC-1]]ゲート0、[[PREFLIGHT-CHECK-1]]想定機能①〜④）。フラグが
+    # 立っても自動停止しない（判断材料の提示のみ、想定機能④）。
+    preflight_result = run_preflight_check(ticker)
+    print_preflight_report(preflight_result)
 
     tanuki_enabled = _flag(row, "tanuki")
     hypecore_enabled = _flag(row, "hypecore")
