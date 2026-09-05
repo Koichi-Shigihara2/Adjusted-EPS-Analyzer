@@ -2,6 +2,155 @@
 
 ---
 
+## 2026-09-05④（完了）
+
+### ✅ [TICKER-LOADING-UNIFICATION-1] 銘柄リスト読み込みロジックのtickers.py統一
+**状態:** ✅完了
+**優先度:** 低
+**分類:** 保守 / 銘柄リスト参照
+**登録日:** 2026-07-11〜2026-07-13（統合日: 2026-08-03）
+**完了日:** 2026-09-05
+**発見:** [[TICKER-DIRECT-ACCESS-GUARD-1]]実装時の全リポジトリスキャン・
+[[TICKER-SOURCE-UNIFY-1]]（完了・BACKLOG_DONE.md参照）対応方針3実施時の
+横断調査
+
+#### 内容
+以下3箇所が、`tickers.py`が既に提供する銘柄リスト取得機能
+（`get_all_tickers()`等）を使わず、cik_lookup.csv等を独自に読み込む
+重複実装を持つ。いずれもバグではなくコード重複（DRY違反）で、
+`tickers.py`経由への統一で解消できる。
+
+**対象箇所**:
+
+① `common/system_health.py::check_h_config()`（旧SYSHEALTH-CIK-
+DEDUP-1、優先度低）: segment/maturity configの孤立エントリ検出のため
+`all_tickers`（フラグ無視の全登録銘柄）を`csv.DictReader`で独自に
+パースしている。同一の全銘柄取得は`tickers.get_all_tickers()`が既に
+提供しており、置換可能（バグではなくコード重複の解消のみ）。
+
+② `src/tail/kpi_proposer.py`・`src/tail/sec_ctrl_fetcher.py`・
+`src/tail/text_kpi_extractor.py`（旧TAIL-CIK-LOOKUP-DEDUP-1、優先度
+低）: 3ファイルが`load_cik(ticker)`（cik_lookup.csvから指定ティッカー
+のCIKを検索して返す関数）をそれぞれ独立に実装している（関数名・実装
+内容ともほぼ同一）とされていた。共有ヘルパーに統合し、3ファイルから
+呼び出す形に変更する。
+
+③ `common/sec_data/config.py`（旧TICKER-SOURCE-CONFIG-DUP-1、優先度
+低）: `tickers.py`とは別の独立した重複ユーティリティで、
+`_load_from_csv()`が独自にcik_lookup.csvを読み、`get_all()`（全銘柄）・
+`get_holdings()`・`get_watchlist()`・`get_ticker_info()`を提供して
+いる。`common/sec_data/update.py`（SEC生データ取得）が現在も正規に
+これを使用しており「バグ」ではないが、`tickers.py`の
+`get_all_tickers()`と機能重複している。
+
+#### 対応方針
+①②は単純な置換で完結する見込み。③は`common/sec_data/update.py`が
+正規に依存している既存の公開APIのため、統合時は移行方針を先に検討して
+から着手する。
+
+#### 着手条件
+なし
+
+#### 実装（2026-09-05）
+
+**①`common/system_health.py::check_h_config()`**:
+`all_tickers = {r["ticker"] for r in rows}`（csv.DictReader直接パース）を
+`all_tickers = set(_tickers_mod.get_all_tickers())`に置換。フラグ・status
+無条件の全銘柄取得という意味は完全に同一のため挙動変化なし。不要になった
+`import csv`・`_CIK_LOOKUP`定数を削除。`tests/test_no_direct_ticker_
+access.py`の許可リストからも本ファイルを除外した（実際にAST検知が
+発火しないことをテストで確認済み＝直接パースが本当になくなったことの
+機械的裏付け）。
+
+**②`src/tail/kpi_proposer.py`・`sec_ctrl_fetcher.py`・
+`text_kpi_extractor.py`**:
+`common/sec_data/tickers.py`に共有関数`get_cik(ticker, csv_path=None)`
+を新設し、CIKを常に10桁ゼロ埋めで返すよう統一した（旧
+`kpi_proposer.py::load_cik()`が2026-08-19⑦で個別に修正したCRWV未
+パディング対応のzfill(10)正規化を、tickers.py側に集約）。
+
+着手前の実態確認で、依頼文・BACKLOG原案の「3ファイルがload_cik(ticker)
+をほぼ同一実装している」という前提が不正確だったことが判明したため
+記録する：
+- `kpi_proposer.py::load_cik(ticker)`: 10桁ゼロ埋め正規化**あり**
+- `text_kpi_extractor.py::load_cik(ticker)`: 10桁ゼロ埋め正規化**なし**
+  （ただし呼び出し先`get_recent_filings()`が`f"CIK{cik_int:010d}.json"`
+  で毎回再パディングしていたため、実害は顕在化していなかった）
+- `sec_ctrl_fetcher.py`: 単一ティッカー版の`load_cik(ticker)`は存在せず、
+  全銘柄辞書を返す`load_cik_map() -> Dict[str, str]`（ゼロ埋めなし）を
+  `main()`内で`cik_map.get(ticker)`と引いていた（呼び出し先
+  `_get_recent_10q()`も`:010d`で再パディング済みのため実害なし）
+
+3ファイルとも`tickers.get_cik()`を直接呼ぶ形に変更し、旧`load_cik`/
+`load_cik_map`関数・不要になった`import csv`・`CIK_LOOKUP(_PATH)`定数は
+削除した。`sec_ctrl_fetcher.py`・`text_kpi_extractor.py`はこれまで
+`common.sec_data`を一切importしておらず`sys.path`にリポジトリルートを
+追加していなかったため、`kpi_proposer.py`と同じ`sys.path.insert(0,
+repo_root)`パターンを新規に追加した（追加しないと単体スクリプト実行時に
+`ModuleNotFoundError`になる。リポジトリルート以外のカレントディレクトリ
+から`runpy`で3ファイルを個別に読み込み、importが成功することを確認
+済み）。`tests/test_no_direct_ticker_access.py`の許可リストからも3ファイル
+を除外した。
+
+**③`common/sec_data/config.py`**:
+`get_all()`の実装を、独自の`TICKERS`辞書キー列挙から
+`tickers.get_registrable_tickers()`（flag引数を省略）呼び出しに置換した。
+
+依頼文は`get_registrable_tickers()`を「retiredのみ除外」と説明していたが、
+実装を確認したところ本関数は`flag: str`が**必須引数**で、指定した単一
+フラグ='true'かつstatus!='retired'の銘柄のみを返す設計だった（`config.
+get_all()`のような「フラグ無視の全銘柄」を返すモードは存在しなかった）。
+`update.py`（本関数の主要呼び出し元、SEC EDGAR生データ取得のStep 1）は
+tanuki/eps/hypecore/stonks_siloいずれのパイプラインフラグにも依存しない
+共有インフラ層であり、単一フラグを指定すると「そのフラグだけfalseの
+銘柄」がSEC生データ取得自体から漏れてしまう
+（2026-09-05時点の本番cik_lookup.csvではhypecore=trueが全103銘柄で
+一致するため単一フラグ指定でも偶然結果が一致するが、将来hypecore=false
+の銘柄が登録されると静かに破綻する設計だった）。
+
+このため`get_registrable_tickers(flag: str | None = None, ...)`に
+シグネチャを拡張し、`flag=None`の場合はフラグによる絞り込みを行わず
+status='retired'以外の全銘柄を返す専用モードを追加した（既存の
+`register_ticker.py`・`hypecore.py`・`pipeline.py`・
+`adjusted_eps_analyzer/pipeline.py`からの単一フラグ指定呼び出しは
+全て非互換なく動作継続）。`config.get_all()`はこの`flag=None`モードを
+呼ぶ形に統一した。
+
+`get_holdings()`・`get_watchlist()`・`get_ticker_info()`については
+tickers.py側に同等機能（名前/CIK/status付きの銘柄情報dictという形）が
+存在しないことを確認し、統合対象から外してconfig.py側にそのまま残した。
+調査の副産物として、`_load_from_csv()`が実際のCSVのstatus列を見ず
+全行を`"watching"`固定で読み込んでいるため、`get_holdings()`は常に
+空リストを返し`get_watchlist()`は実質`get_all()`と同じ全銘柄を返す
+設計であること、かつ両関数ともリポジトリ内に呼び出し元が存在しない
+（grep確認済み）ことが判明した。いずれも既存動作を変える修正は本タスク
+の範囲外のため、コメントで記録するに留めた。
+
+#### 検証結果
+- **①**: `tests/test_no_direct_ticker_access.py`が本ファイルを許可
+  リストから除外した状態でパスすることを確認（直接パースが実際に
+  なくなったことの機械的裏付け）。
+- **②**: `tests/test_tickers.py`に`TestGetCik`クラスを新設し、
+  10桁ゼロ埋め正規化・CRWV型未パディング入力の正規化・未知ティッカー・
+  空CIK・大文字小文字/前後空白無視の5ケースを確認、全件パス。3ファイルを
+  それぞれ`runpy`でリポジトリルート以外のカレントディレクトリから
+  個別に読み込み、importが成功する（sys.path修正が機能する）ことを
+  確認済み。
+- **③**: `tests/test_tickers.py`に`TestGetRegistrableTickersNoFlag`
+  クラスを新設し、flag=None時にフラグ値に関わらず全銘柄を返す・
+  provisioningを含む・retiredを除外する・引数省略時のデフォルト動作の
+  4ケースを確認、全件パス。新規`tests/test_sec_data_config.py`で
+  `config.get_all()`がtickers.py経由に正しく委譲していることを、
+  provisioning銘柄を含む一時CSV（本番データ非依存）で確認（3ケース）。
+  さらに本番cik_lookup.csvに対する回帰テストとして、統合前の`TICKERS`
+  辞書キー列挙との完全一致（103銘柄、順序含め一致）を確認。
+- 共通: `python -m pytest -q`: **1099件全パス**（新規14件含む）
+- `python common/sec_data/audit.py`: 既存警告9件のみ（変化なし）
+- `python common/sec_data/report_consistency_check.py --fail-on-ng`:
+  NG=0 / WARN=93件（ベースラインと同数）
+
+---
+
 ## 2026-09-05③（完了）
 
 ### ✅ [TAIL-DETAIL-1] detail.htmlレイアウト微調整
