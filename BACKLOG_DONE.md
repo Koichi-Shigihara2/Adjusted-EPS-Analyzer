@@ -4,6 +4,404 @@
 
 ## 2026-09-05（完了）
 
+### ✅ [CLAUDE-CODE-START-FY-DESC-FIX-1] CLAUDE_CODE_START.mdのdetermine_fiscal_year()呼び出し箇所記述の修正
+**状態:** ✅完了
+**優先度:** 低
+**分類:** 保守 / ドキュメント
+**登録日:** 2026-07-15
+**完了日:** 2026-09-05
+**発見:** [[FY52WEEK-BUCKET-MISPLACE-1]]根本修正設計のための事前調査時
+
+#### 問題
+CLAUDE_CODE_START.mdの「年度判定は`common/sec_data/utils.py`の
+`determine_fiscal_year()`に統一済み（ARCH-DATA-1-FY 2026-06-25完了）:
+parser.py・extract_key_facts.py・aggregate_annualの3箇所が同関数を参照」
+という記述が不正確と判明した。
+
+実際に`determine_fiscal_year()`を直接呼び出しているのは`parser.py`
+（2箇所: 341行目・469行目、年次10-Kエントリの分類）と
+`extract_key_facts.py`（4箇所: 549・590・613・668行目、四半期エントリの
+(fiscal_year, quarter)分類およびQ4逆算時の年次エントリマッチング）の
+2ファイル6箇所のみ。`aggregate_annual`（adjusted_eps_analyzer/pipeline.py:306）
+は本関数を呼ばず、extract_key_facts.pyが設定済みのfiscal_yearフィールドで
+単純にグループ化するのみの間接消費箇所であり、独立した呼び出し箇所ではない。
+
+#### 対応方針
+CLAUDE_CODE_START.mdの当該記述を「parser.py（2箇所）とextract_key_facts.py
+（4箇所）が直接呼び出し、aggregate_annualはextract_key_facts.pyが設定した
+fiscal_yearフィールドを間接的に消費する」旨に修正する。
+
+#### 着手条件
+なし（軽微な文書修正のため優先度低）
+
+#### 実装（2026-09-05）
+着手時に`grep -n "determine_fiscal_year("`で実コードを再確認したところ、
+2026-07-15登録時点からさらに実装が進み、parser.pyの直接呼び出し箇所は
+**4箇所**（934・2047・2120・2514行目）に増えていたことを発見した
+（BACKLOG登録時の「2箇所」から増加）。extract_key_facts.pyは4箇所
+（550・591・618・675行目、登録時の記載と同数・ほぼ同一行）で変化なし。
+aggregate_annualが`q.get("fiscal_year")`でフィールドを間接消費する
+だけという構造上の診断は正しいことも確認した。
+
+CLAUDE_CODE_START.mdの記述を「parser.py（2026-09-06時点で4箇所）・
+extract_key_facts.py（4箇所）が直接呼び出し、aggregate_annualは
+fiscal_yearフィールドを間接消費する」旨に修正。呼び出し箇所数は今後の
+実装追加でも変動しうるため、「着手時にgrepで現状を再確認すること」という
+注記も追加した（本エントリ自体が「箇所数の記述はすぐ陳腐化する」ことの
+実例だったため）。
+
+コミット: `58805c18b9`。
+
+---
+
+### ✅ [HISTORY-JSON-LEGACY-TANUKI-SCORE-1] history.jsonにレガシーtanuki_scoreフィールドが残存
+**状態:** ✅完了
+**優先度:** 低
+**分類:** データ整合性 / TANUKI VALUATION
+**登録日:** 2026-07-18
+**完了日:** 2026-09-05
+**発見:** [[GATE2-PHASE3B-1]]③-b事前調査時
+
+#### 問題
+`src/value/tanuki_valuation/pipeline.py`723行目のDESIGNコメントは
+「history.jsonはIV/株価等のチャート用データのみに絞る（判定ラベルは
+TANUKI VALUATION/TANUKI SCOREで別ロジックのため混乱を招く。
+score_history.json側に集約）」と明記しており、現行コードは実際に
+`tanuki_score`を書き込んでいない。
+
+しかし`docs/value-monitor/tanuki_valuation/data/SITM/history.json`・
+`ALAB/history.json`等、複数銘柄の実データに`"tanuki_score": "GROWTH_PREMIUM"`
+のようなエントリが実在することを確認した。過去（DESIGNコメントの方針が
+確定する前）に書き込まれたレガシーエントリが削除されずに残存していると
+推測される。ドキュメント（コメント）と実データの乖離状態。
+
+#### 対応方針候補（未確定）
+a. レガシーエントリの`tanuki_score`フィールドを一括削除するスクリプトを作成
+b. 実害がないため現状維持（history.jsonの当該フィールドを読む消費者は
+   現状確認されていない）
+
+#### 着手条件
+なし（実害報告なし、優先度低。次回セッションで方針判断してから着手）
+
+#### 実装（2026-09-05）
+方針a（一括削除スクリプト作成）を採用。着手前にフロントエンド・
+バックエンド双方で消費者ゼロを再確認した:
+- `docs/value-monitor/tanuki_valuation/stock.html::renderHistoryChart()`
+  はhistory.jsonの各エントリから`tanuki_score`を一切参照しない
+  （`d.tanuki_score`という別の参照はrender(d)関数内でlatest.json由来の
+  `d`を指しており無関係）
+- `backfill_history.py`等のバックエンドスクリプトにも参照なし
+
+`src/value/tanuki_valuation/remove_legacy_tanuki_score.py`を新設し、
+dry-runモードで対象件数（92ファイル・計1164件）を確認した上で実行。
+削除のみを行い他フィールド・値は一切変更しない設計（`entry.pop(
+"tanuki_score")`のみ）。
+
+#### 検証結果
+- dry-run実行結果（92ファイル・1164件検出）と実削除後の実件数が完全一致
+- 削除後、`grep -rl "tanuki_score" docs/value-monitor/tanuki_valuation/data/*/history.json`
+  で該当0件を確認
+- git diffが全て純粋な行削除（1164 deletions / 0 insertions）であり、
+  他フィールドの値・順序に変化がないことを確認
+- pytest 1079 passed・audit.py exit 0・report_consistency_check.py
+  --fail-on-ng NG=0（いずれも変更前と同一）
+
+コミット: `94e34ede69`。
+
+---
+
+### ✅ [CHECK-FORMAT-1] report_consistency_check.pyのコメント形式不統一
+**状態:** ✅完了
+**優先度:** 低
+**分類:** 保守性 / 品質管理
+**発見:** 2026-06-26横断調査
+**完了日:** 2026-09-05
+
+#### 問題
+CHECK-1〜11は「# ── CHECK N: 説明 ───」形式、
+CHECK-12〜19は「# CHECK-N:」形式で記述されており、
+grepやスクリプトによる自動検出で漏れが発生しやすい。
+
+#### 対応方針
+全CHECKを「# CHECK-N:」形式に統一する（CHECK-1〜11を修正）。
+
+#### 実装（2026-09-05）
+CHECK-1〜11（1491〜1609行目）を全て`# CHECK-N: 説明`形式に統一。
+CHECK-14/15は登録時点で既に新形式に統合済みだったことを確認した
+（変更不要）。コメントのみの変更でロジックは無変更。
+
+#### 検証結果
+`grep -n "# ──"`で残存する`# ───`パターンは全てCHECK番号と無関係な
+セクション区切り（「パス設定」「ユーティリティ」等）のみであることを
+確認。pytest 1079 passed・report_consistency_check.py --fail-on-ng
+NG=0・WARN=93件（変更前と同一件数）を確認し、コメント変更がチェック
+ロジックに影響していないことを確認した。
+
+コミット: `be4b539715`。
+
+---
+
+### ✅ [ADMIN-LOG-1] admin.html・stock.htmlにconsole.log残存
+**状態:** ✅完了
+**優先度:** 低
+**分類:** コード品質 / admin.html・TANUKI VALUATION
+**発見:** 2026-06-26横断バグ調査
+**完了日:** 2026-09-05
+
+#### 問題
+本番HTMLにconsole.logが32件残存している：
+- admin.html: 26件（ワークフロー実行ポーリングのデバッグトレース）
+- stock.html: 6件（matricesタブ読み込みデバッグログ）
+
+#### 対応方針
+不要なconsole.logを削除する。
+admin.htmlのポーリングログはワークフロー実行確認のデバッグとして
+有用な場合があるため、削除前に必要性を判断する。
+
+#### 実装（2026-09-05）
+実件数を再確認したところ登録時と完全一致（admin.html 26件・stock.html
+（`docs/value-monitor/tanuki_valuation/stock.html`）6件）。全26+6件を
+削除した。内容を確認したところ秘匿情報（トークン等）を出力する行は
+なく、全てティッカー名・run_id・status等のデバッグトレースのみだった
+ため、削除前提の判断に迷う要素はなかった。console.errorは変更対象外
+（エラー通知として有用なため維持）。stock.html側は1箇所（`if (sr.ok)
+{ ... console.log(...); }`）が他の実処理と同一行に埋め込まれていたため
+console.log部分のみ除去し他の処理は維持。
+
+#### 検証結果
+`grep -c "console\.log"`で両ファイルとも0件を確認。全て単独行の
+console.log呼び出しであり削除によるJS構文破壊のリスクがないことを
+事前に確認済み。pytest 1079 passed・report_consistency_check.py
+--fail-on-ng NG=0（HTML変更のためpython側テストへの影響なし）を確認。
+
+コミット: `e75c23c403`。
+
+---
+
+### ✅ [PICK-FIELD-1] daily_pick.jsonとhistory.jsonのフィールド名乖離
+**状態:** ✅完了
+**優先度:** 低
+**分類:** データ定義不整合 / TANUKI SCORE
+**発見:** 2026-06-26横断バグ調査
+**完了日:** 2026-09-05
+
+#### 問題
+同一データが異なるキー名で保存されている：
+- daily_pick.json: selection_reason
+- history.json: reason
+
+daily_pick.pyが書き込む際にキー名が統一されていない。
+機能的な問題はないが保守上の混乱を招く。
+
+#### 対応方針
+どちらかに統一する（selection_reasonを推奨・より説明的なため）。
+history.jsonの既存エントリは移行不要（読み取り時に両キーを参照するフォールバックを追加）。
+
+#### 実装（2026-09-05）
+どちらに揃えるかを「消費しているフロントエンド側の既存参照箇所を確認した
+上で、変更範囲が小さい方を選ぶ」という着手前提に従って判断した。
+`docs/`配下を横断grepした結果:
+- `docs/value-monitor/tanuki_score/index.html:717`が`d.selection_reason`
+  （daily_pick.json由来）を参照する消費者として唯一確認された
+- `docs/integrated-dashboard/history.json`（daily_pick.py::save_history()
+  の出力先）の`reason`キーを読む消費者は、フロントエンド・バックエンド
+  ともに**0件**（grepで該当なし。`.reason`がヒットした2箇所
+  ―`docs/value-monitor/tanuki_valuation/stock.html:1560`のDuPont分解
+  除外理由・`docs/portfolio/tail/index.html:1897`のTAIL journal
+  ―はいずれも無関係な別機能の同名フィールドと確認）
+
+history.json側の消費者が0件のため、history.json側を`selection_reason`
+へ統一する方が変更範囲が最小（daily_pick.py側1箇所の書き込みキー変更
+のみ、フロントエンド変更ゼロ）と判断し、登録時の推奨（selection_reason
+に統一）とも一致する結論になった。当初想定していた「読み取り時の
+フォールバック追加」は消費者が存在しないため不要と判断し実施していない。
+
+`daily_pick.py::save_history()`の書き込みキーを`"reason"`→
+`"selection_reason"`に変更。加えて、消費者ゼロで実害はないものの
+一貫性のため、既存の本番`docs/integrated-dashboard/history.json`
+（30エントリ全件）も同じキー名へ移行した（値・フィールド順序は維持し
+キー名のみ変更）。
+
+#### 検証結果
+- daily_pick.json側は既存のまま無変更（selection_reasonのまま）
+- history.json側は30エントリ全件で`reason`→`selection_reason`への
+  純粋なキー名変更のみ（値は完全一致）であることをdiffで確認
+- フロントエンドへの影響: 静的確認により`integrated-dashboard/history.json`
+  を参照するHTML/JSファイルが皆無（0件）であることを確認済みのため、
+  実ブラウザでの追加確認は不要と判断
+- pytest 1079 passed・report_consistency_check.py --fail-on-ng NG=0
+
+コミット: `275291598c`。
+
+---
+
+### ✅ [TOBE-SEGMENTS-RESIDUAL-WORDING-1] INPUT_DATA_TOBE.mdの保持構造案にsegments除外判断前の「新規吸収」表現が残存している
+**状態:** ✅完了
+**優先度:** 低
+**分類:** ドキュメント不整合
+**登録日:** 2026-07-24
+**完了日:** 2026-09-05
+**発見:** SEC_EDGAR_LAYER_DESIGN.md横断整合性確認調査（フェーズ1）③-1
+
+#### 内容
+`INPUT_DATA_TOBE.md`のセグメントKPI（INPUT-A-016）について、L104の
+定義行は実態訂正済み（正式ASC280セグメントではなく`tail_kpi_map.json`
+ベースの銘柄固有カスタムKPI、フェーズ1統合スコープ除外）だが、同一
+ドキュメント内L264の保持構造案（統合ストアのツリー図）には
+「segments/{FYQ}.json # セグメント別KPI（新規吸収、INPUT-A-016）」
+という、除外判断以前の「新規吸収」という表現が訂正されずに残存
+している。
+
+#### 影響
+実装への影響はない（[[SEC_EDGAR_LAYER_DESIGN.md]] 5章のスコープ確定
+事項が正としてsegments除外を明記しているため）。ドキュメントを読む順序
+によっては、保持構造案の図だけを見て「segmentsも統合対象」と誤解する
+可能性がある字句レベルの不整合。
+
+#### 対応方針
+L264の該当行を、除外判断を反映した表現（例: 該当行を削除するか、
+「segments/{FYQ}.json（対象外、詳細は2-3節参照）」等に修正する）に
+揃える。
+
+#### 着手条件
+なし（優先度低、次にINPUT_DATA_TOBE.mdを編集する機会に合わせて対応
+してよい）
+
+#### 実装（2026-09-05）
+行番号は登録時のL264からL301へ、参照先のL104もL124へそれぞれ
+ドキュメント編集の蓄積でずれていたことを確認した上で対応。該当行を
+「segments/{FYQ}.json # セグメント別KPI（新規吸収、INPUT-A-016）」から
+「segments/{FYQ}.json # 対象外（INPUT-A-016、フェーズ1統合スコープ
+除外）」に修正。直下の【2026-07-23方針転換】説明ブロック（302-307行目）
+は既に正しい内容だったため変更していない。
+
+コミット: `7372b8a855`。
+
+---
+
+### ✅ [BS-IDENTITY-LOG-NONDETERMINISTIC-KEY-ORDER-1] bs_identity_violations_log.jsonのキー順序が実行のたびに非決定的に変化する
+**状態:** ✅完了
+**優先度:** 低
+**分類:** データ品質 / 再現性
+**登録日:** 2026-08-02
+**完了日:** 2026-09-05
+**発見:** [[CHECK29-UNRESOLVED-23-MIXED-CAUSES-1]]HEI・ONDS実装検証時
+（チャット記録）
+
+#### 内容
+PM銘柄の`bs_identity_violations_log.json`で、キー順序のみが実行のたびに
+非決定的に変化する現象を発見した（Python `frozenset`のハッシュランダム化
+が原因と推定。値・resolved状態は完全に同一で実害なし）。
+
+#### 影響
+実害なし（データの正しさには影響しない）。ただし将来の検証作業で、
+実質的な変化がないにもかかわらずgit diffにノイズが生じ、確認作業を
+誤らせるリスクがある。
+
+#### 対応方針
+未定。frozensetをsorted listに置き換える、またはJSON出力時に
+sort_keys=True相当の安定化を行う等、低コストな対応が見込まれる。
+
+#### 着手条件
+なし。優先度低。
+
+#### 実装（2026-09-05、[[TTM-FLOW-FIELDS-FROZENSET-NONDETERMINISTIC-1]]と併せて対応）
+根本原因を`parser.py::_BS_IDENTITY_ALLOWLIST`（frozenset）と特定した。
+`_check_bs_identity_violations()`→`_bs_identity_extra_components()`内の
+`for tag in self._BS_IDENTITY_ALLOWLIST:`（3010・3026行目）が`matched`
+辞書を構築し、これがそのまま`entry["extra_components"] = extra`として
+ログに書き出される。frozensetのイテレーション順序がプロセスごとの
+ハッシュランダム化で変わるため、`matched`辞書のキー挿入順序（＝JSON
+出力順序）が非決定的になっていた。
+
+`_BS_IDENTITY_ALLOWLIST`はメンバーシップ判定（`for`ループでのイテレー
+ション）のみに使われ、集合演算（`&`・`|`等）では使われていないことを
+確認した上で、順序が決定的なtupleに変更した（値・要素は完全に同一、
+純粋な型変更）。`_BS_IDENTITY_CARRYING_AMOUNT_TEMP_EQUITY_TAGS`
+（`&`で`matched.keys()`と交差判定するため必須の集合演算あり）は
+frozensetのまま維持——このタグはイテレーションされず交差判定のみに
+使われるため非決定性の原因にはなっていない。
+
+#### 検証結果
+PM（ローカルの`company_facts.json`のみ使用、ネットワークアクセスなし）
+に対し`PYTHONHASHSEED`を変えた2回の別プロセス実行で
+`bs_identity_violations_log.json`を生成し、diffが完全に0（バイト単位で
+同一）であることを確認した。修正前のコードでは理論上この2回が異なる
+順序になり得たが、修正後は`_BS_IDENTITY_ALLOWLIST`の定義順が常に
+イテレーション順になるため決定的になる。
+
+既存の本番`common/sec_data/data/*/bs_identity_violations_log.json`
+自体の再生成は行っていない（次回の通常SECデータ更新パイプライン実行時に
+新しい決定的な順序で自然に更新される）。
+
+コミット: `847080a3b9`（[[TTM-FLOW-FIELDS-FROZENSET-NONDETERMINISTIC-1]]
+と合同）。
+
+---
+
+### ✅ [TTM-FLOW-FIELDS-FROZENSET-NONDETERMINISTIC-1] ttm_calculator.pyのFLOW_FIELDSがfrozensetのためキー順序が非決定的になる
+**状態:** ✅完了
+**優先度:** 低
+**分類:** 技術的負債 / 保守性
+**登録日:** 2026-07-24
+**完了日:** 2026-09-05
+**発見:** CapEx符号正規化実装（フェーズ1）データ再生成作業中
+
+#### 内容
+ttm_calculator.pyのFLOW_FIELDSがfrozensetで定義されているため、
+プロセス起動ごとにキー順序が非決定的になる。値が同一でも
+ttm/{ticker}_ttm_series.jsonを再生成するたびに無関係なdiffが
+大量発生し、意図した変更内容がgit diff上で埋もれる。
+
+#### 影響
+通常のパイプライン再実行時には毎回この無関係diffが発生し続けている
+状態と推測される。
+
+#### 対応方針
+未定。FLOW_FIELDSをfrozensetから順序が決定的なtuple等に変更する
+対応が有力候補。
+
+#### 着手条件
+なし（優先度低）
+
+#### 実装（2026-09-05、[[BS-IDENTITY-LOG-NONDETERMINISTIC-KEY-ORDER-1]]と併せて対応）
+`calc_ttm_series()`内の`for field_name in FLOW_FIELDS:`（flow辞書構築
+ループ、およびanchor選択用のend_date集合構築ループ）で、`flow`辞書の
+キー挿入順序がFLOW_FIELDS（frozenset）のイテレーション順に依存して
+おり、これがttm/{ticker}_ttm_series.jsonの各エントリの`flow`オブジェクト
+キー順序として非決定的にそのまま出力されていた。
+
+`validate_field_classification()`（`contracts.py`）はFLOW_FIELDS等の
+引数を`set(s)`で明示的に変換してから集合演算（`|=`）するため、
+tuple化しても契約チェック（Layer3フィールド定義の全キーが4分類の
+いずれかに属することを保証するimport時検証）に影響しないことを
+コードを読んで確認した上で、順序が決定的なtupleに変更した（要素・
+値は完全に同一、純粋な型変更）。他ファイル（layer3_builder.py・
+q4_implied.py）でのFLOW_FIELDS言及はコード内コメントのみで実際の
+import・集合演算はないことも確認済み。
+
+#### 検証結果
+PM（ローカルデータのみ、ネットワークアクセスなし）に対し
+`PYTHONHASHSEED`を変えた2回の別プロセス実行で`ttm/PM_ttm_series.json`
+相当のデータを生成し、`generated_at`タイムスタンプ以外は完全に同一
+（バイト単位）であることを確認した。修正前は`flow`オブジェクト内の
+フィールド順序が実行のたびに変わりうる状態だったが、修正後は
+FLOW_FIELDSの定義順（operating_cash_flow, investing_cash_flow,
+financing_cash_flow, ...の順）で常に固定される。
+
+既存の本番`ttm/{ticker}_ttm_series.json`自体の再生成は行っていない
+（次回の通常SECデータ更新パイプライン実行時に新しい決定的な順序で
+自然に更新される。手動一括再生成は全銘柄のSEC EDGAR再取得を要し
+本タスクの範囲を超えるため見送った）。pytest 1079 passed
+（test_ttm_calculator.py・test_contracts.py含む）・audit.py exit 0・
+report_consistency_check.py --fail-on-ng NG=0・WARN=93件（変更前と
+同一）を確認。
+
+コミット: `847080a3b9`（[[BS-IDENTITY-LOG-NONDETERMINISTIC-KEY-ORDER-1]]
+と合同）。
+
+---
+
 ### ✅ [BREAKEVEN-FORECAST-METHOD-MISMATCH-1] 黒字化年予測の手法相違（TANUKI VALUATION vs STONKS SILO）
 **状態:** ✅完了
 **優先度:** 中

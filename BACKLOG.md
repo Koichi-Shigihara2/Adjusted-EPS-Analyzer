@@ -3749,32 +3749,6 @@ Stage 1/2の「積極的な値の検証」基準にそのまま当てはめて�
 
 ---
 
-### [BS-IDENTITY-LOG-NONDETERMINISTIC-KEY-ORDER-1] bs_identity_violations_log.jsonのキー順序が実行のたびに非決定的に変化する
-**優先度:** 低
-**分類:** データ品質 / 再現性
-**登録日:** 2026-08-02
-**発見:** [[CHECK29-UNRESOLVED-23-MIXED-CAUSES-1]]HEI・ONDS実装検証時
-（チャット記録）
-
-#### 内容
-PM銘柄の`bs_identity_violations_log.json`で、キー順序のみが実行のたびに
-非決定的に変化する現象を発見した（Python `frozenset`のハッシュランダム化
-が原因と推定。値・resolved状態は完全に同一で実害なし）。
-
-#### 影響
-実害なし（データの正しさには影響しない）。ただし将来の検証作業で、
-実質的な変化がないにもかかわらずgit diffにノイズが生じ、確認作業を
-誤らせるリスクがある。
-
-#### 対応方針
-未定。frozensetをsorted listに置き換える、またはJSON出力時に
-sort_keys=True相当の安定化を行う等、低コストな対応が見込まれる。
-
-#### 着手条件
-なし。優先度低。
-
----
-
 ### [PL-FIELD-CROSS-ACCN-PERIOD-MISMATCH-1] revenue/cost_of_revenue/gross_profitが独立にaccn・期間を選定するため異なる会計年度のデータが混在する
 **優先度:** 中〜高
 **分類:** バグ / 確定・複数フィールド間の期間不整合
@@ -8777,36 +8751,6 @@ NetIncomeの4フィールドについて`_quarters_complete()`（quarters_used�
 
 ---
 
-### [CLAUDE-CODE-START-FY-DESC-FIX-1] CLAUDE_CODE_START.mdのdetermine_fiscal_year()呼び出し箇所記述の修正
-**優先度:** 低
-**分類:** 保守 / ドキュメント
-**登録日:** 2026-07-15
-**発見:** [[FY52WEEK-BUCKET-MISPLACE-1]]根本修正設計のための事前調査時
-
-#### 問題
-CLAUDE_CODE_START.mdの「年度判定は`common/sec_data/utils.py`の
-`determine_fiscal_year()`に統一済み（ARCH-DATA-1-FY 2026-06-25完了）:
-parser.py・extract_key_facts.py・aggregate_annualの3箇所が同関数を参照」
-という記述が不正確と判明した。
-
-実際に`determine_fiscal_year()`を直接呼び出しているのは`parser.py`
-（2箇所: 341行目・469行目、年次10-Kエントリの分類）と
-`extract_key_facts.py`（4箇所: 549・590・613・668行目、四半期エントリの
-(fiscal_year, quarter)分類およびQ4逆算時の年次エントリマッチング）の
-2ファイル6箇所のみ。`aggregate_annual`（adjusted_eps_analyzer/pipeline.py:306）
-は本関数を呼ばず、extract_key_facts.pyが設定済みのfiscal_yearフィールドで
-単純にグループ化するのみの間接消費箇所であり、独立した呼び出し箇所ではない。
-
-#### 対応方針
-CLAUDE_CODE_START.mdの当該記述を「parser.py（2箇所）とextract_key_facts.py
-（4箇所）が直接呼び出し、aggregate_annualはextract_key_facts.pyが設定した
-fiscal_yearフィールドを間接的に消費する」旨に修正する。
-
-#### 着手条件
-なし（軽微な文書修正のため優先度低）
-
----
-
 ### [DEAD-CODE-AUDIT-BATCH-1] common/sec_data配下の陳腐化・未使用ファイル一括監査（削除要否判断）
 **優先度:** 低
 **分類:** 保守 / リポジトリ整理
@@ -8872,35 +8816,6 @@ score()`とは別の正規表現・別の実装）、実質的な重複が存在
 4件とも「grep確認→未使用なら削除、継続利用の可能性があれば個別対応」の
 共通フローで一括調査する。個別の判定結果（削除/修正/現状維持）は対象
 ごとに異なってよい。
-
-#### 着手条件
-なし（実害報告なし、優先度低。次回セッションで方針判断してから着手）
-
----
-
-### [HISTORY-JSON-LEGACY-TANUKI-SCORE-1] history.jsonにレガシーtanuki_scoreフィールドが残存
-**優先度:** 低
-**分類:** データ整合性 / TANUKI VALUATION
-**登録日:** 2026-07-18
-**発見:** [[GATE2-PHASE3B-1]]③-b事前調査時
-
-#### 問題
-`src/value/tanuki_valuation/pipeline.py`723行目のDESIGNコメントは
-「history.jsonはIV/株価等のチャート用データのみに絞る（判定ラベルは
-TANUKI VALUATION/TANUKI SCOREで別ロジックのため混乱を招く。
-score_history.json側に集約）」と明記しており、現行コードは実際に
-`tanuki_score`を書き込んでいない。
-
-しかし`docs/value-monitor/tanuki_valuation/data/SITM/history.json`・
-`ALAB/history.json`等、複数銘柄の実データに`"tanuki_score": "GROWTH_PREMIUM"`
-のようなエントリが実在することを確認した。過去（DESIGNコメントの方針が
-確定する前）に書き込まれたレガシーエントリが削除されずに残存していると
-推測される。ドキュメント（コメント）と実データの乖離状態。
-
-#### 対応方針候補（未確定）
-a. レガシーエントリの`tanuki_score`フィールドを一括削除するスクリプトを作成
-b. 実害がないため現状維持（history.jsonの当該フィールドを読む消費者は
-   現状確認されていない）
 
 #### 着手条件
 なし（実害報告なし、優先度低。次回セッションで方針判断してから着手）
@@ -8996,21 +8911,6 @@ common/sec_data/report_consistency_check.pyにこのチェックの実装が存�
 
 ---
 
-### [CHECK-FORMAT-1] report_consistency_check.pyのコメント形式不統一
-**優先度:** 低
-**分類:** 保守性 / 品質管理
-**発見:** 2026-06-26横断調査
-
-#### 問題
-CHECK-1〜11は「# ── CHECK N: 説明 ───」形式、
-CHECK-12〜19は「# CHECK-N:」形式で記述されており、
-grepやスクリプトによる自動検出で漏れが発生しやすい。
-
-#### 対応方針
-全CHECKを「# CHECK-N:」形式に統一する（CHECK-1〜11を修正）。
-
----
-
 ### [RPO-ADMIN-1] rpo_config.jsonがadmin.htmlで編集できない
 **優先度:** 低
 **分類:** 管理UI漏れ / admin.html
@@ -9070,42 +8970,6 @@ thesis.jsonの実際のフィールドが期待値と乖離している（全9�
 #### 対応方針
 - TAIL-LAYOUT系の実装時にthesis.jsonのスキーマを正式定義して統一
 - NVDAのentry_priceを実際の取得価格で更新
-
----
-
-### [ADMIN-LOG-1] admin.html・stock.htmlにconsole.log残存
-**優先度:** 低
-**分類:** コード品質 / admin.html・TANUKI VALUATION
-**発見:** 2026-06-26横断バグ調査
-
-#### 問題
-本番HTMLにconsole.logが32件残存している：
-- admin.html: 26件（ワークフロー実行ポーリングのデバッグトレース）
-- stock.html: 6件（matricesタブ読み込みデバッグログ）
-
-#### 対応方針
-不要なconsole.logを削除する。
-admin.htmlのポーリングログはワークフロー実行確認のデバッグとして
-有用な場合があるため、削除前に必要性を判断する。
-
----
-
-### [PICK-FIELD-1] daily_pick.jsonとhistory.jsonのフィールド名乖離
-**優先度:** 低
-**分類:** データ定義不整合 / TANUKI SCORE
-**発見:** 2026-06-26横断バグ調査
-
-#### 問題
-同一データが異なるキー名で保存されている：
-- daily_pick.json: selection_reason
-- history.json: reason
-
-daily_pick.pyが書き込む際にキー名が統一されていない。
-機能的な問題はないが保守上の混乱を招く。
-
-#### 対応方針
-どちらかに統一する（selection_reasonを推奨・より説明的なため）。
-history.jsonの既存エントリは移行不要（読み取り時に両キーを参照するフォールバックを追加）。
 
 ---
 
@@ -9178,63 +9042,6 @@ WATCH丸めに限られ、IV・upside等のDCF計算値自体は変更されな�
 
 #### 着手条件
 なし（修正方針の設計から着手可能。優先度：低のため次回以降の余力時対応）
-
----
-
-### [TTM-FLOW-FIELDS-FROZENSET-NONDETERMINISTIC-1] ttm_calculator.pyのFLOW_FIELDSがfrozensetのためキー順序が非決定的になる
-**優先度:** 低
-**分類:** 技術的負債 / 保守性
-**登録日:** 2026-07-24
-**発見:** CapEx符号正規化実装（フェーズ1）データ再生成作業中
-
-#### 内容
-ttm_calculator.pyのFLOW_FIELDSがfrozensetで定義されているため、
-プロセス起動ごとにキー順序が非決定的になる。値が同一でも
-ttm/{ticker}_ttm_series.jsonを再生成するたびに無関係なdiffが
-大量発生し、意図した変更内容がgit diff上で埋もれる。
-
-#### 影響
-通常のパイプライン再実行時には毎回この無関係diffが発生し続けている
-状態と推測される。
-
-#### 対応方針
-未定。FLOW_FIELDSをfrozensetから順序が決定的なtuple等に変更する
-対応が有力候補。
-
-#### 着手条件
-なし（優先度低）
-
----
-
-### [TOBE-SEGMENTS-RESIDUAL-WORDING-1] INPUT_DATA_TOBE.mdの保持構造案にsegments除外判断前の「新規吸収」表現が残存している
-**優先度:** 低
-**分類:** ドキュメント不整合
-**登録日:** 2026-07-24
-**発見:** SEC_EDGAR_LAYER_DESIGN.md横断整合性確認調査（フェーズ1）③-1
-
-#### 内容
-`INPUT_DATA_TOBE.md`のセグメントKPI（INPUT-A-016）について、L104の
-定義行は実態訂正済み（正式ASC280セグメントではなく`tail_kpi_map.json`
-ベースの銘柄固有カスタムKPI、フェーズ1統合スコープ除外）だが、同一
-ドキュメント内L264の保持構造案（統合ストアのツリー図）には
-「segments/{FYQ}.json # セグメント別KPI（新規吸収、INPUT-A-016）」
-という、除外判断以前の「新規吸収」という表現が訂正されずに残存
-している。
-
-#### 影響
-実装への影響はない（[[SEC_EDGAR_LAYER_DESIGN.md]] 5章のスコープ確定
-事項が正としてsegments除外を明記しているため）。ドキュメントを読む順序
-によっては、保持構造案の図だけを見て「segmentsも統合対象」と誤解する
-可能性がある字句レベルの不整合。
-
-#### 対応方針
-L264の該当行を、除外判断を反映した表現（例: 該当行を削除するか、
-「segments/{FYQ}.json（対象外、詳細は2-3節参照）」等に修正する）に
-揃える。
-
-#### 着手条件
-なし（優先度低、次にINPUT_DATA_TOBE.mdを編集する機会に合わせて対応
-してよい）
 
 ---
 
@@ -9357,9 +9164,6 @@ BKNGの株式数・1株当たり指標を参照する計算（EPS・希薄化率
 
 #### 着手条件
 なし
-
----
-
 
 ---
 
