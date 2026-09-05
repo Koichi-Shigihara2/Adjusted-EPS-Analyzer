@@ -8236,33 +8236,6 @@ layer3_builder.py）自体には手を入れていない。TANUKI TAILの
 
 ---
 
-### [FINTREND-SM-JOBY-NONE-1] financial_trend_calculator.pyのSMフィールドがJOBYでNone化する（Layer3切替時）
-**優先度:** 低（既知の`[[SCHEMA-NORMALIZED-ISSUES-1]]`②の帰結、
-`[[LAYER3-ROIC-WACC-NONE-4TICKERS-1]]`と同型・同じ判断基準を適用）
-**分類:** 仕様変更（改善）
-**登録日:** 2026-08-07
-**発見:** フェーズD Step2-2事前調査（チャット記録、2026-08-07）
-
-#### 内容
-normalized側はSGA総額へのフォールバック値を保持していたがLayer3側は
-`selling_and_marketing`のみを候補としNoneを返す。正しい方の挙動として
-受け入れる。
-
-**補足（2026-08-07、実装時に判明）**: `financial_trend_calculator.py`の
-`compute_vectors()`は`VECTOR_FIELDS`（Revenue/GrossProfit/OperatingIncome/
-RD/NetIncome/OCF/CapExの7項目）のみを処理しており、`SUB_FIELDS`
-（SM・SBC）は定義されているだけで`compute_vectors()`から一切呼び出され
-ていない未使用の定数と判明した。そのため本項目のJOBY None化は
-`_get_quarterly_entries()`単体の挙動としては真だが、**現状の
-`results.json`出力（`financial_vectors`）には実影響がゼロ**である。
-将来`SUB_FIELDS`が実際に配線された場合に初めて表面化する。
-
-#### 着手条件
-SM/SGA概念混同問題（`[[SCHEMA-NORMALIZED-ISSUES-1]]`②）の根本解消時に
-再検討。
-
----
-
 ### [RCAT-2016Q3-ORPHANED-QUARTERLY-FILE-1] RCAT 2016Q3のquarterly_*.jsonが新ロジックで未上書きのまま残存
 **優先度:** 低
 **分類:** データ品質 / SEC EDGARデータ（新DB構築プロジェクト フェーズ1）
@@ -8357,13 +8330,27 @@ SNPS FY2022（2022-10-31）で、原本$5,081,542,000（`Revenues`タグ、
 なし。実害が発生した時点、または類似ケースの横断調査を行う際に
 再検討する。
 
-### [LAYER3-ROIC-WACC-NONE-4TICKERS-1] COHR/LLY/JNJ/KLACのROIC-WACC比率・Moat ROICが、Layer3切替に伴いNone表示になった
+### [LAYER3-SM-SGA-SEPARATION-NONE-FALLOUT-1] Layer3のSM/SGA概念分離に伴うNone化2件の統合（元LAYER3-ROIC-WACC-NONE-4TICKERS-1/FINTREND-SM-JOBY-NONE-1）
+**優先度:** 低（意図的な仕様、既知の`[[SCHEMA-NORMALIZED-ISSUES-1]]`②
+SM/SGA概念混同問題の帰結）
+**分類:** 仕様変更（改善）/ ユーザー影響あり
+**登録日:** 各サブ項目とも2026-08-06・2026-08-07。統合日: 2026-09-05
+**発見:** 2026-09-05のBACKLOG横断整理
+
+#### 統合の経緯
+LAYER3-ROIC-WACC-NONE-4TICKERS-1・FINTREND-SM-JOBY-NONE-1は、いずれも
+`[[SCHEMA-NORMALIZED-ISSUES-1]]`②のSM/SGA概念分離の帰結として、
+Layer3切替後は正しい挙動としてNoneを返すようになったという同一の
+根本原因を持つため、2026-09-05に1エントリへ統合した。元の2件は
+BACKLOG.mdから削除し、内容は要約せず全文そのまま以下の①②に保持する。
+
+#### ① 元[LAYER3-ROIC-WACC-NONE-4TICKERS-1] COHR/LLY/JNJ/KLACのROIC-WACC比率・Moat ROICが、Layer3切替に伴いNone表示になった
 **優先度:** 低（意図的な仕様、既知のSM/SGA概念混同問題の帰結）
 **分類:** 仕様変更（改善）/ ユーザー影響あり
 **登録日:** 2026-08-06
 **発見:** フェーズD Step2-1実装時（チャット記録、2026-08-06）
 
-#### 内容
+##### 内容
 normalized/時代は間違った値（SGA総額を誤混入）でROIC-WACC比率を
 計算していたが、Layer3切替後はselling_and_marketingが正しく分離
 されたため、3フィールド共通end日のintersectionが0件となりNoneを
@@ -8371,8 +8358,38 @@ normalized/時代は間違った値（SGA総額を誤混入）でROIC-WACC比率
 問題の根本解消（別タスク）まで、この4銘柄はROIC-WACC比率非表示の
 まま。
 
-#### 着手条件
+##### 着手条件
 SM/SGA概念混同問題の解消時に再検討。
+
+#### ② 元[FINTREND-SM-JOBY-NONE-1] financial_trend_calculator.pyのSMフィールドがJOBYでNone化する（Layer3切替時）
+**優先度:** 低（既知の`[[SCHEMA-NORMALIZED-ISSUES-1]]`②の帰結、
+`[[LAYER3-ROIC-WACC-NONE-4TICKERS-1]]`と同型・同じ判断基準を適用）
+**分類:** 仕様変更（改善）
+**登録日:** 2026-08-07
+**発見:** フェーズD Step2-2事前調査（チャット記録、2026-08-07）
+
+##### 内容
+normalized側はSGA総額へのフォールバック値を保持していたがLayer3側は
+`selling_and_marketing`のみを候補としNoneを返す。正しい方の挙動として
+受け入れる。
+
+**補足（2026-08-07、実装時に判明）**: `financial_trend_calculator.py`の
+`compute_vectors()`は`VECTOR_FIELDS`（Revenue/GrossProfit/OperatingIncome/
+RD/NetIncome/OCF/CapExの7項目）のみを処理しており、`SUB_FIELDS`
+（SM・SBC）は定義されているだけで`compute_vectors()`から一切呼び出され
+ていない未使用の定数と判明した。そのため本項目のJOBY None化は
+`_get_quarterly_entries()`単体の挙動としては真だが、**現状の
+`results.json`出力（`financial_vectors`）には実影響がゼロ**である。
+将来`SUB_FIELDS`が実際に配線された場合に初めて表面化する。
+
+##### 着手条件
+SM/SGA概念混同問題（`[[SCHEMA-NORMALIZED-ISSUES-1]]`②）の根本解消時に
+再検討。
+
+#### 着手条件（統合後、両サブ項目共通）
+`[[SCHEMA-NORMALIZED-ISSUES-1]]`②のSM/SGA概念混同問題の根本解消時に
+再検討。①②とも個別の着手条件は上記のとおり同一のため、統合先の
+本条件に一本化する。
 
 ### [DEFICIT-SCORE-CEILING-95-1] STONKS SILO DEFICIT分類、赤字企業の実質上限95点
 **優先度:** 低
@@ -9489,9 +9506,9 @@ FY2025売上$53,425K・2026年上半期はさらに増加という実質的な�
   （`growth_sanity.py`の外れ値検知ロジック等）
 - hype_phase判定・TANUKI SCOREの成長性評価が、事業実態の質的変化
   （航空機開発企業→実運航収益企業への転換）を適切に反映できているか
-- 過去のJOBY関連の分類・前提（例:
-  [[FINTREND-SM-JOBY-NONE-1]]のSMフィールドNone化等）がBlade買収後の
-  データでも引き続き妥当か
+- 過去のJOBY関連の分類・前提（例: 旧FINTREND-SM-JOBY-NONE-1、
+  2026-09-05に[[LAYER3-SM-SGA-SEPARATION-NONE-FALLOUT-1]]へ統合済み、
+  のSMフィールドNone化等）がBlade買収後のデータでも引き続き妥当か
 
 #### 対応方針（未定）
 上記観点について個別に実データを確認し、問題があれば当該指標ごとに
@@ -10173,14 +10190,15 @@ CONSTRUCTION-1]]`の未決定事項9件は2026-08-08に全件確定済みのた�
     eps_diluted計算、Q4タイミング依存の構造的リスク）
   - `[[FETCHER-PY-BS-FIELDS-DEAD-KEYS-1]]`（fetcher.pyの_BS_FIELDS
     デッドコード、Layer3移行とは無関係の既存バグ）
-  - `[[FINTREND-SM-JOBY-NONE-1]]`（financial_trend_calculator.pyの
-    SMフィールドJOBY None化、SUB_FIELDS自体が現状未使用と判明済み）
   - `[[PARSER-MERGED-TAG-MIXING-RISK-1]]`（parser.py::
     _extract_values_merged()のタグ混入リスク疑い）
   - `[[LAYER3-SNPS-STALE-TAG-PRIORITY-1]]`（SNPS FY2022 Revenue、
     Layer3候補タグ優先順位が修正再表示を拾えない構造的リスク）
-  - `[[LAYER3-ROIC-WACC-NONE-4TICKERS-1]]`（COHR/LLY/JNJ/KLACの
-    ROIC-WACC比率None化、SM/SGA概念混同の帰結）
+  - `[[LAYER3-SM-SGA-SEPARATION-NONE-FALLOUT-1]]`（2026-09-05に旧
+    FINTREND-SM-JOBY-NONE-1〈financial_trend_calculator.pyのSM
+    フィールドJOBY None化〉と旧LAYER3-ROIC-WACC-NONE-4TICKERS-1
+    〈COHR/LLY/JNJ/KLACのROIC-WACC比率None化〉を統合。いずれもSM/SGA
+    概念分離の帰結という同一の根本原因）
 
 ---
 
@@ -12165,7 +12183,8 @@ MISMATCH-DETECTION-1]]へガード条件付き介入として統合したため�
    [[PARSER-MERGED-TAG-MIXING-RISK-1]]・[[LAYER3-ANNUAL-
    MISCLASSIFICATION-NOW-RMBS-1]]・[[LAYER3-ANNUAL-MISCLASSIFICATION-
    MINOR-5TICKERS-1]]・[[LAYER3-SNPS-STALE-TAG-PRIORITY-1]]・
-   [[LAYER3-ROIC-WACC-NONE-4TICKERS-1]]
+   [[LAYER3-SM-SGA-SEPARATION-NONE-FALLOUT-1]]（2026-09-05に旧
+   LAYER3-ROIC-WACC-NONE-4TICKERS-1・旧FINTREND-SM-JOBY-NONE-1を統合）
 10. 以下、2026-08-03時点リストから変更なし（上記の旧①〜⑭のうち
    Stage系を除く未完了分）: [[TTM-DATA-DRIFT-BEHIND-PIPELINE-1]]・
    [[PARSER-STOCKHOLDERS-EQUITY-CROSS-YEAR-MISSELECT-1]]・
