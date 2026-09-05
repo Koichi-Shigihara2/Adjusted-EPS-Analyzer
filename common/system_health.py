@@ -13,7 +13,6 @@ common/system_health.py
 """
 
 import argparse
-import csv
 import glob
 import json
 import math
@@ -182,7 +181,6 @@ _TAIL_CTRL       = os.path.join(_REPO_ROOT, "docs", "portfolio", "tail", "data",
 _TAIL_POSITIONS  = os.path.join(_REPO_ROOT, "docs", "portfolio", "tail", "data", "positions")
 _HYPE_DATA       = os.path.join(_REPO_ROOT, "docs", "value-monitor", "hypecore", "data")
 _EPS_SUMMARY     = os.path.join(_REPO_ROOT, "docs", "value-monitor", "adjusted_eps_analyzer", "data", "summary.json")
-_CIK_LOOKUP      = os.path.join(_REPO_ROOT, "config", "cik_lookup.csv")
 _BETA_CONFIG     = os.path.join(_REPO_ROOT, "config", "beta_config.json")
 _SEGMENT_CONFIG  = os.path.join(_REPO_ROOT, "config", "segment_config.json")
 _MATURITY_CONFIG = os.path.join(_REPO_ROOT, "config", "maturity_config.json")
@@ -265,12 +263,13 @@ def check_g_hypecore() -> tuple[str, bool, str]:
 
 # ── H. config 整合性チェック ──────────────────────────────────────────
 def check_h_config() -> tuple[str, bool, str]:
-    with open(_CIK_LOOKUP, encoding="utf-8") as f:
-        rows = list(csv.DictReader(f))
     # all_tickersはsegment/maturity configの孤立エントリ検出のため意図的に
     # フラグ無視の全登録銘柄（監査目的）。tanuki_tickersはtickers.py経由に統一
     # （ZS-TICKERS-LEAK-1: 独自にCSVを読んでフラグ判定する重複実装を解消）。
-    all_tickers    = {r["ticker"] for r in rows}
+    # all_tickers取得も[[TICKER-LOADING-UNIFICATION-1]]でtickers.py経由に
+    # 統一（2026-09-05、旧csv.DictReader直接パースを置換。意味は完全に
+    # 同一＝フラグ無視の全登録銘柄）。
+    all_tickers    = set(_tickers_mod.get_all_tickers())
     tanuki_tickers = _tickers_mod.get_tanuki_tickers()
 
     beta_data      = json.load(open(_BETA_CONFIG, encoding="utf-8"))

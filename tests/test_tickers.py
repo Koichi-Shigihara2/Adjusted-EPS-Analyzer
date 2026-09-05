@@ -121,6 +121,90 @@ class TestGetRegistrableTickers:
         assert tk.get_registrable_tickers("tanuki", csv_path) == []
 
 
+class TestGetRegistrableTickersNoFlag:
+    """get_registrable_tickers(flag=None)がフラグによる絞り込みを行わず、
+    status='retired'以外の全銘柄を返すこと（[[TICKER-LOADING-
+    UNIFICATION-1]]、2026-09-05追加。common/sec_data/config.py::get_all()
+    統合用。update.py Step 1がprovisioning銘柄のSEC生データ取得も
+    行える必要があるため、get_active_tickers()〈provisioning除外〉ではなく
+    こちらを使う）"""
+
+    def test_returns_all_flags_regardless_of_flag_values(self, tmp_path):
+        """個々のフラグ値に関わらず（tanuki/eps/hypecore/stonks_silo
+        いずれかがfalseでも）全銘柄が対象になること"""
+        csv_path = _write_csv(tmp_path, [
+            _row("AAA", tanuki="true", hypecore="false", status="active"),
+            _row("BBB", tanuki="false", hypecore="true", status="active"),
+        ])
+        assert tk.get_registrable_tickers(csv_path=csv_path) == ["AAA", "BBB"]
+
+    def test_includes_provisioning_status(self, tmp_path):
+        """update.py Step 1がprovisioning銘柄のSEC生データ取得を
+        継続できることの根拠（register_ticker.py Step 1）"""
+        csv_path = _write_csv(tmp_path, [
+            _row("AAA", status="active"),
+            _row("BBB", status="provisioning"),
+        ])
+        assert tk.get_registrable_tickers(csv_path=csv_path) == ["AAA", "BBB"]
+
+    def test_excludes_retired_status(self, tmp_path):
+        csv_path = _write_csv(tmp_path, [
+            _row("AAA", status="active"),
+            _row("BBB", status="retired"),
+        ])
+        assert tk.get_registrable_tickers(csv_path=csv_path) == ["AAA"]
+
+    def test_default_flag_is_none(self, tmp_path):
+        """位置引数を省略した場合もflag=None相当（全銘柄対象）になること"""
+        csv_path = _write_csv(tmp_path, [
+            _row("AAA", tanuki="false", status="active"),
+        ])
+        assert tk.get_registrable_tickers(csv_path=csv_path) == ["AAA"]
+
+
+class TestGetCik:
+    """tickers.get_cik()が[[TICKER-LOADING-UNIFICATION-1]]（2026-09-05）で
+    src/tail/kpi_proposer.py・sec_ctrl_fetcher.py・text_kpi_extractor.pyの
+    重複load_cik(ticker)実装を統合したもの。SEC submissions APIが要求する
+    10桁ゼロ埋め形式への正規化を常に行うこと（旧kpi_proposer.py側の
+    2026-08-19⑦ CRWV未パディング修正を引き継ぐ）を確認する"""
+
+    def test_returns_cik_zero_padded(self, tmp_path):
+        csv_path = _write_csv(tmp_path, [
+            {"ticker": "AAA", "cik": "0000320193", "name": "AAA",
+             "status": "active"},
+        ])
+        assert tk.get_cik("AAA", csv_path) == "0000320193"
+
+    def test_zero_pads_unpadded_cik(self, tmp_path):
+        """CRWV型: CSV上のCIKが10桁未満（未パディング）の行を正規化する"""
+        csv_path = _write_csv(tmp_path, [
+            {"ticker": "CRWV", "cik": "1769628", "name": "CRWV",
+             "status": "active"},
+        ])
+        assert tk.get_cik("CRWV", csv_path) == "0001769628"
+
+    def test_returns_none_for_unknown_ticker(self, tmp_path):
+        csv_path = _write_csv(tmp_path, [
+            {"ticker": "AAA", "cik": "0000320193", "name": "AAA",
+             "status": "active"},
+        ])
+        assert tk.get_cik("ZZZ", csv_path) is None
+
+    def test_returns_none_when_cik_empty(self, tmp_path):
+        csv_path = _write_csv(tmp_path, [
+            {"ticker": "AAA", "cik": "", "name": "AAA", "status": "active"},
+        ])
+        assert tk.get_cik("AAA", csv_path) is None
+
+    def test_case_and_whitespace_insensitive_ticker_match(self, tmp_path):
+        csv_path = _write_csv(tmp_path, [
+            {"ticker": "AAA", "cik": "0000320193", "name": "AAA",
+             "status": "active"},
+        ])
+        assert tk.get_cik(" aaa ", csv_path) == "0000320193"
+
+
 class TestConvenienceWrappersUseActiveTickers:
     """get_tanuki_tickers等の既存便利関数がget_active_tickers経由になったこと
     （statusフィルタが一貫して適用されること）を確認する"""

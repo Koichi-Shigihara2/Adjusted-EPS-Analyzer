@@ -20,7 +20,6 @@ TANUKI TAIL — kpi_proposer.py
 
 import os
 import sys
-import csv
 import json
 import re
 import time
@@ -42,6 +41,7 @@ from src.tail.xbrl_segment_fetcher import (  # noqa: E402
 )
 from common.sec_data.fetcher import load_company_facts  # noqa: E402
 from common.sec_data.layer3_builder import build_ticker_store, get_latest_quarterly  # noqa: E402
+from common.sec_data import tickers as _tickers_mod  # noqa: E402
 
 SEC_CONCEPT_DEFINITIONS_PATH = os.path.join(repo_root, "config", "sec_concept_definitions.json")
 
@@ -63,7 +63,6 @@ KPI_PROPOSALS_DIR = os.path.join(DATA_DIR, "kpi_proposals")
 # tail_kpi_map.jsonはPythonバックエンド専用の手動設定ファイルのため
 # config/配下に配置（TAILKPI-CONFIG-LOCATION-1、2026-08-15移動）
 KPI_MAP_PATH      = os.path.join(repo_root, "config", "tail_kpi_map.json")
-CIK_LOOKUP_PATH   = os.path.join(repo_root, "config", "cik_lookup.csv")
 
 JST = ZoneInfo("Asia/Tokyo")
 
@@ -143,27 +142,6 @@ def load_kpi_map() -> Dict[str, Any]:
         return {}
     with open(KPI_MAP_PATH, encoding="utf-8") as f:
         return json.load(f)
-
-
-def load_cik(ticker: str) -> Optional[str]:
-    """config/cik_lookup.csvからCIKを読む。SEC submissions APIは10桁
-    ゼロ埋めのCIKを要求するため、常に`.zfill(10)`で正規化して返す
-    （2026-08-19⑦発見・修正: CRWVの行のみCIKが未パディング
-    〈"1769628"〉で登録されており、これが原因でget_10q_filings()が
-    `data.sec.gov/submissions/CIK1769628.json`という誤ったURLを叩いて
-    404で失敗していた。cik_lookup.csv全105行を確認し、未パディングは
-    CRWV 1件のみと確認済み——他行はxbrl_segment_fetcher.py::get_cik()
-    と同じ10桁ゼロ埋め形式で登録されている。CSV自体は修正せず、
-    読み込み側で正規化することで対応した）。
-    """
-    if not os.path.exists(CIK_LOOKUP_PATH):
-        return None
-    with open(CIK_LOOKUP_PATH, encoding="utf-8") as f:
-        for row in csv.DictReader(f):
-            if row.get("ticker", "").upper() == ticker.upper():
-                cik = row.get("cik", "").strip()
-                return cik.zfill(10) if cik else None
-    return None
 
 
 def fetch_real_segment_tags(ticker: str, cik: Optional[str]) -> List[Dict[str, str]]:
@@ -748,7 +726,7 @@ def propose_kpis(ticker: str, dry_run: bool = False) -> Optional[str]:
     # 参照）を実装した上で撤廃した（[[TAIL-KPI-PROPOSER-CORE-ONLY-
     # GATE-1]]対応）。
 
-    cik    = load_cik(ticker)
+    cik    = _tickers_mod.get_cik(ticker)
     existing_kpi_map  = load_kpi_map().get(ticker, [])
     real_segment_tags = fetch_real_segment_tags(ticker, cik)
     print(f"  実XBRLセグメントタグ: {len(real_segment_tags)}件抽出")

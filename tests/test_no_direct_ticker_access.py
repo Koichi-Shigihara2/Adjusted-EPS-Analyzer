@@ -57,15 +57,11 @@ _CIK_LOOKUP_DIRECT_PARSE_ALLOWED = {
     # P4-CIKOrphan/P4-CIKIncomplete/eps=false抑制リスト構築はいずれも
     # 「フラグでは絞り込めない・絞り込んではいけない」種類のチェック）
     "common/sec_data/registration_validator.py",
-    # 監査ツール（segment/maturity configの孤立エントリ検出のため意図的に
-    # フラグ無視の全登録銘柄を使う。tanuki_tickers取得は既にtickers.py経由。
-    # 改善余地: all_tickers取得もtickers.get_all_tickers()に統一可能
-    # だが同義のため今回は許可リストに留める）
-    "common/system_health.py",
-    # 単一ティッカーのCIK/会社名参照（バッチ対象リスト構築ではない）
-    "src/tail/kpi_proposer.py",
-    "src/tail/sec_ctrl_fetcher.py",
-    "src/tail/text_kpi_extractor.py",
+    # common/system_health.py・src/tail/kpi_proposer.py・
+    # sec_ctrl_fetcher.py・text_kpi_extractor.pyは[[TICKER-LOADING-
+    # UNIFICATION-1]]（2026-09-05）でtickers.py経由（get_all_tickers()・
+    # get_cik()）に統一され、直接パースしなくなったため許可リストから
+    # 除外した。
     "src/value/tanuki_valuation/data_fetcher.py",
     "src/value/tanuki_valuation/pipeline.py",
     # 新規銘柄登録オーケストレーション（[[REGISTER-FLOW-REDESIGN-1]]

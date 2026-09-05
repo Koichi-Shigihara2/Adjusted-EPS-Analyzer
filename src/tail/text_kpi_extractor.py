@@ -15,7 +15,7 @@ EDGAR 10-Q MD&A + 8-K Exhibit 99.1 のテキストからGrokで抽出する（La
 """
 
 import os
-import csv
+import sys
 import json
 import re
 import time
@@ -29,10 +29,13 @@ from typing import Optional, Dict, Any, List, Tuple
 script_dir = os.path.dirname(os.path.abspath(__file__))
 repo_root  = os.path.abspath(os.path.join(script_dir, "..", ".."))
 
+if repo_root not in sys.path:
+    sys.path.insert(0, repo_root)
+from common.sec_data import tickers as _tickers_mod  # noqa: E402
+
 DATA_DIR          = os.path.join(repo_root, "docs", "portfolio", "tail", "data")
 KPI_DIR           = os.path.join(DATA_DIR, "kpi")
 KPI_PROPOSALS_DIR = os.path.join(DATA_DIR, "kpi_proposals")
-CIK_LOOKUP_PATH   = os.path.join(repo_root, "config", "cik_lookup.csv")
 
 JST = ZoneInfo("Asia/Tokyo")
 
@@ -101,16 +104,6 @@ def extract_json_from_response(text: str) -> Dict[str, Any]:
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # CIK・Proposal 読み込み
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-def load_cik(ticker: str) -> Optional[str]:
-    if not os.path.exists(CIK_LOOKUP_PATH):
-        return None
-    with open(CIK_LOOKUP_PATH, encoding="utf-8") as f:
-        for row in csv.DictReader(f):
-            if row.get("ticker", "").upper() == ticker.upper():
-                return row.get("cik", "").strip()
-    return None
-
 
 def load_proposal(ticker: str) -> Optional[Dict[str, Any]]:
     path = os.path.join(KPI_PROPOSALS_DIR, f"{ticker}_proposal.json")
@@ -581,7 +574,7 @@ def extract_layer3(ticker: str, dry_run: bool = False) -> Optional[str]:
     print(f"  {ticker} Layer 3 テキスト抽出")
     print(f"{'─' * 60}")
 
-    cik = load_cik(ticker)
+    cik = _tickers_mod.get_cik(ticker)
     if not cik:
         print(f"  [ERROR] {ticker} の CIK が見つかりません")
         return None

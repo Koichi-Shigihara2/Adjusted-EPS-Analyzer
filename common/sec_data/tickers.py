@@ -25,6 +25,30 @@ def get_all_tickers(csv_path: str | None = None) -> list[str]:
     return [r["ticker"] for r in _load(csv_path)]
 
 
+def get_cik(ticker: str, csv_path: str | None = None) -> str | None:
+    """指定ティッカーのCIKを10桁ゼロ埋め形式で返す（見つからなければNone）。
+
+    SEC submissions API（`https://data.sec.gov/submissions/CIK{10桁}.json`）
+    は10桁ゼロ埋めのCIKを要求する。cik_lookup.csvのcik列は基本10桁ゼロ埋めで
+    登録されているが、CRWV等一部の行が未パディング（例:"1769628"）のまま
+    登録されているため、読み込み側で常に`.zfill(10)`正規化して返す
+    （[[TICKER-LOADING-UNIFICATION-1]]、旧`src/tail/kpi_proposer.py::
+    load_cik()`の修正〈2026-08-19⑦、CRWV未パディング起因の404回帰〉と
+    同じ正規化をここに集約）。
+
+    `src/tail/kpi_proposer.py`・`sec_ctrl_fetcher.py`・
+    `text_kpi_extractor.py`がそれぞれ独立実装していた同種の
+    ticker→CIK単発検索を統合するための共有関数（ticker/CIKの
+    大文字小文字・前後空白は無視する）。
+    """
+    ticker_upper = ticker.strip().upper()
+    for r in _load(csv_path):
+        if r.get("ticker", "").strip().upper() == ticker_upper:
+            cik = r.get("cik", "").strip()
+            return cik.zfill(10) if cik else None
+    return None
+
+
 def get_tickers_by_flag(flag: str, csv_path: str | None = None) -> list[str]:
     """
     指定フラグが 'true' の銘柄リストを返す（statusは見ない）。
@@ -86,7 +110,7 @@ def get_stonks_silo_tickers(csv_path: str | None = None) -> list[str]:
     return get_active_tickers("stonks_silo", csv_path)
 
 
-def get_registrable_tickers(flag: str, csv_path: str | None = None) -> list[str]:
+def get_registrable_tickers(flag: str | None = None, csv_path: str | None = None) -> list[str]:
     """
     指定フラグが'true'、かつstatusが'retired'でない銘柄リストを返す
     （'provisioning'は除外しない、`get_active_tickers()`とはこの点のみ異なる）。
@@ -113,10 +137,20 @@ def get_registrable_tickers(flag: str, csv_path: str | None = None) -> list[str]
       引き続き除外する（意図的な対象外のため、ZS-TICKERS-LEAK-1が
       防いだ種類のリークと同型のリスクを再導入しないため）
 
-    flag: 'hypecore' | 'tanuki' | 'eps' | 'stonks_silo'
+    flag: 'hypecore' | 'tanuki' | 'eps' | 'stonks_silo'。**None**の場合は
+    フラグによる絞り込みを行わず、status='retired'以外の全銘柄を返す
+    （`common/sec_data/config.py::get_all()`統合用、
+    [[TICKER-LOADING-UNIFICATION-1]]、2026-09-05追加）。
+    `common/sec_data/update.py`（SEC EDGAR生データ取得、Step 1）は
+    tanuki/eps/hypecore/stonks_siloいずれのパイプラインフラグにも
+    依存しない共有インフラ層であり、特定フラグで絞り込むと
+    「そのフラグだけfalseの銘柄」がSEC生データ取得自体から漏れてしまう
+    （2026-09-05時点の本番データではhypecore=trueが全銘柄で一致するため
+    単一フラグ指定でも偶然結果が一致するが、将来hypecore=falseの銘柄が
+    登録されると静かに破綻する設計のため、flag=Noneの専用モードを設けた）。
     """
     return [
         r["ticker"] for r in _load(csv_path)
-        if r.get(flag, "").strip().lower() == "true"
+        if (flag is None or r.get(flag, "").strip().lower() == "true")
         and r.get("status", "").strip().lower() != "retired"
     ]

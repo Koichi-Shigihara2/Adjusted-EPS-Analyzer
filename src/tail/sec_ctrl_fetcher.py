@@ -14,7 +14,6 @@ TANUKI TAIL — sec_ctrl_fetcher.py  (SEC-CTRL-1)
 """
 
 import os
-import csv
 import json
 import re
 import time
@@ -29,9 +28,12 @@ import requests
 script_dir = os.path.dirname(os.path.abspath(__file__))
 repo_root  = os.path.abspath(os.path.join(script_dir, "..", ".."))
 
+if repo_root not in sys.path:
+    sys.path.insert(0, repo_root)
+from common.sec_data import tickers as _tickers_mod  # noqa: E402
+
 DATA_DIR     = os.path.join(repo_root, "docs", "portfolio", "tail", "data")
 CTRL_DIR     = os.path.join(DATA_DIR, "ctrl")
-CIK_LOOKUP   = os.path.join(repo_root, "config", "cik_lookup.csv")
 POS_IDX_PATH = os.path.join(DATA_DIR, "positions_index.json")
 
 JST = ZoneInfo("Asia/Tokyo")
@@ -325,18 +327,9 @@ def fetch_ctrl(ticker: str, cik: str) -> Optional[Dict[str, Any]]:
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # CIK ロード / ポジション取得
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-def load_cik_map() -> Dict[str, str]:
-    result: Dict[str, str] = {}
-    if not os.path.exists(CIK_LOOKUP):
-        return result
-    with open(CIK_LOOKUP, encoding="utf-8") as f:
-        for row in csv.DictReader(f):
-            t = row.get("ticker", "").upper().strip()
-            c = row.get("cik", "").strip()
-            if t and c:
-                result[t] = c
-    return result
+# CIK取得は[[TICKER-LOADING-UNIFICATION-1]]（2026-09-05）でcommon.sec_data.
+# tickers.get_cik()に統合済み（旧load_cik_map()を削除、呼び出し元で
+# ティッカーごとにget_cik()を呼ぶ形に変更）。
 
 
 def load_tail_tickers() -> List[str]:
@@ -370,12 +363,11 @@ def main():
             print("positions_index.json が見つからないか空です")
             sys.exit(1)
 
-    cik_map = load_cik_map()
     os.makedirs(CTRL_DIR, exist_ok=True)
 
     ok, ng = 0, 0
     for ticker in tickers:
-        cik = cik_map.get(ticker)
+        cik = _tickers_mod.get_cik(ticker)
         if not cik:
             print(f"[{ticker}] CIK 未登録 — スキップ")
             ng += 1
