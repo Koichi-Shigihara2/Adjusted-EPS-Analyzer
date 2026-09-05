@@ -2,6 +2,95 @@
 
 ---
 
+## 2026-09-05②（完了）
+
+### ✅ [MOAT-CATALOG-DUP-1] moat_score（AS-IS-026/028）のカタログ重複
+**状態:** ✅完了
+**優先度:** 低
+**分類:** ドキュメント整合性
+**登録日:** 2026-07-23
+**完了日:** 2026-09-05
+**発見:** `FIELD_DEFINITIONS.md`フェーズ4
+
+#### 内容
+AS-IS-026とAS-IS-028は同一の`calculate_moat_score()`戻り値を指す重複
+カタログエントリ。過去のインベントリ作成過程で同じ関数の出力が2つの
+異なるAS-IS-IDとして重複記録されている。
+
+#### 対応方針
+どちらか一方に統合する（コード修正は不要、カタログ整理のみ）。
+
+#### 着手条件
+なし
+
+#### 実装（2026-09-05）
+番号が若い方（AS-IS-026）を正本として残し、AS-IS-028の行を
+「（AS-IS-026へ統合済み）」の参照エントリに置き換えた
+（`docs/architecture/new_data_platform/FIELD_DEFINITIONS.md`）。
+定義本体・計算式はAS-IS-026側のみに残し、AS-IS-028からは参照させる形に
+整理。あわせて、この重複を最初に指摘した「気づいた問題」欄の記述にも
+「2026-09-05対応済み」の注記を追加し、次フェーズへの申し送り欄にあった
+「AS-IS-026/028の重複統合は実装を伴うため範囲外」という記述も
+（実際にはドキュメントのみで完結したため）「完了済み」に更新した。
+コード修正なし。
+
+#### 検証結果
+ドキュメントのみの変更のためコードへの影響なし。`calculate_moat_score()`
+自体は変更していないため、既存の全99銘柄の`components.moat_score`値に
+変化はない。
+
+---
+
+### ✅ [ERP-DUAL-CALC-1] ERP①②の重複計算
+**状態:** ✅完了
+**優先度:** 低
+**分類:** 保守性 / TANUKI VALUATION
+**登録日:** 2026-07-23
+**完了日:** 2026-09-05
+**発見:** `FIELD_DEFINITIONS.md`フェーズ3（AS-IS-055/056）
+
+#### 内容
+`pipeline.py`内の`_save_result()`と`_generate_report()`が、どちらも
+`forward_eps`/`current_price`/`risk_free_rate`を個別に読み直して同じERP
+計算式を独立に再計算している。共通関数化されていないため、片方だけ修正
+すると①②が食い違う保守リスクがある。
+
+#### 対応方針
+共通関数に統合する。
+
+#### 着手条件
+なし
+
+#### 実装（2026-09-05）
+`src/value/tanuki_valuation/pipeline.py`にモジュールレベルの共通関数
+`_calculate_erp(forward_eps, current_price, risk_free_rate)`を新設し
+（`_dilution_severity_info()`と同様のモジュール関数スタイル）、
+`_save_result()`・`_generate_report()`双方の呼び出し箇所をこれを参照する
+形に統合した。
+
+統合にあたり、`_generate_report()`側にのみ存在していた
+`isinstance(forward_eps, (int, float))`の型チェックを共通関数側に採用
+（`_save_result()`側は元々このチェックがなく、非数値のforward_epsが
+渡ると例外になる潜在バグを内包していた）。本番データでforward_epsは
+常にNoneかfloatのため実挙動への影響はないことをデータ確認済み。
+
+#### 検証結果
+- 純粋なリファクタリングであることを検証するため、全99銘柄の実際の
+  `latest.json`から`forward_eps`/`current_price`/`risk_free_rate`を
+  読み出し、①統合前の`_save_result()`側インライン計算式、②統合前の
+  `_generate_report()`側インライン計算式（isinstance判定含む）、
+  ③統合後の`_calculate_erp()`の3通りをそれぞれ計算して突き合わせた
+  結果、**全99銘柄で完全一致（不一致0件）**を確認した
+  （report.txt/latest.jsonの実ファイル再生成はSEC EDGAR/yfinance実取得を
+  伴いCI経由でのみ現実的なため、本検証では実データ値からの直接再計算に
+  よる数式レベルの同値性確認で代替した）。
+- `python -m pytest -q`: 1085件全パス
+- `python common/sec_data/audit.py`: 既存の警告9件のみ（変化なし）
+- `python common/sec_data/report_consistency_check.py --fail-on-ng`:
+  NG=0 / WARN=93件（ベースラインと同数、ERP関連の新規NG/WARNなし）
+
+---
+
 ## 2026-09-05（完了）
 
 ### ✅ [CLAUDE-CODE-START-FY-DESC-FIX-1] CLAUDE_CODE_START.mdのdetermine_fiscal_year()呼び出し箇所記述の修正

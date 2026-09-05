@@ -155,6 +155,31 @@ def _dilution_severity_info(dil_pct: float | None) -> tuple:
         return "critical", "極度の希薄化 🚨 IPO直後か継続増資か要確認", f"IPO後の株式発行が主因の可能性。継続なら1株価値を年率{dil_pct:.1f}%毀損。"
 
 
+def _calculate_erp(forward_eps, current_price, risk_free_rate: float = 0.043) -> tuple:
+    """ERP（株式リスクプレミアム）と益利回りを計算する（[[ERP-DUAL-CALC-1]]）。
+
+    ERP = Forward Earnings Yield - Risk Free Rate
+    益利回り = ForwardEPS / 現在株価、Rf = WACC計算に使用した10年国債利回り
+
+    従来`_save_result()`と`_generate_report()`がそれぞれ独立に同じ計算式を
+    再実装していたため、共通関数に統合（丸めは呼び出し側の用途に応じて
+    行う。本関数は丸めなしの生値を返す）。
+
+    forward_epsが数値でない、またはcurrent_priceが0以下の場合は
+    (None, None) を返す。
+    """
+    if (
+        forward_eps is None
+        or not isinstance(forward_eps, (int, float))
+        or not current_price
+        or current_price <= 0
+    ):
+        return None, None
+    earnings_yield = forward_eps / current_price
+    erp = earnings_yield - risk_free_rate
+    return earnings_yield, erp
+
+
 # [[BREAKEVEN-FORECAST-METHOD-MISMATCH-1]]（2026-09-05）: STONKS SILO
 # （discover/stonks-silo/src/analyzer.py::_margin_breakeven()）が持つ
 # 安全策一式（理由コード・傾き上限・異常値除外）をこちら側にも追加し、
@@ -1038,14 +1063,15 @@ class TanukiValuationPipeline:
         latest_data["phase1_growth_original"] = _phase1_growth_original
         latest_data["phase1_growth_auto_adjusted"] = _phase1_auto_adjusted
         # DESIGN-1: ERP を latest.json に保存（フロント参考表示用）
+        # [[ERP-DUAL-CALC-1]]: 計算式は_calculate_erp()に統合済み（_generate_report()と共通）
         _comps_ld = latest_data.get("components", {})
         _fwd_eps_ld = _comps_ld.get("forward_eps")
         _cp_ld = _comps_ld.get("current_price") or 0
         _wacc_ld = latest_data.get("wacc", {})
         _rf_ld = _wacc_ld.get("risk_free_rate", 0.043) if isinstance(_wacc_ld, dict) else 0.043
-        if _fwd_eps_ld is not None and _cp_ld > 0:
-            _ey_ld = _fwd_eps_ld / _cp_ld
-            latest_data["erp"] = round(_ey_ld - _rf_ld, 4)
+        _ey_ld, _erp_ld = _calculate_erp(_fwd_eps_ld, _cp_ld, _rf_ld)
+        if _erp_ld is not None:
+            latest_data["erp"] = round(_erp_ld, 4)
             latest_data["forward_earnings_yield"] = round(_ey_ld, 4)
         _dil_pct = (latest_data.get("financial_health") or {}).get("dilution_3yr_annual_pct")
         _dil_sev, _dil_badge, _ = _dilution_severity_info(_dil_pct)
@@ -2416,15 +2442,10 @@ class TanukiValuationPipeline:
         L.append("HYPE_Signal: Combined judgment of Matrix quadrant")
         L.append("and HypeCore phase")
         # ── DESIGN-1: ERP（株式リスクプレミアム）参考表示 ──
-        # ERP = Forward Earnings Yield - Risk Free Rate
-        # 益利回り = ForwardEPS / 現在株価、Rf = WACC計算に使用した10年国債利回り
+        # [[ERP-DUAL-CALC-1]]: 計算式は_calculate_erp()に統合済み（_save_result()と共通）
         _fwd_eps_erp = comps.get("forward_eps")
         _rf_erp = wacc_data.get("risk_free_rate", 0.043) if isinstance(wacc_data, dict) else 0.043
-        _erp = None
-        _ey = None
-        if _fwd_eps_erp is not None and isinstance(_fwd_eps_erp, (int, float)) and current_price > 0:
-            _ey = _fwd_eps_erp / current_price
-            _erp = _ey - _rf_erp
+        _ey, _erp = _calculate_erp(_fwd_eps_erp, current_price, _rf_erp)
         L.append("ERP (Equity Risk Premium, 参考表示):")
         if _erp is not None:
             L.append(f"  Forward_Earnings_Yield: {_ey*100:.2f}%  (ForwardEPS ${_fwd_eps_erp:.2f} / Price ${current_price:,.2f})")

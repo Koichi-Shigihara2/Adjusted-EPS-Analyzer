@@ -8451,45 +8451,6 @@ DUAL-MGMT-1]]、バリデーション0件）ほど深刻ではない（コンテ
 
 ---
 
-### [ERP-DUAL-CALC-1] ERP①②の重複計算
-**優先度:** 低
-**分類:** 保守性 / TANUKI VALUATION
-**登録日:** 2026-07-23
-**発見:** `FIELD_DEFINITIONS.md`フェーズ3（AS-IS-055/056）
-
-#### 内容
-`pipeline.py`内の`_save_result()`と`_generate_report()`が、どちらも
-`forward_eps`/`current_price`/`risk_free_rate`を個別に読み直して同じERP
-計算式を独立に再計算している。共通関数化されていないため、片方だけ修正
-すると①②が食い違う保守リスクがある。
-
-#### 対応方針
-共通関数に統合する。
-
-#### 着手条件
-なし
-
----
-
-### [MOAT-CATALOG-DUP-1] moat_score（AS-IS-026/028）のカタログ重複
-**優先度:** 低
-**分類:** ドキュメント整合性
-**登録日:** 2026-07-23
-**発見:** `FIELD_DEFINITIONS.md`フェーズ4
-
-#### 内容
-AS-IS-026とAS-IS-028は同一の`calculate_moat_score()`戻り値を指す重複
-カタログエントリ。過去のインベントリ作成過程で同じ関数の出力が2つの
-異なるAS-IS-IDとして重複記録されている。
-
-#### 対応方針
-どちらか一方に統合する（コード修正は不要、カタログ整理のみ）。
-
-#### 着手条件
-なし
-
----
-
 ### [TANUKI-VALUATION-MISC-GAPS-1] TANUKI VALUATIONの軽微な構造的ギャップまとめ（PERフォールバック欠如・EV/EBITDA負値格納・net_debt符号エイリアス・v0_adjusted死フィールド・Runway cash算出相違・mature_profit S&M欠落・根拠不明な定数・セグメントKPIテーブル機能撤去済み）
 **優先度:** 低
 **分類:** データ品質 / TANUKI VALUATION

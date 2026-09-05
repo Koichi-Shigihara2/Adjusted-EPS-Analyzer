@@ -424,7 +424,7 @@ discover_config.json）は、バリデーションなしで直接GitHubにコミ
 | AS-IS ID(元) | サブシステム | 表示名 | プログラム名称 | 定義（最小単位まで分解した計算式） | データ取得元（最終的にたどり着く一次データ等のAS-IS-ID一覧） | データ性質分類 |
 |---|---|---|---|---|---|---|
 | AS-IS-026 | TANUKI VALUATION | Moat Score（経済的濠スコア） | `components.moat_score` 等 | `moat_score = gm_norm×0.40 + roic_norm×0.40 + fcf_norm×0.20`（3指標が全てNoneの場合のみ`moat_score=0.5`固定）<br>`gm_norm = clamp(gross_margin_3yr_avg / 1.0, 0, 1)`<br>`roic_norm = clamp((roic - 0.10) / 0.30, 0, 1)`（0.10はAS-IS-013の`market_return`要素、DCF/WACC構成要素系・未定義）<br>`fcf_norm = clamp(fcf_margin_3yr_avg / 0.30, 0, 1)`<br>`phase1_years = 3 + round(moat_score × 7)`（3〜10年、DCF高成長期間・感応度分析base_yearsに連動）<br>`gross_margin_3yr_avg` = normalized四半期JSONの年次GrossProfit/Revenue直近3年平均（年次タグ欠如時は直近12四半期合算にフォールバック。SEC EDGAR一次データ、カタログ対象外、`pipeline.py:_calc_moat_inputs`）<br>`roic = NOPAT/Invested_Capital`、`NOPAT=OperatingIncome×(1-21%固定実効税率)`、`Invested_Capital=Equity+LTDebt+STDebt-Cash`（いずれもSEC EDGAR annual一次データ、カタログ対象外、`pipeline.py:_calc_roic_wacc_ratio`）<br>`fcf_margin_3yr_avg` = annual SECの`free_cash_flow/revenue`直近3年平均（`free_cash_flow`はAS-IS-047と同一データ由来） | AS-IS-013（未定義）＋ GrossProfit/Revenue/OperatingIncome/Equity/LTDebt/STDebt/Cash/FCF（SEC EDGAR、カタログ対象外） | 導出データ |
-| AS-IS-028 | TANUKI VALUATION | moat_score / moat_phase1_years / moat_gross_margin_norm / moat_roic_norm / moat_fcf_margin_norm | 同上 | AS-IS-026と完全に同一の`calculator/adjustments.py:calculate_moat_score()`戻り値を指す別カタログエントリ（重複、下記「気づいた問題」参照） | AS-IS-026と同じ | 導出データ |
+| AS-IS-028 | TANUKI VALUATION | （AS-IS-026へ統合済み） | — | AS-IS-026と完全に同一の`calculator/adjustments.py:calculate_moat_score()`戻り値を指す重複カタログエントリだったため、[[MOAT-CATALOG-DUP-1]]（2026-09-05）によりAS-IS-026に統合。定義本体はAS-IS-026を参照 | AS-IS-026（本表参照） | — |
 | AS-IS-045 | TANUKI VALUATION | financial_health.*（net_debt/total_debt/cash_and_equivalents/sbc_ttm/dilution_3yr_annual_pct等） | `financial_health` | `total_debt = bs_adjustment.long_term_debt + bs_adjustment.short_term_debt`<br>`cash_and_equivalents = bs_adjustment.cash`、`short_term_investments = bs_adjustment.short_term_investments`<br>`net_debt = -bs_adjustment.net_cash`（符号反転。net_cashは「純キャッシュ」+、net_debtは「純負債」+の逆符号設計）<br>`bs_adjustment.*` = AS-IS-025（DCF/WACC構成要素系・未定義。TANUKIのDCF計算に使うBS値〈`SECReader.get_net_cash()`戻り値〉をreport.txt表示にもそのまま再利用し、単一の計算経路に統一）<br>`sbc_ttm` = 直近年`annual_{yr}.json`の`cf.stock_based_compensation`（SEC EDGAR、カタログ対象外）<br>`dilution_3yr_annual_pct = ((直近希薄化後株式数/3年前希薄化後株式数)^(1/3) - 1) × 100`。株式数はnormalized JSONの年次`SharesDiluted`（株式分割の遡及調整・SEC/yfinance株式数10倍超乖離時のsanity-check skipあり、SEC EDGAR、カタログ対象外） | AS-IS-025（未定義）＋ SharesDiluted/SBC（SEC EDGAR、カタログ対象外） | 導出データ |
 | AS-IS-046 | TANUKI VALUATION | dupont.net_margin/asset_turnover/financial_leverage/roe_decomposed | `dupont` | `net_margin = NI_TTM / Revenue_TTM`<br>`asset_turnover = Revenue_TTM / Total_Assets`<br>`financial_leverage = Total_Assets / Equity`<br>`roe_decomposed = net_margin × asset_turnover × financial_leverage`<br>`NI_TTM`/`Revenue_TTM` = `common/sec_data/ttm/{ticker}_ttm_series.json`の`series[0].flow.NetIncome/Revenue`（SEC EDGAR、カタログ対象外）<br>`Total_Assets`/`Equity` = 直近四半期`quarterly_*.json`の`bs.total_assets`/`bs.stockholders_equity`（同上）<br>除外条件: `Revenue_TTM < $15M`は計算せず`{"excluded": True}`<br>信頼性フラグ: 直近4四半期のうち最大1四半期の`NetIncome`絶対値がTTM合計の60%超なら`reliability="LOW"` | NI_TTM/Revenue_TTM/Total_Assets/Equity（SEC EDGAR、カタログ対象外） | 導出データ |
 | AS-IS-047 | TANUKI VALUATION | fcf_history[] | `fcf_history` | `fcf_history[].fcf` = 直近5年`annual_{yr}.json`の`cf.free_cash_flow`（SEC EDGAR一次データ、カタログ対象外。`common/sec_data/parser.py`が`FCF=OCF-max(0,\|CapEx\|-\|FinanceLeasePmts\|)`として事前計算済みの値をそのまま転記）<br>`fcf_history[].fcf_margin = round(fcf/revenue×100, 1)`、`revenue`は同年`pl.revenue`（SEC EDGAR、カタログ対象外） | free_cash_flow/revenue（SEC EDGAR、カタログ対象外） | 導出データ |
@@ -519,6 +519,9 @@ discover_config.json）は、バリデーションなしで直接GitHubにコミ
   重複カタログエントリ**: 過去のインベントリ作成過程で同じ関数の出力が
   2つの異なるAS-IS-IDとして重複記録されている（前フェーズで発見した
   ERP①②の「重複計算」とは異なり、こちらは「同一計算の重複カタログ化」）。
+  **2026-09-05対応済み**: `[[MOAT-CATALOG-DUP-1]]`によりAS-IS-028を
+  AS-IS-026への参照に置き換え、カタログ重複を解消（コード修正なし、
+  ドキュメントのみ。BACKLOG_DONE.md参照）。
 
 ### 次フェーズへの申し送り
 
@@ -533,9 +536,11 @@ discover_config.json）は、バリデーションなしで直接GitHubにコミ
   いずれもAS-IS番号を持たない内部フィールドである。DCF/WACC構成要素系・
   信頼性・品質判定系フェーズで関連項目を定義する際、実際の取得経路
   （`common/sec_data`正規化JSON経由）を合わせて記録することを推奨する
-- AS-IS-026/028の重複統合、AS-IS-071とAS-IS-157のCapEx符号不統一修正は
-  いずれも実装（コード修正）を伴うため、本タスクの範囲外として記録に
-  とどめた。修正が必要と判断される場合は別途依頼文で着手する
+- AS-IS-026/028の重複統合は2026-09-05に`[[MOAT-CATALOG-DUP-1]]`として
+  ドキュメントのみで完了済み（BACKLOG_DONE.md参照）。AS-IS-071とAS-IS-157
+  のCapEx符号不統一修正は実装（コード修正）を伴うため、引き続き本タスクの
+  範囲外として記録にとどめる。修正が必要と判断される場合は別途依頼文で
+  着手する
 
 ---
 
