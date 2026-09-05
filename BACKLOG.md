@@ -7018,24 +7018,6 @@ Adjusted EPSが新たに算出される**ようになった。株数の引き継
 
 ---
 
-### [ENTG-TER-SEGMENT-1] ENTG・TERのsegment_config.json未設定
-**優先度:** 中
-**分類:** データ品質 / TANUKI VALUATION
-**登録日:** 2026-07-09
-**発見:** 5銘柄登録の横断整合性確認時
-
-#### 問題
-ENTG（Materials Solutions 43.9% / Advanced Purity Solutions 56.1%）・
-TER（Semiconductor Test 79.1% / Product Test 11.2% / Robotics 9.7%）
-は共にASC 280 formal segment数2つ以上のLMT型に該当するが、
-segment_config.json未登録のまま_default設定でDCF計算されている。
-
-#### 対応方針
-各セグメントのgrowth rate設定に過去YoY実績・ガイダンスを踏まえた
-判断が必要なため、Step 3.5として別途セッションで着手する。
-
----
-
 ### [SPLIT-REALTIME-GAP-REVERSE-1] KULR/SPIRのリバース分割で同型の恒久固着ギャップ有無が未確認
 **優先度:** 低
 **分類:** データ品質 / EPS ANALYZER

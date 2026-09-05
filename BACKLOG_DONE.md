@@ -4,6 +4,107 @@
 
 ## 2026-09-05（完了）
 
+### ✅ [ENTG-TER-SEGMENT-1] ENTG・TERのsegment_config.json未設定
+**状態:** ✅完了
+**優先度:** 中
+**分類:** データ品質 / TANUKI VALUATION
+**登録日:** 2026-07-09
+**完了日:** 2026-09-05
+**発見:** 5銘柄登録の横断整合性確認時
+
+#### 問題
+ENTG（Materials Solutions 43.9% / Advanced Purity Solutions 56.1%）・
+TER（Semiconductor Test 79.1% / Product Test 11.2% / Robotics 9.7%）
+は共にASC 280 formal segment数2つ以上のLMT型に該当するが、
+segment_config.json未登録のまま_default設定でDCF計算されている。
+
+#### 対応方針
+各セグメントのgrowth rate設定に過去YoY実績・ガイダンスを踏まえた
+判断が必要なため、Step 3.5として別途セッションで着手する。
+
+#### 実装（2026-09-05、一次情報ベース）
+Claude Code自身がSEC EDGAR原本（両社の最新10-K・Q4決算発表8-K・最新
+10-Q）を直接読み、引用を伴ってsegment_config.jsonへ追加した。
+
+**ENTG（FY2025 10-K、accn 0001101302-26-000012、期末2025-12-31・
+提出2026-02-11）**:
+- R104「Schedule of Financial Information for Reportable Segments」
+  実測: Materials Solutions（MS）net sales FY2025=$1,406.7M/
+  FY2024=$1,400.1M/FY2023=$1,689.5M。Advanced Purity Solutions（APS）
+  net sales FY2025=$1,799.1M/FY2024=$1,850.2M/FY2023=$1,846.6M。
+  weight = MS/(MS+APS) = 1406.7/3205.8 = **43.9%**、
+  APS = 1799.1/3205.8 = **56.1%**（依頼書記載の比率と完全一致、
+  再確認の上そのまま採用）
+- YoY: MS FY25 vs FY24 = **+0.5%**（FY24 vs FY23 = -17.1%、半導体材料
+  下落サイクルの底打ち）。APS FY25 vs FY24 = **-2.8%**（FY24 vs
+  FY23 = +0.2%）
+- Q4'25決算発表8-K（accn 0001101302-26-000009、entgq42025ex991.htm）
+  のCEO Jim Reeder氏コメントを確認: 「enters 2026 with solid
+  momentum」「customers are increasingly adopting more complex device
+  architectures to advance their technology roadmaps and support the
+  rapid growth of AI」「accelerate our growth, drive higher content
+  per wafer」。Q1 2026 revenue guidance $785M〜$825M
+- 直近実績四半期（Q1'26 10-Q、accn 0001101302-26-000102、R47）で
+  MS Q1'26=$351.1M vs Q1'25=$341.4M=**+2.8%**、
+  APS Q1'26=$463.6M vs Q1'25=$433.9M=**+6.8%**と両セグメントとも
+  加速・APS優位の反転を確認
+- 設定値: MS growth=**6%**（FY25実績+0.5%→Q1'26+2.8%の回復途上、
+  5yr CAGR+11.4%の過去ピークサイクルは織り込まず保守的に設定）、
+  APS growth=**7%**（Q1'26でMS以上に加速した実績を踏まえやや高め）
+
+**TER（FY2025 10-K、accn 0001193125-26-059002、期末2025-12-31・
+提出2026-02-19）**:
+- R138「Schedule of Segment Information」実測: Semiconductor Test
+  net revenue FY2025=$2,523.7M/FY2024=$2,123.9M/FY2023=$1,957.2M。
+  Product Test FY2025=$358.0M/FY2024=$331.1M/FY2023=$343.9M。
+  Robotics FY2025=$308.3M/FY2024=$364.8M/FY2023=$375.2M。
+  weight: Semiconductor Test=2523.7/3190.0=**79.1%**、
+  Product Test=358.0/3190.0=**11.2%**、Robotics=308.3/3190.0=**9.7%**
+  （依頼書記載の比率と完全一致、再確認の上そのまま採用）
+- YoY: Semiconductor Test FY25 vs FY24=**+18.8%**（AI関連コンピュート・
+  メモリ向けテスタ需要急増）。Product Test FY25 vs FY24=**+8.1%**。
+  Robotics FY25 vs FY24=**-15.5%**（FY24 vs FY23も-2.7%、2年連続減収）
+- Q4'25決算発表8-K（accn 0001193125-26-034348、ter-ex99_1.htm）を
+  確認: 「Q4 growth driven by strong AI-related demand in compute and
+  memory」「In 2026, we expect year-over-year growth across all of
+  our businesses, with strong momentum in compute driven by AI」。
+  Roboticsは2025年に約400名の人員削減（$4.9M資産減損）を実施したことも
+  確認したが、事業売却・戦略的選択肢に関する言及はなし。Q1 2026
+  revenue guidance $1,150M〜$1,250M
+- 直近実績四半期（Q1'26 10-Q、accn 0001193125-26-201058、R4/R93）で
+  Semiconductor Test Q1'26=$1,110.8M vs Q1'25=$542.5M=**+104.8%**
+  という極端なAI需要急増を確認（会社全体でもQ1'26=$1,282.5M vs
+  Q1'25=$685.7M=+87%、Q1ガイダンス上限をも上回る実績）。Product Test
+  Q1'26=$80.4M vs Q1'25=$74.2M=+8.4%（FY25実績とほぼ一致）。Robotics
+  Q1'26=$91.3M vs Q1'25=$69.0M=**+32.3%**と2年連続減収から反転
+- 設定値: Semiconductor Test growth=**20%**（FY25実績+18.8%は上回るが、
+  Q1'26実績+104.8%はCRWV等の既存前例〈実績+168%→保守的に65%設定〉に
+  倣いそのまま採用せず抑制）、Product Test growth=**8%**（FY25・Q1'26
+  実績にそのまま整合）、Robotics growth=**10%**（Q1'26で反転を確認
+  したが1四半期のみの実績のため保守的に設定）
+
+**weight合計**: ENTG=1.000、TER=1.000（いずれも0.95〜1.05の範囲内）
+
+#### 検証結果（2026-09-05）
+`pipeline.py ENTG TER`実行によりsegment_configured: false→trueへ切替、
+_defaultフォールバックからsegment_weightedへの変化を確認：
+- ENTG: growth 6.37%→6.56%、intrinsic_value_per_share $26.24→$26.62
+  （+1.5%）
+- TER: growth 0.44%→17.69%、intrinsic_value_per_share $43.53→$98.68
+  （+126.7%、_defaultが極端に低い値だったため大幅上昇）。TANUKI SCORE
+  分類はENTG・TERともにWATCHのまま不変（現在価格がいずれのIVも
+  大きく上回るため、大幅なIV上昇でも分類フリップは発生せず）
+
+pytest 1041 passed（既知失敗0件）・`audit.py`exit 0（既知警告9件のみ、
+ENTG/TER関連の新規警告なし）・`report_consistency_check.py --fail-on-ng`
+NG=0（ENTG既存WARN-26は2026-07-19確認済み・acknowledged登録済みで
+本変更とは無関係、TERは警告なし）を確認。
+
+コミット: `8a33444325`（segment_config.json追加）・`cec6710ef8`
+（本番データ再生成）。
+
+---
+
 ### ✅ [FYE-BOUNDARY-COLLISION-UNCONFIRMED-1] LITE/WSTの決算期変更境界バケツ競合が一次情報未確認のまま残存
 **状態:** ✅完了（判定1で確定・クローズ）
 **優先度:** 低〜未定
