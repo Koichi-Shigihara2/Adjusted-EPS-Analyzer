@@ -25,14 +25,23 @@ TTM_DIR = os.path.join(BASE_DIR, "ttm")
 
 # フロー系フィールド（4Q合算）。Layer3（config/sec_concept_definitions.json）
 # のcategory="flow"に対応するsnake_caseフィールド名（17件）。
-FLOW_FIELDS = frozenset([
+#
+# [[TTM-FLOW-FIELDS-FROZENSET-NONDETERMINISTIC-1]]: frozensetはハッシュ
+# ランダム化でイテレーション順序が実行のたびに変わり、`for field_name in
+# FLOW_FIELDS:`（本ファイル下部、flow辞書構築ループ）で構築する各TTM
+# エントリのキー順序がttm/{ticker}_ttm_series.json上で無関係なdiffを
+# 発生させていたため、順序が決定的なtupleに変更した
+# （validate_field_classification()はset(s)へ変換してから集合演算するため
+# tuple化しても契約チェックへの影響なし。値・ロジックは変更しない純粋な
+# 型変更）。
+FLOW_FIELDS = (
     "operating_cash_flow", "investing_cash_flow", "financing_cash_flow",
     "capital_expenditure", "finance_lease_payments",
     "stock_based_compensation", "depreciation_and_amortization",
     "revenue", "gross_profit", "operating_income", "net_income",
     "research_and_development", "selling_and_marketing", "buyback",
     "eps_basic", "eps_diluted", "selling_general_and_administrative",
-])
+)
 
 # ストック系フィールド（最新Q末の値）。Layer3のcategory="stock"（10件）。
 # CurrentAssets/CurrentLiabilities: GATE2-PHASE3B-1②で追加（貸借対照表項目の

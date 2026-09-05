@@ -2876,7 +2876,14 @@ class SECParser:
     # 済み。ASTS(2019)（別問題、[[CHECK29-UNRESOLVED-23-MIXED-CAUSES-1]]
     # ③要さらなる確認）は本タグ追加後も未解消のまま（cross-accn値が
     # 必要額と一致しないため）で、想定通り無関係。
-    _BS_IDENTITY_ALLOWLIST = frozenset([
+    # [[BS-IDENTITY-LOG-NONDETERMINISTIC-KEY-ORDER-1]]: frozensetは
+    # ハッシュランダム化でイテレーション順序が実行のたびに変わり、下記
+    # `for tag in self._BS_IDENTITY_ALLOWLIST:`（3010・3026行目）で構築する
+    # `matched`/`extra_components`辞書のキー順序がbs_identity_violations_
+    # log.json上で無関係なdiffを発生させていたため、順序が決定的なtupleに
+    # 変更した（メンバーシップ判定以外の集合演算では使われていないため
+    # 型変更の副作用なし。値・ロジックは変更しない純粋な型変更）。
+    _BS_IDENTITY_ALLOWLIST = (
         "MinorityInterest",
         "TemporaryEquityCarryingAmount",
         "TemporaryEquityCarryingAmountAttributableToParent",
@@ -2885,7 +2892,7 @@ class SECParser:
         "RedeemableNoncontrollingInterestEquityCommonCarryingAmount",
         "RedeemableNoncontrollingInterestEquityPreferredCarryingAmount",
         "TemporaryEquityValueExcludingAdditionalPaidInCapital",
-    ])
+    )
 
     # "Including...NoncontrollingInterests"系タグ（一時的持分のうちNCI分も
     # 含む合算値）が存在する場合、"AttributableToParent"系・無印の
