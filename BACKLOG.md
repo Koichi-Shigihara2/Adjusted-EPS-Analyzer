@@ -2860,7 +2860,95 @@ None値系警告）以外に新規の異常なし。
 
 ## 優先度：高（早急に対応）
 
-### [MACRODATA-FTSD-SERIES-ID-INVALID-1] FRED系列コード「FTSD」がFRED API上に実在しない（05_main.pyのWTREGENフォールバックが機能しない可能性）
+### [MACRODATA-FULL-HISTORY-DAILY-REFETCH-1] fetch_series()/fetch_all_series()がstart未指定時に常に全期間履歴を再取得する設計になっている（日次cronが非効率）
+**優先度:** 低〜中（実害は限定的〈FRED APIへの負荷・実行時間増加のみ、
+upsert設計のため正確性への影響はない〉が、`common/market_data/`が
+確立した「日次は直近のみ・全期間取得は一過性の別関数」という設計
+パターンから逸脱している）
+**分類:** 設計改善 / 効率性
+**登録日:** 2026-08-12
+**発見:** `common/macro_data/`定期取得ワークフロー新設・動作確認
+（`fetch_all_series()`の実FRED_API_KEYによるローカル実行、チャット
+記録、2026-08-12）
+
+#### 内容
+`common/macro_data/fetcher.py::fetch_series(series_id, start=None)`は
+`start`未指定時、`observation_start`パラメータをFRED APIへ渡さない
+ため、系列の提供開始日（系列によっては1940〜1970年代）からの**全期間
+履歴**を毎回取得する。`.github/workflows/Macro_Data_Update.yml`
+（毎日UTC10:00実行、`python common/macro_data/fetcher.py`を`start`
+指定なしで呼び出す）はこの関数を経由するため、**日次cronが実行の
+たびに25系列全件・合計約9.5万レコード（初回実測、18MB）を毎回
+再取得する**設計になっている。
+
+これは`common/market_data/fetcher.py`が確立した設計パターン
+（`fetch_daily_prices()`＝日次cronは直近数日分のみ取得・
+`backfill_daily_prices(period/start)`＝全期間取得は定期cronに
+組み込まない一過性の別関数）から逸脱している。`update_series()`は
+日付単位のupsertのため正確性への実害はないが、FRED APIへの負荷・
+GitHub Actions実行時間・git差分サイズが日次cronとしては不必要に
+大きい。
+
+#### 対応方針（未定）
+- `fetcher.py`のCLIへ`--start`引数を追加し、`Macro_Data_Update.yml`の
+  日次cron呼び出し側は直近数日〜数週間分のみを指定する
+  （`common/market_data/`の`fetch_daily_prices()`相当の設計に揃える）
+- 初回の全期間投入は今回実施済みのため、以降は「直近分のみ日次取得・
+  全期間再取得が必要な場合のみ手動で`--start`省略実行」という運用に
+  切替える
+
+#### 着手条件
+なし。次回`common/macro_data/`関連作業時に対応要否を判断する。
+
+---
+
+### [MACRODATA-FETCH-FAILURE-VISIBILITY-GAP-1] 系列単位の取得失敗がviolations_log.jsonで「正常」と区別できない
+**優先度:** 中（実害は現時点でFTSD1件のみ確認済みだが、今後同様の
+失敗〈系列ID変更・FRED側仕様変更等〉が起きても気づけない構造的リスク）
+**分類:** 設計上のギャップ / 可視性欠如
+**登録日:** 2026-08-15
+**発見:** `common/macro_data/`更新実行実績・データ鮮度の確認調査
+（チャット記録、2026-08-15）
+**統合について（2026-09-05）**: `MACRODATA-FTSD-SERIES-ID-INVALID-1`
+（FRED系列コード「FTSD」がFRED API上に実在しない具体事例）を本エントリへ
+統合した。両者は「一般的な欠陥（取得失敗が可視化されない設計）」と
+「その欠陥が実際に表面化した具体例（FTSD系列コード誤り）」という直接の
+親子関係にあるため、可視性欠如を扱う本エントリを主エントリとして残し、
+FTSDケースの内容は要約せず全文そのまま下記「具体事例（FTSDケース）」に
+保持する。`MACRODATA-FTSD-SERIES-ID-INVALID-1`はBACKLOG.mdから削除済み。
+`[[MACRODATA-FULL-HISTORY-DAILY-REFETCH-1]]`は別論点のため統合対象外。
+
+#### 内容
+`fetch_series()`は失敗時に例外を投げずNoneを返す設計（print()ログの
+みでリポジトリには残らない）。`update_series()`はNone時に
+`{"updated": 0, "warnings": []}`を返し`violations_log.json`へ書き込む
+が、この構造は正常に0件警告だった健全な系列と区別がつかない。
+FTSDエントリ（`{"checked_at": ..., "warnings": []}`）が実例（詳細は
+下記「具体事例（FTSDケース）」参照）。`series/{ID}.json`ファイルが
+存在しないことに能動的に気づかない限り、取得失敗を発見できない。
+
+加えて、`fetch_all_series()`のforループには系列単位のtry/exceptが
+なく、予期しない例外（ディスクエラー等）が発生した場合、その系列
+以降の全系列が未処理のままバッチ全体が中断する構造的リスクも
+あわせて確認された（今回の3日間の実行では未発生）。
+
+#### 対応方針（未定）
+- `violations_log.json`に「fetch自体の成否」を示すフィールド
+  （例: `fetch_status: "success"/"failed"/"skipped"`）を追加する
+- `fetch_all_series()`のforループに系列単位のtry/exceptを追加し、
+  1系列の失敗が他系列の処理を止めないようにする
+- 週次等の定期監視（`audit.py`型の診断ツール）で
+  `series_meta.json`の全系列と`series/`ディレクトリの実ファイルを
+  突合し、欠落を検知する仕組みを追加する
+
+#### 着手条件
+なし。対応方針の具体化から。
+
+#### 具体事例（FTSDケース、統合元[MACRODATA-FTSD-SERIES-ID-INVALID-1]）
+以下は独立BACKLOGエントリだった`[MACRODATA-FTSD-SERIES-ID-INVALID-1]
+FRED系列コード「FTSD」がFRED API上に実在しない（05_main.pyのWTREGEN
+フォールバックが機能しない可能性）`の全文をそのまま転記したもの。
+
 **優先度:** 中で据え置き（2026-08-13事実確認の結果、実害は極めて稀と
 確認できたため引き上げ不要と判断。ただし機能しないフォールバックを
 放置すべきではないため記録は残す。詳細は下記「追記」参照）
@@ -2872,7 +2960,7 @@ None値系警告）以外に新規の異常なし。
 （`fetch_all_series()`の実FRED_API_KEYによるローカル実行、チャット
 記録、2026-08-12）
 
-#### 内容
+##### 内容
 `common/macro_data/fetcher.py::fetch_series("FTSD")`を実行したところ、
 fredapi経由・`curl`による直接FRED REST API呼び出し
 （`https://api.stlouisfed.org/fred/series?series_id=FTSD&api_key=...`）
@@ -2892,7 +2980,7 @@ target_date, lookback=21)`）が、このフォールバックが実際に発動
 台帳に追加した系列だが、台帳追加時点では実際にFRED上に存在するかの
 検証は行っていなかった。
 
-#### 追記（2026-08-13、事実確認調査完了、記録のみ・実装なし）
+##### 追記（2026-08-13、事実確認調査完了、記録のみ・実装なし）
 
 **原因特定**: `FTSD`は2026-05-08のコミット`8561125f3`（`Co-Authored-By:
 Claude Sonnet 4.6`、NET LIQUIDITY計算のためWTREGEN/RRPONTSYD取得を
@@ -2951,90 +3039,12 @@ Noneを返す）は「`WTREGEN`系列ファイル自体が存在しない／空�
 「一度も機能しないフォールバックが存在し続ける」こと自体は望ましくない
 ため、記録は残す。
 
-#### 着手条件
+##### 着手条件
 次回の低優先度課題群まとめ対応時（`[[MACRODATA-AS-IS-DUPLICATION-
 UNDERCOUNT-1]]`・`[[MACRODATA-SCHEDULED-SILENT-GAP-CSCICP-USALOL-1]]`・
 `[[MACRODATA-IMPORT-HISTORY-CONFIG-DRIFT-1]]`・
 `[[MACRODATA-FULL-HISTORY-DAILY-REFETCH-1]]`等と合わせて着手検討）。
 上記「修正案」を踏まえ、対応方針は事実上確定済み。
-
----
-
-### [MACRODATA-FULL-HISTORY-DAILY-REFETCH-1] fetch_series()/fetch_all_series()がstart未指定時に常に全期間履歴を再取得する設計になっている（日次cronが非効率）
-**優先度:** 低〜中（実害は限定的〈FRED APIへの負荷・実行時間増加のみ、
-upsert設計のため正確性への影響はない〉が、`common/market_data/`が
-確立した「日次は直近のみ・全期間取得は一過性の別関数」という設計
-パターンから逸脱している）
-**分類:** 設計改善 / 効率性
-**登録日:** 2026-08-12
-**発見:** `common/macro_data/`定期取得ワークフロー新設・動作確認
-（`fetch_all_series()`の実FRED_API_KEYによるローカル実行、チャット
-記録、2026-08-12）
-
-#### 内容
-`common/macro_data/fetcher.py::fetch_series(series_id, start=None)`は
-`start`未指定時、`observation_start`パラメータをFRED APIへ渡さない
-ため、系列の提供開始日（系列によっては1940〜1970年代）からの**全期間
-履歴**を毎回取得する。`.github/workflows/Macro_Data_Update.yml`
-（毎日UTC10:00実行、`python common/macro_data/fetcher.py`を`start`
-指定なしで呼び出す）はこの関数を経由するため、**日次cronが実行の
-たびに25系列全件・合計約9.5万レコード（初回実測、18MB）を毎回
-再取得する**設計になっている。
-
-これは`common/market_data/fetcher.py`が確立した設計パターン
-（`fetch_daily_prices()`＝日次cronは直近数日分のみ取得・
-`backfill_daily_prices(period/start)`＝全期間取得は定期cronに
-組み込まない一過性の別関数）から逸脱している。`update_series()`は
-日付単位のupsertのため正確性への実害はないが、FRED APIへの負荷・
-GitHub Actions実行時間・git差分サイズが日次cronとしては不必要に
-大きい。
-
-#### 対応方針（未定）
-- `fetcher.py`のCLIへ`--start`引数を追加し、`Macro_Data_Update.yml`の
-  日次cron呼び出し側は直近数日〜数週間分のみを指定する
-  （`common/market_data/`の`fetch_daily_prices()`相当の設計に揃える）
-- 初回の全期間投入は今回実施済みのため、以降は「直近分のみ日次取得・
-  全期間再取得が必要な場合のみ手動で`--start`省略実行」という運用に
-  切替える
-
-#### 着手条件
-なし。次回`common/macro_data/`関連作業時に対応要否を判断する。
-
----
-
-### [MACRODATA-FETCH-FAILURE-VISIBILITY-GAP-1] 系列単位の取得失敗がviolations_log.jsonで「正常」と区別できない
-**優先度:** 中（実害は現時点でFTSD1件のみ確認済みだが、今後同様の
-失敗〈系列ID変更・FRED側仕様変更等〉が起きても気づけない構造的リスク）
-**分類:** 設計上のギャップ / 可視性欠如
-**登録日:** 2026-08-15
-**発見:** `common/macro_data/`更新実行実績・データ鮮度の確認調査
-（チャット記録、2026-08-15）
-
-#### 内容
-`fetch_series()`は失敗時に例外を投げずNoneを返す設計（print()ログの
-みでリポジトリには残らない）。`update_series()`はNone時に
-`{"updated": 0, "warnings": []}`を返し`violations_log.json`へ書き込む
-が、この構造は正常に0件警告だった健全な系列と区別がつかない。
-FTSDエントリ（`{"checked_at": ..., "warnings": []}`）が実例。
-`series/{ID}.json`ファイルが存在しないことに能動的に気づかない限り、
-取得失敗を発見できない。
-
-加えて、`fetch_all_series()`のforループには系列単位のtry/exceptが
-なく、予期しない例外（ディスクエラー等）が発生した場合、その系列
-以降の全系列が未処理のままバッチ全体が中断する構造的リスクも
-あわせて確認された（今回の3日間の実行では未発生）。
-
-#### 対応方針（未定）
-- `violations_log.json`に「fetch自体の成否」を示すフィールド
-  （例: `fetch_status: "success"/"failed"/"skipped"`）を追加する
-- `fetch_all_series()`のforループに系列単位のtry/exceptを追加し、
-  1系列の失敗が他系列の処理を止めないようにする
-- 週次等の定期監視（`audit.py`型の診断ツール）で
-  `series_meta.json`の全系列と`series/`ディレクトリの実ファイルを
-  突合し、欠落を検知する仕組みを追加する
-
-#### 着手条件
-なし。対応方針の具体化から。
 
 ---
 
