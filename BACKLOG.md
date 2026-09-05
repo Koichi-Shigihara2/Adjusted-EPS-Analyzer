@@ -2037,6 +2037,49 @@ TICKER-SOURCE-UNIFY-1は対応方針1・2・3すべて2026-07-11中に完了し�
 ###### 着手条件
 当面は運用でカバー可能。銘柄数がさらに増えた場合に着手。
 
+##### ゲート4実装（2026-09-05）
+上記想定機能①〜⑥を`common/system_health.py::check_k_ticker_audit()`
+として実装した（既存の`check_X_name() -> tuple[str, bool, str]`パターン
+に準拠、`main()`の`check_a`〜`check_j`と並列に呼び出しK列として集約）。
+
+- **①**: status=candidate（現行cik_lookup.csvに`status=test`は存在せず、
+  candidateが唯一のtest相当値。想定機能①原案の「test相当」を実データに
+  合わせて修正）かつ登録から30日超の銘柄を一覧化
+- **②**: registration_source=technical_screening（想定機能②原案の
+  「moomoo_screening」は現行データに存在しない値のため、実際の列挙値
+  technical_screeningに修正）かつ`docs/portfolio/data/portfolio.json`に
+  保有記載のない銘柄を抽出
+- **③**: `common/system_health.py`への追加関数として実装（決定済み事項の実装）
+- **④**: 判断は自動化せず、レポート出力のみ（status変更・retired化等は
+  一切行わない）。テストで書き込み副作用がないことも確認済み
+- **⑤**: `registration_validator.py::check_p4_orphan_configs()`を再利用し、
+  戻り値からカテゴリ`P4-CIKOrphan`の警告のみを抽出して他の想定機能と
+  同じ目立つ形式（`⑤P4-CIKOrphan`プレフィックス）で出力（独自の
+  再実装はせず、既存の唯一の実装を再利用）
+- **⑥**: `monitor_tickers.yaml`と`cik_lookup.csv`の銘柄集合差分
+  （どちらか片方にのみ存在する銘柄）を検出
+
+`common/sec_data/tickers.py`に新規関数`get_all_rows()`
+（cik_lookup.csvの全行を辞書リストで返す）を追加し、①②の実装で
+status/registered_date/registration_source列を横断参照する際も
+cik_lookup.csvを独自にcsv.DictReaderで再パースしない設計とした
+（[[TICKER-LOADING-UNIFICATION-1]]の方針を踏襲）。
+
+##### 検証結果（2026-09-05）
+- 現行103銘柄で実行し、想定通りWST/APGE/CON/SNの4銘柄が①②双方で
+  検知され（いずれも2026-07-02登録のtechnical_screening・candidate・
+  無保有）、⑤⑥は該当なしと確認（`python common/system_health.py`の
+  実行結果で確認）
+- ⑤⑥については意図的にテスト用の孤立エントリ・同期漏れをmonkeypatchで
+  模した16ケースの単体テスト（`tests/test_system_health_ticker_audit.py`）
+  で正しく検知することを確認（本番データは変更していない）
+- 既存check_a〜jへの影響がないことを既存テスト
+  （`tests/test_system_health_workflow_monitor.py`）全件パスで確認
+- `python -m pytest -q`: 1118件全パス（新規19件含む）
+- `python common/sec_data/audit.py`: 既存警告9件のみ（変化なし）
+- `python common/sec_data/report_consistency_check.py --fail-on-ng`:
+  NG=0 / WARN=93件（ベースラインと同数）
+
 #### 既存タスクの位置づけ（統合マッピング）
 以下は個別タスクとして独立進行させず、本EPIC配下のPhase実装時に吸収する：
 - ゲート0: [[REGISTER-FLOW-REDESIGN-1]]の対応方針2〜4、[[PREFLIGHT-CHECK-1]]
@@ -2047,7 +2090,9 @@ TICKER-SOURCE-UNIFY-1は対応方針1・2・3すべて2026-07-11中に完了し�
 - ゲート2: [[ARCH-DATA-1]]本体（正規化レイヤー強化）
 - ゲート3: 新規（計算式ゴールデンテスト整備は現状ほぼ手つかず）
 - ゲート4: TICKER-AUDIT-1のWARN集約構想（2026-09-05に独立エントリを
-  削除し、上記「ゲート構成」内の付録として全文統合済み）
+  削除し、上記「ゲート構成」内の付録として全文統合済み）。**2026-09-05、
+  想定機能①〜⑥を`system_health.py::check_k_ticker_audit()`として実装
+  完了**（詳細は付録「ゲート4実装（2026-09-05）」参照）
 - 上記いずれでも解消しない構造的限界の可視化は[[TRUST-SUMMARY-EPIC-1]]に
   引き続き委ねる（本EPIC完了後に再評価）
 
