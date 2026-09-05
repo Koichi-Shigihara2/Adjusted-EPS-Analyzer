@@ -285,6 +285,56 @@ def apply_dta_adjustments(ticker: str, quarterly_results: List[Dict]) -> List[Di
     return quarterly_results
 
 
+# [[EPS-LOAR-1]]: 直近（最新）四半期のdiluted_sharesに対する比率の閾値。
+# IPO前・株式併合前等で株式数の構造自体が別物になっている四半期を検知する
+# （|EPS|等の絶対値閾値では一部の異常値〈adjusted_eps=3.32等〉を見逃すため、
+# 根本原因〈株式数が別物〉に直結する株式数基準を採用）。
+SHARE_STRUCTURE_MISMATCH_RATIO = 0.01
+
+
+def apply_share_structure_filter(ticker: str, quarterly_results: List[Dict]) -> List[Dict]:
+    """
+    [[EPS-LOAR-1]]: 直近四半期のdiluted_sharesと比較して
+    SHARE_STRUCTURE_MISMATCH_RATIO（1%）未満の四半期を「株式数構造が
+    別物」としてフラグする（LOARのIPO前204,000株等）。
+
+    削除はせず special_flags=["SHARE_STRUCTURE_MISMATCH"] を付与するのみ
+    （quarterly.jsonには残し監査可能性を維持、表示側・集計側でスキップする
+    設計）。calculate_ttm()・aggregate_annual()はこのフラグを見て、
+    フラグ付き四半期を含むTTM窓・年度を除外する。
+    """
+    valid = [q for q in quarterly_results if (q.get('diluted_shares', 0) or 0) > 0]
+    if not valid:
+        return quarterly_results
+
+    latest = max(valid, key=lambda x: x["filing_date"])
+    latest_shares = latest.get('diluted_shares', 0) or 0
+    if latest_shares <= 0:
+        return quarterly_results
+
+    threshold = latest_shares * SHARE_STRUCTURE_MISMATCH_RATIO
+    excluded = []
+    for q in quarterly_results:
+        shares = q.get('diluted_shares', 0) or 0
+        if 0 < shares < threshold:
+            q['special_flags'] = q.get('special_flags', []) + ['SHARE_STRUCTURE_MISMATCH']
+            q['special_notes'] = q.get('special_notes', {})
+            q['special_notes']['share_structure_mismatch'] = (
+                f"diluted_shares={shares:,.0f} は直近四半期"
+                f"({latest['filing_date']}, {latest_shares:,.0f}株)の"
+                f"{SHARE_STRUCTURE_MISMATCH_RATIO:.0%}未満のため、株式数構造が"
+                f"別物（IPO前/株式併合前等）と判定し表示・TTM・年次集計から除外"
+            )
+            excluded.append(q['filing_date'])
+
+    if excluded:
+        print(f"  [Share Structure Filter] {ticker}: {len(excluded)}四半期を株式数基準で除外フラグ "
+              f"(閾値: latest={latest_shares:,.0f}×{SHARE_STRUCTURE_MISMATCH_RATIO:.0%}={threshold:,.0f}) "
+              f"→ {', '.join(excluded)}")
+
+    return quarterly_results
+
+
 def load_cik_data() -> List[Dict]:
     cik_file = os.path.join(PROJECT_ROOT, "config", "cik_lookup.csv")
     data = []
@@ -301,6 +351,11 @@ def calculate_ttm(quarterly_results: List[Dict], end_idx: int) -> Optional[Dict]
     if end_idx < 3:
         return None
     ttm_data = quarterly_results[end_idx-3:end_idx+1]
+    # [[EPS-LOAR-1]]: 株式数構造が別物の四半期（SHARE_STRUCTURE_MISMATCH）を
+    # 1件でも含む窓はTTMとして無意味なため丸ごと除外する（部分的な差し替えは
+    # しない。IPO前後で株式数の意味自体が異なり平均しても実態を表さないため）。
+    if any('SHARE_STRUCTURE_MISMATCH' in (q.get('special_flags') or []) for q in ttm_data):
+        return None
     if len(ttm_data) < 4:
         return None
     total_net_income = sum(q["gaap_net_income"] for q in ttm_data)
@@ -326,8 +381,15 @@ def aggregate_annual(quarterly_results: List[Dict]) -> List[Dict]:
     # fiscal_year フィールドを使ってグループ化（extract_key_facts.py が常に設定する）
     # fiscal_year が None の場合は filing_date[:4] にフォールバックするが、
     # 非12月決算企業では Q1 等で誤グループ化が起きる可能性があるため警告を出す
+    #
+    # [[EPS-LOAR-1]]: 株式数構造が別物の四半期（SHARE_STRUCTURE_MISMATCH）は
+    # 年度集計の対象から除外する。除外後4四半期に満たない年度（LOAR FY2023の
+    # 全4四半期・FY2024の1四半期が該当）は下の len(quarters) < 4 で自然に
+    # スキップされ、意味のある年度のみannual.jsonに出力される。
     annual_map = {}
     for q in quarterly_results:
+        if 'SHARE_STRUCTURE_MISMATCH' in (q.get('special_flags') or []):
+            continue
         fy = q.get("fiscal_year")
         if fy is not None:
             year = str(fy)
@@ -380,11 +442,19 @@ def generate_summary(tickers_data: Dict[str, Dict], existing_summary_path: str =
 
     # 新しいデータで更新
     for ticker, data in tickers_data.items():
-        if data.get("quarters") and len(data["quarters"]) > 0:
-            latest = data["quarters"][0]
+        # [[EPS-LOAR-1]]: 株式数構造が別物の四半期はsummary.jsonの
+        # latest/YoY計算からも除外する（quarters[0]は常に真の最新四半期の
+        # ため通常は影響しないが、IPO直後で該当四半期が直近5件以内に
+        # 入るティッカーへの副作用を防ぐための防御的措置）
+        _quarters = [
+            q for q in data.get("quarters", [])
+            if 'SHARE_STRUCTURE_MISMATCH' not in (q.get('special_flags') or [])
+        ]
+        if _quarters:
+            latest = _quarters[0]
             yoy_growth = None
-            if len(data["quarters"]) >= 5:
-                prev = data["quarters"][4]
+            if len(_quarters) >= 5:
+                prev = _quarters[4]
                 if prev["adjusted_eps"] != 0:
                     yoy_growth = (latest["adjusted_eps"] - prev["adjusted_eps"]) / abs(prev["adjusted_eps"])
 
@@ -573,6 +643,9 @@ def process_one_ticker(ticker, adjustment_config, classifier, ticker_to_name,
 
         # DTA（繰延税金資産）認識による異常 adj_eps の検出・補正
         quarterly_results = apply_dta_adjustments(ticker, quarterly_results)
+
+        # 株式数構造の別物検知（IPO前/株式併合前等、[[EPS-LOAR-1]]）
+        quarterly_results = apply_share_structure_filter(ticker, quarterly_results)
 
         # 成熟度監視
         if sector and quarterly_results:

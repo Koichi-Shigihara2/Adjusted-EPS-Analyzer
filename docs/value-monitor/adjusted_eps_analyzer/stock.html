@@ -555,6 +555,16 @@
         const qResp = await fetch(`data/${currentTicker}/quarterly.json`, { cache: 'no-store' });
         if (!qResp.ok) throw new Error('四半期データが見つかりません');
         quarterlyData = await qResp.json();
+        // [[EPS-LOAR-1]]: 株式数構造が別物（IPO前/株式併合前等）の四半期は
+        // 表示対象から除外する。quarterly.json自体には監査可能性のため
+        // 残す（special_flags付き）が、表示側では読み込み直後に取り除き、
+        // 以降quarterlyData.quartersを参照する全箇所（チャート・表・YoY
+        // 計算等）に自動的に反映させる。
+        if (quarterlyData && Array.isArray(quarterlyData.quarters)) {
+          quarterlyData.quarters = quarterlyData.quarters.filter(
+            q => !(q.special_flags && q.special_flags.includes('SHARE_STRUCTURE_MISMATCH'))
+          );
+        }
 
         ttmData = null;
         try {
