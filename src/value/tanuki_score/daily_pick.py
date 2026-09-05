@@ -523,14 +523,14 @@ def main():
     all_cats = {s["ticker"]: s["category"] for s in stocks}
     history = [e for e in history if e.get("date") != today_str]
     history.insert(0, {
-        "date":           today_str,
-        "ticker":         selected["ticker"],
-        "company":        selected["company"],
-        "reason":         reason,
-        "category":       selected["category"],
-        "funda_score":    selected["funda"],
-        "timing_score":   selected["timing"],
-        "all_categories": all_cats,
+        "date":             today_str,
+        "ticker":           selected["ticker"],
+        "company":          selected["company"],
+        "selection_reason": reason,
+        "category":         selected["category"],
+        "funda_score":      selected["funda"],
+        "timing_score":     selected["timing"],
+        "all_categories":   all_cats,
     })
     history = history[:30]
     save_history(history)
