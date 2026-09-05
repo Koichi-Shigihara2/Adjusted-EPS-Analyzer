@@ -1906,6 +1906,48 @@ DCF-REL-SYNC-1で複数件誘発等）もこの構造に起因する。
   四半期充足数チェック（TTM-QUARTERS-CHECK-1の考え方をFCF以外の全系列に
   一般化）は既存方針を維持
 
+##### 付録: 元[PREVENT-5]（2026-09-05統合、要約なしの全文転記）
+下記は独立BACKLOGエントリだった`[PREVENT-5] 定期横断調査スクリプトの
+整備`の全文をそのまま転記したもの（[[QUALITY-GATES-EPIC-1]]統合前の
+「ゲート1（PREVENT-5）」というマッピング記載はあったが具体的提案内容
+（cross_check.pyのチェック項目案等）自体は転記されていなかったため、
+2026-09-05に本節へ追記した）。見出しレベルのみ本エントリの階層に
+合わせて`####`→`######`に2段階下げてあり（本付録自体の見出しが
+`#####`のため）、文言・内容は無変更。
+
+**優先度:** 中
+**分類:** 再発防止 / 品質管理
+
+**QUALITY-GATES-EPIC-1への統合について**: 本タスクは
+[[QUALITY-GATES-EPIC-1]]のゲート1（PREVENT-5）/ゲート4
+（TICKER-AUDIT-1）に統合マッピング済み。個別に着手する前に
+QUALITY-GATES-EPIC-1のPhase 3/4の進行状況を確認し、二重実装を
+避けること。
+
+###### 背景
+今回のような横断調査を毎回手動で実施するのはコストが高い。
+system_health.pyでカバーできない観点（表示ロジック・用語統一・
+フィールド定義整合性等）については、定期的な手動調査が必要。
+
+###### 優先度見直し理由（2026-07-09）
+現状、データ形起因バグの発見手段が「新規銘柄登録・決算更新時に
+たまたま発火する」という受動的トリガーに限られている。
+2026-07-09のASTS/LLYの期末日不整合バグ（バグB）は、
+XBRL-TAG-KLAC-1-FOLLOWUP検証がなければ発見されず、既存102銘柄の
+IVが過大評価されたまま放置されていた可能性がある。
+ARCH-DATA-1の着手条件（次にデータ形起因バグが発生した時点で着手）は
+維持するが、そのバグを発見する手段自体を能動化する必要があるため、
+横断監査スクリプト整備の優先度を引き上げる。
+
+###### 対応内容
+以下を整備する：
+- 横断調査用のチェックスクリプト（cross_check.py）を新規作成
+  - cik_lookup.csv vs 全configの整合性
+  - glossary.jsonのdata-info属性カバレッジ
+  - console.log残存チェック
+  - フィールド名の表記ゆれ検出
+- 月次メンテナンスタスクとしてCLAUDE_CODE_START.mdに追記
+
 **ゲート2（正規化契約）・ゲート3（計算式検証）の位置づけ**: ゲート2・3は
 外部データの不確実性への対処ではなく、自分たちのコード内の規約違反
 （GROWTH-CAGR-SIGN-1のfcf_list並び順取り違え等）を対象とする「**予防設計**」
@@ -1926,15 +1968,86 @@ docstringではなく型（dataclass等）でコード化し、構造的に間�
 全テストファイルにする。フルバッチ再生成時のClassification差分レポートを
 標準出力にする。
 
+##### 付録: 元[TICKER-AUDIT-1]（2026-09-05統合、要約なしの全文転記）
+下記は独立BACKLOGエントリだった`[TICKER-AUDIT-1] 銘柄棚卸しスクリプト`の
+全文をそのまま転記したもの（[[QUALITY-GATES-EPIC-1]]統合前の
+「ゲート4（TICKER-AUDIT-1）」というマッピング記載はあったが、P4-
+CIKOrphan WARN見落とし経緯・monitor_tickers.yaml同期漏れの過去
+インシデント等の具体的内容自体は転記されていなかったため、2026-09-05に
+本節へ追記した）。見出しレベルのみ本エントリの階層に合わせて
+`####`→`######`に2段階下げてあり（本付録自体の見出しが`#####`のため）、
+文言・内容は無変更。
+
+**優先度:** 中
+**分類:** 再発防止 / 品質管理
+**登録日:** 2026-07-02
+
+**QUALITY-GATES-EPIC-1への統合について**: 本タスクは
+[[QUALITY-GATES-EPIC-1]]のゲート1（PREVENT-5）/ゲート4
+（TICKER-AUDIT-1）に統合マッピング済み。個別に着手する前に
+QUALITY-GATES-EPIC-1のPhase 3/4の進行状況を確認し、二重実装を
+避けること。
+
+###### 背景
+テスト目的等での銘柄追加が本番パイプラインに紛れ込み、野放図に増加する問題への対処。
+cik_lookup.csvへのstatus/registration_source/registration_note列追加を前提に、
+定期的な棚卸しを自動化する。
+
+###### 前提条件
+cik_lookup.csvへのstatus/registered_date/registration_source/registration_note列追加、
+完了済み（commit 337bf3d29。既存97銘柄はstatus=active/registration_source=unknownで
+バックフィル済み。CLAUDE_CODE_START.mdのStep 0.5として新規登録手順にも組み込み済み）
+
+###### 想定機能
+① status=test かつ registered_date が一定期間（閾値は要検討、例：30日）より古い銘柄を
+   「見直し候補」として一覧化
+② registration_source=moomoo_screening等の検証由来かつポジションなしの銘柄を抽出
+③ system_health.pyの拡張として実装するか、独立スクリプトにするか要検討
+④ 判断（retired化等）は自動化せず、候補出しまでに留める。最終判断はKoichi自身が行う。
+⑤ `registration_validator.py`のP4-CIKOrphanチェック相当（全フラグfalseかつ
+   status=activeの孤立エントリ検出）を定期棚卸しレポートに明示的に集約する
+   （下記「P4-CIKOrphan WARN見落とし問題」参照）
+⑥ monitor_tickers.yamlとcik_lookup.csvの件数差・銘柄差分の検出も棚卸し対象条件に含める
+   （下記「monitor_tickers.yaml同期漏れ」参照）
+
+###### P4-CIKOrphan WARN見落とし問題（2026-07-10発見・2026-07-11追記）
+`registration_validator.py`のP4-CIKOrphanチェックは、全フラグfalseかつactiveな
+孤立エントリ（BX・ENB）を以前から検出していたが、WARNは非ブロッキングのため
+運用上見落とされていた。[[CIK-ORPHAN-FLAGS-1]]（2026-07-10登録）は実質この
+見落としの再発見だった。TICKER-AUDIT-1実装時は、WARNレベルの検出結果であっても
+定期的に人の目に触れる仕組み（棚卸しレポートへの明示的な集約等）にすること。
+
+###### monitor_tickers.yaml同期漏れ（2026-07-10発見・2026-07-11修正済み）
+SYSTEM_MAP.md実態調査（2026-07-10）で、cik_lookup.csv（正本・106件）に対し
+monitor_tickers.yaml（99件）が6件未反映（RMBS/ENTG/TER/KLAC/LRCX/APGE、
+いずれもStep 7の同期漏れ）だったことが判明し、2026-07-11に手動追加で修正済み
+（BXのみ全フラグfalseで除外が正当なため対象外のまま）。cik_lookup.csvと
+monitor_tickers.yamlの同期は自動化されておらず、新規登録手順Step 7の手動実施のみに
+依存しているため、TICKER-AUDIT-1実装時は両ファイルの差分検出も棚卸し対象に含めること。
+
+###### 銘柄リスト正本参照の一元化との関係（2026-07-11追記・同日完了済み）
+本タスクが検出すべき「同期漏れ」の根本原因は、[[TICKER-SOURCE-UNIFY-1]]
+（完了・BACKLOG_DONE.md参照）で確定した「本来cik_lookup.csvを参照すべき箇所が
+monitor_tickers.yamlを参照している」同型バグ（registration_validator.py・
+adjusted_eps_analyzer/pipeline.py）にある。TICKER-AUDIT-1は「症状の棚卸し」、
+TICKER-SOURCE-UNIFY-1は「原因の是正」という役割分担だったが、
+TICKER-SOURCE-UNIFY-1は対応方針1・2・3すべて2026-07-11中に完了したため、
+本タスクが検出すべき同期漏れ自体の新規発生は構造的に減っている。
+
+###### 着手条件
+当面は運用でカバー可能。銘柄数がさらに増えた場合に着手。
+
 #### 既存タスクの位置づけ（統合マッピング）
 以下は個別タスクとして独立進行させず、本EPIC配下のPhase実装時に吸収する：
 - ゲート0: [[REGISTER-FLOW-REDESIGN-1]]の対応方針2〜4、[[PREFLIGHT-CHECK-1]]
-- ゲート1: [[ARCH-DATA-1]]のaudit.py拡張項目、[[PREVENT-5]]。
+- ゲート1: [[ARCH-DATA-1]]のaudit.py拡張項目、PREVENT-5（2026-09-05に
+  独立エントリを削除し、上記「ゲート構成」内の付録として全文統合済み）。
   [[LLY-CAPEX-STALE-1]]（完了・BACKLOG_DONE.md参照）はPhase 2aで
   「フォールバック選定ロジックの最新end日優先化」として一般化実装済み
 - ゲート2: [[ARCH-DATA-1]]本体（正規化レイヤー強化）
 - ゲート3: 新規（計算式ゴールデンテスト整備は現状ほぼ手つかず）
-- ゲート4: [[TICKER-AUDIT-1]]のWARN集約構想
+- ゲート4: TICKER-AUDIT-1のWARN集約構想（2026-09-05に独立エントリを
+  削除し、上記「ゲート構成」内の付録として全文統合済み）
 - 上記いずれでも解消しない構造的限界の可視化は[[TRUST-SUMMARY-EPIC-1]]に
   引き続き委ねる（本EPIC完了後に再評価）
 
@@ -7351,104 +7464,6 @@ report.txtに「Analyst_Consensus ... vs IV: +151.4%」のような、
 
 ---
 
-### [PREVENT-5] 定期横断調査スクリプトの整備
-**優先度:** 中
-**分類:** 再発防止 / 品質管理
-
-**QUALITY-GATES-EPIC-1への統合について**: 本タスクは
-[[QUALITY-GATES-EPIC-1]]のゲート1（PREVENT-5）/ゲート4
-（TICKER-AUDIT-1）に統合マッピング済み。個別に着手する前に
-QUALITY-GATES-EPIC-1のPhase 3/4の進行状況を確認し、二重実装を
-避けること。
-
-#### 背景
-今回のような横断調査を毎回手動で実施するのはコストが高い。
-system_health.pyでカバーできない観点（表示ロジック・用語統一・
-フィールド定義整合性等）については、定期的な手動調査が必要。
-
-#### 優先度見直し理由（2026-07-09）
-現状、データ形起因バグの発見手段が「新規銘柄登録・決算更新時に
-たまたま発火する」という受動的トリガーに限られている。
-2026-07-09のASTS/LLYの期末日不整合バグ（バグB）は、
-XBRL-TAG-KLAC-1-FOLLOWUP検証がなければ発見されず、既存102銘柄の
-IVが過大評価されたまま放置されていた可能性がある。
-ARCH-DATA-1の着手条件（次にデータ形起因バグが発生した時点で着手）は
-維持するが、そのバグを発見する手段自体を能動化する必要があるため、
-横断監査スクリプト整備の優先度を引き上げる。
-
-#### 対応内容
-以下を整備する：
-- 横断調査用のチェックスクリプト（cross_check.py）を新規作成
-  - cik_lookup.csv vs 全configの整合性
-  - glossary.jsonのdata-info属性カバレッジ
-  - console.log残存チェック
-  - フィールド名の表記ゆれ検出
-- 月次メンテナンスタスクとしてCLAUDE_CODE_START.mdに追記
-
----
-
-### [TICKER-AUDIT-1] 銘柄棚卸しスクリプト
-**優先度:** 中
-**分類:** 再発防止 / 品質管理
-**登録日:** 2026-07-02
-
-**QUALITY-GATES-EPIC-1への統合について**: 本タスクは
-[[QUALITY-GATES-EPIC-1]]のゲート1（PREVENT-5）/ゲート4
-（TICKER-AUDIT-1）に統合マッピング済み。個別に着手する前に
-QUALITY-GATES-EPIC-1のPhase 3/4の進行状況を確認し、二重実装を
-避けること。
-
-#### 背景
-テスト目的等での銘柄追加が本番パイプラインに紛れ込み、野放図に増加する問題への対処。
-cik_lookup.csvへのstatus/registration_source/registration_note列追加を前提に、
-定期的な棚卸しを自動化する。
-
-#### 前提条件
-cik_lookup.csvへのstatus/registered_date/registration_source/registration_note列追加、
-完了済み（commit 337bf3d29。既存97銘柄はstatus=active/registration_source=unknownで
-バックフィル済み。CLAUDE_CODE_START.mdのStep 0.5として新規登録手順にも組み込み済み）
-
-#### 想定機能
-① status=test かつ registered_date が一定期間（閾値は要検討、例：30日）より古い銘柄を
-   「見直し候補」として一覧化
-② registration_source=moomoo_screening等の検証由来かつポジションなしの銘柄を抽出
-③ system_health.pyの拡張として実装するか、独立スクリプトにするか要検討
-④ 判断（retired化等）は自動化せず、候補出しまでに留める。最終判断はKoichi自身が行う。
-⑤ `registration_validator.py`のP4-CIKOrphanチェック相当（全フラグfalseかつ
-   status=activeの孤立エントリ検出）を定期棚卸しレポートに明示的に集約する
-   （下記「P4-CIKOrphan WARN見落とし問題」参照）
-⑥ monitor_tickers.yamlとcik_lookup.csvの件数差・銘柄差分の検出も棚卸し対象条件に含める
-   （下記「monitor_tickers.yaml同期漏れ」参照）
-
-#### P4-CIKOrphan WARN見落とし問題（2026-07-10発見・2026-07-11追記）
-`registration_validator.py`のP4-CIKOrphanチェックは、全フラグfalseかつactiveな
-孤立エントリ（BX・ENB）を以前から検出していたが、WARNは非ブロッキングのため
-運用上見落とされていた。[[CIK-ORPHAN-FLAGS-1]]（2026-07-10登録）は実質この
-見落としの再発見だった。TICKER-AUDIT-1実装時は、WARNレベルの検出結果であっても
-定期的に人の目に触れる仕組み（棚卸しレポートへの明示的な集約等）にすること。
-
-#### monitor_tickers.yaml同期漏れ（2026-07-10発見・2026-07-11修正済み）
-SYSTEM_MAP.md実態調査（2026-07-10）で、cik_lookup.csv（正本・106件）に対し
-monitor_tickers.yaml（99件）が6件未反映（RMBS/ENTG/TER/KLAC/LRCX/APGE、
-いずれもStep 7の同期漏れ）だったことが判明し、2026-07-11に手動追加で修正済み
-（BXのみ全フラグfalseで除外が正当なため対象外のまま）。cik_lookup.csvと
-monitor_tickers.yamlの同期は自動化されておらず、新規登録手順Step 7の手動実施のみに
-依存しているため、TICKER-AUDIT-1実装時は両ファイルの差分検出も棚卸し対象に含めること。
-
-#### 銘柄リスト正本参照の一元化との関係（2026-07-11追記・同日完了済み）
-本タスクが検出すべき「同期漏れ」の根本原因は、[[TICKER-SOURCE-UNIFY-1]]
-（完了・BACKLOG_DONE.md参照）で確定した「本来cik_lookup.csvを参照すべき箇所が
-monitor_tickers.yamlを参照している」同型バグ（registration_validator.py・
-adjusted_eps_analyzer/pipeline.py）にある。TICKER-AUDIT-1は「症状の棚卸し」、
-TICKER-SOURCE-UNIFY-1は「原因の是正」という役割分担だったが、
-TICKER-SOURCE-UNIFY-1は対応方針1・2・3すべて2026-07-11中に完了したため、
-本タスクが検出すべき同期漏れ自体の新規発生は構造的に減っている。
-
-#### 着手条件
-当面は運用でカバー可能。銘柄数がさらに増えた場合に着手。
-
----
-
 ### [REGISTER-FLOW-REDESIGN-1] 新規銘柄登録プロセスの原子性・検証強制力の欠如
 **優先度:** 中
 **分類:** アーキテクチャ / 銘柄登録フロー
@@ -7606,9 +7621,10 @@ cik_lookup.csvの記載だけでは判別できない。
 方針3のオーケストレーションスクリプト自体が実質的に達成（運用規律に
 よる担保、技術的な強制はなし）。[[REGISTER-FLOW-REDESIGN-1]]の
 対応方針としては全件着手完了となったが、本エントリ自体は
-[[TICKER-AUDIT-1]]・[[PREFLIGHT-CHECK-1]]との統合的設計という
-当初の前提（上記「優先度についての所感」）の扱いが残るため、
-クローズは見送り現状維持のままとする。
+TICKER-AUDIT-1（2026-09-05に[[QUALITY-GATES-EPIC-1]]ゲート4の付録へ
+統合済み、独立エントリとしては削除）・[[PREFLIGHT-CHECK-1]]との
+統合的設計という当初の前提（上記「優先度についての所感」）の扱いが
+残るため、クローズは見送り現状維持のままとする。
 
 #### 方針4実装（2026-09-03、cik_lookup.csvへのexclusion_reason列追加）
 
