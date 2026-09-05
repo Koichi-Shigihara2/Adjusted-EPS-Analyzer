@@ -1228,8 +1228,16 @@ NVDA +18% / MSFT -12% / AVAV +93% / IOT applied=False→True 等、20銘柄のIV
 - IOT等の applied=False→True の変化（赤字→黒字化）は特に要注意:
   本物の黒字化なら許容、ゼロ近傍アーティファクトならゲート閾値を見直す
 - **年度判定は `common/sec_data/utils.py` の `determine_fiscal_year()` に統一済み**（ARCH-DATA-1-FY 2026-06-25完了）:
-  parser.py・extract_key_facts.py・aggregate_annual の3箇所が同関数を参照。
-  変更する際は `determine_fiscal_year()` のみを修正し、3箇所で矛盾が生じないか確認すること。
+  直接呼び出すのは `parser.py`（年次10-Kエントリの分類、2026-09-06時点で4箇所）と
+  `extract_key_facts.py`（四半期エントリの(fiscal_year, quarter)分類・Q4逆算時の年次
+  エントリマッチング、4箇所）の2ファイルのみ。`aggregate_annual`
+  （`adjusted_eps_analyzer/pipeline.py`）は本関数を呼ばず、extract_key_facts.pyが
+  設定済みの`fiscal_year`フィールドで単純にグループ化するだけの間接消費箇所であり、
+  独立した呼び出し箇所ではない。
+  変更する際は `determine_fiscal_year()` 本体と、直接呼び出す2ファイルの
+  呼び出し箇所で矛盾が生じないか確認すること（呼び出し箇所数は今後の実装追加で
+  変動しうるため、着手時に `grep -n "determine_fiscal_year("` で現状を再確認する
+  こと。[[CLAUDE-CODE-START-FY-DESC-FIX-1]]参照）。
 
 **タイブレークロジック追加時の適用範囲限定（ARCH-DATA-1ステージ1の教訓・必須）：**
 
