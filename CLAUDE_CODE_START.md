@@ -1902,7 +1902,7 @@ git push origin kaihatsu
 - [ ] 単体テストで動作確認
 - [ ] 全銘柄再生成で成功率確認
 - [ ] **`python common/sec_data/report_consistency_check.py` を実行し NG=0 を確認**
-  - 現行チェック項目（CHECK-1〜22 + STALE-CHECK-1）:
+  - 現行チェック項目（CHECK-1〜22）:
     CHECK-1:FCF符号矛盾 / CHECK-2:DCF_Reliability欠落 / CHECK-3:LOW丸め / CHECK-4:割引率2段 /
     CHECK-5:NetDebt旧表示 / CHECK-6:負PER / CHECK-7:RPO条件 / CHECK-8:Matrix④高FCFラベル赤字 /
     CHECK-9:セグメント鮮度 / CHECK-10:PS異常値 / CHECK-11:Revenue孤立年 / CHECK-12:Cash-STI期ズレ /
@@ -1913,7 +1913,6 @@ git push origin kaihatsu
     CHECK-21:Revenue段差型急変（QUALITY-GATES-EPIC-1 Phase 2b-2） /
     CHECK-22:fyキー競合（[FY52WEEK-BUCKET-MISPLACE-1]根本修正で新設。
     `reportDate==end_date`本人データ同士でfyタグが競合した銘柄をWARNで検知）
-    ※ STALE-CHECK-1（決算後未更新）は未実装。BACKLOG [STALE-CHECK-1-IMPL] 参照。
   - **新種バグを修正したら同スクリプトに検出項目を追加して恒久化する**
 - [ ] HTMLファイルを新規作成・移設・削除した場合は `python ~/check_links.py` でリンク切れ0件を確認
 - [ ] **新規計算フィールドを追加した場合**: report_consistency_check.pyに対応CHECKを追加（追加できない場合はBACKLOGにCHECK-COVERAGE-Nとして登録）

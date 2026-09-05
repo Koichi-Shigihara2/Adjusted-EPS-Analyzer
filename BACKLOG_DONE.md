@@ -4,6 +4,38 @@
 
 ## 2026-09-05②（完了）
 
+### ✅ [STALE-CHECK-1-IMPL] STALE-CHECK-1の未実装とドキュメント乖離
+**状態:** ✅完了（B案採用）
+**優先度:** 低
+**分類:** ドキュメント乖離 / 品質管理
+**発見:** 2026-06-26横断調査
+**完了日:** 2026-09-05
+
+#### 問題
+CLAUDE_CODE_START.md（L689〜693）に「STALE-CHECK-1:決算後未更新」と記載されているが、
+common/sec_data/report_consistency_check.pyにこのチェックの実装が存在しない。
+ドキュメントの記述が実装より先行している状態。
+
+#### 対応方針
+- A案: STALE-CHECK-1を実装する
+  （直近決算発表日からN日以上経過しているのにlatest.jsonが更新されていない銘柄を検出）
+- B案: 実装予定なければCLAUDE_CODE_START.mdの記載を削除する
+
+#### 実装（2026-09-05）
+B案（削除）を採用。依頼文が指す行番号「L689〜693」は他セッションでの
+編集により既にずれており、実際の記載箇所は`CLAUDE_CODE_START.md`
+L1905（チェック項目一覧の見出し「CHECK-1〜22 + STALE-CHECK-1」）と
+L1916（「※ STALE-CHECK-1（決算後未更新）は未実装。BACKLOG
+[STALE-CHECK-1-IMPL] 参照。」の注記行）の2箇所だった（grep で全文検索し、
+他に言及箇所がないことも確認済み）。両箇所からSTALE-CHECK-1への言及を
+削除した。
+
+#### 検証結果
+ドキュメントのみの変更のためコードへの影響なし。`grep -rn "STALE-CHECK-1"
+CLAUDE_CODE_START.md`で削除漏れがないことを確認済み。
+
+---
+
 ### ✅ [CHECK-COVERAGE-1] 新機能に対応するconsistency checkが未追加
 **状態:** ✅完了（moat_score検出分のみ。DuPont分解null検出分は[[CHECK-COVERAGE-2]]として切り出し継続）
 **優先度:** 低

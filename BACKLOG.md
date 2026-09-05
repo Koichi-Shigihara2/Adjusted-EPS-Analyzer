@@ -8834,23 +8834,6 @@ EXTREME-FEAR-1対応時、買い候補TOP10機能（TANUKI score×乖離率×fun
 
 ---
 
-### [STALE-CHECK-1-IMPL] STALE-CHECK-1の未実装とドキュメント乖離
-**優先度:** 低
-**分類:** ドキュメント乖離 / 品質管理
-**発見:** 2026-06-26横断調査
-
-#### 問題
-CLAUDE_CODE_START.md（L689〜693）に「STALE-CHECK-1:決算後未更新」と記載されているが、
-common/sec_data/report_consistency_check.pyにこのチェックの実装が存在しない。
-ドキュメントの記述が実装より先行している状態。
-
-#### 対応方針
-- A案: STALE-CHECK-1を実装する
-  （直近決算発表日からN日以上経過しているのにlatest.jsonが更新されていない銘柄を検出）
-- B案: 実装予定なければCLAUDE_CODE_START.mdの記載を削除する
-
----
-
 ### [RPO-ADMIN-1] rpo_config.jsonがadmin.htmlで編集できない
 **優先度:** 低
 **分類:** 管理UI漏れ / admin.html
