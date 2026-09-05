@@ -1488,7 +1488,7 @@ def check_ticker(ticker: str, whitelist: set, include_yfinance: bool = False) ->
     fcf_hist = parsed["fcf_history"]
     latest_entry = max(fcf_hist, key=lambda x: x[0]) if fcf_hist else None
 
-    # ── CHECK 1: FCF符号矛盾 ─────────────────────────────────
+    # CHECK-1: FCF符号矛盾
     mt = parsed["matrix_type"] or ""
     kmy = parsed["key_metric_y"] or ""
     if "④" in mt and "FCF_Margin" in kmy and latest_entry:
@@ -1504,14 +1504,14 @@ def check_ticker(ticker: str, whitelist: set, include_yfinance: bool = False) ->
                 )
                 ng.append(f"    → {kmy}")
 
-    # ── CHECK 2: DCF_Reliability欠落 ─────────────────────────
+    # CHECK-2: DCF_Reliability欠落
     if parsed["has_fcf_base"] and parsed["dcf_reliability"] is None:
         ng.append("  [NG-2 DCF_Reliability欠落] FCF_Base行あり & DCF_Reliability行なし")
     # DCF-RELIABILITY-1: FCF_Conversion_Rate方式（Policy B対象）でも同様に欠落を検出
     if parsed["has_fcf_conversion_rate"] and parsed["dcf_reliability"] is None:
         ng.append("  [NG-2 DCF_Reliability欠落] FCF_Conversion_Rate行あり & DCF_Reliability行なし")
 
-    # ── CHECK 3: LOW丸め未発動 ───────────────────────────────
+    # CHECK-3: LOW丸め未発動
     rel = parsed["dcf_reliability"]
     cls = parsed["classification"]
     if rel == "LOW" and cls not in ("WATCH", "SELL", "PASS", None):
@@ -1519,14 +1519,14 @@ def check_ticker(ticker: str, whitelist: set, include_yfinance: bool = False) ->
             f"  [NG-3 LOW丸め未発動] DCF_Reliability=LOW & Classification={cls}"
         )
 
-    # ── CHECK 4: 割引率1段 ───────────────────────────────────
+    # CHECK-4: 割引率1段
     if parsed["discount_rate_primary_data"] is None:
         if parsed["has_wacc_old"]:
             ng.append("  [NG-4 割引率1段] Discount_Rate_Primary行なし・旧WACC単独形式")
         else:
             ng.append("  [NG-4 割引率1段] Discount_Rate_Primary行が存在しない")
 
-    # ── CHECK 5: NetDebt旧表示 (警告) ────────────────────────
+    # CHECK-5: NetDebt旧表示 (警告)
     if parsed["has_net_debt_report"] and not parsed["has_st_invest_report"]:
         fh = latest.get("financial_health", {}) or {}
         st_inv = fh.get("short_term_investments") or 0
@@ -1536,12 +1536,12 @@ def check_ticker(ticker: str, whitelist: set, include_yfinance: bool = False) ->
                 " だが報告行なし"
             )
 
-    # ── CHECK 6: 負PER数値表示 (警告) ───────────────────────
+    # CHECK-6: 負PER数値表示 (警告)
     pv = parsed["per_gaap_value"] or ""
     if re.match(r'^-[\d.]+', pv):
         warn.append(f"  [WARN-6 負PER数値表示] Market_PER_GAAP: {pv}  (N/M 未変換)")
 
-    # ── CHECK 7: RPO条件違反 ─────────────────────────────────
+    # CHECK-7: RPO条件違反
     rpo_pv = parsed["rpo_pv_value"]
     if rpo_pv is not None and rpo_pv > 0 and ticker not in whitelist:
         comp    = latest.get("components", {}) or {}
@@ -1556,7 +1556,7 @@ def check_ticker(ticker: str, whitelist: set, include_yfinance: bool = False) ->
                 )
                 ng.append(f"    → {parsed['rpo_pv_line']}")
 
-    # ── CHECK 8: Matrix④高FCFラベルだが実績赤字 ─────────────
+    # CHECK-8: Matrix④高FCFラベルだが実績赤字
     lbl = parsed["label"] or ""
     if "④" in mt and "高FCF" in lbl and latest_entry:
         _, latest_neg, _ = latest_entry
@@ -1566,7 +1566,7 @@ def check_ticker(ticker: str, whitelist: set, include_yfinance: bool = False) ->
                 f" Label={lbl!r} & 最新FCF({latest_entry[0]})実績マイナス"
             )
 
-    # ── CHECK 9: セグメント設定鮮度 (警告) ──────────────────
+    # CHECK-9: セグメント設定鮮度 (警告)
     # segment_configのfiscal_yearが2年以上前の場合、陳腐化の可能性を警告
     seg_cfg = _load_seg_config().get(ticker, {})
     if seg_cfg.get("enabled") and seg_cfg.get("fiscal_year"):
@@ -1587,7 +1587,7 @@ def check_ticker(ticker: str, whitelist: set, include_yfinance: bool = False) ->
                     f" (現在{gen_yr}年、{gen_yr - fy_yr}年前のデータ)"
                 )
 
-    # ── CHECK 10: PS異常値 (警告) ────────────────────────────
+    # CHECK-10: PS異常値 (警告)
     # yfinance PSが自社計算値(price×shares/revenue)と大きく乖離する場合にWARN
     comp = latest.get("components", {}) or {}
     ps_yf   = comp.get("ps")
@@ -1606,7 +1606,7 @@ def check_ticker(ticker: str, whitelist: set, include_yfinance: bool = False) ->
                     f" (乖離{ratio:.1f}倍) → ステール値の可能性"
                 )
 
-    # ── CHECK 11: Revenue桁違い (NG) ──────────────────────────
+    # CHECK-11: Revenue桁違い (NG)
     # BUG-REV-SPAC-1型の誤XBRLタグ検出。
     # 隣接年Revenue比が10倍超かつベース年 > $1M (スタートアップ微少値を除外) の場合はNG。
     # IONQ 2022: Revenuesタグが$1,235M(SPAC調達)を誤タグ → 正常年$11M との比 112倍
