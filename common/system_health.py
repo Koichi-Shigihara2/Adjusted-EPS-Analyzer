@@ -35,14 +35,34 @@ from common.sec_data.audit import (
     run_audit,
 )
 from common.sec_data import tickers as _tickers_mod
+# [[QUALITY-GATES-EPIC-1]]ゲート4（旧TICKER-AUDIT-1想定機能⑤）: P4-CIKOrphan
+# チェック・monitor_tickers.yaml読み込みロジックを再利用する（2026-09-05）。
+# 独立に再実装せず、既存の唯一の実装を再利用することでロジックの重複・
+# 乖離を防ぐ。
+from common.sec_data.registration_validator import (
+    Issues as _RegIssues,
+    check_p4_orphan_configs as _check_p4_orphan_configs,
+    _load_monitor_tickers,
+)
 
 _TANUKI_DATA = os.path.join(_REPO_ROOT, "docs", "value-monitor", "tanuki_valuation", "data")
 _DOCS_ROOT   = os.path.join(_REPO_ROOT, "docs")
 _SS_RESULTS  = os.path.join(_DOCS_ROOT, "value-monitor", "stonks-silo", "data", "results.json")
 _WORKFLOWS_DIR = os.path.join(_REPO_ROOT, ".github", "workflows")
+_PORTFOLIO_JSON = os.path.join(_DOCS_ROOT, "portfolio", "data", "portfolio.json")
 
 _STALE_DAYS  = 7   # この日数以上古いデータを「stale」と判定
 _GH_API_BASE = "https://api.github.com"
+
+# ── check_k_ticker_audit()用の定数 ────────────────────────────────────
+# ①: status=candidateのまま放置とみなす閾値（日）。旧TICKER-AUDIT-1原案の
+# 「status=test」は現行cik_lookup.csvに存在せず、candidateが唯一の
+# test相当の値（tickers.py _INVALID_STATUSESのコメント参照）。2026-09-05確認
+_STALE_CANDIDATE_DAYS = 30
+# ②: 検証由来のregistration_source値。旧TICKER-AUDIT-1原案の
+# 「moomoo_screening」は現行データに存在しない列挙値のため、実際に
+# 使われている値（technical_screening）に合わせた。2026-09-05確認
+_SCREENING_REGISTRATION_SOURCES = {"technical_screening"}
 
 
 # ── git log でファイルの最終コミット日時を取得 ──────────────────────
@@ -499,6 +519,108 @@ def check_j_workflow_runs() -> tuple[str, bool, str]:
     return f"{icon} {detail}", ok, detail
 
 
+# ── K. 銘柄棚卸しレポート（[[QUALITY-GATES-EPIC-1]]ゲート4） ───────────
+def _portfolio_tickers() -> set[str]:
+    """docs/portfolio/data/portfolio.jsonの全ブローカー・全ポジションから
+    保有中の銘柄集合を返す（ファイル不在・パースエラー時は空集合）。"""
+    try:
+        with open(_PORTFOLIO_JSON, encoding="utf-8") as f:
+            data = json.load(f)
+    except Exception:
+        return set()
+    result: set[str] = set()
+    for broker in (data or {}).get("brokers", {}).values():
+        result.update(broker.get("positions", {}).keys())
+    return result
+
+
+def check_k_ticker_audit() -> tuple[str, bool, str]:
+    """[[QUALITY-GATES-EPIC-1]]ゲート4（付録「元[TICKER-AUDIT-1]」の
+    想定機能①②⑤⑥）: 銘柄棚卸しレポート。判断は自動化せず、候補一覧の
+    可視化のみを行う（想定機能④: status変更・retired化等は一切行わない）。
+
+    ①status=candidate（現行cik_lookup.csvにおける唯一のtest相当値）かつ
+      登録から`_STALE_CANDIDATE_DAYS`超の銘柄を「見直し候補」として一覧化
+    ②registration_source=technical_screening（現行データでの検証由来値）
+      かつportfolio.jsonに保有記載のない銘柄を抽出
+    ⑤registration_validator.py::check_p4_orphan_configs()のP4-CIKOrphan
+      チェック結果を集約する（WARNレベルのため運用上見落とされてきた
+      経緯があるため、他のチェックと同じ目立つ形式で出力する）
+    ⑥monitor_tickers.yamlとcik_lookup.csvの件数差・銘柄差分を検出する
+      （[[TICKER-SOURCE-UNIFY-1]]で根本原因は解消済みだが、安全網として残す）
+
+    想定機能③（実装場所）は本関数自体がその決定の実装。
+    """
+    rows  = _tickers_mod.get_all_rows()
+    today = date.today()
+
+    # ①
+    stale_candidates: list[str] = []
+    for r in rows:
+        if r.get("status", "").strip().lower() != "candidate":
+            continue
+        reg_date_str = r.get("registered_date", "").strip()
+        if not reg_date_str:
+            continue
+        try:
+            reg_date = date.fromisoformat(reg_date_str)
+        except ValueError:
+            continue
+        if (today - reg_date).days > _STALE_CANDIDATE_DAYS:
+            stale_candidates.append(r["ticker"])
+    stale_candidates.sort()
+
+    # ②
+    held = _portfolio_tickers()
+    screening_no_position: list[str] = []
+    for r in rows:
+        if r.get("registration_source", "").strip() not in _SCREENING_REGISTRATION_SOURCES:
+            continue
+        if r["ticker"] not in held:
+            screening_no_position.append(r["ticker"])
+    screening_no_position.sort()
+
+    # ⑤
+    reg_issues  = _RegIssues()
+    monitor_set = set(_load_monitor_tickers())
+    _check_p4_orphan_configs(reg_issues, monitor_set)
+    orphan_warnings = [msg for sev, cat, msg in reg_issues.all() if cat == "P4-CIKOrphan"]
+
+    # ⑥
+    cik_set       = {r["ticker"] for r in rows}
+    only_in_cik     = sorted(cik_set - monitor_set)
+    only_in_monitor = sorted(monitor_set - cik_set)
+
+    ok = not (stale_candidates or screening_no_position or orphan_warnings
+              or only_in_cik or only_in_monitor)
+    icon = "✅" if ok else "⚠️ "
+    parts: list[str] = []
+    if stale_candidates:
+        parts.append(
+            f"①見直し候補(candidate>{_STALE_CANDIDATE_DAYS}日){len(stale_candidates)}件: "
+            f"{', '.join(stale_candidates[:5])}{'…' if len(stale_candidates) > 5 else ''}"
+        )
+    if screening_no_position:
+        parts.append(
+            f"②検証由来・無保有{len(screening_no_position)}件: "
+            f"{', '.join(screening_no_position[:5])}{'…' if len(screening_no_position) > 5 else ''}"
+        )
+    if orphan_warnings:
+        parts.append(
+            f"⑤P4-CIKOrphan{len(orphan_warnings)}件: "
+            f"{'; '.join(orphan_warnings[:2])}{'…' if len(orphan_warnings) > 2 else ''}"
+        )
+    if only_in_cik or only_in_monitor:
+        diff_bits = []
+        if only_in_cik:
+            diff_bits.append(f"cik_lookupのみ{len(only_in_cik)}件({', '.join(only_in_cik[:3])})")
+        if only_in_monitor:
+            diff_bits.append(f"monitor_tickersのみ{len(only_in_monitor)}件({', '.join(only_in_monitor[:3])})")
+        parts.append("⑥同期漏れ: " + " / ".join(diff_bits))
+    detail = "該当なし（棚卸し正常）" if ok else " / ".join(parts)
+    return f"{icon} {detail}", ok, detail
+
+
 # ── Discord 1行サマリー ───────────────────────────────────────────────
 def build_one_line(run_date: str, results: dict) -> str:
     overall_ok = all(r["ok"] for r in results.values())
@@ -508,6 +630,7 @@ def build_one_line(run_date: str, results: dict) -> str:
     labels = {
         "A": "SEC", "B": "Score", "C": "Latest", "D": "Actions", "E": "Silo",
         "F": "Tail", "G": "Hype", "H": "Config", "I": "EPS", "J": "CronRuns",
+        "K": "TickerAudit",
     }
     for key, label in labels.items():
         r = results.get(key, {})
@@ -541,6 +664,7 @@ def main() -> int:
     label_h, ok_h, det_h = check_h_config()
     label_i, ok_i, det_i = check_i_eps()
     label_j, ok_j, det_j = check_j_workflow_runs()
+    label_k, ok_k, det_k = check_k_ticker_audit()
 
     results = {
         "A": {"ok": ok_a, "short": det_a.split("件")[0] + "件" if "件" in det_a else det_a[:10]},
@@ -553,6 +677,7 @@ def main() -> int:
         "H": {"ok": ok_h, "short": det_h[:20]},
         "I": {"ok": ok_i, "short": det_i[:20]},
         "J": {"ok": ok_j, "short": det_j[:20]},
+        "K": {"ok": ok_k, "short": det_k[:20]},
     }
 
     overall_ok = all(r["ok"] for r in results.values())
@@ -569,6 +694,7 @@ def main() -> int:
         print(f"[H] Config:        {label_h}")
         print(f"[I] EPS Analyzer:  {label_i}")
         print(f"[J] CronRuns:      {label_j}")
+        print(f"[K] TickerAudit:   {label_k}")
         status_str = "✅ HEALTHY" if overall_ok else f"⚠️  WARNING（問題{n_warn}件）"
         print(f"Overall: {status_str}\n")
 

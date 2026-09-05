@@ -25,6 +25,19 @@ def get_all_tickers(csv_path: str | None = None) -> list[str]:
     return [r["ticker"] for r in _load(csv_path)]
 
 
+def get_all_rows(csv_path: str | None = None) -> list[dict]:
+    """cik_lookup.csv の全行を辞書のリストで返す（status/registered_date/
+    registration_source等、ticker以外の列も含む）。
+
+    銘柄フラグ・statusによる絞り込みだけでは足りず、複数列を横断参照する
+    必要がある消費者（例: system_health.py::check_k_ticker_audit()の
+    棚卸しレポート）向けに新設した（[[QUALITY-GATES-EPIC-1]]ゲート4、
+    2026-09-05）。cik_lookup.csvを独自にcsv.DictReaderで再パースする
+    実装が新たに生まれることを防ぐため、既存の`_load()`をそのまま公開する。
+    """
+    return _load(csv_path)
+
+
 def get_cik(ticker: str, csv_path: str | None = None) -> str | None:
     """指定ティッカーのCIKを10桁ゼロ埋め形式で返す（見つからなければNone）。
 

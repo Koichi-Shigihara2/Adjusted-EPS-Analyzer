@@ -238,6 +238,36 @@ class TestConvenienceWrappersUseActiveTickers:
         assert tk.get_hypecore_tickers(csv_path) == ["AAA"]
 
 
+class TestGetAllRows:
+    """get_all_rows()がticker以外の列（status/registered_date/
+    registration_source等）も含む全行を返すこと（[[QUALITY-GATES-
+    EPIC-1]]ゲート4、system_health.py::check_k_ticker_audit()向けに
+    2026-09-05新設）"""
+
+    def test_returns_all_columns(self, tmp_path):
+        csv_path = _write_csv(tmp_path, [
+            _row("AAA", status="candidate"),
+        ])
+        rows = tk.get_all_rows(csv_path)
+        assert len(rows) == 1
+        assert rows[0]["ticker"] == "AAA"
+        assert rows[0]["status"] == "candidate"
+
+    def test_returns_all_rows_regardless_of_flags_or_status(self, tmp_path):
+        csv_path = _write_csv(tmp_path, [
+            _row("AAA", tanuki="true", status="active"),
+            _row("BBB", tanuki="false", status="retired"),
+        ])
+        rows = tk.get_all_rows(csv_path)
+        assert [r["ticker"] for r in rows] == ["AAA", "BBB"]
+
+    def test_default_path_matches_get_all_tickers(self):
+        """csv_path省略時は本番cik_lookup.csvを読み、get_all_tickers()と
+        同じ銘柄集合になること"""
+        rows = tk.get_all_rows()
+        assert [r["ticker"] for r in rows] == tk.get_all_tickers()
+
+
 class TestProductionCikLookup:
     """本番cik_lookup.csvに対する回帰テスト（ZS-TICKERS-LEAK-1の実害確認）"""
 
