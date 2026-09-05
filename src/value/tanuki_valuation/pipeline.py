@@ -155,6 +155,82 @@ def _dilution_severity_info(dil_pct: float | None) -> tuple:
         return "critical", "極度の希薄化 🚨 IPO直後か継続増資か要確認", f"IPO後の株式発行が主因の可能性。継続なら1株価値を年率{dil_pct:.1f}%毀損。"
 
 
+# [[BREAKEVEN-FORECAST-METHOD-MISMATCH-1]]（2026-09-05）: STONKS SILO
+# （discover/stonks-silo/src/analyzer.py::_margin_breakeven()）が持つ
+# 安全策一式（理由コード・傾き上限・異常値除外）をこちら側にも追加し、
+# 「常に直近4点のOLS回帰」という回帰方式自体はSTONKS SILO側と揃えた
+# （対象指標は調整後EPSのまま維持、STONKS SILO側のマージン比率とは別軸）。
+#
+# 閾値はEPS Analyzer対象100銘柄・全1723四半期の実データ分布から校正
+# （マージン比率用に校正されたSTONKS SILO側の閾値をそのまま転用しない）:
+# - 正常範囲は概ね-9.5〜+18.2（p1=-1.35, p99=+8.72, mean=1.20, stdev=4.10）。
+#   唯一の極端な外れ値はLITE 2026Q4（adjusted_eps=-95.0）で、10-Kの通期
+#   実績が単一四半期として誤抽出された別種のバグ
+#   （[[EPS-LITE-ANNUAL-AS-QUARTERLY-1]]として別途新規登録、本タスクでは
+#   対象外）。EPS_MAGNITUDE_CAP=30はこの唯一の異常値を確実に除外しつつ、
+#   正常範囲の最大値(+18.2)に約65%の余裕を残す
+# - 現在赤字の16銘柄で直近4四半期OLS傾きを実測した結果、LITEの異常値
+#   混入分(-28.73/四半期)を除けば最大でも±0.31/四半期（CRWV）。
+#   EPS_SLOPE_CAP_PER_QUARTER=2.0はこれに対し約6倍の余裕を持たせつつ、
+#   LITEの異常混入ケースは1桁以上下回り確実に除外する
+EPS_MAGNITUDE_CAP = 30.0          # |adjusted_eps|がこれを超える四半期は回帰対象から除外
+EPS_SLOPE_CAP_PER_QUARTER = 2.0   # 傾きがこれを超える改善は信頼せずNO_TRENDとする
+BREAKEVEN_HORIZON_QUARTERS = 20   # 5年（STONKS SILOのhorizon=5年と統一）
+
+
+def compute_eps_breakeven(quarters_list: list, current_year: int) -> tuple:
+    """
+    EPS Analyzer quarterly.jsonの"quarters"（filing_date降順、直近が
+    index 0）から、調整後EPSの直近4四半期OLS回帰で黒字化四半期を予測する。
+
+    STONKS SILO（discover/stonks-silo/src/analyzer.py::_margin_
+    breakeven()）と回帰の方式（常に直近4点のOLS）・安全策の考え方
+    （理由コード・傾き上限・異常値除外）を揃えている。対象指標は
+    調整後EPS（STONKS SILO側はマージン比率）のまま維持。
+
+    Returns: (breakeven_estimate, breakeven_reason)
+    reason codes: ACHIEVED / PREDICTED / NO_TREND / NO_DATA / TOO_FAR
+    """
+    candidates = quarters_list[:4]
+    # 値が存在し・株式数構造が別物でなく（[[EPS-LOAR-1]]の
+    # SHARE_STRUCTURE_MISMATCH）・EPS絶対値が異常でない
+    # （EPS_MAGNITUDE_CAP以内）ものだけを回帰対象とする
+    recent_eps = [
+        q.get("adjusted_eps") for q in candidates
+        if q.get("adjusted_eps") is not None
+        and "SHARE_STRUCTURE_MISMATCH" not in (q.get("special_flags") or [])
+        and abs(q.get("adjusted_eps")) <= EPS_MAGNITUDE_CAP
+    ]
+    if len(recent_eps) < 2:
+        return None, "NO_DATA"
+    if recent_eps[0] >= 0:
+        # STONKS SILO側（_breakeven_estimate()の直近黒字ショートサーキット）
+        # と同じ規約: 「達成済み」は年ではなくreasonのみで表す
+        # （breakeven_estimateはNoneのまま）
+        return None, "ACHIEVED"
+
+    vals = list(reversed(recent_eps))  # oldest→newest
+    n = len(vals)
+    x_mean = (n - 1) / 2.0
+    y_mean = sum(vals) / n
+    denom = sum((i - x_mean) ** 2 for i in range(n))
+    if denom == 0:
+        return None, "NO_DATA"
+
+    slope = sum((i - x_mean) * (vals[i] - y_mean) for i in range(n)) / denom
+    if slope <= 0 or slope > EPS_SLOPE_CAP_PER_QUARTER:
+        return None, "NO_TREND"
+
+    intercept = y_mean - slope * x_mean
+    x_zero = -intercept / slope
+    quarters_until = max(x_zero - (n - 1), 0)
+    if quarters_until > BREAKEVEN_HORIZON_QUARTERS:
+        return None, "TOO_FAR"
+
+    breakeven_year = round(current_year + quarters_until / 4.0)
+    return breakeven_year, "PREDICTED"
+
+
 class TanukiValuationPipeline:
     """TANUKI VALUATION パイプライン"""
 
@@ -2399,7 +2475,16 @@ class TanukiValuationPipeline:
         L.append(f"Revenue_Growth_YoY: {rev_growth_str}%")
         L.append(f"Next_Earnings_Date: {next_earnings}")
         breakeven_est = extra.get("breakeven_estimate")
-        L.append(f"Breakeven_Estimate: {breakeven_est}年頃（推定）" if breakeven_est is not None else "Breakeven_Estimate: N/A (profitable or insufficient data)")
+        breakeven_reason_disp = extra.get("breakeven_reason")
+        if breakeven_reason_disp == "ACHIEVED":
+            L.append("Breakeven_Estimate: 黒字化：達成済み")
+        elif breakeven_est is not None:
+            L.append(f"Breakeven_Estimate: {breakeven_est}年頃（推定、reason=PREDICTED）")
+        elif breakeven_reason_disp:
+            _be_reason_m = {"NO_TREND": "黒字化予測不可（改善傾向なし）", "NO_DATA": "データ不足", "TOO_FAR": "5年超"}
+            L.append(f"Breakeven_Estimate: {_be_reason_m.get(breakeven_reason_disp, breakeven_reason_disp)}")
+        else:
+            L.append("Breakeven_Estimate: N/A (profitable or insufficient data)")
         L.append("Definition:")
         L.append("")
         L.append("Short_Interest: % of float sold short")
@@ -2805,6 +2890,9 @@ class TanukiValuationPipeline:
             pass
 
         # --- breakeven estimate from EPS quarterly.json (deficit tickers only) ---
+        # [[BREAKEVEN-FORECAST-METHOD-MISMATCH-1]]: 計算本体は
+        # compute_eps_breakeven()（モジュール直下、単体テスト可能）に
+        # 切り出し済み
         eps_q_path = os.path.join(
             self.repo_root, "docs", "value-monitor", "adjusted_eps_analyzer", "data", ticker, "quarterly.json"
         )
@@ -2813,27 +2901,12 @@ class TanukiValuationPipeline:
                 with open(eps_q_path, encoding="utf-8") as f:
                     eps_q_data = json.load(f)
                 quarters_list = eps_q_data.get("quarters", [])
-                recent_eps = [
-                    q.get("adjusted_eps") for q in quarters_list[:4]
-                    if q.get("adjusted_eps") is not None
-                ]
-                if len(recent_eps) >= 2 and recent_eps[0] < 0:
-                    vals = list(reversed(recent_eps))  # oldest→newest
-                    n = len(vals)
-                    x_mean = (n - 1) / 2.0
-                    y_mean = sum(vals) / n
-                    denom = sum((i - x_mean) ** 2 for i in range(n))
-                    if denom > 0:
-                        slope = sum((i - x_mean) * (vals[i] - y_mean) for i in range(n)) / denom
-                        intercept = y_mean - slope * x_mean
-                        if slope > 0:
-                            x_zero = -intercept / slope
-                            quarters_until = x_zero - (n - 1)
-                            if 0 < quarters_until < 20:
-                                from datetime import datetime as _dt
-                                years_until = quarters_until / 4.0
-                                breakeven_year = round(_dt.now().year + years_until)
-                                result["breakeven_estimate"] = breakeven_year
+                from datetime import datetime as _dt
+                breakeven_estimate, breakeven_reason = compute_eps_breakeven(quarters_list, _dt.now().year)
+                if breakeven_estimate is not None:
+                    result["breakeven_estimate"] = breakeven_estimate
+                if breakeven_reason is not None:
+                    result["breakeven_reason"] = breakeven_reason
             except Exception:
                 pass
 
