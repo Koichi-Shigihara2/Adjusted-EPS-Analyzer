@@ -444,7 +444,7 @@ discover_config.json）は、バリデーションなしで直接GitHubにコミ
 | AS-IS-156 | STONKS SILO | ocf_annual（単年、月次バーン内訳表示用） | `ocf_annual` | 直近年`cf.operating_cash_flow`（AS-IS-154の`ocf`と同一値。SEC EDGAR、カタログ対象外） | ocf（SEC EDGAR、カタログ対象外） | 導出データ |
 | AS-IS-157 | STONKS SILO | capex_annual | `capex_annual` | 直近年`cf.capital_expenditure`のSEC EDGAR生値を**符号正規化なしでそのまま表示**（SEC EDGAR、カタログ対象外） | capex（SEC EDGAR、カタログ対象外） | 導出データ |
 | AS-IS-160 | STONKS SILO | ocf_annual（年次dict） | `ocf_annual`（`_analyze_profitability_path()`内） | `{year: cf.operating_cash_flow for year in years}`（複数年。AS-IS-156の単年版を全年に拡張したもの） | AS-IS-156と同じ（SEC EDGAR、カタログ対象外） | 導出データ |
-| AS-IS-267 | EPS Analyzer | quarters[].gaap_eps/adjusted_eps/gaap_net_income/adjusted_net_income/diluted_shares_used/adjustments/net_adjustment_total | `calculate_eps()` | `gaap_eps = gaap_net_income / diluted_shares_used`<br>`gaap_net_income`/`diluted_shares_used` = 四半期`net_income`/`diluted_shares`のXBRL正規化値（計算なしのパススルー。SEC EDGAR、カタログ対象外）<br>`adjusted_net_income = gaap_net_income + net_adjustment_total`<br>`adjusted_eps = adjusted_net_income / diluted_shares_used`<br>`net_adjustment_total`/`adjustments[]` = 一過性項目検出（`detect_adjustments()`）＋税効果適用（`apply_tax_adjustments()`）の結果。信頼性・品質判定系のAS-IS-268/269（未定義。DTA自動補正Type-A/B等の内部ロジックは当該サブカテゴリで別途定義予定） | AS-IS-268, AS-IS-269（信頼性・品質判定系・未定義）＋ net_income/diluted_shares（SEC EDGAR、カタログ対象外） | 導出データ |
+| AS-IS-267 | EPS Analyzer | quarters[].gaap_eps/adjusted_eps/gaap_net_income/adjusted_net_income/diluted_shares_used/adjustments/net_adjustment_total | `calculate_eps()` | **【パススルー値・計算なし】**（[[EPS-267-MIXED-PASSTHROUGH-1]]により区別を明記、2026-09-05）<br>`gaap_net_income`/`diluted_shares_used` = 四半期`net_income`/`diluted_shares`のXBRL正規化値をそのまま転記（SEC EDGAR、カタログ対象外）<br>`gaap_eps = gaap_net_income / diluted_shares_used`（一過性項目調整を伴わない単純な比率算出のためパススルー値グループに分類）<br><br>**【計算値・net_adjustment_total加算を伴う】**<br>`adjusted_net_income = gaap_net_income + net_adjustment_total`<br>`adjusted_eps = adjusted_net_income / diluted_shares_used`<br>`net_adjustment_total`/`adjustments[]` = 一過性項目検出（`detect_adjustments()`）＋税効果適用（`apply_tax_adjustments()`）の結果。信頼性・品質判定系のAS-IS-268/269（未定義。DTA自動補正Type-A/B等の内部ロジックは当該サブカテゴリで別途定義予定） | AS-IS-268, AS-IS-269（信頼性・品質判定系・未定義）＋ net_income/diluted_shares（SEC EDGAR、カタログ対象外） | 導出データ |
 | AS-IS-274 | EPS Analyzer | gaap_eps/adjusted_eps（summary.json） | `generate_summary()` | `summary.json`の`gaap_eps`/`adjusted_eps` = 最新四半期`quarters[0]`（AS-IS-267）の値をそのまま転記（再計算なし） | AS-IS-267（本表参照） | 導出データ |
 | AS-IS-281 | EPS Analyzer | ttm.json（ttm[].period/net_income/adjusted_income/diluted_shares/eps/adjusted_eps） | `calculate_ttm()` | `net_income = Σ(直近4四半期のgaap_net_income)`<br>`adjusted_income = net_income + Σ(直近4四半期のnet_adjustment_total)`<br>`diluted_shares = mean(直近4四半期のdiluted_shares_used)`（単純平均、加重なし）<br>`eps = net_income/diluted_shares`、`adjusted_eps = adjusted_income/diluted_shares`。いずれもAS-IS-267の4四半期分から算出 | AS-IS-267（本表参照） | 導出データ |
 | AS-IS-391 | Portfolio | total_assets_usd | `total_assets_usd` | `total_assets_usd = total_equity_usd + total_cash_usd`<br>`total_equity_usd = Σ(shares × price)`（全ブローカー・全ポジション合算）<br>`shares`/`avg_cost` = `docs/portfolio/data/portfolio.json`の`brokers.{broker}.positions.{ticker}.shares/avg_cost`（手動編集ファイル、書き込みスクリプトなし。カタログ対象外）<br>`price` = AS-IS-084（HypeCore `{ticker}_poc.json`の`monthly[-1].price`、一次データ・未定義、評価倍率フェーズ参照）<br>`total_cash_usd = Σ(brokers.{broker}.cash)`（同portfolio.json） | portfolio.json（手動入力相当、カタログ対象外）＋ AS-IS-084（一次データ・未定義） | 導出データ |
@@ -509,7 +509,10 @@ discover_config.json）は、バリデーションなしで直接GitHubにコミ
   （計算なし）である一方、`adjusted_eps`/`adjusted_net_income`は
   `net_adjustment_total`の加算を伴う真の計算値であり、Market Pulse
   ETF束ね行（AS-IS-320等）で既に記録済みのパターンと同型の混在が
-  ここにも存在する。
+  ここにも存在する。**2026-09-05対応済み**: `[[EPS-267-MIXED-PASSTHROUGH-1]]`
+  によりAS-IS-267の「定義」列を【パススルー値】【計算値】の2グループに
+  明示的に分けて記載（コード修正なし、ドキュメントのみ。BACKLOG_DONE.md
+  参照）。
 - **AS-IS-045の`net_debt`はAS-IS-025の`net_cash`を符号反転しただけの
   別名フィールド**: `net_debt = -net_cash`という単純な符号反転だが、
   「正=ネットキャッシュ」の概念と「正=純負債」の概念が同じ元データから

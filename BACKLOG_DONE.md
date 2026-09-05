@@ -4,6 +4,41 @@
 
 ## 2026-09-05②（完了）
 
+### ✅ [EPS-267-MIXED-PASSTHROUGH-1] AS-IS-267内でパススルー値と計算値が混在
+**状態:** ✅完了
+**優先度:** 低〜未定
+**分類:** ドキュメント整合性 / EPS Analyzer
+**登録日:** 2026-07-23
+**完了日:** 2026-09-05
+**発見:** `FIELD_DEFINITIONS.md`フェーズ4
+
+#### 内容
+AS-IS-267の`gaap_eps`/`gaap_net_income`/`diluted_shares_used`はXBRL値の
+パススルー（計算なし）である一方、`adjusted_eps`/`adjusted_net_income`は
+`net_adjustment_total`の加算を伴う真の計算値であり、同一AS-IS内に性質の
+異なるフィールドが混在する。
+
+#### 対応方針
+コード修正は不要。将来カタログを再整理する際に、パススルー値と計算値を
+分離したAS-ID採番を検討する。
+
+#### 着手条件
+なし
+
+#### 実装（2026-09-05）
+AS-ID分離までは行わず（対応方針どおり将来課題として残す）、AS-IS-267の
+「定義」列内を【パススルー値・計算なし】（`gaap_net_income`/
+`diluted_shares_used`のXBRL正規化値そのままの転記、および一過性項目調整を
+伴わない単純比率の`gaap_eps`）と【計算値・net_adjustment_total加算を
+伴う】（`adjusted_net_income`/`adjusted_eps`）の2グループに明示的に
+分けて記載し直した（`FIELD_DEFINITIONS.md`）。あわせて「気づいた問題」欄
+の該当記述にも「2026-09-05対応済み」の注記を追加。コード修正なし。
+
+#### 検証結果
+ドキュメントのみの変更のためコードへの影響なし。
+
+---
+
 ### ✅ [MOAT-CATALOG-DUP-1] moat_score（AS-IS-026/028）のカタログ重複
 **状態:** ✅完了
 **優先度:** 低

@@ -8665,27 +8665,6 @@ percentileが変動しうる。過去の`results.json`保存値と時系列比�
 
 ---
 
-### [EPS-267-MIXED-PASSTHROUGH-1] AS-IS-267内でパススルー値と計算値が混在
-**優先度:** 低〜未定
-**分類:** ドキュメント整合性 / EPS Analyzer
-**登録日:** 2026-07-23
-**発見:** `FIELD_DEFINITIONS.md`フェーズ4
-
-#### 内容
-AS-IS-267の`gaap_eps`/`gaap_net_income`/`diluted_shares_used`はXBRL値の
-パススルー（計算なし）である一方、`adjusted_eps`/`adjusted_net_income`は
-`net_adjustment_total`の加算を伴う真の計算値であり、同一AS-IS内に性質の
-異なるフィールドが混在する。
-
-#### 対応方針
-コード修正は不要。将来カタログを再整理する際に、パススルー値と計算値を
-分離したAS-ID採番を検討する。
-
-#### 着手条件
-なし
-
----
-
 ### [TTM-SBC-QUARTERS-GAP-1] build_rice_annual_shape()のSBCがquarters完全性チェック対象外
 **優先度:** 低〜未定
 **分類:** データ品質 / SECデータ取得層
