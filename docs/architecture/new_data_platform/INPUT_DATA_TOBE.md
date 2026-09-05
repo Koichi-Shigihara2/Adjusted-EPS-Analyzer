@@ -298,7 +298,7 @@ common/sec_data/data/{TICKER}/
                            # ではない（下記「本節の位置づけ」注記参照）。
                            # 詳細はBACKLOG_DONE.md参照。
   filing_meta.json        # 提出日・CIK・最終確認日等のメタ情報（INPUT-A-018）
-  segments/{FYQ}.json     # セグメント別KPI（新規吸収、INPUT-A-016）
+  segments/{FYQ}.json     # 対象外（INPUT-A-016、フェーズ1統合スコープ除外）
                            # 【2026-07-23方針転換】当初は正式ASC280セグメントを
                            # 想定していたが、実態は銘柄固有カスタムKPIであり、
                            # 取得方式（生XBRL XML解析）も他フィールドと異なる。
