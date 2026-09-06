@@ -196,6 +196,50 @@ YAML構文（`yaml.safe_load`）で確認済み。`gh`CLIは本セッション�
 
 ---
 
+### ✅ [TOOLTIP-INDEX-1] tanuki_valuation/index.htmlへのinfo-tooltip未適用
+**状態:** ✅完了
+**優先度:** 低
+**分類:** UX / TANUKI VALUATION
+**発見:** 2026-06-26横断調査
+**完了日:** 2026-09-06
+
+#### 問題
+以下の画面でinfo-tooltip.jsがimportされておらずglossaryツールチップが使えない：
+- docs/value-monitor/tanuki_valuation/index.html
+
+（stock.htmlはSTOCK-GLOSSARY-1として既登録）
+
+catalyst.html・news_history.html分は[[DISCOVER-SUBSYSTEM-REMOVAL-1]]により
+Discoverサブシステム自体が削除対象となったため対応不要と判定する。
+
+#### 実装内容
+- `docs/value-monitor/tanuki_valuation/index.html`に`info-tooltip.js`の
+  importを追加（`site-header.js`/`site-nav.js`より前）
+- `docs/common/glossary.json`へ`tvidx_`プレフィックスで13キーを新規登録
+  （平均Moat・平均RICE・理論株価BASE/β込み・乖離率・Moat・RICE(base)・
+  RICE/PER・200MA乖離・成長率・株主資本コスト・Q・CFの各説明文）
+- 統計バー2項目（平均Moat・平均RICE）のラベルを`<span data-info="...">`
+  でラップ
+- テーブルヘッダー12項目には、既存のクリックソート機能を壊さないよう
+  ラベル全体を囲むのではなく、ラベル末尾に小さな独立した空`<span
+  data-info="...">`（アイコンのみ表示）を追加する方式を採用
+  （info-tooltip.jsのクリックハンドラが`e.stopPropagation()`を呼ぶため、
+  ラベル全体を囲むと`<th>`側のソートクリックリスナーへイベントが
+  伝播せずソート機能が破壊されることを実装前レビューで発見し、この
+  設計に変更した）
+
+#### 検証結果（ブラウザ実機確認、2026-09-06）
+ローカルHTTPサーバー経由でページを起動し、`mcp__claude-in-chrome`
+ブラウザ自動化ツールで確認：
+- 統計バー・テーブルヘッダー各ツールチップアイコンへのホバーで
+  glossary.jsonの説明文が正しく表示されることを確認
+- 「Moat」列ヘッダー（`<th>`本体、アイコン部分ではない）をクリックし、
+  `sort-desc`クラスの付与・行順序の変化を確認（ソート機能の非破壊を
+  確認）
+- ブラウザコンソールにエラーなし
+
+---
+
 ### ✅ [REGISTER-FLOW-REDESIGN-1] 新規銘柄登録プロセスの原子性・検証強制力の欠如
 **状態:** ✅完了
 **優先度:** 中

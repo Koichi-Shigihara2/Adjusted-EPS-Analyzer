@@ -158,11 +158,11 @@
     </div>
     <div class="stat-item">
       <div class="stat-value" id="avg-moat">--</div>
-      <div class="stat-label">平均 Moat</div>
+      <div class="stat-label"><span data-info="tvidx_avg_moat">平均 Moat</span></div>
     </div>
     <div class="stat-item">
       <div class="stat-value" id="avg-rice">--</div>
-      <div class="stat-label">平均 RICE</div>
+      <div class="stat-label"><span data-info="tvidx_avg_rice">平均 RICE</span></div>
     </div>
   </div>
 
@@ -172,17 +172,17 @@
         <tr>
           <th data-col="ticker"  data-type="str"  style="text-align:left">TICKER</th>
           <th data-col="price"   data-type="num">現在株価</th>
-          <th data-col="ivps"    data-type="num">理論株価<br><span style="font-weight:400;opacity:.6">BASE</span></th>
-          <th data-col="ivps_beta" data-type="num">理論株価<br><span style="font-weight:400;opacity:.6">β込み</span></th>
-          <th data-col="upside"  data-type="num">乖離率</th>
-          <th data-col="moat"    data-type="num">Moat</th>
-          <th data-col="rice"    data-type="num" class="col-rice grp-border">RICE<br><span style="font-weight:400;opacity:.7">base</span></th>
-          <th data-col="rice_per" data-type="num">RICE/PER</th>
-          <th data-col="ma200"   data-type="num">200MA<br><span style="font-weight:400;opacity:.6">乖離</span></th>
-          <th data-col="growth"  data-type="num">成長率<br><span style="font-weight:400;opacity:.6">BASE</span></th>
-          <th data-col="wacc"    data-type="num" class="grp-border">株主資本コスト(Ke)</th>
-          <th data-col="q"       data-type="num">Q<br><span style="font-weight:400;opacity:.6">OCF/NI</span></th>
-          <th data-col="cf"      data-type="num">CF<br><span style="font-weight:400;opacity:.6">投資効率</span></th>
+          <th data-col="ivps"    data-type="num">理論株価<br><span style="font-weight:400;opacity:.6">BASE</span><span data-info="tvidx_ivps_base"></span></th>
+          <th data-col="ivps_beta" data-type="num">理論株価<br><span style="font-weight:400;opacity:.6">β込み</span><span data-info="tvidx_ivps_beta"></span></th>
+          <th data-col="upside"  data-type="num">乖離率<span data-info="tvidx_upside"></span></th>
+          <th data-col="moat"    data-type="num">Moat<span data-info="tvidx_moat"></span></th>
+          <th data-col="rice"    data-type="num" class="col-rice grp-border">RICE<br><span style="font-weight:400;opacity:.7">base</span><span data-info="tvidx_rice"></span></th>
+          <th data-col="rice_per" data-type="num">RICE/PER<span data-info="tvidx_rice_per"></span></th>
+          <th data-col="ma200"   data-type="num">200MA<br><span style="font-weight:400;opacity:.6">乖離</span><span data-info="tvidx_ma200"></span></th>
+          <th data-col="growth"  data-type="num">成長率<br><span style="font-weight:400;opacity:.6">BASE</span><span data-info="tvidx_growth"></span></th>
+          <th data-col="wacc"    data-type="num" class="grp-border">株主資本コスト(Ke)<span data-info="tvidx_wacc"></span></th>
+          <th data-col="q"       data-type="num">Q<br><span style="font-weight:400;opacity:.6">OCF/NI</span><span data-info="tvidx_q"></span></th>
+          <th data-col="cf"      data-type="num">CF<br><span style="font-weight:400;opacity:.6">投資効率</span><span data-info="tvidx_cf"></span></th>
           <th data-col="date"    data-type="str"  class="grp-border">更新日</th>
         </tr>
       </thead>
@@ -610,6 +610,7 @@ function toJST(dateStr) {
 
 loadTickers();
 </script>
+  <script src="../../common/info-tooltip.js"></script>
   <script src="../../common/site-header.js"></script>
   <script src="../../common/site-nav.js"></script>
 </body>

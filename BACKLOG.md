@@ -9146,26 +9146,6 @@ STONKS SILOのgross margin表示。現状JOBY/CEG/CPRTは恒久的にNoneの
 
 ---
 
-### [TOOLTIP-INDEX-1] tanuki_valuation/index.htmlへのinfo-tooltip未適用
-**優先度:** 低
-**分類:** UX / TANUKI VALUATION
-**発見:** 2026-06-26横断調査
-
-#### 問題
-以下の画面でinfo-tooltip.jsがimportされておらずglossaryツールチップが使えない：
-- docs/value-monitor/tanuki_valuation/index.html
-
-（stock.htmlはSTOCK-GLOSSARY-1として既登録）
-
-catalyst.html・news_history.html分は[[DISCOVER-SUBSYSTEM-REMOVAL-1]]により
-Discoverサブシステム自体が削除対象となったため対応不要と判定する。
-
-#### 対応方針
-docs/value-monitor/tanuki_valuation/index.htmlにinfo-tooltip.jsのimportを追加し、
-説明が必要な要素にdata-info属性を付与する。
-
----
-
 ### [JOBY-BLADE-ACQUISITION-IMPACT-SCOPE-1] JOBYの2025年Blade買収による事業実態変化がCOGS以外の指標にも波及していないかの確認未了
 **優先度:** 中〜未定
 **分類:** データ品質 / 事業実態変化の反映確認 / TANUKI VALUATION
