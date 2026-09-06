@@ -693,6 +693,69 @@ $2.76M→$34.25M、倍率12.4倍、上記バックテストで実際に検知さ
 
 ---
 
+### ✅ [STONKS-FINANCIAL-VECTORS-RELATIVE-1] financial_vectorsのpercentile/angle/lengthが相対順位であることの明示
+**状態:** ✅完了
+**優先度:** 低〜未定
+**分類:** ドキュメント整合性 / STONKS SILO
+**登録日:** 2026-07-23
+**完了日:** 2026-09-06
+**発見:** `FIELD_DEFINITIONS.md`フェーズ5（AS-IS-135/175/176）
+
+#### 内容（登録時点）
+`financial_vectors`のpercentile・angle・lengthは絶対的な変化率ではなく、
+同時点の全STONKS SILO銘柄集合に対する相対順位である。新規銘柄の追加・
+除外のたびに、対象銘柄自身のデータが変わっていなくても他銘柄の
+percentileが変動しうる。過去の`results.json`保存値と時系列比較する際は
+この母集団変動の影響を考慮する必要がある。
+
+#### 対応方針の採用結果: **③results.jsonへのメタ情報追記**（画面表示箇所なし）
+`docs/value-monitor/stonks-silo/index.html`を横断調査した結果、
+percentile/angle/length/compositeを画面表示（またはこれらから派生した
+値の表示）に使っている箇所は**存在しなかった**：
+- `buildVectorPanel()`（財務トレンドパネル、実際にpercentile/angle/
+  lengthが計算される`financial_vectors`を渡されている唯一の描画関数）は
+  `fd.yoy.change_pct`・`fd.qoq.change_pct`（絶対的な変化率）と
+  `series_q`（生の四半期系列）のみを参照しており、`angle`/`length`/
+  `percentile`/`composite`は一切参照していない
+- `grep -n "\.angle\b\|\.percentile\b\|composite" index.html`は0件
+  （`.length`のヒットは全てJS配列の`Array.length`で無関係）
+
+このため対応方針②（画面上のバッジ＋ツールチップ）は不採用とし、
+③（`results.json`メタ情報）を採用した。
+
+#### 実装内容
+1. `discover/stonks-silo/src/financial_trend_calculator.py::
+   compute_vectors()`: 各`yoy`/`qoq`辞書に`population_size`
+   （そのフィールド・期間で実際にパーセンタイル計算に使われた比較対象
+   銘柄数）を追加。フィールド・期間ごとにデータが揃っている銘柄数が
+   異なるため、全銘柄一律の値ではなく個別に記録する設計とした
+2. `discover/stonks-silo/src/pipeline.py`: `results.json`トップレベルに
+   `financial_vectors_note`（相対順位である旨・population_sizeの意味・
+   change_pct等の絶対値は影響を受けない旨を説明する文字列）を追加
+3. `financial_trend_calculator.py`のモジュールdocstring・
+   `FIELD_DEFINITIONS.md`（AS-IS-135/175/176の注記）を実装内容に合わせて
+   更新
+
+#### 検証結果（2026-09-06）
+- `compute_vectors()`を実データ（stonks_silo=true 25銘柄）で直接実行し、
+  `population_size`が正しく付与されることを確認（例: ASTS Revenue YoY
+  → population_size=25）
+- 画面表示に変更を加えていないため、ブラウザでの表示崩れ確認は対象外
+  （index.html・関連JSファイルは一切変更していない）
+- `results.json`本体の本番再生成は行っていない（`pipeline.py::run()`は
+  `fetch_valuation()`経由でyfinance等への実ネットワーク呼び出しを伴い、
+  時価総額・株価等の本番スナップショットを不必要に更新してしまうため。
+  今回の変更は`compute_vectors()`の追加フィールドのみで既存ロジックに
+  影響しない純粋な追記であり、次回の定期実行で自動的に反映される）
+- `pytest -q`: 1163 passed（既存テストへの影響なし、
+  `tests/test_stonks_silo_pipeline.py`12件含め全件PASS）
+- `audit.py`: NG無し（10銘柄警告、既存と同一）
+- `report_consistency_check.py --fail-on-ng`: NG=0・WARN=119件
+  （本タスクによる変化なし、STONKS SILO側の変更はcommon/sec_data側の
+  チェック対象外）
+
+---
+
 ### ✅ [REGISTER-FLOW-REDESIGN-1] 新規銘柄登録プロセスの原子性・検証強制力の欠如
 **状態:** ✅完了
 **優先度:** 中

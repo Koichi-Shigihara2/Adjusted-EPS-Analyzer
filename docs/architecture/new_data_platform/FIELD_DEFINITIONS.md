@@ -675,7 +675,11 @@ discover_config.json）は、バリデーションなしで直接GitHubにコミ
   絶対的な変化率ではなく、同時点の全STONKS SILO銘柄集合に対する相対順位**:
   新規銘柄の追加・除外のたびに、対象銘柄自身のデータが変わっていなくても
   他銘柄のpercentileが変動しうる。過去のresults.json保存値と時系列比較
-  する際はこの母集団変動の影響を考慮する必要がある。
+  する際はこの母集団変動の影響を考慮する必要がある。**2026-09-06対応済み**:
+  [[STONKS-FINANCIAL-VECTORS-RELATIVE-1]]により、画面表示箇所が存在
+  しないことを確認した上で、`results.json`側にpopulation_size（フィールド・
+  期間ごとの実際の比較対象銘柄数）とfinancial_vectors_note（相対順位で
+  ある旨の説明文）をメタ情報として追加した（BACKLOG_DONE.md参照）。
 - **AS-IS-119（ライフサイクル）のフォールバック元`revenue_growth`
   （yfinance、小数）と`rev_yoy`（AS-IS-093、SEC EDGAR TTM%）は算出基準が
   異なる別の指標**であり、どちらが使われるかは単に

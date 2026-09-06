@@ -8317,27 +8317,6 @@ FRED再公開遅延が上乗せされる構造。
 
 ---
 
-### [STONKS-FINANCIAL-VECTORS-RELATIVE-1] financial_vectorsのpercentile/angle/lengthが相対順位であることの明示
-**優先度:** 低〜未定
-**分類:** ドキュメント整合性 / STONKS SILO
-**登録日:** 2026-07-23
-**発見:** `FIELD_DEFINITIONS.md`フェーズ5（AS-IS-135/175/176）
-
-#### 内容
-`financial_vectors`のpercentile・angle・lengthは絶対的な変化率ではなく、
-同時点の全STONKS SILO銘柄集合に対する相対順位である。新規銘柄の追加・
-除外のたびに、対象銘柄自身のデータが変わっていなくても他銘柄の
-percentileが変動しうる。過去の`results.json`保存値と時系列比較する際は
-この母集団変動の影響を考慮する必要がある。
-
-#### 対応方針
-コード修正ではなく、画面上または`results.json`のメタデータとして
-「相対順位である」旨・母集団サイズを明示することを検討する。
-
-#### 着手条件
-なし
-
----
 
 ### [TTM-SBC-QUARTERS-GAP-1] build_rice_annual_shape()のSBCがquarters完全性チェック対象外
 **優先度:** 低〜未定

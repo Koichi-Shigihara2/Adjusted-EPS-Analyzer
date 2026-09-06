@@ -20,12 +20,26 @@ Layer3ストア（common/sec_data/layer3_builder.py::build_ticker_store()の
   長さ: 全銘柄×全期間の変化率分布のパーセンタイル(0-1)
   原価(原価率): 下がる方が改善のため符号を反転
 
+[[STONKS-FINANCIAL-VECTORS-RELATIVE-1]]、2026-09-06: angle/length/
+percentileは絶対的な変化率ではなく、この実行時点で有効なchange_pctを
+持つ銘柄集合に対する相対順位である（同時点の全STONKS SILO銘柄集合とは
+限らず、フィールド・期間ごとにデータが揃っている銘柄数が異なる）。
+新規銘柄の追加・除外のたびに、対象銘柄自身のデータが変わっていなくても
+値が変動しうる。この母集団サイズを`population_size`として各yoy/qoq
+辞書に記録する。change_pct/val_latest/val_prev/series_qは絶対値のため
+母集団変動の影響を受けない。画面表示（docs/value-monitor/stonks-silo/
+index.html）ではpercentile/angle/length/compositeはいずれも未使用
+（change_pct等の絶対値のみ表示）であることを確認済みのため、本注記は
+results.json側のメタ情報としてのみ追加し、画面表示への変更は行わない。
+
 出力フィールド（results.jsonのticker配下に追加）:
   "financial_vectors": {
     "updated_at": "...",
     "fields": {
-      "OCF":        { "yoy": {"angle":45, "length":0.7, "pct":75, "val_latest":-26M, "val_prev":-35M},
-                      "qoq": {"angle":20, "length":0.4, "pct":60, ...} },
+      "OCF":        { "yoy": {"angle":45, "length":0.7, "percentile":75,
+                               "population_size":42, "val_latest":-26M, "val_prev":-35M},
+                      "qoq": {"angle":20, "length":0.4, "percentile":60,
+                               "population_size":40, ...} },
       "RD":         { ... },
       "NetIncome":  { ... },
       "CapEx":      { ... },
@@ -342,6 +356,15 @@ def compute_vectors(all_stores: dict[str, dict]) -> dict[str, dict]:
                     "angle":      angle,
                     "length":     length,
                     "percentile": pct_rank,
+                    # [[STONKS-FINANCIAL-VECTORS-RELATIVE-1]]: angle/length/
+                    # percentileは絶対的な変化率ではなく、この実行時点で
+                    # 有効なchange_pctを持つ銘柄集合（下記population_size件）
+                    # に対する相対順位である。フィールド・期間（yoy/qoq）ごとに
+                    # データが揃っている銘柄数が異なるため、population_sizeは
+                    # フィールド・期間ごとに個別に記録する（全銘柄一律の値では
+                    # ない）。change_pct/val_latest/val_prev/series_qは絶対値
+                    # のため母集団変動の影響を受けない。
+                    "population_size": len(sv),
                     "change_pct": round(change["change_pct"], 1),
                     "val_latest": change["val_latest"],
                     "val_prev":   change["val_prev"],
