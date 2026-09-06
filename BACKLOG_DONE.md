@@ -465,6 +465,81 @@ thesis.jsonの実際のフィールドが期待値と乖離している（登録
 
 ---
 
+### ✅ [DISCOVER-RESIDUAL-LINKS-1] docs/index.html・site-header.jsに残るDiscoverリンク残骸の除去
+**状態:** ✅完了
+**優先度:** 低
+**分類:** UI残骸 / TANUKI VALUATION（サイト共通部）
+**登録日:** 2026-09-06
+**完了日:** 2026-09-06
+**発見:** Koichiさんの目視指摘（`[[DISCOVER-SUBSYSTEM-REMOVAL-1]]`
+2026-09-01実装からの確認漏れ）
+
+#### 問題
+2026-09-01の`[[DISCOVER-SUBSYSTEM-REMOVAL-1]]`実装時、削除対象自身の
+ディレクトリ（`docs/discover/`等）や個別ページの参照は洗い出せていた
+一方、以下2箇所を確認漏れしていた：
+- `docs/index.html`（サイトトップページ）: 削除済みDiscoverへの
+  `<a href="discover/" class="card card-discover">`カード全体
+  （「LIVE · 毎朝JST 7:00自動更新」等の説明文含む）と対応するCSS
+  （`.card-discover`関連2行）
+- `docs/common/site-header.js`: `TOOL_META`オブジェクト内の
+  `'discover': { title: 'DISCOVER', subtitle: '...' }`エントリ
+
+#### 対応内容
+1. `docs/index.html`のDiscoverカード全体（開始タグから対応する
+   `</a>`まで）とCSS（`.card-discover{...}`・`.card-discover
+   .card-title{...}`の2行）を削除
+2. `docs/common/site-header.js`の`TOOL_META.discover`エントリを削除
+   （どのページからも`build('discover', ...)`の呼び出しがないことを
+   事前にgrepで確認済み。呼び出しが残っていてもフォールバック
+   `TOOL_META[tool] || TOOL_META.home`により実害はない設計だが、
+   今回は呼び出し自体が皆無だった）
+
+#### 変更しなかったもの（誤爆確認）
+- `docs/portfolio/index.html`・`docs/value-monitor/admin.html`内の
+  `discover_config.json`関連の記述（削除対象外の共有設定ファイル。
+  admin.htmlは依頼書に明記されていなかったが、portfolio/index.html
+  と全く同じ理由で対象外と判断）
+- `docs/value-monitor/stonks-silo/index.html`内の「Discover · 10x
+  Candidates」（STONKS SILO自体のキャッチコピー文言）・
+  `discover/stonks-silo/`への言及（STONKS SILOのソースコードパス
+  自体の名称）
+
+#### 検証結果（2026-09-06）
+- ローカルHTTPサーバー+ブラウザ自動化で`docs/index.html`を確認:
+  Discoverカードが表示されず、HYPE CORE・PORT FOLIO等の他カードの
+  グリッドレイアウトが崩れていないことを確認（コンソールエラーなし）
+- `docs/value-monitor/stonks-silo/index.html`を確認: `site-header.js`
+  から`TOOL_META.discover`を削除した後もヘッダーが正常描画される
+  ことを確認（コンソールエラーなし）
+- `grep -rli "discover" docs/ --include="*.html" --include="*.js"`の
+  残存4ファイル（`docs/index.html`・`docs/portfolio/index.html`・
+  `docs/value-monitor/admin.html`・`docs/value-monitor/stonks-silo/
+  index.html`）を全て個別に中身確認し、いずれも上記「変更しなかった
+  もの」に該当する意図的な残存であることを確認
+- `CLAUDE_CODE_START.md`のリンク整合性チェックスクリプト
+  （`check_links.py`相当）を実行し、Discover関連の新規デッドリンクが
+  ないことを確認（既存49件のヒットは`/On-a-journey/`絶対パスを
+  `docs/On-a-journey/`として誤解決するチェッカー側の既知の誤検知
+  〈GitHub Pagesのベースパスをdocsルート直下として解釈できない〉で
+  あり、本タスクとは無関係。個別に内容確認し、discover関連の新規
+  デッドリンクが含まれないことを確認済み）
+- `pytest -q` 1148 passed / `audit.py` NG無し /
+  `report_consistency_check.py --fail-on-ng` NG=0・WARN=93
+  （ベースラインと同数）
+
+#### サブシステム削除時のチェックリスト整備（依頼の「検討事項」への回答）
+既存の「銘柄削除時の必須手順」（`CLAUDE_CODE_START.md`）と同様の構造的
+問題——固定ファイルリストを機械的になぞるだけでは新しいレイヤーの
+追加に追従できない——がサブシステム削除でも起きたため、
+**追加すると判断し**、`CLAUDE_CODE_START.md`に新規セクション
+「## サブシステム削除時の必須手順」を追加した。「サイトトップページ・
+共通ヘッダーコンポーネント」を能動的な確認項目として明記し、
+今回発覚した経緯（Step 0のgrep自体は機械的に見つけられる状態だった
+にも関わらず、確認項目として存在しなかったため見落とした）を記録した。
+
+---
+
 ### ✅ [REGISTER-FLOW-REDESIGN-1] 新規銘柄登録プロセスの原子性・検証強制力の欠如
 **状態:** ✅完了
 **優先度:** 中

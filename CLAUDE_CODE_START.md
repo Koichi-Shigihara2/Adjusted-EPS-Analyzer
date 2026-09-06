@@ -2222,6 +2222,59 @@ with open('docs/market-monitor/market-pulse/data/market_data.csv') as f:
 
 ---
 
+## サブシステム削除時の必須手順
+
+`[[DISCOVER-SUBSYSTEM-REMOVAL-1]]`（2026-09-01実装）で、削除対象自身の
+ディレクトリ（`docs/discover/`等）や個別ページの参照は洗い出せていた
+一方、**サイトトップページ（`docs/index.html`）のカード導線**・
+**`docs/common/site-header.js`のようなサイト全体で共有される共通
+コンポーネント内の設定オブジェクト（`TOOL_META`のキー等）**の2箇所を
+確認漏れし、5日後にKoichiさんの目視指摘で発覚した
+（`[[DISCOVER-RESIDUAL-LINKS-1]]`、2026-09-06クローズ）。
+
+原因は「削除対象の正式名称・パス（`discover`ディレクトリ名等）」だけを
+手がかりに`grep`していたため機械的には見つかる状態だったにも
+関わらず、削除作業のチェックリストに「サイトトップページ・共通ヘッダー
+コンポーネントを確認する」という**能動的な確認項目**が存在せず、
+洗い出し自体を実施していなかったこと。銘柄削除時の必須手順
+（上記）がAVGO削除時に学んだのと同じ教訓——固定ファイルリストを
+機械的になぞるだけでは新しいレイヤーの追加に追従できない——が、
+サブシステム削除でも同様に成り立つ。
+
+### 削除手順
+
+```bash
+# Step 0: 削除前の全参照洗い出し（サブシステムの正式名・短縮キー
+# 両方で検索すること。例: Discoverなら"discover"だけでなく、
+# 個別ページ内で使われる短縮タグ・クラス名も対象に含める）
+grep -rln "[SUBSYSTEM_NAME]" . --include="*.py" --include="*.html" \
+  --include="*.js" --include="*.yml" --include="*.yaml" --include="*.json" \
+  --include="*.md" 2>/dev/null
+
+# Step 1: 必ず個別に目視確認する箇所（銘柄削除時のcik_lookup.csvに相当、
+# サブシステム削除では「サイト全体の導線・共通コンポーネント」が
+# この位置づけになる）
+# - docs/index.html（サイトトップページ）のカード（<a href="...">〜</a>
+#   ブロック全体）・対応するCSS（.card-{subsystem}系）
+# - docs/common/site-header.js のTOOL_META等、キー付き設定オブジェクト
+# - docs/common/site-nav.js 等、他の共通ナビゲーションコンポーネント
+#   （site-header.js以外にも存在する場合は同様に確認）
+# - 他サブシステムのキャッチコピー・ソースパス名としての偶然の同名
+#   一致（例: STONKS SILOの"Discover · 10x Candidates"というタグ、
+#   discover/stonks-silo/というソースパス）は削除対象と誤認しないこと
+
+# Step 2: リンク整合性チェックを必ず実行（下記セクション参照）
+python ~/check_links.py
+```
+
+`docs/index.html`・共通ヘッダーコンポーネントは全ページから参照される
+「削除対象自身のディレクトリ配下には存在しない」参照元のため、
+Step 0のgrep結果に必ず含まれるにも関わらず見落としやすい。次にサブ
+システムを削除する際は、このStep 1リストを機械的になぞるだけで済ませず、
+Step 0のgrep結果を1件ずつ確認すること。
+
+---
+
 ## リンク整合性チェック（HTMLファイルを新規作成・移設・削除した場合は必須）
 
 ```bash
