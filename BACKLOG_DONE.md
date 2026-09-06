@@ -1451,6 +1451,303 @@ Technology Platform・NCO・NIM）を解消、2件（ADBE研究開発費・APGE
 
 ---
 
+### ✅ [TAIL-KPI-PROPOSER-CORE-ONLY-GATE-1] kpi_proposer.pyのcore限定ゲートは撤廃済み — ただしKPI値の取得自体が別の理由でブロックされていることが判明
+**状態:** ✅完了
+**優先度:** 中（core限定ゲート自体は解消済みだが、値取得のブロックに
+よりKPIデータ欠如という実害は未解消のまま）
+**分類:** 運用ギャップ / TAIL自動化パイプライン / ゲート撤廃は完了・
+値取得の課題は継続
+**登録日:** 2026-08-19③
+**更新日:** 2026-08-19④（core限定ゲート撤廃を実装・検証。ただし
+KPI値取得が別途ブロックされていることを新たに発見、下記参照）
+**完了日:** 2026-09-06（BACKLOG.md全97件棚卸し中に発見・クローズ）
+**発見:** `[[TAIL-COVERAGE-POLICY-UNDECIDED-1]]`（BACKLOG_DONE.md、TAIL
+監視対象の全保有ポジション拡大）の完了後、`kpi_proposer.py`のcore限定
+ゲートを判定調査した結果
+
+#### 内容
+`kpi_proposer.py::propose_kpis()`（298-302行目）は`thesis.get("type")
+!= "core"`でsatelliteを早期returnし、KPI提案生成（Grok呼び出し→
+`kpi_proposals/{ticker}_proposal.json`→`config/tail_kpi_map.json`への
+`auto_fetchable=true`分の自動登録）を行わない。四半期レビュー生成は
+`[[TAIL-COVERAGE-POLICY-UNDECIDED-1]]`で全保有ポジションに拡大したが、
+KPI提案生成はcore限定のままであり、**satelliteはレビューは出るがKPI
+提案が出ない非対称な状態**になっている。
+
+#### 判定1: core限定である技術的な理由があるか
+**ある。`build_kpi_prompt()`（138-154行目）は`thesis.get('thesis',
+'未設定')`・`thesis.get('exit_guide', '未設定')`という、coreスキーマ
+専用のフィールド名を直接読んでいる。** これは
+`[[TAIL-COVERAGE-POLICY-UNDECIDED-1]]`実装時に
+`quarterly_review_generator.py`で発見・修正したのと**全く同じ型の
+スキーマ不整合バグ**である。satelliteのthesisファイルは
+`strategy_name`/`entry_condition`/`exit_condition`/`holding_period`と
+いう別スキーマのため、これらのキーは存在せず、修正なしにゲートだけを
+外すと`thesis`/`exit_guide`が両方とも「未設定」としてGrokに渡り、
+`quarterly_review_generator.py`で実際に発生したのと同じ内容破綻
+（テーゼ未設定という誤った前提でのKPI提案生成）が再発する。**現状の
+core限定ゲートは、このスキーマ不整合バグを偶然マスクしている状態**
+であり、恣意的な制限ではなく現時点で必要な安全装置になっている。
+
+#### 判定2: satelliteに広げた場合、何が必要になるか
+`quarterly_review_generator.py`に実装した`thesis_narrative_fields()`
+（2026-08-19④に`src/tail/thesis_utils.py`へ抽出・共通化、下記「実装
+状況」参照）と同様の、type別スキーマ正規化ヘルパーを`kpi_proposer.py`
+側にも実装し、`build_kpi_prompt()`内の`thesis.get('thesis', ...)`・
+`thesis.get('exit_guide', ...)`の2箇所を正規化後の値に差し替える必要が
+ある。修正自体の規模は小さい（`quarterly_review_generator.py`での実装
+実績あり）が、ゲートを外すだけでは不可。
+
+#### 判定3: 広げなかった場合、レビューの品質にどう影響するか
+**実測で確認済みの構造的な影響がある。** `[[TAIL-COVERAGE-POLICY-
+UNDECIDED-1]]`実装時に実際に生成したsatellite 7銘柄
+（ADBE/APGE/NVDA/APP/CELH/SOUN/CRWV全て）のレビューの
+`summary`・`concerns`を確認したところ、**全銘柄で共通して「KPIデータが
+一切提供されておらず（欠如しており）テーゼの方向性を検証できない」旨の
+文言が出現**しており、Grokがこれをhealth_score算定上の重大な不確実性
+要因として毎回明示的に評価へ組み込んでいることを確認した。原因は
+`kpi_proposer.py`がcore限定のため`config/tail_kpi_map.json`に
+satelliteのKPIが1件も登録されておらず、`xbrl_segment_fetcher.py`・
+`text_kpi_extractor.py`（layer2/layer3のKPI取得、いずれもcore/
+satellite区別なくpendingキューのtickerを処理する設計）が取得対象を
+持たないため。加えて`TANUKI_TAIL_KPI_Update.yml`（週次KPI更新）も
+`config/tail_kpi_map.json`のキーをticker一覧としているため、satellite
+は自動的にこの対象からも外れている。**KPI提案が無いレビューは
+「定量的な裏付けを欠いた定性評価のみ」になっており、これは今回の
+監視対象拡大が半分（レビュー生成）しか完了していないことを意味する。**
+
+#### 対応方針(a)の実装状況（2026-08-19④、方針判断不要と判断され実装）
+本項目の判定1〜3が「方針判断を要さない技術的対応」と判断されたため、
+(a)が実装された。
+
+- `_thesis_narrative_fields()`は複製せず、`src/tail/thesis_utils.py`
+  （新設）へ抽出・共通化し、`quarterly_review_generator.py`・
+  `kpi_proposer.py`の両方から`thesis_narrative_fields()`としてimport
+  する形にした（`quarterly_review_generator.py`は`common.sec_data.
+  layer3_builder`という重量な依存を持つため、`kpi_proposer.py`が
+  そちらから直接importすると不要な結合が生じる。共通化先を新規の
+  軽量モジュールにすることでこれを回避した）
+- `build_kpi_prompt()`の`thesis.get('thesis', ...)`・
+  `thesis.get('exit_guide', ...)`を`thesis_narrative_fields()`の
+  戻り値に差し替えた
+- `propose_kpis()`のcore限定ゲートを撤廃した
+- NVDA単独で先行検証: 生成されたKPI提案（データセンター売上成長率・
+  データセンター粗利益率等）は投資テーゼ（「AI産業の成長期待」）と
+  明確に噛み合った内容であり、「未設定」を前提とした汎用提案には
+  なっていないことを確認。残り6銘柄（ADBE/APGE/APP/CELH/SOUN/CRWV）
+  も実行し、いずれも銘柄固有の妥当なKPI提案（例: APGEは臨床試験進捗、
+  APPは広告ROAS等）を確認。`config/tail_kpi_map.json`への
+  `auto_fetchable=true`分の自動登録も7銘柄全てで確認済み
+
+#### 新たに発見された未解決の問題（2026-08-19④、値の取得がブロックされている）
+**KPI提案の生成・登録until成功したが、その値を実際に取得することが
+できないことが判明した。** `xbrl_segment_fetcher.py`（layer2、XBRL
+タグベース抽出）をsatellite 7銘柄全てで実行した結果、**提案された
+KPIの実測値が1件も取得できなかった**（全て「取得失敗」）。
+
+原因を追跡した結果、2つの要因を確認:
+
+1. **`xbrl_segment_fetcher.py`の構造的な設計上の制約**:
+   `parse_contexts()`（223-252行目）は指定ディメンション軸の
+   `explicitMember`を持つコンテキストのみを`ctx_map`に格納し、
+   セグメント区分のない会社全体の事実（`xbrl_dimension`が空の
+   ファクト）は**構造的に一切取得できない**（該当するコンテキストが
+   `ctx_map`に存在しないため）。Grokが提案するKPIの多くは
+   `xbrl_dimension: null`（例: 「総売上高成長率」等の会社全体指標）
+   であり、これらは**銘柄に関わらず**この設計上の制約に該当する。
+   これは今回新たに作られた問題ではなく、既存のcore銘柄（PLTR）でも
+   同型の失敗（6件中3件が非セグメント指標で「取得失敗」）が実際に
+   発生していることを実測で確認した——satellite拡大以前から存在した
+   既知の制約が、KPI提案対象がsatelliteに広がったことで顕在化した形
+2. **Grokが生成する`xbrl_member`名の精度**: セグメント指標（
+   `xbrl_dimension`あり）についても失敗が発生した。NVDAの
+   「ゲーミング売上成長率」（`xbrl_member: "nvda:GamingMember"`）を
+   例に実際のXBRLファイルを直接検査したところ、NVDAの実際のセグメント
+   タグは`nvda:GraphicsSegmentMember`であり、Grokが生成した
+   `xbrl_member`名は実際のXBRLタグ付け慣行と一致していなかった
+   （実測確認、推測ではない）
+
+`text_kpi_extractor.py`（layer3、MD&Aテキスト抽出）もNVDAで実行した
+ところ、手動抽出対象2件（AI関連顧客数推移・次世代GPU受注残高）とも
+「未発見」となり値を取得できなかった。
+
+**結論: KPI提案の生成・登録という入口は今回のセッションで解消したが、
+値を実際に取得して四半期レビューへ反映する出口が別途ブロックされて
+おり、`[[TAIL-KPI-PROPOSER-CORE-ONLY-GATE-1]]`が目指した「KPIデータ
+欠如を理由とする減点の解消」自体はまだ達成されていない。** 対応方針
+・優先度は別途判断（本項目のスコープを超える別種の課題のため、
+新規登録を検討）。
+
+#### 関連
+- `[[TAIL-COVERAGE-POLICY-UNDECIDED-1]]`（BACKLOG_DONE.md、同型の
+  スキーマ不整合バグを`quarterly_review_generator.py`側で発見・修正
+  した項目。`thesis_narrative_fields()`の実装元）
+
+#### 着手条件
+方針判断を要する部分（本項目のcore限定ゲート撤廃）は実装済み・完了。
+残る「KPIの値が取得できない」問題は、対応方針の検討が必要（別項目化を
+含め判断すること）。
+
+#### クローズ（2026-09-06、BACKLOG.md全97件棚卸し中に発見）
+本エントリ自身のスコープ（core限定ゲート撤廃）は実装済み・完了と
+本文に明記されている。分離した残課題「KPI値取得ブロック」は
+`[[TAIL-XBRL-SEGMENT-FETCHER-NONDIMENSIONED-GAP-1]]`として別項目化
+され、そのエントリは本セッション内で既にStep 1〜6完了・クローズ済み
+（BACKLOG_DONE.md参照）。本エントリ自体にはもう能動的な残作業がない
+ため、棚卸しの過程でクローズする。
+
+---
+
+### ✅ [SECDATA-STORAGE-FRAGMENTATION-1] common/sec_data内のraw/normalized/ttm3系統並存によるスキーマ分岐
+**状態:** ✅完了
+**優先度:** 中
+**分類:** アーキテクチャ / データ品質
+**登録日:** 2026-07-23
+**完了日:** 2026-09-06（BACKLOG.md全97件棚卸し中に発見・クローズ）
+**発見:** `INPUT_DATA_AS_IS.md`2-A（一次データ層AS-IS調査）
+
+#### 内容
+`common/sec_data/`配下は`data/{TICKER}/annual_*.json・quarterly_*.json`に
+加え、`raw/`（正規化前の生XBRL）・`normalized/`（別スキーマの独立した
+正規化四半期データ）・`ttm/`（TTM系列）という最低6ファイル系統に分岐して
+いる。`normalized/`はstock.html直接fetchに加え、reader.py共通アクセサ
+経由で最低5系統（TANUKI VALUATION本体のNet Debt計算・
+financial_trend_calculator.py〈STONKS SILO〉・
+quarterly_review_generator.py〈TANUKI TAIL〉・tail_dcf_bridge.py
+〈TANUKI TAIL DCF〉・hypecore.py〈HypeCore〉）が本番で依存している
+（GATE2-PHASE3B-1で意図的に共通化された経緯あり）。廃止・統合時は
+これら5系統全ての移行が必要。
+
+なお、[[DOCS-SECDATA-NORMALIZED-DIR-STALE-1]]・
+[[NORMALIZER-YTD-METADATA-STALE-1]]は、本タスクの統合設計時に
+合わせて解消すべき関連課題として発見されている。
+
+#### 対応方針
+`SEC_EDGAR_LAYER_DESIGN.md`フェーズD（Layer3統合、5消費者の優先順位
+確定済み: ①TANUKI VALUATION本体 ②STONKS SILO ③TANUKI TAIL
+④HypeCore ⑤stock.htmlフロントエンド）を正とする（2026-08-06投資調査で
+確定、下記「2計画併存の経緯」参照）。`normalized/`のCapEx符号不統一は
+[[CAPEX-SIGN-UNNORMALIZED-1]]（2026-07-24対応完了、BACKLOG_DONE.md
+参照）で解消済みのため、統合スキーマ側は正規化済みCapExを前提に
+設計できる。
+
+**進捗（2026-08-07更新・フェーズD最終状況）**:
+
+- Step2-1〜2-4（①TANUKI VALUATION本体・②STONKS SILO主要部
+  〈`financial_trend_calculator.py`のみ〉・③TANUKI TAIL・
+  ④HypeCore）: **完了**（完了記録は`[[SEC-EDGAR-LAYER-DESIGN-PHASE-D-
+  STEP2-1]]`〜`[[SEC-EDGAR-LAYER-DESIGN-PHASE-D-STEP2-4]]`参照）
+- Step2-5（⑤stock.htmlフロントエンド＋診断・補助スクリプト7件）:
+  **実質完了**（2026-08-07投資調査の結果、9系統中Layer3切替の実質
+  対象は`dcf_validity_checker.py::check_c_data_jump()`のみと判明、
+  他8系統は死蔵コード・書き込み専用・既にLayer3経由・アーキテクチャ上
+  切替不可のいずれかで切替対象自体が存在しなかった）
+- 保留中だった2判断（`fetcher.py`選択思想・stock.html公開パイプライン）:
+  **いずれも現状維持を選択、着手見送りが確定**（`[[LAYER3-FETCHER-
+  SELECTION-PHILOSOPHY-MISMATCH-1]]`案2採用・`[[STOCKHTML-LAYER3-
+  PUBLISH-PIPELINE-MISSING-1]]`着手見送り、いずれも2026-08-07確定）
+
+**フェーズE（`normalized/`廃止）は着手不可**: 上記の通り、
+`fetcher.py`・`dcf_validity_checker.py`（いずれも`data/annual_*.json`
+依存を意図的に継続）・stock.html（`normalized/`直接依存、Layer3公開
+パイプライン未整備のため切替不可）が意図的に現状維持のまま残るため、
+`normalized/`を完全に廃止することはできない。**`normalized/`はこの
+3系統向けに存続し続ける設計とする**（フェーズDの目標だった「全消費者
+Layer3統一」は、この3系統を恒久的な例外として除いた形で達成とみなす）。
+
+**次セッション着手順序**: フェーズD（`common/sec_data`統合スキーマ
+移行）は実質完了。次の一次データ層プロジェクトの優先タスクは、
+新DB構築プロジェクトの他フェーズ（`PROJECT_STATUS.md`フェーズ1記載の
+`common/market_data/`・`common/macro_data/`新設）へ移行することを
+検討する。
+
+**Step1完了（2026-08-05、全消費者洗い出し・読み取り専用調査）**:
+`raw/`（実消費者ゼロのデッドコード）・`normalized/`（5本番消費者、
+pipeline.py内部は最低5用途に細分化）・`ttm/`（独立パイプライン、
+`[[TTM-DATA-DRIFT-BEHIND-PIPELINE-1]]`参照）・EPS Analyzer/TANUKI TAIL
+独自アクセス経路（EPS Analyzer1系統・TANUKI TAIL3系統＋RSS監視）の
+全消費者を実ファイルで確認済み。`[[SCHEMA-NORMALIZED-ISSUES-1]]`①
+（STDebt網羅性）を実測再確認した結果、AAPL/XOM/Vいずれもnormalized側
+STDebtが完全に0件（既存記載より悪化）と確認。詳細はチャット記録参照。
+
+**raw/削除完了（2026-08-05実装）**: 全消費者ゼロと確認済みの`raw/`を
+撤去した（`quarterly.py`の書込処理削除・既存105ファイル削除・
+`SEC_Data_Update.yml`のgit add対象からも除去）。詳細はBACKLOG_DONE.md
+参照。
+
+**残タスクは`SEC_EDGAR_LAYER_DESIGN.md`フェーズDの実装**（TANUKI
+VALUATION本体を最優先に、5消費者＋診断・補助スクリプト7件を
+Layer3〈`layer3_builder.py::build_ticker_store()`〉経由へ順次切替）。
+`data/quarterly_{FYQ}.json`のpl/cf/shares区分SA/YTD修正（コミット
+939b8f57f、2026-08-05）は、フェーズD完了までの暫定的な正確性向上
+として意味を持つ。フェーズD完了後の`normalized/`廃止（フェーズE）が
+実施されれば5消費者はLayer3のみに依存するようになり、data/系統向け
+アクセサの新規実装は不要になる見込み（Layer3側`get_field_entries()`が
+`get_quarterly_series()`相当の既存アクセサとして既に実装済みであると
+2026-08-06投資調査で確認済み）。
+
+**2計画併存の経緯（2026-08-06投資調査で判明）**: 本エントリ（登録日
+2026-07-23）と`SEC_EDGAR_LAYER_DESIGN.md`（作成日2026-07-24）は、
+`INPUT_DATA_AS_IS.md`・`INPUT_DATA_TOBE.md`という同一の調査を起点に
+1日違いで分岐した。`SEC_EDGAR_LAYER_DESIGN.md`は本エントリの
+「対応方針」欄（`INPUT_DATA_TOBE.md`2-Aが設計した単一正規化ストアへの
+統合）を詳細設計として具体化したものと位置づけられるが、本エントリの
+「対応方針」欄は2026-08-05まで`SEC_EDGAR_LAYER_DESIGN.md`への
+クロスリンクを持たないまま更新され続け、5消費者の移行先を独自に
+「normalized/→data/統合」と記述していた。2026-08-02〜03の
+`[[TTM-DATA-DRIFT-BEHIND-PIPELINE-1]]`調査で「両者は`SEC_EDGAR_LAYER_
+DESIGN.md`が既に『3スキーマ併存』として認識済みの既知課題の一部」と
+一度確定していたにも関わらず、その2日後（2026-08-05）に本エントリの
+ロードマップ（0-A〜0-C）が独立して実行され、フェーズDとの整合確認は
+行われなかった。両エントリとも技術的に誤ってはいなかったが、移行先
+（Layer3 vs data/）という最も重要な点で1ヶ月弱食い違ったまま別々に
+進行していた。原因は、担当セッションが参照した一次ドキュメントが
+異なっていたためと推測される（本エントリ自身が`SEC_EDGAR_LAYER_
+DESIGN.md`への参照を持たなかったため、本エントリの「次セッションでの
+着手順序」欄だけを見て着手すると、フェーズD側の決定事項に辿り着けない
+構造だった）。再発防止策はCHAT_RULES.md「文書横断整合性チェック」
+（2026-08-06追加）参照。
+
+**新DB構築プロジェクト最終確認（2026-08-15）**: `FIELD_DEFINITIONS.md`
+499項目単位での新DB参照切替状況を集計する投資調査を完了。SEC EDGAR
+由来4件（AS-IS-129・266・273・395）はいずれも意図的にフェーズD
+（Layer3統合）の対象外と確定済みで、記載も現状と一致することを確認
+（AS-IS-129は`[[LAYER3-FETCHER-SELECTION-PHILOSOPHY-MISMATCH-1]]`に
+よるSTONKS SILO `fetcher.py`の現状維持確定、AS-IS-266・273はEPS
+Analyzerの独立ライブ取得設計、AS-IS-395はTANUKI TAILのリアルタイム
+監視専用ファイルによる対象外）。既に確認済みのyfinance/FRED由来18件
+（`[[MARKETDATA-LAYER-CONSTRUCTION-1]]`・`[[MACRODATA-LAYER-
+CONSTRUCTION-1]]`の2026-08-15付注記参照）と合わせ、**新DB構築
+プロジェクト（sec_data/market_data/macro_data）は消費者ファイル単位・
+重複計算パターン単位・フィールド単位の全ての粒度で完了確認済み**と
+なった。
+
+**フロントエンド横断点検（2026-08-15）**: `docs/`配下の全フロント
+エンドファイル（HTML/JS、28ファイル）を対象に、`fetch()`呼び出しを
+全数抽出・分類する横断点検を実施した結果、`normalized/`を直接fetch
+しているのは`tanuki_valuation/stock.html`の1件のみと確認された。他に
+`normalized/`を直接参照するフロントエンドファイルは存在しない
+（`[[SCHEMA-NORMALIZED-ISSUES-1]]`の同日付「調査依頼文の前提訂正」は
+`fetcher.py`・`dcf_validity_checker.py`・stock.htmlという既知の3系統
+限定の調査であり、本点検とは対象範囲が異なる別調査。両者は結論が
+一致するが、本点検は3系統に限定せずフロントエンド全ファイルを対象と
+した点で独立の裏付けとなる）。
+
+#### 着手条件
+なし（着手条件だった「[[CAPEX-SIGN-UNNORMALIZED-1]]の対応方針確定」は
+2026-07-24の実装完了により満たされた。raw/撤去は完了、
+`SEC_EDGAR_LAYER_DESIGN.md`フェーズDの実装から再開可能）
+
+#### クローズ（2026-09-06、BACKLOG.md全97件棚卸し中に発見）
+本文末尾の一連の記録が既に「フェーズD実質完了」「フェーズEは着手
+不可・`normalized/`は3系統向けに恒久存続」「新DB構築プロジェクトは
+完了確認済み」と結論づけている。「着手条件」欄に残っていた
+「`SEC_EDGAR_LAYER_DESIGN.md`フェーズDの実装から再開可能」という記述は、
+本文末尾のこれらの結論（既に完了）と矛盾する陳腐化した記載だった。
+実質的には既に決着済みのエントリであり、棚卸しの過程でクローズする。
+
+---
+
 ### ✅ [REGISTER-FLOW-REDESIGN-1] 新規銘柄登録プロセスの原子性・検証強制力の欠如
 **状態:** ✅完了
 **優先度:** 中
