@@ -306,6 +306,49 @@
   変更なし。現存BACKLOG.md総数は機械カウントで**107件**（統合・クローズ
   により151件から大幅減）。
 
+- **2026-09-06〜09-07**（非常に長時間のセッション、実装・修正10件・
+  BACKLOG.md全97件棚卸し・CWAN登録抹消、全てpush済み）:
+  1. **個別実装・修正10件**: `[[STONKS-SILO-PRICE-SCHEDULE-LAG-
+     SUSPECT-1]]`・`[[REGISTER-FLOW-REDESIGN-1]]`クローズ、
+     `[[TOOLTIP-INDEX-1]]`（`index.html`へ`info-tooltip.js`適用）・
+     `[[LAYER3-COGS-CANDIDATE-TAG-EXPANSION-1]]`（JOBY/CEG/CPRT限定で
+     `cost_of_revenue`候補タグ拡張）・`[[CHECK-COVERAGE-2]]`（DuPont
+     分解null銘柄検出consistency check）・`[[THESIS-FIELD-1]]`（NVDA
+     `thesis.json`の`entry_price`欠損修正）・`[[DISCOVER-RESIDUAL-
+     LINKS-1]]`（Discoverリンク残骸除去）・`[[SN-TANUKI-DELAY-1]]`
+     （SNの`tanuki=false`解除でTANUKI VALUATION対象拡大）・
+     `[[DATA-JUMP-CHECK-GENERALIZE-1]]`（段差型急変検知を売上総利益・
+     CapExへ展開、純利益・SBCは`[[DATA-JUMP-CHECK-NETINCOME-SBC-1]]`へ
+     切り出し）・`[[STONKS-FINANCIAL-VECTORS-RELATIVE-1]]`
+     （`financial_vectors`が相対順位である旨を明示）を実施
+  2. **BACKLOG.md全97件棚卸し**（「表層的事実確認＋診断結論の検証」の
+     2段階で全件を本文精読＋実コード照合）: Round1（34件検証・🟢有効
+     30件・クローズ2件〈`[[TAIL-KPI-PROPOSER-CORE-ONLY-GATE-1]]`・
+     `[[SECDATA-STORAGE-FRAGMENTATION-1]]`〉・疑義2件報告）に続き
+     残り63件を中断せず連続実施、97件全件完了。最終結果は🟢有効93件・
+     クローズ2件・⚠️疑義2件〈`[[MARKETDATA-CWAN-FROZEN-DATA-
+     SUSPECT-1]]`・`[[TTM-DATA-DRIFT-BEHIND-PIPELINE-1]]`（後者は
+     `[[LAYER3-ANNUAL-CLASSIFICATION-DROPS-DATA-1]]`の既知パターンの
+     新事例と確認、記載維持）〉・軽微な更新余地2件〈`[[ANOMALY-
+     PATTERN-CATALOG-1]]`・`[[REPORT-CONSISTENCY-GROSSPROFIT-COGS-
+     CHECK-MISSING-1]]`、いずれも報告のみ〉
+  3. **CWAN登録抹消**: 上記棚卸しで疑義2件のうち`[[MARKETDATA-CWAN-
+     FROZEN-DATA-SUSPECT-1]]`（66日間の価格凍結データがTANUKI
+     VALUATION最新出力へ実際に混入）を最優先個別調査した結果、
+     **CWAN（Clearwater Analytics）が2026-06-25にPermira・Warburg
+     Pincus主導で1株$24.55の非公開化買収を受けNYSE上場廃止**していた
+     ことが根本原因と判明（SEC EDGAR`former_names`・yfinance
+     delisted検知・凍結価格が買収対価と一致等、複数独立ソースで
+     裏付け。データパイプライン自体は正常挙動だったことも確定）。
+     AVGO・ENBに続く3件目の同型ケースとして「銘柄削除時の必須手順」に
+     従いtanuki/stonks_silo/eps/hypecore全4パイプラインから登録抹消・
+     全銘柄再生成し、`[[MARKETDATA-CWAN-FROZEN-DATA-SUSPECT-1]]`を
+     クローズ
+
+  詳細はBACKLOG_DONE.md「2026-09-06（完了）」・BACKLOG.md各エントリ
+  参照。新DB構築プロジェクトのコード・データには変更なし。現存
+  BACKLOG.md総数は機械カウントで**94件**。
+
 ---
 
 更新日: 2026-08-15（**フェーズ3「導出データ層の管理方法検討」完了**。

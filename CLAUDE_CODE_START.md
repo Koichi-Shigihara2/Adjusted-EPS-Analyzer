@@ -1,5 +1,90 @@
 # Claude Code 作業開始テンプレート
 
+最終更新: 2026-09-07（**セッション終了時ブラッシュアップ・2026-09-06〜
+09-07セッションサマリー**。前回2026-09-05サマリー〈下記ブロック〉の
+続き。実装・修正10件、BACKLOG.md全97件棚卸し（陳腐化2件クローズ・
+疑義2件報告）、その副産物としてのCWAN登録抹消（AVGO・ENBに続く3件目の
+同型ケース）を実施した（全てpush済み）:
+
+1. `[[STONKS-SILO-PRICE-SCHEDULE-LAG-SUSPECT-1]]`クローズ
+   （コミット`eae85f83d3`）
+2. `[[REGISTER-FLOW-REDESIGN-1]]`クローズ（コミット`3cdea86b59`。
+   TICKER-AUDIT-1・PREFLIGHT-CHECK-1とも解消済みとなり前提が変わった
+   ため、前回セッションの申し送り通りクローズ可否を判断）
+3. `[[TOOLTIP-INDEX-1]]`実装（コミット`545718d1bf`）:
+   `tanuki_valuation/index.html`に`info-tooltip.js`を適用
+4. `[[LAYER3-COGS-CANDIDATE-TAG-EXPANSION-1]]`実装（コミット
+   `125262c4b8`）: `cost_of_revenue`候補タグをJOBY/CEG/CPRT限定で拡張
+5. `[[CHECK-COVERAGE-2]]`実装（コミット`d5f015129e`）: DuPont分解の
+   null銘柄検出consistency checkを追加
+6. `[[THESIS-FIELD-1]]`修正（コミット`7c963420f7`）: NVDA
+   `thesis.json`の`entry_price`欠損を解消・スキーマ記載を実態に修正
+7. `[[DISCOVER-RESIDUAL-LINKS-1]]`修正（コミット`691ccc3c09`）:
+   `index.html`・`site-header.js`に残るDiscoverリンク残骸を除去
+8. `[[SN-TANUKI-DELAY-1]]`実装（コミット`2058326dd6`）: SNの
+   `tanuki=false`を解除しTANUKI VALUATIONを有効化（対象銘柄拡大）
+9. `[[DATA-JUMP-CHECK-GENERALIZE-1]]`実装（コミット`e27c4d413c`）:
+   段差型急変検知（WARN-21相当）を売上総利益・CapExの2項目へ展開
+   （WARN-44/45新設）。純利益・SBCは別方式の検討課題として
+   `[[DATA-JUMP-CHECK-NETINCOME-SBC-1]]`へ切り出し
+10. `[[STONKS-FINANCIAL-VECTORS-RELATIVE-1]]`対応（コミット
+    `163449555a`）: `financial_vectors`のpercentile/angle/lengthが
+    相対順位であることを`results.json`に明示
+
+**BACKLOG.md全97件棚卸し**（依頼書に基づき「表層的事実確認＋診断結論の
+検証」の2段階で全件を本文精読＋実コード照合）:
+- Round1（コミット`94294fad7f`）: 34件検証・🟢有効30件・クローズ2件
+  （`[[TAIL-KPI-PROPOSER-CORE-ONLY-GATE-1]]`・
+  `[[SECDATA-STORAGE-FRAGMENTATION-1]]`）・疑義2件報告
+- 残り63件を中断せず連続実施し全97件完了。最終結果:
+  🟢有効93件・クローズ2件（上記Round1分）・⚠️疑義2件・軽微な更新余地2件
+  - 疑義2件（内容は変更せず報告のみ）: `[[MARKETDATA-CWAN-FROZEN-
+    DATA-SUSPECT-1]]`（→下記の通り最優先で個別調査・登録抹消まで
+    実施）、`[[TTM-DATA-DRIFT-BEHIND-PIPELINE-1]]`（`[[LAYER3-COGS-
+    CANDIDATE-TAG-EXPANSION-1]]`実装により発生した新事例だが、
+    `[[LAYER3-ANNUAL-CLASSIFICATION-DROPS-DATA-1]]`が既に文書化済みの
+    既知パターンと確認、記載はそのまま維持）
+  - 軽微な更新余地2件（報告のみ、本セッションでは未対応）:
+    `[[ANOMALY-PATTERN-CATALOG-1]]`（本日のJOBY/CEG/CPRT実例が
+    型Aカタログに未反映）・`[[REPORT-CONSISTENCY-GROSSPROFIT-COGS-
+    CHECK-MISSING-1]]`（本日追加のWARN-44/45は本エントリが求める
+    revenue−COGS=gross_profitの算術整合性チェックとは別種で代替に
+    ならない旨を確認）
+
+**`[[MARKETDATA-CWAN-FROZEN-DATA-SUSPECT-1]]`個別調査・CWAN登録抹消**
+（コミット`ba6c1fc8d7`「CWAN削除本体」・`0ae69e966f`「BACKLOG更新」）:
+97件棚卸しで66日間の価格凍結データがTANUKI VALUATION最新出力へ実際に
+混入していることが判明し優先度を引き上げ、個別調査した結果、
+**CWAN（Clearwater Analytics）が2026-06-25にPermira・Warburg
+Pincus主導で1株$24.55の非公開化買収を受けNYSE上場廃止**していたと
+判明（SEC EDGAR `submissions.json`の`former_names`・yfinance
+delisted検知・凍結価格が買収対価と一致等、複数独立ソースで裏付け）。
+登録時点の診断「取得側の技術的異常」は誤りで、データパイプライン
+自体は正常挙動（存在しない株価を取得できないのは当然の挙動）だった
+ことを確定。AVGO・ENBに続く3件目の同型ケースとして「銘柄削除時の
+必須手順」に従いtanuki/stonks_silo/eps/hypecore全パイプラインから
+登録抹消（Step 0再洗い出しで新規3箇所を追加発見）、4パイプライン
+全銘柄再生成、`[[MARKETDATA-CWAN-FROZEN-DATA-SUSPECT-1]]`をクローズ。
+検証: `audit.py`/`report_consistency_check.py --fail-on-ng`/
+`system_health.py`いずれもNG=0・CWAN起因の新規WARN無し、
+`pytest tests/ -q`: 1139 passed。
+
+詳細は各BACKLOGエントリ・BACKLOG_DONE.md「2026-09-06（完了）」・
+PROJECT_STATUS.md参照。
+
+**次セッションの着手候補**:
+- `Market_Pulse_Update.yml`の実地確認（1週間分の観察がまもなく完了、
+  最終確認）
+- `SEC_Data_Update.yml`（週次yfinance突合、次回日曜サイクルでの実地
+  確認）
+- `[[DATA-JUMP-CHECK-NETINCOME-SBC-1]]`（純利益・SBC向け代替方式の
+  検討、優先度低）
+- `[[ANOMALY-PATTERN-CATALOG-1]]`への本日実例（JOBY/CEG/CPRT）反映
+- `[[JOBY-BLADE-ACQUISITION-IMPACT-SCOPE-1]]`（COGS以外への波及確認、
+  未着手）
+
+---
+
 最終更新: 2026-09-05（**セッション終了時ブラッシュアップ・2026-09-04〜
 09-05セッションサマリー**。前回2026-09-03サマリー〈下記ブロック〉の
 続き。実装・修正20件超、BACKLOG統合9クラスタ（21件→8エントリ）、
