@@ -2,6 +2,358 @@
 
 ---
 
+## 2026-09-06（完了）
+
+### ✅ [REGISTER-FLOW-REDESIGN-1] 新規銘柄登録プロセスの原子性・検証強制力の欠如
+**状態:** ✅完了
+**優先度:** 中
+**分類:** アーキテクチャ / 銘柄登録フロー
+**登録日:** 2026-07-11
+**完了日:** 2026-09-06
+**発見:** 2026-07-10の半導体5銘柄monitor_tickers.yaml同期漏れ・BX/ENB孤立エントリの
+構造診断（TICKER-AUDIT-1・[[CIK-ORPHAN-FLAGS-1]]と関連）
+
+#### 診断結果サマリ
+2026-07-10のインシデント（RMBS/ENTG/TER/KLAC/LRCXのStep 7/5b未実施、
+BX/ENBの孤立エントリ）は単発ミスではなく、登録プロセス自体に以下3つの
+構造的欠陥があることに起因する。
+
+#### 1. 原子性の欠如
+`cik_lookup.csv`に行を追加した瞬間（Step 0.5）から、その銘柄は
+`status=active`かつ各フラグ（tanuki/stonks_silo/eps/hypecore）がtrueであれば
+即座に各パイプライン（SEC定期更新・tanuki pipeline.py・stonks-silo pipeline.py・
+hypecore.py --batch等）から「対象銘柄」として扱われる。Step 1〜8は独立した
+逐次コマンドの羅列であり、オーケストレーション層が存在しないため：
+- Step 0.5だけ実施してStep 1〜8が未完了の状態でも、cik_lookup.csv上は
+  「完了済み銘柄」と見分けがつかない（status列にはactive/candidate/retiredの
+  3値しかなく「登録進行中」を表す状態がない）
+- セッション中断（コンテキスト制限・作業者都合等）が発生すると、
+  そのまま「中途半端な登録」が本番データに混入する
+- 「手動一括登録」（今回の半導体5銘柄のようにStep-by-stepを経ない一括操作）は
+  特にこの構造の影響を受けやすく、複数銘柄をまとめて処理する過程で
+  個別ステップ（特にStep 7/5b）が抜け落ちやすい
+
+#### 2. 検証の強制力不足（registration_validator.pyの構造的盲点）
+`registration_validator.py`のP1系チェック（7ステップ登録完全性）は
+**デフォルト実行時（引数なし）のスキャン対象がmonitor_tickers.yamlの
+既存銘柄のみ**（`tickers_to_check = target_tickers if target_tickers else monitor_tickers`）。
+つまり、monitor_tickers.yamlに未登録の銘柄はP1チェックのループに
+そもそも入らず、「monitor_tickers.yaml未登録」自体を検出できるのは
+明示的に対象ティッカーを指定した場合（Step 8を個別実行した場合）のみ。
+デフォルト実行でこの種の抜けを検出できるのは、cik_lookup.csv全体を
+無条件スキャンするP4-CIKOrphanチェックだけだが、これはWARN止まりで
+非ブロッキングのため運用上見落とされやすい（[[CIK-ORPHAN-FLAGS-1]]・
+今回の6件漏れは共にこの穴の顕在化）。
+
+**原因確定（2026-07-11 git履歴調査）:** P1（monitor_tickers.yamlスキャン）と
+P4-CIKOrphan（cik_lookup.csv全体スキャン）は、後から片方が追加されて
+想定がズレたのではなく、**同一の初回コミット**（`0d718e2d4`、2026-06-11）で
+同時に実装されていた。当時の設計はP1を「monitor_tickers.yamlに登録済みの
+運用中銘柄の日次健全性チェック」、P4を「cik_lookup.csv全体を対象にした
+孤立エントリの定期監査」と役割分担する意図だったと見られ、後続コミット
+（`e902ee037`、同日）ではP4-CIKOrphanが実際に検出したCRWD/FIG/MDB/PUBM/WEAV
+5件を「monitor_tickers.yamlへ追加」ではなく「登録抹消（削除）」で解消していた。
+つまりP4-CIKOrphanの想定是正手段は当初から「追加」と「削除」の両方があり得る
+ため機械的にNG化しづらく、これがWARN据え置きの設計理由だったと推測される。
+根本原因は「2つのチェックの役割分担自体」ではなく、**新規登録時にP1相当の
+完全性チェックをcik_lookup.csv全体に対しても実行する仕組みが存在しない**こと
+（=デフォルト実行モードが「運用中銘柄の日次チェック」用途しか想定しておらず、
+「登録直後の完全性監査」用途を兼ねられていない）。詳細は[[TICKER-SOURCE-UNIFY-1]]
+（完了・BACKLOG_DONE.md参照）参照。
+
+またNG/WARNの重大度分類にも一貫性の欠如がある：
+| チェック | 重大度 | 実質的な影響 |
+|---|---|---|
+| P1-Step1-SEC（SECデータ未取得） | NG | ブロッキング |
+| P1-Step2-Beta（Beta未設定） | WARN | raw yfinance値で代替されるため実害は小さい |
+| P1-Step3-Valuation（latest.json未生成） | NG | ブロッキング |
+| P1-Step5-HypeCore（poc.json未生成） | WARN | 非ブロッキングだが実質Step5未完了と同義 |
+| P1-Step5b-EPS（EPS Analyzerなし） | WARN | 同上（今回6件のうち5件がこれに該当） |
+| P1-Step6-Discover | NG | ブロッキング |
+| P1-Step7-Monitor | NG | ブロッキングだが上記スキャン範囲の穴で発火しないケースがある |
+| P4-CIKOrphan | WARN | cik_lookup全体を見る唯一のセーフティネットだが非ブロッキング |
+
+Step 3.5（segment_config設定）は、既存エントリの内容検証（P3）はあるが
+「本来設定すべきなのに未設定」自体を検出する仕組みが存在しない
+（[[ENTG-TER-SEGMENT-1]]も同型の見落とし）。Step 4（audit.py --check-beta）は
+コード中に明示的に「runtimeチェックのためskip（別途audit.pyで実行）」と
+コメントされており、registration_validator.py自体はStep 4の実施有無を
+一切検証しない。
+
+#### 3. データソース起因とプロセス起因の混同リスク
+今回の調査対象銘柄を分類すると：
+- **プロセス起因**（本来フルパイプライン完走すべきだったが手順が飛んだ）:
+  RMBS/ENTG/TER/KLAC/LRCX（全件tanuki=true/eps=true/hypecore=true、
+  SECデータ取得は正常。2026-07-11に修正済み）
+- **データソース起因・真の取得失敗**: ~~ENB（IFRS/40-F企業のためSEC annual
+  data 0件、`update.py`はエラーを出さず「完了」表示のまま空データを返す。
+  P1-Step1-SEC NGで検出可能だが、Step 0（カナダ企業チェック）が本来
+  弾くべきケース。列追加時点の遡及登録のため経緯不明のまま残存）~~
+  2026-09-03 登録抹消（コミット`62aa662102`）により解消・[[CIK-ORPHAN-
+  FLAGS-1]]参照
+- **データソース起因・評価枠組み非適合（意図的除外）**: APGE（売上ゼロの
+  臨床段階バイオ、SEC取得自体は正常）・~~BX（資産運用会社でPL項目が薄い）~~
+  2026-07-11 登録抹消（コミット`8dde36fdc`）により解消・SN（20-F提出企業で
+  四半期系列不足、[[SN-TANUKI-DELAY-1]]参照）。
+  いずれも全フラグor一部フラグfalseは意図的な設計判断であり「失敗」ではない
+
+この3分類が明示的にラベル化されていないため、「フラグfalseの銘柄」を見ても
+「意図的除外」なのか「取得失敗の放置」なのか「登録途中」なのかが
+cik_lookup.csvの記載だけでは判別できない。
+
+#### 対応方針（診断のみ・実装は別タスク）
+優先順位付きで以下を提案する（実装順は着手時に判断）：
+1. ✅ **P4-CIKOrphan相当のチェックをNG（ブロッキング）へ格上げ、または
+   デフォルト実行のスキャン範囲をcik_lookup.csv全体に拡張**する
+   （最も低コストで効果が大きい。P1のスキャン範囲を`monitor_tickers`から
+   `cik_lookup.csv全銘柄`に変更すれば、monitor_tickers未登録自体もP1が
+   直接検出できるようになる。**この修正自体は[[TICKER-SOURCE-UNIFY-1]]
+   （完了・BACKLOG_DONE.md参照）の確定バグ2と同一であり、着手時はそちらの
+   対応方針2をそのまま適用すればよい**）
+   → **2026-07-11 コミット`ba2cfef42`で完了**（`tickers_to_check`のデフォルト値を
+   cik_lookup.csv全銘柄に変更）。対応方針2〜5は引き続き未着手。
+2. ✅ **cik_lookup.csvのstatus列に「登録進行中」を表す値を追加する**
+   （例: `status=provisioning`。Step 8のNG=0確認後に`active`へ昇格する運用にすれば、
+   各パイプラインは`status=active`のみを対象とすることで中途半端な登録の
+   本番混入を防げる。ただし既存パイプラインの対象銘柄取得ロジック
+   （フラグベース）に`status`条件を追加する変更が必要）
+   → **2026-09-03 コミット群で完了**（`_INVALID_STATUSES`に
+   `provisioning`追加＋`registration_validator.py --promote`昇格ロジック。
+   詳細は下記「方針2・3実装（2026-09-03）」参照）
+3. ✅ **Step 1〜8を1つのオーケストレーションスクリプトにまとめ、
+   全ステップ成功後にのみcik_lookup.csvへコミット可能にする**（原子化。
+   実装コストは最も高いが、根本解決になる）
+   → **2026-09-03完了**（`common/registration/register_ticker.py`新設。
+   「cik_lookup.csvへのコミット可能化」は依頼書当初の想定〈完全な
+   git commitゲート〉ではなく、方針2のprovisioning状態＋Step 8昇格
+   ゲートという軽量な形で実現。詳細は下記参照）
+4. ✅ **cik_lookup.csvに「意図的除外」を示す列・値を追加する**
+   （例: `exclusion_reason`列。APGE/BX/SN等の"評価枠組み非適合"ケースを
+   明示すれば、フラグfalse＝異常ではないことがCSV自体から読み取れる）
+   → **2026-09-03 コミット`f0c4b18e09`で完了**（`exclusion_reason`列を
+   新設し4銘柄に記入。詳細は下記「方針4実装（2026-09-03）」参照）
+5. ✅（実質達成）**「手動一括登録」という抜け道を塞ぎ、単一エントリポイント
+   経由の登録に集約する**（複数銘柄を一括処理する場合でも、内部的には
+   1銘柄ずつ完全なStep 1〜8を実行する設計にする）
+   → `register_ticker.py`は複数ティッカーをスペース区切りで受け取り、
+   内部的に1銘柄ずつフルにStep 1〜8を実行する設計のため、依頼書が
+   求める挙動そのものは達成している。ただし個々のコマンド
+   （`update.py`・`pipeline.py`等）を直接手動実行する経路は技術的には
+   引き続き存在し、オーケストレーションスクリプトの使用を強制する
+   仕組みはない（CLAUDE_CODE_START.mdの手順書で明記するに留まる、
+   運用規律による担保）。この限定付きで「実質達成」と評価する
+
+#### 優先度についての所感
+現時点では実際のIV計算等を歪める実害はなく（今回の漏れはデータ欠損であり
+誤計算ではない）、ARCH-DATA-1のような「優先度：高」の即時実害はない。
+一方で同型の見落とし（BX/ENB→今回の6件）が既に2回発生しており、
+銘柄数が増えるほど再発確率が上がる構造的問題のため「優先度：中」を提案する。
+TICKER-AUDIT-1・PREFLIGHT-CHECK-1と統合的に設計すべき
+（別々に実装しない）。
+
+**着手順の推奨（2026-07-11追記・同日完了済み）:** 対応方針1（P4のNG格上げ/
+スキャン範囲拡張）は[[TICKER-SOURCE-UNIFY-1]]（完了・BACKLOG_DONE.md参照）で
+確定した同型バグの修正と同一であり、上記の通り既に完了している。
+
+**（2026-09-03追記）対応方針1〜5、全て完了または実質達成。** 方針2
+（provisioning状態）・方針3（オーケストレーションスクリプト）は
+2026-09-03に同一セッションで実装（詳細は下記「方針2・3実装
+（2026-09-03）」）。方針4（exclusion_reason列）は同日先行実装済み
+（上記「方針4実装（2026-09-03）」）。方針5（単一エントリポイント化）は
+方針3のオーケストレーションスクリプト自体が実質的に達成（運用規律に
+よる担保、技術的な強制はなし）。REGISTER-FLOW-REDESIGN-1の
+対応方針としては全件着手完了となったが、本エントリ自体は
+TICKER-AUDIT-1（2026-09-05に[[QUALITY-GATES-EPIC-1]]ゲート4の付録へ
+統合済み、独立エントリとしては削除）・PREFLIGHT-CHECK-1との
+統合的設計という当初の前提（上記「優先度についての所感」）の扱いが
+残るため、クローズは見送り現状維持のままとする。
+
+**（2026-09-05追記）** 上記「統合的設計」の相手だったTICKER-AUDIT-1・
+PREFLIGHT-CHECK-1は、いずれも[[QUALITY-GATES-EPIC-1]]配下（ゲート4・
+ゲート0）で実装が完了した（PREFLIGHT-CHECK-1は完了・BACKLOG_DONE.md
+参照）。「統合的設計」という当初の前提自体が解消されたため、本エントリ
+（REGISTER-FLOW-REDESIGN-1）のクローズ可否は次回セッションで
+Koichiさんと再検討する余地がある（本タスクのスコープ外のため、
+クローズの実施は見送る）。
+
+#### 方針4実装（2026-09-03、cik_lookup.csvへのexclusion_reason列追加）
+
+コミット`62aa662102`（ENB登録抹消本体）・`f0c4b18e09`（exclusion_reason
+列追加＋stonks_silo方針文書化）。[[QUALITY-GATES-EPIC-1]]ゲート0対応の
+一環として着手。
+
+**ENB登録抹消が先行**: 方針4着手の過程で、上記「3. データソース起因と
+プロセス起因の混同リスク」で「データソース起因・真の取得失敗」に分類
+していたENBが、[[CIK-ORPHAN-FLAGS-1]]の自己点検（2026-07-10、yfinance
+`country`フィールドでカナダ企業と確認済み）以降も未解決のまま残って
+いることが再確認された。Koichiさんの判断により、BX（2026-07-11に
+同一方針で解消済み）と同じくA案（登録抹消）を採用し、cik_lookup.csv
+からENB自体を削除した上でexclusion_reason列を追加した（ENBは列追加の
+対象外——存在しない銘柄に除外理由は不要なため）。詳細は[[CIK-ORPHAN-
+FLAGS-1]]参照。
+
+**exclusion_reason列の記入内容**: `config/cik_lookup.csv`
+（103行、ENB抹消後）に新規列を追加し、4銘柄に個別の除外理由を記入した:
+- RKLB・ZS: 成長株のためSTONKS SILO側で評価する設計
+  （`tanuki=false`・`stonks_silo=true`。ZSは`eps=false`も同理由）
+- SN: 20-F提出企業で四半期系列不足の一時的措置
+  （[[SN-TANUKI-DELAY-1]]参照、Q2 10-Q提出後にtanuki=trueへ戻す予定）
+- APGE: 売上ゼロの臨床段階バイオ、評価枠組み非適合（意図的除外）
+
+それ以外の`tanuki=true`銘柄は空欄のまま。既存12列・103行の内容は
+Pythonでのテキストベース部分追記（各行末に列を追加するのみ）で対応し、
+csv.DictReaderでの往復検証・git diffで対象行以外の差分がないことを
+確認した（`json.dump`全体書き直しがコンパクト表記を壊す事故〈2026-09-02
+CIK履歴JSON編集時に発覚〉と同型のリスクを、CSVでも同じくテキストベース
+部分編集を優先する方針で回避）。
+
+**stonks_silo=falseは一般方針として文書化のみ、個別記入せず**:
+`stonks_silo=false`は78銘柄（2026-09-03時点）と大多数を占めるが、これは
+個別判断ではなく「大型株・黒字企業全般はSTONKS SILO対象外」という設計
+方針そのものである（STONKS SILOは赤字企業の黒字化評価に特化したシステム
+で、`stonks_silo=true`側〈25銘柄〉が例外的に選定された赤字企業リスト）。
+cik_lookup.csvへの個別記入はせず、`SYSTEM_MAP.md`のSTONKS SILOセクション
+に一般方針として1箇所明記した。
+
+**検証**: pytest 1009 passed、registration_validator.py（103銘柄、
+ENB関連NG/WARN皆無）・report_consistency_check.py --fail-on-ng
+（NG=0、CHECK-32含め変更前と同一のNG/WARN件数）・audit.py・
+system_health.py（Config: 整合OK）で回帰なしを確認。全105→104銘柄相当
+のフルパイプライン再生成は、ENBがそもそも計算対象外のデータのため
+不要と判断し実施していない（依頼書の指示通り）。
+
+#### 方針2・3実装（2026-09-03、provisioning状態＋オーケストレーションスクリプト）
+
+[[QUALITY-GATES-EPIC-1]]ゲート0対応。方針2（`status=provisioning`）と
+方針3（オーケストレーションスクリプト）は依存関係が強い（後者は前者の
+状態を前提に動く）ため同一セッションで実装した。
+
+**方針2: provisioning状態の追加**
+- `config/cik_lookup.csv`のstatus列が取りうる値に`provisioning`を追加
+  （既存の`active`/`candidate`/`retired`と並ぶ4つ目の値）
+- `common/sec_data/tickers.py::_INVALID_STATUSES`に`provisioning`を追加
+  （`{"retired"}`→`{"retired", "provisioning"}`）。これにより
+  `get_active_tickers()`系（`get_tanuki_tickers()`等）がprovisioning
+  中のティッカーをバッチ実行対象から除外するようになった
+- `registration_validator.py`に`--promote {active,candidate}`を新設
+  （`promote_ticker_status()`・`ticker_ng_items()`）。単一ティッカー
+  指定時のみ使用可、NG=0なら`cik_lookup.csv`のstatus列のみをテキスト
+  ベース部分編集で書き換える（他列・他行は一切変更しない）。NG判定は
+  当該ティッカーに関するNGのみに絞り込む設計とした——P3
+  （segment_config整合性）等の「全体チェック」はtarget_tickersフィルタ
+  に関わらずcik_lookup.csv/segment_config.json全体を毎回スキャンする
+  ため、`result.count_ng()`の総数には無関係な既存銘柄のNGが混入し
+  うる。全NGメッセージが`f"{ticker}: ..."`形式で統一されていることを
+  利用し、メッセージ先頭のプレフィックスで自ティッカー分のみに絞り込む
+  ことで、他銘柄の既存NGが昇格を誤ってブロックしないようにした
+
+**発見した設計上の衝突とその解消（重要）**: `_INVALID_STATUSES`への
+`provisioning`追加を実装した直後、実地検証（後述のHIMSテスト登録）で
+致命的な副作用を発見した——`pipeline.py [TICKER]`・`hypecore.py --batch
+[TICKER]`・`adjusted_eps_analyzer/pipeline.py --ticker [TICKER]`の
+CLI引数明示指定時フィルタ（ZS-TICKERS-LEAK-1由来の`_filter_*_tickers()`
+群）は`get_tanuki_tickers()`等のstatus フィルタ済み集合を参照しており、
+方針2の変更により**オーケストレーションスクリプト自身がprovisioning中の
+ティッカーを明示指定してStep 3/5/5bを実行しようとしても、この安全弁に
+弾かれて処理できない**という自己矛盾が生じていた。
+
+解消策として`common/sec_data/tickers.py`に`get_registrable_tickers(flag)`
+を新設した——`get_active_tickers()`とは異なり`retired`のみを除外し
+`provisioning`は除外しない（デフォルト・バッチ実行の対象選定は引き続き
+`get_active_tickers()`を使い、provisioning中ティッカーの自動処理を防ぐ）。
+`pipeline.py::_filter_tanuki_tickers()`・`hypecore.py`の`--batch`/単体
+指定パス・`adjusted_eps_analyzer/pipeline.py::run()`の3箇所を、CLI引数
+明示指定時の検証にはこの新関数を使うよう修正した（`--all`等のバッチ
+パスは変更なし）。
+
+**方針3: オーケストレーションスクリプト新設**
+`common/registration/register_ticker.py`を新設。Step 1（SEC取得）・
+Step 2（β取得）・Step 3（TANUKI VALUATIONパイプライン）・Step 4
+（audit.py --check-beta）・Step 5（HypeCore、hypecore=trueのみ）・
+Step 5b（EPS Analyzer、eps=trueのみ）・Step 6（Discover登録）・Step 7
+（monitor_tickers.yaml追加）・Step 8（registration_validator.py実行、
+NG=0なら`--target-status`で指定されたstatusへ昇格）を自動連続実行する。
+複数ティッカーを渡した場合も内部的に1銘柄ずつフルにStep 1〜8を実行する
+（方針5相当）。
+
+- 昇格先status（active/candidate）はCLI引数`--target-status`で明示
+  指定させる設計とした（依頼書が挙げた2案のうち、cik_lookup.csvの
+  registration_note等からの自動判定は曖昧になりうるため明示指定方式を
+  採用）
+- Step 2.5（Software_System分類）・Step 3.5（セグメント設定）は
+  依頼書の設計方針通りスクリプトが判定を代行せず、一時停止して
+  Claude Codeへ判断を委ねる（risk_fetcher.py・Discoverサブシステム
+  撤去と同じ「根拠不明の生成をそのまま採用しない」方針）:
+  - Step 2.5: `beta_config.json`の`overrides.{ticker}.sector`が
+    暫定プレースホルダ`"Software_System"`のままなら一時停止。
+    既存の自動分類ロジック（`beta_fetcher.py --classify-software-
+    system`、前受収益比率による判定）は代行呼び出ししない
+  - Step 3.5: `common/sec_data/data/{ticker}/segment_review.json`に
+    `{"reviewed": true, ...}`が書き込まれるまで常に一時停止する。
+    ASC 280正式セグメント数はXBRLタグから機械的に判定できないため
+    （ソースのないヒューリスティックで代替するより、`tanuki=true`の
+    銘柄では毎回Claude Codeが10-Kを確認する設計の方が安全と判断した）
+- 各ステップはべき等に設計（Step 1/2/3/4/5/5bは既存スクリプトの
+  「取得・再生成して上書き」する挙動にそのまま依存、Step 6/7は
+  CLAUDE_CODE_START.mdの既存インラインコードと同じ「既に存在すれば
+  スキップ」パターンを踏襲）。Step 2.5・3.5で一時停止した場合、
+  Claude Codeが確認・書き込みを行った後に同じコマンドを再実行すれば
+  安全に続きから進められる（ロールバックは実装せず、依頼書の設計
+  方針通り）
+- `common/sec_data/update.py`（Step 1本体）は`config.py::get_all()`と
+  いう別経路でティッカー一覧を取得しておりstatusを一切見ない
+  （provisioning中でもSEC取得自体は行われる）。SEC取得は計算・表示に
+  影響しないため実害小と判断し、既知のギャップとしてコード・
+  CLAUDE_CODE_START.md双方に記録した
+
+**実地検証（HIMS、テスト用一時ブランチ、本番銘柄リストへの影響なし）**:
+実在する未登録の小型株HIMS（Hims & Hers Health）を用い、
+`test-registration-hims`という一時ブランチ上で実際にend-to-endの登録
+フローを検証した（検証完了後、ブランチは破棄・ローカルの生成物も
+全て削除し本番へは一切影響していない）。
+- Step 3.5一時停止→`segment_review.json`書き込み→再実行で正しく
+  再開できることを確認（LLY型判定、単一セグメント）
+- Step 2.5の一時停止メッセージは`sector="Software_System"`を模擬
+  注入した単体テストで動作確認（HIMSは実際にはこのsectorに該当
+  しなかったため）
+- Step 5（HypeCore）が実データで自然に失敗する事例（`株価データ取得
+  失敗`）に遭遇し、非ブロッキングで後続ステップ・Step 8昇格まで
+  正常完走することを確認（意図的な障害注入ではなく実際に発生した
+  事例だが、依頼書の検証手順2が求める内容を満たす）
+- 同一コマンドの2回目実行（既にactive昇格済みの状態からの再実行）が
+  エラーなく完走することを確認（べき等性）
+- **副次的に発見・修正したバグ**: 本スクリプト自身のprint()が
+  パイプ出力時にフルバッファリングされ、subprocess呼び出し先の出力
+  より大幅に遅れて表示される事故を発見（実行順序と表示順序が食い違い、
+  一時停止メッセージの視認性を損なう）。`sys.stdout.reconfigure(
+  line_buffering=True)`で解消
+- 既存104銘柄（HIMSを除く）のstatus値に意図しない変更がないことを
+  `git diff`で確認（HIMSの行のみが差分として現れることを確認）
+
+**検証**: pytest 1019 passed（新規テスト`tests/test_tickers.py`
+〈provisioning除外・get_registrable_tickers〉・
+`tests/test_registration_validator.py`〈--promote機能〉を追加）。
+`tests/test_no_direct_ticker_access.py`の`cik_lookup.csv`直接パース
+許可リストに`common/registration/register_ticker.py`を追加登録
+（単一ティッカー自身の行参照でありバッチリスト構築ではないため）。
+`report_consistency_check.py --fail-on-ng`・`audit.py`・
+`registration_validator.py`（引数なし全銘柄実行）いずれもNG=0
+（HIMSテストデータ削除後のkaihatsuブランチで再確認、変更前と同一の
+NG/WARN件数であることを確認済み）。
+
+#### クローズ（2026-09-06）
+対応方針1〜5は上記の通り全て完了または実質達成しており（2026-09-03〜05
+の一連の実装で確認済み）、クローズを保留していた唯一の理由——
+TICKER-AUDIT-1・PREFLIGHT-CHECK-1との「統合的設計」という当初の前提
+（上記「優先度についての所感」）——も、両者とも[[QUALITY-GATES-EPIC-1]]
+配下（ゲート4・ゲート0）で実装完了したことにより解消済みとなった
+（TICKER-AUDIT-1は2026-09-05にQUALITY-GATES-EPIC-1ゲート4付録へ全文
+統合、PREFLIGHT-CHECK-1は同日ゲート0実装完了・BACKLOG_DONE.md「2026-
+09-05⑤（完了）」参照）。クローズを妨げる要因が残っていないため、本
+エントリをBACKLOG.mdからBACKLOG_DONE.mdへ移設する。
+
+---
+
 ## 2026-09-05⑤（完了）
 
 ### ✅ [PREFLIGHT-CHECK-1] 新規登録時のデータ品質プリフライトチェック
