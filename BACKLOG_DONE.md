@@ -540,6 +540,55 @@ thesis.jsonの実際のフィールドが期待値と乖離している（登録
 
 ---
 
+### ✅ [SN-TANUKI-DELAY-1] SN TANUKI VALUATION再検討
+**状態:** ✅完了
+**優先度:** 低
+**分類:** データ品質 / TANUKI VALUATION
+**登録日:** 2026-07-02
+**完了日:** 2026-09-06
+
+#### 背景
+SNは2025年まで20-F提出企業（外国民間発行体）のため四半期報告義務がなく、
+四半期データが2026年Q1分（初回10-Q、2026-05-06提出）のみ存在していた。
+四半期トレンド・TTM系列が構築不能なため、当面tanuki=falseで保留していた
+（「2026年8月頃のQ2 10-Q提出後、四半期系列蓄積を待ってtrueに戻す」という
+時限措置）。
+
+#### 対応内容
+実データ確認の結果、`common/sec_data/data/SN/quarterly_2026Q2.json`が
+既に存在しており解除条件を満たしていたため、以下を実施した：
+1. `config/cik_lookup.csv`のSN行、`tanuki`を`false`→`true`に変更
+2. `registration_note`の該当記述（`｜tanuki=false は一時的措置(...)`）を
+   `｜tanuki=false一時的措置は2026-09-06に解除済み（quarterly_2026Q2.json
+   蓄積を実データ確認、[[SN-TANUKI-DELAY-1]]クローズ）`に更新
+3. `exclusion_reason`列（旧: `20-F提出企業で四半期系列不足、一時的措置。
+   [[SN-TANUKI-DELAY-1]]参照...`）も、tanuki=true化に伴いもはや「現在の
+   除外理由」ではなくなったため空欄化した（依頼書には明記がなかったが、
+   `tanuki=true`銘柄99件全件で`exclusion_reason`が空欄という既存の
+   一貫した運用パターンに合わせた。この列は現在有効な除外理由の記録に
+   限定されており、過去の経緯は`registration_note`側に残る）
+4. `python src/value/tanuki_valuation/pipeline.py SN`でTANUKI VALUATION
+   Step3をSN単体で実行
+
+#### 検証結果（2026-09-06）
+- SNのreport.txt/latest.jsonを確認: 四半期データが2件（2026Q1/Q2）のみ
+  のため、TTM依存フィールドは無理に埋めず正直にNone/除外表示されて
+  いることを確認——`dupont: {"excluded": true, "reason":
+  "ni_ttm_unavailable"}`（TTM純利益取得不可のため除外）・
+  `Dilution_3yr_Annual: N/A`・`fcf_source: annual_fallback`
+  （FCFはTTMでなく年次データにフォールバック）。一方、年次データが
+  豊富な項目（FCF 5yr/2yr平均・Moat Score・DCF・SBC等）は正常に算出
+  されており、「無理に埋めない設計」が意図通り機能していることを確認
+- `audit.py`でSNが新たに4件のWARN（NI/OCF/Revenue一部None・TTMエントリ
+  2件<3件）として検出されることを確認——いずれも上場間もない実態を
+  正直に反映したものでNGではない
+- `report_consistency_check.py --fail-on-ng`: NG=0・WARN=93
+  （SN追加後も対象100銘柄、SN起因の新規WARNなし）
+- `pytest -q`: 1149 passed（既存1148件＋SN追加による銘柄横断テスト
+  1件増）
+
+---
+
 ### ✅ [REGISTER-FLOW-REDESIGN-1] 新規銘柄登録プロセスの原子性・検証強制力の欠如
 **状態:** ✅完了
 **優先度:** 中
