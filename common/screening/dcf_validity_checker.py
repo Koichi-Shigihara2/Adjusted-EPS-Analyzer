@@ -20,6 +20,9 @@ TANUKI VALUATIONのDCF成長率前提・ROIC計算根拠が実績データと整
        表示される銘柄を検知し、実際の根拠(recommended_g自動注入 / TTM実績注入)を推定
   C. SECデータ異常ジャンプ検知
      - 直近6年の年次売上でYoY倍率が2.0倍以上または0.5倍以下となる不連続を検知
+     - [[DATA-JUMP-CHECK-GENERALIZE-1]]でsection/fieldパラメータ化。
+       report_consistency_check.py側では売上総利益（上振れ5.0倍/下振れ0.2倍）・
+       CapEx（上振れ8.0倍/下振れ0.15倍）にも展開済み（WARN-44・WARN-45）
   D. ROIC投下資本の妥当性
      - 直近期の株主資本マイナス、または投下資本が売上の15%未満(閾値は引数で調整可)
   E. HypeCore遷移確率のサンプル数
@@ -140,25 +143,41 @@ def check_b_source_label(repo_root, latest, ticker):
                          "real_source_guess": real_source if flag else displayed_source}
 
 
-def check_c_data_jump(repo_root, ticker, lookback_years=6, jump_ratio=2.0):
-    """C: SECデータ異常ジャンプ検知(直近lookback_years年の年次売上でYoY倍率がjump_ratio倍以上/1/jump_ratio倍以下)"""
+def check_c_data_jump(repo_root, ticker, lookback_years=6, jump_ratio=2.0, down_ratio=None,
+                       section="pl", field="revenue"):
+    """C: SECデータ異常ジャンプ検知(直近lookback_years年の年次{section}.{field}で
+    YoY倍率がjump_ratio倍以上/down_ratio倍以下)
+
+    [[DATA-JUMP-CHECK-GENERALIZE-1]]でRevenue専用のハードコードから
+    section/fieldパラメータ化した。Revenue呼び出し元（report_consistency_check.py
+    CHECK-21・WARN-21）は本改修前と完全に同一のデフォルト引数
+    （section="pl", field="revenue", jump_ratio=2.0, down_ratio=None→1/jump_ratio=0.5）
+    で呼び出されるため動作は変わらない。
+
+    down_ratio: 下振れ判定用の閾値。Noneの場合は1/jump_ratio（上振れ・下振れが
+    互いに逆数の対称な閾値）を使用する。CapEx（上振れ8.0倍/下振れ0.15倍）のように
+    上振れ・下振れが逆数の関係にない非対称な閾値が必要なフィールド向けに
+    明示指定できるようにした。
+    """
+    if down_ratio is None:
+        down_ratio = 1 / jump_ratio
     years = _get_annual_years(repo_root, ticker)
     target_years = years[-lookback_years:]
-    revs = [(y, (_load_annual(repo_root, ticker, y).get("pl") or {}).get("revenue")) for y in target_years]
+    vals = [(y, (_load_annual(repo_root, ticker, y).get(section) or {}).get(field)) for y in target_years]
 
     flag = False
     jumps = []
-    for i in range(1, len(revs)):
-        y0, r0 = revs[i - 1]
-        y1, r1 = revs[i]
-        if r0 is None or r1 is None or r0 == 0:
+    for i in range(1, len(vals)):
+        y0, v0 = vals[i - 1]
+        y1, v1 = vals[i]
+        if v0 is None or v1 is None or v0 == 0:
             continue
-        ratio = r1 / r0
-        if ratio >= jump_ratio or ratio <= 1 / jump_ratio:
+        ratio = v1 / v0
+        if ratio >= jump_ratio or ratio <= down_ratio:
             flag = True
-            jumps.append(f"{y0}({r0/1e6:.0f}M)→{y1}({r1/1e6:.0f}M) 倍率{ratio:.2f}x")
+            jumps.append(f"{y0}({v0/1e6:.0f}M)→{y1}({v1/1e6:.0f}M) 倍率{ratio:.2f}x")
 
-    return flag, jumps, revs
+    return flag, jumps, vals
 
 
 def check_d_invested_capital(repo_root, ticker, ic_revenue_threshold=0.15):

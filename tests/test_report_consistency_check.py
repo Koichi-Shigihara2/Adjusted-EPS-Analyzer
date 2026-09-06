@@ -128,7 +128,8 @@ class TestCheckCDataJumpIntegration:
         monkeypatch.setattr(rcc, "DATA_DIR", str(tmp_path))
         monkeypatch.setattr(
             rcc, "check_c_data_jump",
-            lambda repo_root, ticker: (True, ["2020(100M)→2021(400M) 倍率4.00x"], []),
+            lambda repo_root, ticker, **kw: (True, ["2020(100M)→2021(400M) 倍率4.00x"], [])
+            if kw.get("field", "revenue") == "revenue" else (False, [], []),
         )
         ng, warn = rcc.check_ticker("TESTCO", whitelist=set())
         assert any("WARN-21" in w and "4.00x" in w for w in warn)
@@ -139,7 +140,7 @@ class TestCheckCDataJumpIntegration:
         monkeypatch.setattr(rcc, "DATA_DIR", str(tmp_path))
         monkeypatch.setattr(
             rcc, "check_c_data_jump",
-            lambda repo_root, ticker: (False, [], []),
+            lambda repo_root, ticker, **kw: (False, [], []),
         )
         ng, warn = rcc.check_ticker("TESTCO", whitelist=set())
         assert not any("WARN-21" in w for w in warn)
@@ -150,15 +151,103 @@ class TestCheckCDataJumpIntegration:
         monkeypatch.setattr(rcc, "DATA_DIR", str(tmp_path))
         monkeypatch.setattr(
             rcc, "check_c_data_jump",
-            lambda repo_root, ticker: (
+            lambda repo_root, ticker, **kw: (
                 True,
                 ["2019(300M)→2020(1160M) 倍率3.87x", "2020(1160M)→2021(1295M) 倍率1.12x が除外"],
                 [],
-            ),
+            ) if kw.get("field", "revenue") == "revenue" else (False, [], []),
         )
         ng, warn = rcc.check_ticker("TESTCO", whitelist=set())
         warn_21_entries = [w for w in warn if "WARN-21" in w]
         assert len(warn_21_entries) == 2
+
+
+class TestCheck44GrossProfitDataJump:
+    """CHECK-44（売上総利益段差型急変、[[DATA-JUMP-CHECK-GENERALIZE-1]]で
+    check_c_data_jump()をsection/fieldパラメータ化して展開）がWARN-44として
+    warnリストに追加され、他のcheck_c_data_jump呼び出し（Revenue/CapEx）とは
+    独立して発火することを確認する"""
+
+    def _make_ticker_dir(self, tmp_path, ticker: str) -> None:
+        ticker_dir = tmp_path / ticker
+        ticker_dir.mkdir(parents=True, exist_ok=True)
+        (ticker_dir / "report.txt").write_text("Classification: WATCH\n", encoding="utf-8")
+        (ticker_dir / "latest.json").write_text("{}", encoding="utf-8")
+
+    def test_warn_44_added_when_gross_profit_jump_flags(self, tmp_path, monkeypatch):
+        self._make_ticker_dir(tmp_path, "TESTCO")
+        monkeypatch.setattr(rcc, "DATA_DIR", str(tmp_path))
+        monkeypatch.setattr(
+            rcc, "check_c_data_jump",
+            lambda repo_root, ticker, **kw: (True, ["2023(10M)→2024(60M) 倍率6.00x"], [])
+            if kw.get("field") == "gross_profit" else (False, [], []),
+        )
+        ng, warn = rcc.check_ticker("TESTCO", whitelist=set())
+        assert any("WARN-44" in w and "6.00x" in w for w in warn)
+        assert not any("WARN-44" in n for n in ng)
+
+    def test_no_warn_44_when_gross_profit_jump_does_not_flag(self, tmp_path, monkeypatch):
+        self._make_ticker_dir(tmp_path, "TESTCO")
+        monkeypatch.setattr(rcc, "DATA_DIR", str(tmp_path))
+        monkeypatch.setattr(
+            rcc, "check_c_data_jump",
+            lambda repo_root, ticker, **kw: (False, [], []),
+        )
+        ng, warn = rcc.check_ticker("TESTCO", whitelist=set())
+        assert not any("WARN-44" in w for w in warn)
+
+    def test_warn_44_independent_of_warn_21(self, tmp_path, monkeypatch):
+        """RevenueとGrossProfitで異なる発火結果を返した場合、それぞれ独立して
+        反映されること（section/fieldパラメータ化によりRevenue呼び出しの
+        挙動へ波及していないことの回帰テスト）"""
+        self._make_ticker_dir(tmp_path, "TESTCO")
+        monkeypatch.setattr(rcc, "DATA_DIR", str(tmp_path))
+
+        def _fake(repo_root, ticker, **kw):
+            field = kw.get("field", "revenue")
+            if field == "revenue":
+                return False, [], []
+            if field == "gross_profit":
+                return True, ["2023(10M)→2024(60M) 倍率6.00x"], []
+            return False, [], []
+
+        monkeypatch.setattr(rcc, "check_c_data_jump", _fake)
+        ng, warn = rcc.check_ticker("TESTCO", whitelist=set())
+        assert not any("WARN-21" in w for w in warn)
+        assert any("WARN-44" in w for w in warn)
+
+
+class TestCheck45CapexDataJump:
+    """CHECK-45（CapEx段差型急変、[[DATA-JUMP-CHECK-GENERALIZE-1]]）が
+    WARN-45としてwarnリストに追加されることを確認する"""
+
+    def _make_ticker_dir(self, tmp_path, ticker: str) -> None:
+        ticker_dir = tmp_path / ticker
+        ticker_dir.mkdir(parents=True, exist_ok=True)
+        (ticker_dir / "report.txt").write_text("Classification: WATCH\n", encoding="utf-8")
+        (ticker_dir / "latest.json").write_text("{}", encoding="utf-8")
+
+    def test_warn_45_added_when_capex_jump_flags(self, tmp_path, monkeypatch):
+        self._make_ticker_dir(tmp_path, "TESTCO")
+        monkeypatch.setattr(rcc, "DATA_DIR", str(tmp_path))
+        monkeypatch.setattr(
+            rcc, "check_c_data_jump",
+            lambda repo_root, ticker, **kw: (True, ["2023(2M)→2024(34M) 倍率12.40x"], [])
+            if kw.get("field") == "capital_expenditure" else (False, [], []),
+        )
+        ng, warn = rcc.check_ticker("TESTCO", whitelist=set())
+        assert any("WARN-45" in w and "12.40x" in w for w in warn)
+        assert not any("WARN-45" in n for n in ng)
+
+    def test_no_warn_45_when_capex_jump_does_not_flag(self, tmp_path, monkeypatch):
+        self._make_ticker_dir(tmp_path, "TESTCO")
+        monkeypatch.setattr(rcc, "DATA_DIR", str(tmp_path))
+        monkeypatch.setattr(
+            rcc, "check_c_data_jump",
+            lambda repo_root, ticker, **kw: (False, [], []),
+        )
+        ng, warn = rcc.check_ticker("TESTCO", whitelist=set())
+        assert not any("WARN-45" in w for w in warn)
 
 
 class TestCheck23FyTagMismatch:

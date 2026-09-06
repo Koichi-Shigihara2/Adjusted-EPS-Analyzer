@@ -1738,6 +1738,49 @@ def check_ticker(ticker: str, whitelist: set, include_yfinance: bool = False) ->
                 f" → XBRLタグ誤り、または実際の急成長/急減の可能性（要確認）"
             )
 
+    # CHECK-44・CHECK-45: 売上総利益・CapExの段差型急変
+    # （[[DATA-JUMP-CHECK-GENERALIZE-1]]、2026-09-06）
+    #
+    # check_c_data_jump()をsection/fieldパラメータ化し、CHECK-21（Revenue）と
+    # 同じ「隣接年比の段差型検知」を売上総利益（pl.gross_profit）・
+    # CapEx（cf.capital_expenditure）にも展開した。純利益・SBCは対象外
+    # （[[DATA-JUMP-CHECK-NETINCOME-SBC-1]]として別途切り出し。純利益は
+    # 符号反転により比率が発散、SBCはゼロ近傍からの急増（最大2468倍）が
+    # 頻発し、比率方式そのものが本質的に機能しないと実データで確認済み
+    # のため）。
+    #
+    # 閾値は実測分布（tanuki=true全100銘柄・直近6年）を基準に、Revenue
+    # と同様「NGにするには誤検知率が高すぎる」ため一貫してWARN止まりと
+    # した：
+    #   売上総利益: 上振れ5.0倍/下振れ0.2倍
+    #   CapEx: 上振れ8.0倍/下振れ0.15倍（上振れの逆数0.125とは異なる、
+    #     非対称な閾値。down_ratio引数で個別指定）
+    # いずれも小規模銘柄（ASTS/RCAT/ONDS/KULR/BBAI等）でゼロ近傍から
+    # 有意な水準への立ち上がり・巡航期入り前の設備投資急増が主な発火要因
+    # であり、事業実態の反映であってXBRLタグ誤りとは限らない点はWARN-21
+    # と同様（要確認レベルの可視化が目的、自動修正なし）。
+    gp_flag, gp_jumps, _gp_vals = check_c_data_jump(
+        REPO_ROOT, ticker, section="pl", field="gross_profit",
+        jump_ratio=5.0, down_ratio=0.2,
+    )
+    if gp_flag:
+        for _jump in gp_jumps:
+            warn.append(
+                f"  [WARN-44 売上総利益段差型急変] {_jump}"
+                f" → XBRLタグ誤り、または実際の急成長/急減の可能性（要確認）"
+            )
+
+    capex_flag, capex_jumps, _capex_vals = check_c_data_jump(
+        REPO_ROOT, ticker, section="cf", field="capital_expenditure",
+        jump_ratio=8.0, down_ratio=0.15,
+    )
+    if capex_flag:
+        for _jump in capex_jumps:
+            warn.append(
+                f"  [WARN-45 CapEx段差型急変] {_jump}"
+                f" → XBRLタグ誤り、または実際の設備投資急増/急減の可能性（要確認）"
+            )
+
     # CHECK-12: Cash-ST_Invest 期整合チェック（BUG-NETDEBT-5回帰検知）
     # Cashが最新四半期値に更新されているのにST_Investが年次のままなら期ズレ
     _ann_files_c12 = sorted(glob.glob(os.path.join(SEC_DATA_DIR, ticker, "annual_*.json")))
