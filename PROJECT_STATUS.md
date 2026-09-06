@@ -250,6 +250,62 @@
   参照）。新DB構築プロジェクトのコード・データには変更なし。現存
   BACKLOG.md総数は機械カウントで**151件**。
 
+- **2026-09-04〜09-05**（非常に長時間のセッション、実装・修正20件超・
+  BACKLOG統合9クラスタ・些末項目クローズ2件・ゲート実装2件、
+  全てpush済み）:
+  1. **個別バグ・データ品質是正8件**: `[[STONKS-PILLAR-THRESHOLD-
+     MISMATCH-1]]`（`dq.score`専用の`deficitColor()`新設でpillarColor
+     閾値不一致を解消、IOT/JOBYの表示色を実測確認）・
+     `[[RPO-REVTTM-GATE-SKIP-1]]`（懸念シナリオが構造上発生し得ないと
+     判明・クローズ）・`[[JNJ-XOM-PM-FLOOR-RISK-1]]`（定点確認で
+     `floor_hit=False`継続を確認・監視継続）・`[[ENTG-TER-SEGMENT-1]]`
+     （10-K一次情報でsegment_config.jsonへセグメント別成長率を追加）・
+     `[[EPS-LOAR-1]]`（IPO前株式数構造の別物四半期を株式数基準で除外）・
+     `[[BREAKEVEN-FORECAST-METHOD-MISMATCH-1]]`（黒字化年予測手法を
+     TANUKI VALUATION・STONKS SILO間で統一）・`[[LAYER3-COGS-
+     STRUCTURAL-GAP-16TICKERS-1]]`（残10〈実11〉銘柄の一次情報裏取り、
+     新規2件を追加登録）・`[[FYE-BOUNDARY-COLLISION-UNCONFIRMED-1]]`
+     （LITE/WSTを一次情報で確認・確定しクローズ）
+  2. **`[[QUALITY-GATES-EPIC-1]]`ゲート実装2件**: ゲート4（旧
+     TICKER-AUDIT-1）を`system_health.py::check_k_ticker_audit()`として
+     実装（見直し候補・検証由来無保有・P4-CIKOrphan集約・
+     monitor_tickers.yaml同期漏れの4検知）。ゲート0（`[[PREFLIGHT-
+     CHECK-1]]`）を`common/registration/preflight_check.py`として実装し
+     `register_ticker.py`のStep 0.5直後に組み込み（上場後3年未満・
+     直近提出書式が10-K/10-Q以外・収益系XBRLタグ不在の3検知、
+     フラグが立っても自動停止しない設計）。いずれもBACKLOG_DONE.mdへ
+     完了移設済み
+  3. **`[[TICKER-LOADING-UNIFICATION-1]]`実装**: 銘柄リスト読み込みの
+     重複実装3箇所（`system_health.py`・`src/tail/`3ファイル・
+     `common/sec_data/config.py`）を`tickers.py`経由に統一。`get_cik()`・
+     `get_all_rows()`・`get_registrable_tickers(flag=None)`を新設
+  4. **小規模技術的負債13件（2バッチ）・些末項目2件クローズ**: 1バッチ目
+     8件（`[[CLAUDE-CODE-START-FY-DESC-FIX-1]]`等）・2バッチ目5件
+     （`[[MOAT-CATALOG-DUP-1]]`・`[[CHECK-COVERAGE-1]]`〈CHECK-42として
+     実装〉等）・`[[TAIL-DETAIL-1]]`/`[[SILO-LEGEND-1]]`を対応不要として
+     クローズ
+  5. **BACKLOG統合9クラスタ（21件→8エントリ）**: DESIGN-2/4/5/6/14/15
+     （6件）→`[[HYPECORE-EXPECTATION-FRAMEWORK-EPIC-1]]`、PREVENT-5・
+     TICKER-AUDIT-1（2件）→`[[QUALITY-GATES-EPIC-1]]`付録へ全文統合、
+     UX-FLOW-1/MULTI-1/ARCH-1/EVAL-2/DESIGN-8-3/DESIGN-8-4（6件）→
+     `[[FUTURE-FEATURE-IDEAS-CATALOG-1]]`、TANUKI-FIN-1・TANUKI-FIN-2
+     （2件）→`[[TANUKI-FIN-2]]`に一本化、EPS-ANALYZER-INTEGRATE-1/
+     RICE-INTEGRATE-1/ANALYST-VS-IV-INTEGRATE-1（3件）→
+     `[[SCREENING-SIGNAL-INTEGRATION-EPIC-1]]`、LAYER3-ROIC-WACC-
+     NONE-4TICKERS-1・FINTREND-SM-JOBY-NONE-1（2件）→
+     `[[LAYER3-SM-SGA-SEPARATION-NONE-FALLOUT-1]]`、MACRODATA-FTSD-
+     SERIES-ID-INVALID-1・MACRODATA-FETCH-FAILURE-VISIBILITY-GAP-1
+     （2件）→後者に一本化。いずれも要約せず全文転記し、検証スクリプトで
+     元エントリの内容が一言一句欠落なく含まれていることを確認済み
+
+  **Market Pulseのローカル/GitHub Actions二重実行**
+  （`[[MARKET-PULSE-LOCAL-DUAL-EXEC-1]]`）は実地確認を継続中（1週間分の
+  傾向確認が完了していないため判断は引き続き保留）。詳細はBACKLOG_
+  DONE.md「2026-09-04（完了）」「2026-09-05①〜⑤（完了）」・
+  BACKLOG.md各エントリ参照。新DB構築プロジェクトのコード・データには
+  変更なし。現存BACKLOG.md総数は機械カウントで**107件**（統合・クローズ
+  により151件から大幅減）。
+
 ---
 
 更新日: 2026-08-15（**フェーズ3「導出データ層の管理方法検討」完了**。

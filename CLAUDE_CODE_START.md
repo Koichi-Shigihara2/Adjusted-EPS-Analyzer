@@ -1,5 +1,129 @@
 # Claude Code 作業開始テンプレート
 
+最終更新: 2026-09-05（**セッション終了時ブラッシュアップ・2026-09-04〜
+09-05セッションサマリー**。前回2026-09-03サマリー〈下記ブロック〉の
+続き。実装・修正20件超、BACKLOG統合9クラスタ（21件→8エントリ）、
+些末項目クローズ2件、ゲート実装2件を実施した（全てpush済み）:
+
+**前回（2026-09-03）サマリーの要点再掲**（実際の完了日は2026-09-01〜02、
+詳細は下記2026-09-03ブロック参照。日付の食い違いに注意——本ブロック
+作成時に再確認した結果、実質的には09-01〜09-02の作業だったと判明）:
+1. `risk_fetcher.py`・Discoverサブシステム撤去、`AVGO`/`ENB`管理対象
+   除外（2026-09-01〜09-02完了）
+2. `[[MARKETDATA-LAYER-CONSTRUCTION-1]]`・`[[MACRODATA-LAYER-
+   CONSTRUCTION-1]]`クローズ（コミット`d6f854634c`、2026-09-02完了）
+3. `[[TRUST-SUMMARY-EPIC-1]]`クローズ（コミット`547736e376`・
+   `39e9eee08f`・`7167df09ae`、2026-09-02完了。FCF-CONVRATE①②③実装完了）
+4. `[[QUALITY-GATES-EPIC-1]]`ゲート1拡張（コミット`297ba95523`等、
+   revenue/純利益へのyfinance自動照合横展開・CHECK-41新設・週次化）
+5. ENB登録抹消・`exclusion_reason`列追加、`[[REGISTER-FLOW-REDESIGN-1]]`
+   方針2・3（`register_ticker.py`新設）
+
+**Market Pulseのローカル/GitHub Actions二重実行**
+（`[[MARKET-PULSE-LOCAL-DUAL-EXEC-1]]`）: cron調整後の実地確認を継続中。
+2026-09-02・09-03の2営業日確認時点では約1時間55分の遅延が継続しており
+判断保留だった。**実地確認は引き続き継続観察中**（解消をまだ確認できて
+いない、下記「次セッションの着手候補」参照）。
+
+**本セッション（2026-09-04〜09-05）で新規に実施した内容**:
+
+6. 個別バグ・データ品質是正8件:
+   - `[[STONKS-PILLAR-THRESHOLD-MISMATCH-1]]`（コミット`67117ae1e7`）:
+     `dq.score`専用の`deficitColor()`新設で`pillarColor`閾値不一致を
+     解消（IOT/JOBYの表示色を実測確認）
+   - `[[RPO-REVTTM-GATE-SKIP-1]]`（コミット`9b01402ec2`）: 懸念シナリオ
+     が`get_rpo_context()`の構造上発生し得ないと判明・クローズ＋防御的
+     コメント追加
+   - `[[JNJ-XOM-PM-FLOOR-RISK-1]]`（コミット`11ad98f00e`）: 定点確認
+     結果を追記、対象7銘柄で`floor_hit=False`継続を確認・**監視継続**
+   - `[[ENTG-TER-SEGMENT-1]]`（コミット`8a33444325`・`cec6710ef8`・
+     `b88cafe402`）: 10-K一次情報に基づき`segment_config.json`へ
+     セグメント別成長率を追加、TANUKI VALUATION再生成
+   - `[[EPS-LOAR-1]]`（コミット`ea44bfb081`）: IPO前株式数構造の別物
+     四半期を株式数基準で除外
+   - `[[BREAKEVEN-FORECAST-METHOD-MISMATCH-1]]`（コミット
+     `f9c22d08ac`・`eea2b3a151`）: 黒字化年予測手法をTANUKI VALUATION・
+     STONKS SILO間で統一（常時直近4点OLS回帰）
+   - `[[LAYER3-COGS-STRUCTURAL-GAP-16TICKERS-1]]`（コミット
+     `feac5bf0d4`）: 残10（実11）銘柄の一次情報裏取り調査を実施、
+     新規2件（`[[LAYER3-COGS-CANDIDATE-TAG-EXPANSION-1]]`・
+     `[[JOBY-BLADE-ACQUISITION-IMPACT-SCOPE-1]]`）を登録
+   - `[[FYE-BOUNDARY-COLLISION-UNCONFIRMED-1]]`（コミット
+     `b5a72aafe8`）: LITE/WSTを一次情報で確認、判定1で確定しクローズ
+
+7. `[[QUALITY-GATES-EPIC-1]]`のゲート実装2件:
+   - ゲート4（旧TICKER-AUDIT-1、コミット`21242ac3c7`）:
+     `system_health.py::check_k_ticker_audit()`を新設し、①見直し候補
+     （status=candidate&gt;30日）②検証由来・無保有③P4-CIKOrphan集約
+     ④`monitor_tickers.yaml`同期漏れ検知を実装
+   - ゲート0（`[[PREFLIGHT-CHECK-1]]`、コミット`acc4740837`）:
+     `common/registration/preflight_check.py`を新設し、①上場後3年未満
+     ②直近提出書式が10-K/10-Q以外③収益系XBRLタグ不在を`register_
+     ticker.py`のStep 0.5直後で自動検知（自動停止はしない）。実データ
+     検証でSN（2023年当時20-F提出企業）が登録日以降に10-K/10-Q提出企業
+     へ既に移行済みと判明し、②ではなく①が発火することを確認・記録
+   - いずれもBACKLOG_DONE.mdへ完了移設済み（`[[TICKER-AUDIT-1]]`は
+     ゲート4付録へ全文統合、`[[PREFLIGHT-CHECK-1]]`は通常の完了移設）
+
+8. `[[TICKER-LOADING-UNIFICATION-1]]`実装（コミット`aa8104a6c3`）:
+   銘柄リスト読み込みの重複実装3箇所（①`system_health.py`
+   ②`src/tail/kpi_proposer.py`・`sec_ctrl_fetcher.py`・
+   `text_kpi_extractor.py`③`common/sec_data/config.py`）を`tickers.py`
+   経由に統一。`tickers.py`に`get_cik()`・`get_all_rows()`・
+   `get_registrable_tickers(flag=None)`を新設
+
+9. 小規模技術的負債13件（2バッチ、コミット`58805c18b9`〜`847080a3b9`・
+   `189024383e`〜`a6634ba1da`）:
+   - 1バッチ目8件: `[[CLAUDE-CODE-START-FY-DESC-FIX-1]]`・
+     `[[CHECK-FORMAT-1]]`・`[[ADMIN-LOG-1]]`・`[[PICK-FIELD-1]]`・
+     `[[HISTORY-JSON-LEGACY-TANUKI-SCORE-1]]`・`[[TOBE-SEGMENTS-
+     RESIDUAL-WORDING-1]]`・`[[BS-IDENTITY-LOG-NONDETERMINISTIC-
+     KEY-ORDER-1]]`・`[[TTM-FLOW-FIELDS-FROZENSET-NONDETERMINISTIC-1]]`
+   - 2バッチ目5件: `[[MOAT-CATALOG-DUP-1]]`・`[[EPS-267-MIXED-
+     PASSTHROUGH-1]]`・`[[CHECK-COVERAGE-1]]`（CHECK-42として実装、
+     原案のCHECK-20は既に別件で使用済みのため採番変更）・
+     `[[STALE-CHECK-1-IMPL]]`・`[[ERP-DUAL-CALC-1]]`
+   - 些末項目2件クローズ（コミット`8d2b0ba228`）: `[[TAIL-DETAIL-1]]`・
+     `[[SILO-LEGEND-1]]`を対応不要としてクローズ
+
+10. BACKLOG統合9クラスタ（21件→8エントリ、コミット`15e7c48ae2`・
+    `7dda887292`・`f444437820`・`6508d6722a`・`290043ebc1`）:
+    - DESIGN-2/4/5/6/14/15（6件）→`[[HYPECORE-EXPECTATION-
+      FRAMEWORK-EPIC-1]]`
+    - PREVENT-5・TICKER-AUDIT-1（2件）→`[[QUALITY-GATES-EPIC-1]]`
+      付録（ゲート1・ゲート4）へ全文統合
+    - UX-FLOW-1/MULTI-1/ARCH-1/EVAL-2/DESIGN-8-3/DESIGN-8-4（6件）→
+      `[[FUTURE-FEATURE-IDEAS-CATALOG-1]]`
+    - TANUKI-FIN-1・TANUKI-FIN-2（2件）→`[[TANUKI-FIN-2]]`に一本化
+    - EPS-ANALYZER-INTEGRATE-1/RICE-INTEGRATE-1/ANALYST-VS-IV-
+      INTEGRATE-1（3件）→`[[SCREENING-SIGNAL-INTEGRATION-EPIC-1]]`
+    - LAYER3-ROIC-WACC-NONE-4TICKERS-1・FINTREND-SM-JOBY-NONE-1（2件）
+      →`[[LAYER3-SM-SGA-SEPARATION-NONE-FALLOUT-1]]`
+    - MACRODATA-FTSD-SERIES-ID-INVALID-1・MACRODATA-FETCH-FAILURE-
+      VISIBILITY-GAP-1（2件）→後者`[[MACRODATA-FETCH-FAILURE-
+      VISIBILITY-GAP-1]]`に一本化
+    いずれも要約せず全文をそのまま転記し、検証スクリプトで元エントリの
+    内容が一言一句欠落なく新エントリ内に含まれていることを機械的に
+    確認済み。統合に伴う相互参照の更新漏れ（ダングリング参照）も
+    その都度検知・修正した
+
+詳細は各BACKLOGエントリ・BACKLOG_DONE.md「2026-09-04（完了）」
+「2026-09-05①〜⑤（完了）」・PROJECT_STATUS.md参照。
+
+**次セッションの着手候補**:
+- `Market_Pulse_Update.yml`の実地確認継続（1週間の傾向確認、土曜分は
+  クリア済み）
+- `SEC_Data_Update.yml`（週次yfinance突合、次回日曜サイクルでの実地
+  確認）
+- `[[REGISTER-FLOW-REDESIGN-1]]`のクローズ可否判断（TICKER-AUDIT-1・
+  PREFLIGHT-CHECK-1とも解消済みのため前提が変わった）
+- `[[QUALITY-GATES-EPIC-1]]`の残り（ゲート0オーケストレーション
+  磨き込み、Phase 4/ゲート3は優先度低のまま）
+- BS項目整合性系4件・MACRO PULSE系2件（統合せず個別対応が必要と
+  判断済み）
+
+---
+
 最終更新: 2026-09-03（**セッション終了時ブラッシュアップ・本日
 セッションサマリー**。9項目を順次実施した（全てpush済み）:
 
