@@ -1,6 +1,6 @@
 {
   "ticker": "HQY",
-  "last_updated": "2026-09-06T22:53:22.669503",
+  "last_updated": "2026-09-06T14:37:28.306451",
   "quarters": [
     {
       "gaap_eps": 0.781345966148499,
@@ -49,9 +49,20 @@
       "tax_expense": 22221000.0,
       "pretax_income": 87865000.0,
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にリクエストエラーが発生しました: Request failed: HTTPSConnectionPool(host='api.x.ai', port=443): Read timed out. (read timeout=30)",
-        "sources": []
+        "health": "過大調整",
+        "comment": "調整項目のSBCと無形資産償却費はともに恒常的に発生する費用（非現金だが毎期継続）であり、一過性とは判断しにくいため過大調整の可能性が高いです。市場がGAAP EPS（0.78）で判断する場合、調整後EPS（1.35）が示す企業の実力（キャッシュ生成力など）が過小評価されやすく、株価が抑えられるリスクがあります。ただしSBCの株主希薄化や償却の経済的実態を無視した調整は過大評価を招く恐れもあり、投資家はFCFや調整の持続性を注視すべきです。",
+        "sources": [
+          {
+            "item": "sbc",
+            "snippet": "株式報酬費用は毎期発生する非現金費用であり、恒常的な運用コストと考えられる",
+            "confidence": 0.2
+          },
+          {
+            "item": "amortization_intangibles",
+            "snippet": "買収関連無形資産の償却は買収後も複数期にわたり発生する恒常的な非現金費用",
+            "confidence": 0.2
+          }
+        ]
       }
     },
     {

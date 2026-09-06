@@ -1,6 +1,6 @@
 {
   "ticker": "ENTG",
-  "last_updated": "2026-09-06T22:55:45.034352",
+  "last_updated": "2026-09-06T14:39:15.981731",
   "quarters": [
     {
       "gaap_eps": 0.609375,
@@ -49,9 +49,20 @@
       "tax_expense": 16500000.0,
       "pretax_income": 110100000.0,
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にリクエストエラーが発生しました: Request failed: HTTPSConnectionPool(host='api.x.ai', port=443): Read timed out. (read timeout=30)",
-        "sources": []
+        "health": "調整大",
+        "comment": "調整項目の主力である無形資産償却費（4610万ドル）は買収に伴う恒常的な非現金費用であり、毎期発生する可能性が高い。一方リストラ費用（560万ドル）は一過性と判断される。GAAP EPS 0.61に対しAdjusted EPS 0.90と約47%の上方修正となっており、市場がGAAPベースで判断する場合、企業の買収戦略による実力・コア収益力が過小評価されている可能性がある。ただし償却費のadd_backが大半を占めるため、調整後EPSが持続可能利益を過大に示すリスクもあり、過大評価に繋がる恐れもある。投資家は償却を除いた真のキャッシュ生成力と今後の買収・統合効果の持続性を慎重に検証すべき。",
+        "sources": [
+          {
+            "item": "amortization_intangibles",
+            "snippet": "買収関連無形資産の償却として毎期発生する恒常的な費用であり、非経常的とは言い難い（調整によりadd_back）。",
+            "confidence": 0.25
+          },
+          {
+            "item": "restructuring",
+            "snippet": "一過性の事業再編費用としてリストラ関連の非経常的項目であり、調整の妥当性が高い。",
+            "confidence": 0.8
+          }
+        ]
       }
     },
     {

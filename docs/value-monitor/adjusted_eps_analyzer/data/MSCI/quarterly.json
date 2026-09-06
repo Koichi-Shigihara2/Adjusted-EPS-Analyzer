@@ -1,6 +1,6 @@
 {
   "ticker": "MSCI",
-  "last_updated": "2026-09-06T22:53:15.565686",
+  "last_updated": "2026-09-06T14:37:17.416353",
   "quarters": [
     {
       "gaap_eps": 4.691358024691358,
@@ -36,9 +36,15 @@
       "tax_expense": 75300000.0,
       "pretax_income": 417300000.0,
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にリクエストエラーが発生しました: Request failed: HTTPSConnectionPool(host='api.x.ai', port=443): Read timed out. (read timeout=30)",
-        "sources": []
+        "health": "調整中",
+        "comment": "無形資産償却費は買収関連の恒常的な非現金費用であり、一過性ではなく毎期発生する性質を持つため、調整の妥当性は中程度。市場がGAAP EPS（4.69）で判断する場合、この償却費により企業のキャッシュ生成力や実質的な収益力が過小評価される可能性がある。ただし恒常的項目であるため、調整後EPS（5.18）を使用すると持続可能性を過大評価するリスクも伴う。投資家は過去買収のROIや将来の償却スケジュールを注視し、過小評価リスクを考慮しつつコア事業の成長性を評価すべき。",
+        "sources": [
+          {
+            "item": "amortization_intangibles",
+            "snippet": "買収関連無形資産の償却は、M&Aで認識した無形資産を一定期間にわたって償却する恒常的な非現金費用であり、毎期発生する調整項目。",
+            "confidence": 0.2
+          }
+        ]
       }
     },
     {

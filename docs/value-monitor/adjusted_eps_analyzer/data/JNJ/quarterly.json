@@ -1,6 +1,6 @@
 {
   "ticker": "JNJ",
-  "last_updated": "2026-09-06T22:54:45.946226",
+  "last_updated": "2026-09-06T14:38:31.567142",
   "quarters": [
     {
       "gaap_eps": 2.2679398385312077,
@@ -62,9 +62,20 @@
         }
       },
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にリクエストエラーが発生しました: Request failed: HTTPSConnectionPool(host='api.x.ai', port=443): Read timed out. (read timeout=30)",
-        "sources": []
+        "health": "調整中",
+        "comment": "調整項目の主なものは買収関連無形資産償却（恒常的非現金費用）と一過性のリストラ費用。GAAP EPSはこれらにより2.27に圧縮されており、市場がGAAPベースで判断する場合、JNJの買収戦略を通じた実力や真の収益力が過小評価される可能性がある。特に償却費は毎期発生する恒常コストのため、調整後EPS2.68を過度に信用すると過大評価リスクも伴う。投資家は調整の持続可能性を注視し、経済的実態を加味した評価が必要。",
+        "sources": [
+          {
+            "item": "amortization_intangibles",
+            "snippet": "買収関連無形資産の償却は、M&Aを継続する企業において恒常的に発生する非現金費用であり、調整の正当性は判断が分かれる。",
+            "confidence": 0.2
+          },
+          {
+            "item": "restructuring",
+            "snippet": "一過性の事業再編費用であり、非経常的と判断され調整が適切。",
+            "confidence": 0.8
+          }
+        ]
       }
     },
     {

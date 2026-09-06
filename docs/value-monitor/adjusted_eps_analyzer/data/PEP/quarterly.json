@@ -1,6 +1,6 @@
 {
   "ticker": "PEP",
-  "last_updated": "2026-09-06T22:55:00.033760",
+  "last_updated": "2026-09-06T14:38:37.339943",
   "quarters": [
     {
       "gaap_eps": 2.1775018261504746,
@@ -49,9 +49,15 @@
         }
       },
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にリクエストエラーが発生しました: Request failed: HTTPSConnectionPool(host='api.x.ai', port=443): Read timed out. (read timeout=30)",
-        "sources": []
+        "health": "調整小",
+        "comment": "調整項目は恒常的な株式報酬費用(SBC)の加算であり、非現金だが報酬としての実質コストが毎期発生する性質を持つ。市場がGAAP EPSで判断する場合、SBC控除後のEPSが低く出るため企業の実力(特にキャッシュ生成力)がやや見えにくくなり、株価が過小評価される可能性がある。ただしSBCは株主希薄化を伴う経済的コストでもあるため、調整 relianceにより実力を過大評価する逆リスクも存在。調整幅はEPSで約1.8%と小さく、投資家はSBCの継続性を注視しつつコア事業の現金創出力に着目すべき。",
+        "sources": [
+          {
+            "item": "sbc",
+            "snippet": "非現金費用として毎期発生する株式報酬費用(SBC)は恒常的コストであり、一過性調整とは言えない(調整によりAdjusted EPSを押し上げ)。",
+            "confidence": 0.2
+          }
+        ]
       }
     },
     {

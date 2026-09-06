@@ -1,6 +1,6 @@
 {
   "ticker": "ALAB",
-  "last_updated": "2026-09-06T22:47:54.554353",
+  "last_updated": "2026-09-06T14:31:14.629511",
   "quarters": [
     {
       "gaap_eps": 0.8349950910875968,
@@ -52,9 +52,15 @@
         }
       },
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にリクエストエラーが発生しました: Request failed: HTTPSConnectionPool(host='api.x.ai', port=443): Read timed out. (read timeout=30)",
-        "sources": []
+        "health": "調整中",
+        "comment": "調整項目はSBC（株式報酬費用）で恒常的な非現金コストであるため、GAAP EPSは実力よりも低く表示され、市場がGAAP中心に判断する場合に企業の実力を過小評価する可能性があります。ただしSBCは株式希薄化を伴う本質的コストのため、調整後EPSを過信すると過大評価リスクが生じます。投資家は調整の持続性と希薄化影響を注視し、キャッシュフローや非GAAP指標を総合的に評価すべきです。",
+        "sources": [
+          {
+            "item": "sbc",
+            "snippet": "非現金費用としてadd_backされているが、テック企業では毎期継続的に発生する恒常的コストであり、一過性とは言えない。",
+            "confidence": 0.2
+          }
+        ]
       }
     },
     {

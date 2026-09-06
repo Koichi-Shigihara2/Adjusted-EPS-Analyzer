@@ -1,6 +1,6 @@
 {
   "ticker": "KLAC",
-  "last_updated": "2026-09-06T22:55:57.359359",
+  "last_updated": "2026-09-06T14:39:16.304230",
   "quarters": [
     {
       "gaap_eps": 1.0329076341679846,
@@ -62,9 +62,25 @@
       "tax_expense": 775154000.0,
       "pretax_income": 2138213000.0,
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にリクエストエラーが発生しました: Request failed: HTTPSConnectionPool(host='api.x.ai', port=443): Read timed out. (read timeout=30)",
-        "sources": []
+        "health": "調整中",
+        "comment": "主な調整項目であるSBCと無形資産償却は恒常的な非現金費用であり、リストラ費用のみが一過性。市場がGAAP EPS（1.03）を基準に判断する場合、これら調整により企業の実力（キャッシュフロー生成力）が過小評価される可能性がある。特に半導体装置大手KLACではSBCが継続的に発生するため、調整後EPS（1.09）使用時の過大評価リスクも投資家は考慮すべき。注目点はSBCの希薄化影響とフリーキャッシュフローの持続性であり、全体として軽度の過小評価リスクが存在する。",
+        "sources": [
+          {
+            "item": "sbc",
+            "snippet": "株式報酬費用は非現金費用だが、毎期継続して発生する恒常的な運用コストである（confidence低）。",
+            "confidence": 0.2
+          },
+          {
+            "item": "amortization_intangibles",
+            "snippet": "無形資産償却費は過去の買収に関連した継続的な非現金償却であり、恒常的性質が強い。",
+            "confidence": 0.2
+          },
+          {
+            "item": "restructuring",
+            "snippet": "リストラ費用は一過性の事業再編費用であり、真に非経常的と判断される。",
+            "confidence": 0.8
+          }
+        ]
       }
     },
     {

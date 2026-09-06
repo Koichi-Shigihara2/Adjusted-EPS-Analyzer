@@ -1,6 +1,6 @@
 {
   "ticker": "BROS",
-  "last_updated": "2026-09-06T22:54:02.383449",
+  "last_updated": "2026-09-06T14:37:54.443057",
   "quarters": [
     {
       "gaap_eps": 0.2775943308722591,
@@ -36,9 +36,15 @@
       "tax_expense": 12623000.0,
       "pretax_income": 50033000.0,
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にリクエストエラーが発生しました: Request failed: HTTPSConnectionPool(host='api.x.ai', port=443): Read timed out. (read timeout=30)",
-        "sources": []
+        "health": "調整中",
+        "comment": "調整項目は恒常的な株式報酬費用(SBC)であり、一過性ではない。市場がGAAP EPS(0.2776)で判断する場合、非現金ではあるが実質的な報酬コストを控除した後の企業実力が見えにくくなり、成長企業の実力を過小評価している可能性がある。ただしSBCは株主希薄化を伴う継続コストのため、Adjusted EPS(0.3158)を過信すると過大評価リスクもある。投資家はSBCの金額推移、希薄化率、将来の現金流出影響を注視すべき。",
+        "sources": [
+          {
+            "item": "sbc",
+            "snippet": "非現金費用として株式報酬費用をadd_backしているが、成長企業において毎期発生する恒常的コストであり、一過性とは言えない。",
+            "confidence": 0.2
+          }
+        ]
       }
     },
     {

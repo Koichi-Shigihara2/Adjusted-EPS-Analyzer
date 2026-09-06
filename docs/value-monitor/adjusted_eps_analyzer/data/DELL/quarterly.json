@@ -1,6 +1,6 @@
 {
   "ticker": "DELL",
-  "last_updated": "2026-09-06T22:54:17.660921",
+  "last_updated": "2026-09-06T14:38:10.591358",
   "quarters": [
     {
       "gaap_eps": 5.240853658536586,
@@ -49,9 +49,20 @@
       "tax_expense": 510000000.0,
       "pretax_income": 3948000000.0,
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にリクエストエラーが発生しました: Request failed: HTTPSConnectionPool(host='api.x.ai', port=443): Read timed out. (read timeout=30)",
-        "sources": []
+        "health": "調整中",
+        "comment": "SBCと無形資産償却の両調整項目は恒常的に発生する非現金費用であり一過性ではないため、Adjusted EPSがGAAP EPSを上回る形となっている。市場がGAAP EPSで判断する場合、企業の現金生成力の実態が見えにくくなり実力を過小評価する可能性がある。ただしSBCは報酬としての実質的コスト（希薄化）を伴うため、Adjusted EPS relianceによる過大評価リスクも存在。投資家はフリーキャッシュフローとSBCの希薄化影響を注視し、調整の持続可能性を評価すべき。",
+        "sources": [
+          {
+            "item": "sbc",
+            "snippet": "株式報酬費用は毎期発生する恒常的な非現金コストであり、調整により実力が見えにくくなるが真に一過性とは言えない",
+            "confidence": 0.2
+          },
+          {
+            "item": "amortization_intangibles",
+            "snippet": "無形資産償却費は買収後の複数年にわたる恒常的償却であり、非現金だが継続コストとして実力を歪める可能性がある",
+            "confidence": 0.2
+          }
+        ]
       }
     },
     {
