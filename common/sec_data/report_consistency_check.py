@@ -765,6 +765,41 @@ def _check_moat_score_validity(ticker: str, latest: dict) -> list[str]:
     return warn
 
 
+def _check_dupont_null_validity(ticker: str, latest: dict) -> list[str]:
+    """CHECK-43: dupontフィールドがNone（キー自体の欠落含む）なのに、
+    最新annual_YYYY.jsonのstockholders_equityが正の値（負債超過ではない）
+    の銘柄を検知する（[[CHECK-COVERAGE-2]]、[[CHECK-COVERAGE-1]]完了時に
+    DuPont分解null検出分として切り出し）。
+
+    pipeline.py::DuPont分解ロジック（`[[DUPONT-TTM-FIELD-CASE-MISMATCH-1]]`
+    以降の「DuPont観測性統一」実装）は、計算不能な全ケース（negative_equity/
+    revenue_too_small/total_assets_unavailable/equity_unavailable/
+    ni_ttm_unavailable/revenue_unavailable/insufficient_data）で必ず
+    `dupont`キーへ`{"excluded": True, "reason": "..."}`形式の理由付き辞書を
+    設定する設計のため、latest.jsonの`dupont`が真にNone（キー自体が欠落）に
+    なるのは、この一連のtry/except内で理由設定前に例外が発生し無言で
+    握りつぶされた場合のみのはずである。負債超過（stockholders_equity<=0）
+    の銘柄がこの経路でdupont=Noneになることは設計上想定されていないため、
+    正の純資産を持つ銘柄でdupont=Noneが観測された場合はDuPont分解ロジック
+    の回帰（例外の握りつぶし等）を示唆する（2026-09-06時点で全銘柄
+    `{"excluded": ...}`形式の辞書かroe_decomposed算出済みのためWARN発火
+    0件、将来の回帰防止が目的。CHECK-42と同型の防御的チェック）。
+    """
+    warn: list[str] = []
+    dupont = latest.get("dupont")
+    if dupont is not None:
+        return warn
+    bs, period = _read_latest_annual_bs(ticker)
+    equity = bs.get("stockholders_equity")
+    if equity is not None and equity > 0:
+        warn.append(
+            f"  [WARN-43 dupont異常] dupont=None（キー欠落）だがFY{period}"
+            f" stockholders_equity={equity:,.0f}は正の値（負債超過ではない）"
+            f" → DuPont分解ロジックの例外握りつぶし等による回帰の可能性"
+        )
+    return warn
+
+
 # CHECK-36: ティッカー非依存の単発チェック用の基準件数。2026-08-16実装時点で
 # 中立フォールバック対象は2銘柄（BKNG/CPRT）。今後の推移を見て閾値は調整する。
 _MOAT_NEUTRAL_FALLBACK_BASELINE_COUNT = 4
@@ -1508,6 +1543,7 @@ def check_ticker(ticker: str, whitelist: set, include_yfinance: bool = False) ->
     latest  = _read_latest(ticker)
     warn.extend(_check_moat_score_neutral_fallback(ticker, latest))
     warn.extend(_check_moat_score_validity(ticker, latest))
+    warn.extend(_check_dupont_null_validity(ticker, latest))
     parsed  = _parse_report(text)
 
     fcf_hist = parsed["fcf_history"]

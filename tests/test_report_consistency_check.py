@@ -764,3 +764,72 @@ class TestCheckMoatScoreValidity:
             latest = {"components": {"moat_score": boundary}}
             warn = rcc._check_moat_score_validity("TESTCO", latest)
             assert not any("WARN-42" in w for w in warn)
+
+
+class TestCheckDupontNullValidity:
+    """CHECK-43: dupontフィールドがNone（キー欠落含む）なのに、最新
+    annual_YYYY.jsonのstockholders_equityが正の値（負債超過ではない）の
+    銘柄を検知すること（[[CHECK-COVERAGE-2]]）。
+
+    pipeline.py::DuPont分解ロジックは計算不能な全ケースで必ず
+    `{"excluded": True, "reason": "..."}`形式の理由付き辞書をdupontへ
+    設定する設計のため、dupont=None（真の欠落）は例外の握りつぶし等に
+    よる回帰を示唆する。負債超過（stockholders_equity<=0）銘柄では
+    dupont=Noneが発生してもこの除外ロジックの想定内であり発火しない
+    ことも合わせて検証する。"""
+
+    def _write_annual(self, sec_data_path, ticker: str, period: int, bs: dict) -> None:
+        ticker_dir = sec_data_path / ticker
+        ticker_dir.mkdir(parents=True, exist_ok=True)
+        (ticker_dir / f"annual_{period}.json").write_text(
+            json.dumps({"period": period, "bs": bs}), encoding="utf-8"
+        )
+
+    def test_warn_43_fires_when_dupont_none_and_equity_positive(self, tmp_path, monkeypatch):
+        sec_data_path = tmp_path / "sec_data"
+        self._write_annual(sec_data_path, "TESTCO", 2025, {"stockholders_equity": 1000})
+        monkeypatch.setattr(rcc, "SEC_DATA_DIR", str(sec_data_path))
+        warn = rcc._check_dupont_null_validity("TESTCO", {"dupont": None})
+        assert any("WARN-43" in w for w in warn)
+
+    def test_warn_43_fires_when_dupont_key_missing_and_equity_positive(self, tmp_path, monkeypatch):
+        sec_data_path = tmp_path / "sec_data"
+        self._write_annual(sec_data_path, "TESTCO", 2025, {"stockholders_equity": 1000})
+        monkeypatch.setattr(rcc, "SEC_DATA_DIR", str(sec_data_path))
+        warn = rcc._check_dupont_null_validity("TESTCO", {})
+        assert any("WARN-43" in w for w in warn)
+
+    def test_no_warn_43_when_dupont_none_but_negative_equity(self, tmp_path, monkeypatch):
+        """負債超過（stockholders_equity<=0）の銘柄は除外ロジックの想定内のため発火しない"""
+        sec_data_path = tmp_path / "sec_data"
+        self._write_annual(sec_data_path, "TESTCO", 2025, {"stockholders_equity": -500})
+        monkeypatch.setattr(rcc, "SEC_DATA_DIR", str(sec_data_path))
+        warn = rcc._check_dupont_null_validity("TESTCO", {"dupont": None})
+        assert not any("WARN-43" in w for w in warn)
+
+    def test_no_warn_43_when_dupont_none_but_equity_unavailable(self, tmp_path, monkeypatch):
+        """stockholders_equity自体が取得できない場合は判定不能として発火しない"""
+        sec_data_path = tmp_path / "sec_data"
+        self._write_annual(sec_data_path, "TESTCO", 2025, {"stockholders_equity": None})
+        monkeypatch.setattr(rcc, "SEC_DATA_DIR", str(sec_data_path))
+        warn = rcc._check_dupont_null_validity("TESTCO", {"dupont": None})
+        assert not any("WARN-43" in w for w in warn)
+
+    def test_no_warn_43_when_dupont_is_excluded_dict(self, tmp_path, monkeypatch):
+        """dupontが{"excluded": True, ...}形式の辞書（真のNoneではない）場合は
+        設計通りの除外表現のため発火しない（negative_equity/revenue_too_small等
+        いずれの理由でも同様）"""
+        sec_data_path = tmp_path / "sec_data"
+        self._write_annual(sec_data_path, "TESTCO", 2025, {"stockholders_equity": 1000})
+        monkeypatch.setattr(rcc, "SEC_DATA_DIR", str(sec_data_path))
+        latest = {"dupont": {"excluded": True, "reason": "revenue_too_small"}}
+        warn = rcc._check_dupont_null_validity("TESTCO", latest)
+        assert not any("WARN-43" in w for w in warn)
+
+    def test_no_warn_43_when_dupont_is_valid_decomposition(self, tmp_path, monkeypatch):
+        sec_data_path = tmp_path / "sec_data"
+        self._write_annual(sec_data_path, "TESTCO", 2025, {"stockholders_equity": 1000})
+        monkeypatch.setattr(rcc, "SEC_DATA_DIR", str(sec_data_path))
+        latest = {"dupont": {"roe_decomposed": 0.15}}
+        warn = rcc._check_dupont_null_validity("TESTCO", latest)
+        assert not any("WARN-43" in w for w in warn)

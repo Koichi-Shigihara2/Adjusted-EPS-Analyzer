@@ -351,6 +351,60 @@ CPRT $602,997K）と一致。CEG（FY2020-2025）・CPRT（FY2018-2025、
 
 ---
 
+### ✅ [CHECK-COVERAGE-2] DuPont分解のnull銘柄に対応するconsistency checkが未追加
+**状態:** ✅完了
+**優先度:** 低
+**分類:** 品質管理
+**登録日:** 2026-09-05
+**完了日:** 2026-09-06
+**発見:** [[CHECK-COVERAGE-1]]完了時の切り出し（2026-09-05）
+
+#### 問題
+[[CHECK-COVERAGE-1]]は元々moat_score検出（CHECK-20相当）とDuPont分解の
+null検出（CHECK-21相当）の2件をまとめて提案していたが、2026-09-05の
+実装依頼ではmoat_score側のみが対象範囲として明示され、CHECK-42として
+実装・完了した。DuPont分解（TANUKI-ROE-1）の`dupont=nullの銘柄のうち
+負債超過でないものの検出`は未実装のまま残っていたため、本エントリとして
+独立登録されていた。
+
+#### 実装内容
+`common/sec_data/report_consistency_check.py`に`_check_dupont_null_
+validity(ticker, latest)`をCHECK-42（`_check_moat_score_validity`）と
+同じ実装パターンで新規追加した。番号は着手時点の最新使用番号（CHECK-42）
+の次のCHECK-43を新規採番（CHECK-20/21は別件で使用済みのため使用せず）。
+
+- `latest.json`の`dupont`フィールドが`None`（キー自体の欠落を含む）か
+  つ、最新`annual_YYYY.json`の`bs.stockholders_equity`が正の値（負債
+  超過ではない）の銘柄を検知しWARN-43を出す
+- pipeline.py::DuPont分解ロジックは計算不能な全ケース（negative_equity/
+  revenue_too_small/total_assets_unavailable等）で必ず`{"excluded":
+  True, "reason": "..."}`形式の理由付き辞書を`dupont`へ設定する設計
+  のため、`dupont`が真に`None`になるのは、この一連のtry/except内で
+  理由設定前に例外が発生し無言で握りつぶされた場合のみのはずである。
+  負債超過銘柄がこの経路で`dupont=None`になることは設計上想定されて
+  いないため、正の純資産を持つ銘柄で`dupont=None`が観測された場合は
+  DuPont分解ロジックの回帰（例外の握りつぶし等）を示唆する、という
+  防御的チェックとして実装した
+
+#### 検証結果（2026-09-06）
+- 全99銘柄相当の実データで実行し、WARN-43の発火は0件（現状は全銘柄
+  `dupont`が`{"excluded": ...}`形式の辞書または有効な分解結果であり、
+  真の`None`は存在しないことを確認）
+- `tests/test_report_consistency_check.py::TestCheckDupontNullValidity`
+  に6件のユニットテストを追加し、意図的なテストケースで発火・非発火
+  双方を確認: ①`dupont=None`かつ`stockholders_equity>0`→発火、
+  ②`dupont`キー自体が欠落かつ`stockholders_equity>0`→発火、
+  ③`dupont=None`だが`stockholders_equity<=0`（負債超過）→非発火、
+  ④`stockholders_equity`自体が取得不能→非発火（判定不能として保守的に
+  スキップ）、⑤`dupont`が`{"excluded": ...}`形式の辞書（真の`None`
+  ではない）→非発火、⑥`dupont`が有効な分解結果→非発火
+
+検証トリオ: `pytest -q` 1148 passed（既存1142件＋新規6件）/ `audit.py`
+NG無し / `report_consistency_check.py --fail-on-ng` NG=0・WARN=93
+（ベースラインと同数、CHECK-43由来の新規警告なし）。
+
+---
+
 ### ✅ [REGISTER-FLOW-REDESIGN-1] 新規銘柄登録プロセスの原子性・検証強制力の欠如
 **状態:** ✅完了
 **優先度:** 中
