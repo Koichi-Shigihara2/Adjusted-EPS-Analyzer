@@ -405,6 +405,66 @@ NG無し / `report_consistency_check.py --fail-on-ng` NG=0・WARN=93
 
 ---
 
+### ✅ [THESIS-FIELD-1] thesis.jsonのフィールド定義不整合
+**状態:** ✅完了
+**優先度:** 低
+**分類:** データ定義不整合 / TANUKI TAIL
+**発見:** 2026-06-26横断バグ調査
+**完了日:** 2026-09-06
+
+#### 問題（登録時点）
+thesis.jsonの実際のフィールドが期待値と乖離している（登録時点で全9銘柄
+共通、現在はAPGE追加で10銘柄）：
+- company: 未実装（フィールド自体なし）
+- position_size: 未実装（フィールド自体なし）
+- strategy → 実際は strategy_name（フィールド名相違）
+- thesis_version → 実際は version（フィールド名相違）
+- entry_price: NVDAでnull（既存ポジション登録時に取得価格未記録）
+
+#### 対応内容
+1. **NVDAのentry_price更新**: `docs/portfolio/tail/data/positions/
+   NVDA_thesis.json`（登録時のパス`docs/portfolio/tail/data/NVDA/
+   thesis.json`は実際には存在せず、現行の実ファイル配置は
+   `positions/{TICKER}_thesis.json`）の`entry_price`を、
+   `docs/portfolio/data/portfolio.json`のMONEX口座NVDAポジション
+   （40株）の`avg_cost`＝169.35で更新した（`updated_at`も同時更新）
+2. **company/position_size**: HTML/JS/Pythonの全ソースを横断検索し、
+   `thesis.company`・`thesis.position_size`を参照するコードが
+   存在しないことを確認した（`detail.html`の`ha.company`は
+   `historical_analogy.company`という別データ構造への参照で無関係の
+   偶然の同名一致）。未実装のまま追加する意味がないため、判断根拠を
+   本エントリに記録した上でBACKLOG記載（期待スキーマ側）から削除する
+   （実装追加は行わない）
+3. **スキーマ定義の記載修正**: 実際のフィールド名は`strategy_name`
+   （satelliteタイプ）・`thesis`（coreタイプ）・`version`（共通）。
+   `thesis_version`という名前自体は`journal.json`・
+   `kpi_proposals`等の**別ファイル**の出力スキーマとして正しく存在
+   するが、いずれも`thesis.get("version", 1)`から値を取得して
+   書き込む設計であり、`thesis.json`自身のフィールド名ではない
+   （命名の誤りではなく、別ファイルの独自スキーマ）。コード側
+   （`src/tail/thesis_utils.py`のdocstring等）は元々`strategy_name`
+   で正しく記述されており、乖離があったのはBACKLOG記載のみだった
+
+#### 現状のスキーマ（実データ確認、2026-09-06）
+全10銘柄（ADBE/APGE/APP/CELH/CRWV/NVDA/PLTR/SOFI/SOUN/TSLA）の
+`type`は`satellite`（6銘柄）・`core`（PLTR/SOFI/TSLA、3銘柄）の
+2種類に分かれ、フィールド構成が異なる：
+- satellite: `strategy_name`/`entry_condition`/`exit_condition`/
+  `holding_period`
+- core: `thesis`/`entry_story`/`exit_guide`/`kpis`
+- 共通: `ticker`/`type`/`status`/`version`/`created_at`/`updated_at`/
+  `entry_price`/`entry_date`
+
+#### 検証結果（2026-09-06）
+- NVDA_thesis.jsonの`entry_price`が169.35に更新されたことを確認
+- `git status --short docs/portfolio/`でNVDA_thesis.json以外の
+  thesis.jsonに差分がないことを確認（他9銘柄への影響なし）
+- `pytest -q` 1148 passed / `audit.py` NG無し /
+  `report_consistency_check.py --fail-on-ng` NG=0・WARN=93
+  （ベースラインと同数）
+
+---
+
 ### ✅ [REGISTER-FLOW-REDESIGN-1] 新規銘柄登録プロセスの原子性・検証強制力の欠如
 **状態:** ✅完了
 **優先度:** 中

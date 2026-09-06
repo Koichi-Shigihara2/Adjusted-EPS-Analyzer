@@ -8530,28 +8530,6 @@ admin.htmlにrpo_config.jsonの編集UIセクションを追加する。追加�
 
 ---
 
-### [THESIS-FIELD-1] thesis.jsonのフィールド定義不整合
-**優先度:** 低
-**分類:** データ定義不整合 / TANUKI TAIL
-**発見:** 2026-06-26横断バグ調査
-
-#### 問題
-thesis.jsonの実際のフィールドが期待値と乖離している（全9銘柄共通）：
-
-- company: 未実装（フィールド自体なし）
-- position_size: 未実装（フィールド自体なし）
-- strategy → 実際は strategy_name（フィールド名相違）
-- thesis_version → 実際は version（フィールド名相違）
-- entry_price: NVDAでnull（既存ポジション登録時に取得価格未記録）
-
-機能的な問題はないが、スキーマ定義と実データの乖離が蓄積している。
-
-#### 対応方針
-- TAIL-LAYOUT系の実装時にthesis.jsonのスキーマを正式定義して統一
-- NVDAのentry_priceを実際の取得価格で更新
-
----
-
 ### [SN-TANUKI-DELAY-1] SN TANUKI VALUATION再検討
 **優先度:** 低
 **分類:** データ品質 / TANUKI VALUATION
