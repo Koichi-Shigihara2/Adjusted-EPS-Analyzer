@@ -9146,6 +9146,26 @@ STONKS SILOのgross margin表示。現状JOBY/CEG/CPRTは恒久的にNoneの
 
 ---
 
+### [TOOLTIP-INDEX-1] tanuki_valuation/index.htmlへのinfo-tooltip未適用
+**優先度:** 低
+**分類:** UX / TANUKI VALUATION
+**発見:** 2026-06-26横断調査
+
+#### 問題
+以下の画面でinfo-tooltip.jsがimportされておらずglossaryツールチップが使えない：
+- docs/value-monitor/tanuki_valuation/index.html
+
+（stock.htmlはSTOCK-GLOSSARY-1として既登録）
+
+catalyst.html・news_history.html分は[[DISCOVER-SUBSYSTEM-REMOVAL-1]]により
+Discoverサブシステム自体が削除対象となったため対応不要と判定する。
+
+#### 対応方針
+docs/value-monitor/tanuki_valuation/index.htmlにinfo-tooltip.jsのimportを追加し、
+説明が必要な要素にdata-info属性を付与する。
+
+---
+
 ### [JOBY-BLADE-ACQUISITION-IMPACT-SCOPE-1] JOBYの2025年Blade買収による事業実態変化がCOGS以外の指標にも波及していないかの確認未了
 **優先度:** 中〜未定
 **分類:** データ品質 / 事業実態変化の反映確認 / TANUKI VALUATION
@@ -9404,179 +9424,6 @@ DESIGN-15内部の見出し（目的/設計方針/レイヤー構造/着手条�
 #### 着手条件
 なし（Koichiさんとの投資方針・製品方向性の確認待ち。個別サブ項目
 （①〜⑥）ごとに着手可否を判断する）
-
----
-
-### [TOOLTIP-INDEX-1] tanuki_valuation/index.htmlへのinfo-tooltip未適用
-**優先度:** 低
-**分類:** UX / TANUKI VALUATION
-**発見:** 2026-06-26横断調査
-
-#### 問題
-以下の画面でinfo-tooltip.jsがimportされておらずglossaryツールチップが使えない：
-- docs/value-monitor/tanuki_valuation/index.html
-
-（stock.htmlはSTOCK-GLOSSARY-1として既登録）
-
-catalyst.html・news_history.html分は[[DISCOVER-SUBSYSTEM-REMOVAL-1]]により
-Discoverサブシステム自体が削除対象となったため対応不要と判定する。
-
-#### 対応方針
-docs/value-monitor/tanuki_valuation/index.htmlにinfo-tooltip.jsのimportを追加し、
-説明が必要な要素にdata-info属性を付与する。
-
----
-
-### [STONKS-SILO-PRICE-SCHEDULE-LAG-SUSPECT-1] Stonks_Silo_Updateも同種のcron実行順序ラグを抱えている疑い — 2026-08-31、実データでラグを確認し`workflow_run`連鎖化を実装完了・次回発火サイクルでの実地確認待ち
-
-**優先度:** 中（実データでラグの実在を確認し、既存の承認済み解決パターン
-〈[[TANUKI-VALUATION-PRICE-SCHEDULE-LAG-1]]と同型〉の横展開として
-実装まで完了したため、「低・疑いの段階」から引き上げ）
-**分類:** アーキテクチャ / GitHub Actions / データ鮮度
-**登録日:** 2026-08-22
-**更新日:** 2026-08-31（実データ検証で真因を確認、`Stonks_Silo_Update.yml`
-に`workflow_run: [..., "Market Data Daily Update"]`を追加し旧・独立平日
-cronを低頻度フォールバックに置換。次回発火サイクルでの実地確認待ち、
-本エントリはまだクローズしない）
-**発見:** [[TANUKI-VALUATION-PRICE-SCHEDULE-LAG-1]]・
-[[WORKFLOW-SEC-TANUKI-GAP-1]]実装時の依存グラフ点検で発見
-
-#### 2026-08-27 調査結果（疑いは「別の原因」により棚上げ、実装せず）
-`Stonks_Silo_Update.yml`のcronが`Market_Data_Daily_Update`完了より
-先に発火する構造自体は実コードで確認した（変更なし、依然として
-`5 15 * * 1-5` UTC＝`Market_Data_Daily_Update`完了`21:40 UTC`より先）。
-
-しかし本項目が想定する「1日分の価格鮮度ラグ」を検証する前提——
-「`Stonks_Silo_Update`が定期的に成功実行され`results.json`が更新
-され続けている」——自体が成立していないことが判明した。GitHub
-Actions実行履歴を確認したところ、`Stonks_Silo_Update`は**2026-07-13
-以降、本日〈2026-08-27〉までの全スケジュール実行（約30回）で
-100%失敗しており、`results.json`は2026-08-13から更新されていない**。
-真因は変数名衝突による`AttributeError`（既存登録`[[STONKS-SILO-
-CLI-TICKERS-SHADOW-1]]`、2026-08-11登録時点では影響範囲を「CLI手動
-実行のみ」と過小評価していたが、cronの自動実行経路も同一原因で
-100%失敗していたと今回確定）。
-
-「価格が1営業日遅れる」どころか**パイプライン自体が45日間一度も
-正常完了していない**ため、cron実行順序ラグ（今回の疑い）が実害として
-顕在化しているかどうかを実データで検証すること自体ができない状態
-にある。
-
-**対応**: 依頼文の「疑いが実データで否定された、または別の原因
-だった場合は実装せず報告」に従い、`workflow_run`連鎖化の実装は
-見送った。真因である`[[STONKS-SILO-CLI-TICKERS-SHADOW-1]]`の修正
-（優先度を中→高へ訂正済み）が先決であり、そちらの復旧後に
-`Stonks_Silo_Update`が正常稼働を再開してから、本項目のcron順序ラグの
-有無を実データで再検証するのが妥当な順序と判断する。
-
-#### 2026-08-27② 追記: 前提条件が解消、次回セッションで再検証可能
-`[[STONKS-SILO-CLI-TICKERS-SHADOW-1]]`の緊急復旧（コミット
-`ff59e7b13`・`c649741ca`）により、`Stonks_Silo_Update`は2026-07-13
-以来45日ぶりに正常完走した（全25銘柄成功）。これにより上記で指摘した
-「検証の前提自体が成立しない」状態は解消された。ただし本タスクは
-緊急復旧（コード修正＋データ再生成）にスコープを限定しており、本項目
-自体（`Market_Data_Daily_Update`との実行順序ラグの実害有無）の
-実データ検証は今回実施していない。
-
-**次回セッションでの再検証手順**: `Stonks_Silo_Update`が今後複数回
-正常に自動実行された後（cronは`5 15 * * 1-5` UTCのまま変更していない
-ため、次回発火は次の平日）、`[[TANUKI-VALUATION-PRICE-SCHEDULE-
-LAG-1]]`と同じ手順——STONKS SILO対象銘柄の`results.json`側の価格
-関連フィールドと`common/market_data/daily/`の実際の最新保存日を
-突合——で実データ確認し、着手要否・優先度を判断する。
-
-#### 内容
-`discover/stonks-silo/src/valuation_fetcher.py`が
-`common/market_data/daily/`（yfinance統合層）の日次終値に依存している
-ことをコードから確認した。一方`Stonks_Silo_Update.yml`のcronは
-`5 15 * * 1-5`（UTC15:05、平日）であり、`Market_Data_Daily_Update.yml`
-の`25 21 * * 1-5`（UTC21:25完了目安、平日。2026-08-29のPlan A変更で
-旧21:40から前倒し、`[[MARKET-DATA-SCHEDULE-7AM-JST-1]]`参照）より
-**先**に発火する。
-
-これは[[TANUKI-VALUATION-PRICE-SCHEDULE-LAG-1]]で確認・修正した
-`TANUKI_VALUATION_Update`の構造的ラグ（現在の日次終値がまだ`daily/`に
-反映される前にパイプラインが実行され、常に前営業日終値を参照して
-しまう問題）と**同型**であり、Stonks Siloのスコア計算内で使われる
-価格データも同じラグを抱えている可能性が高い。
-
-ただし本エントリ登録時点では、Stonks Silo側で実際にどのフィールドに
-`daily/`終値が使われているか（スコア計算への実際の影響範囲）は
-未調査であり、「疑い」の段階に留まる。
-
-#### 対応方針（未着手）
-- 次回セッションで、TANUKI VALUATIONの調査と同じ手順（保有/監視銘柄で
-  `results.json`側の価格関連フィールドと`daily/`の実際の最新保存日を
-  突合）で実データ確認してから、着手要否・優先度を判断する
-- 実害が確認された場合、`Stonks_Silo_Update.yml`に
-  `workflow_run: ["Market Data Daily Update"]`を追加する対応が
-  想定される（既存の平日日次cronとの併存要否も含めて設計要）
-
-#### 2026-08-31 実データ検証結果（ラグを確認）
-`[[TANUKI-VALUATION-PRICE-SCHEDULE-LAG-1]]`確認時と同じ手順で、
-STONKS SILO対象25銘柄のうち4銘柄（ASTS/AVAV/BBAI/CRWV）を個別に
-突合した。`docs/value-monitor/stonks-silo/data/results.json`の
-`valuation.current_price`は`discover/stonks-silo/src/valuation_
-fetcher.py`が`common.market_data.reader.get_latest_price()`経由で
-`common/market_data/daily/<ticker>.json`から取得している（コード上で
-再確認済み、変更なし）。
-
-平日cron（`5 15 * * 1-5` UTC）で実行された2回のStonks Silo更新を検証：
-- コミット`4374447938`（generated_at 2026-08-28T00:17:30Z）:
-  ASTS `current_price=59.88`。同時刻に`common/market_data/daily/
-  ASTS.json`で入手可能だった最新値は`cf2d6f3d8e`時点（2026-08-27分の
-  Market Data Daily Updateがまだ未着地）の**2026-08-26終値**
-  （59.88）と完全一致——本来Market_Data_Daily_Updateが同日中に
-  2026-08-27分を確定させていれば（実際の着地は14:38 JST、Stonks
-  Silo実行9:17 JSTより後）、その値を参照できなかった構造。
-  AVAV（146.88=8/26終値）・BBAI（3.05=8/26終値）・CRWV
-  （88.01=8/26終値）も同時点のdaily/最新値と完全一致を確認。
-- コミット`63fa7fe396`（generated_at 2026-08-28T23:54:23Z）:
-  ASTS `current_price=61.44`は`081c342867`時点（Market Data Daily
-  Updateの2026-08-28分`6da721006b`はまだ未着地）の**2026-08-27終値**
-  と完全一致。
-
-**判断根拠**: `Stonks_Silo_Update`の平日cron（15:05 UTC）は`Market_
-Data_Daily_Update`の同日cron（21:25 UTC）より約6時間20分**先**に
-発火するスケジュール構造であり、同日分のMarket Data Daily Updateが
-（遅延なく）完了していたとしても、Stonks Siloの`current_price`は
-構造的に必ず前営業日終値を参照する（TANUKI-VALUATION-PRICE-
-SCHEDULE-LAG-1の旧設計と同型の順序関係）。実測でも4銘柄全てで
-「Stonks Silo実行時点で`daily/`にあった最新値」と完全一致しており、
-値そのものの誤りではなく、参照タイミングが常に1営業日遅れる構造的
-ラグであることを確認した。
-
-#### 2026-08-31 実装内容（案①、`[[TANUKI-VALUATION-PRICE-SCHEDULE-
-LAG-1]]`・`[[WORKFLOW-SEC-TANUKI-GAP-1]]`確立済みパターンの横展開）
-`TANUKI_VALUATION_Update.yml`の実装（`workflow_run`対象に`Market Data
-Daily Update`を追加・旧独立cronを低頻度フォールバックに置換）を参照し、
-同型のパターンを`Stonks_Silo_Update.yml`に適用した。
-
-- `on.workflow_run.workflows`に既存の`"SEC Data Update"`
-  （`[[WORKFLOW-SEC-TANUKI-GAP-1]]`実装分、維持）に加え
-  `"Market Data Daily Update"`を追加。
-- 旧・独立平日cron（`5 15 * * 1-5` UTC）は削除し、TANUKI_VALUATION_
-  Update.ymlの前例（金曜22:30 UTCフォールバック）と同型の低頻度
-  フォールバックのみ残した。10分ずらして金曜22:40 UTC（`40 22 * * 5`、
-  衝突回避。HypeCore/Adjusted_EPS_Data_Updateの月曜4:00/4:10 UTC
-  フォールバックと同じ10分ずらしの慣例に合わせた）。
-  `Market_Data_Daily_Update`金曜分の完了（21:25 UTC）より確実に
-  後になる時刻。
-- ジョブの`if: github.event_name != 'workflow_run' ||
-  github.event.workflow_run.conclusion == 'success'`ガードは
-  変更なし（複数`workflow_run`ソースいずれに対しても機能する）。
-- `workflow_dispatch`は変更なし。
-
-YAML構文（`yaml.safe_load`）で確認済み。`gh`CLIは本セッションでも
-利用不可のため、GitHub Actions側の実際の発火・連鎖動作は本セッションでは
-検証不能。次回発火サイクル（最短で次回平日のMarket Data Daily Update
-完了後）にコミット履歴のタイムスタンプ突合で実地確認するまでは
-「実装完了・未検証」として扱う。**本エントリはクローズしない**
-（`[[TANUKI-VALUATION-PRICE-SCHEDULE-LAG-1]]`の前例と同じ扱い）。
-
-#### 着手条件
-なし（実装完了。`Stonks_Silo_Update.yml`の`workflow_run`連鎖の実地
-確認は2026-08-31時点で未検証。次回平日サイクル後に再確認すること）
 
 ---
 
