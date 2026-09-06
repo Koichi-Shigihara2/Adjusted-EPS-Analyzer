@@ -490,6 +490,17 @@ class SECParser:
         # 全期間の採用タグが切り替わり過大計上になるのを防ぐ。sti_concept等
         # と同型のticker限定オーバーライド）
         _cash_concept_override = TICKER_RESTRICTIONS.get(ticker, {}).get("cash_concept")
+        # 銘柄別 cogs_concept オーバーライド（[[LAYER3-COGS-CANDIDATE-TAG-
+        # EXPANSION-1]]、2026-09-06: JOBY/CEG/CPRTはcost_of_revenue相当の
+        # 値をOtherCostAndExpenseOperating/CostDirectMaterialという汎用的な
+        # 名称のタグで申告しているが、両タグとも他銘柄（AMZN/CAKE/CAT/FCX/
+        # KO/LMT/META/RCAT/LYFT等）でCOGSとは無関係の少額項目に使われて
+        # いることを全105銘柄相当のcompany_facts.json横断チェックで確認済み
+        # のため、グローバル候補リスト（XBRL_MAPPING["cost_of_revenue"]）
+        # へは追加せずticker限定オーバーライドとする。VSTは同タグを申告して
+        # いるが原価の76%相当が別のカスタムタグのため意図的に適用しない
+        # （quarterly.py::TICKER_RESTRICTIONS内のJOBYコメント参照）。
+        _cogs_concept_override = TICKER_RESTRICTIONS.get(ticker, {}).get("cogs_concept")
         # 銘柄別 cross_filing_tags オーバーライド（NVDA-STI-TAG-UNIDENTIFIED-1:
         # ANOMALY-PATTERN-CATALOG-1型C。単一タグでは捕捉できず、複数XBRL概念を
         # 指定end_date・指定form制限で直接検索し合算する必要があるケース向け。
@@ -544,6 +555,20 @@ class SECParser:
             # cash_concept が指定されている場合はそのタグのみ使用
             if field_name == "cash_and_equivalents" and _cash_concept_override:
                 xbrl_keys = [_cash_concept_override]
+            # cogs_concept が指定されている場合は既存候補リストへ追加する
+            # （置換ではない）。CPRTはFY2016-2019をCostOfGoodsAndServices
+            # Sold等の既存候補タグが既に値を提供しており、cogs_concept
+            # （CostDirectMaterial）はFY2018以降のみcompany_facts.jsonに
+            # 存在するため、[override]へ全置換するとFY2016-2017が完全に
+            # 欠損する回帰が生じることをQA中に発見した。_extract_values_
+            # best_candidate()は全candidateを横断してfreshest（最新期末）
+            # のタグを「勝者」として採用しつつ、本人データ（is_own_data）
+            # backfillは勝者タグに限らずxbrl_keys全体から収集するため、
+            # 追加（末尾append）のみでCostDirectMaterialが新規に候補入り
+            # しても既存候補の年度別データは失われない
+            # （[[LAYER3-COGS-CANDIDATE-TAG-EXPANSION-1]]、2026-09-06）
+            if field_name == "cost_of_revenue" and _cogs_concept_override:
+                xbrl_keys = list(xbrl_keys) + [_cogs_concept_override]
             extracted[field_name] = self._extract_values(
                 us_gaap, xbrl_keys, use_max=use_max, merge_all_tags=merge_all,
                 fiscal_end_month=fiscal_end_month, accn_reportdate=_accn_reportdate,

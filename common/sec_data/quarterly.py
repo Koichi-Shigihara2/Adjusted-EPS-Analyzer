@@ -107,11 +107,63 @@ TICKER_RESTRICTIONS: dict[str, dict] = {
     # （sti_concept等と同型のticker限定オーバーライド）。
     "CPRT": {
         "cash_concept": "CashAndCashEquivalentsAtCarryingValue",
+        # LAYER3-COGS-CANDIDATE-TAG-EXPANSION-1（2026-09-06）:
+        # CPRTの「Cost of vehicle sales」はCostDirectMaterialタグで
+        # 申告されている（company_facts.jsonにFY2018から全期間存在、
+        # 標準候補6タグのいずれにも含まれない）。CostDirectMaterialは
+        # 名称が汎用的で、LYFT（部品費約$9M、COGSとは無関係の少額項目）
+        # 等でも別の意味で申告されているため、グローバル候補リストへは
+        # 追加せずticker限定オーバーライドとする。
+        "cogs_concept": "CostDirectMaterial",
         "note": "CashAndCashEquivalentsAtCarryingValueが2019年まで機能して"
                 "いるが、新設のCashCashEquivalentsRestrictedCashAndRestricted"
                 "CashEquivalents（2025年まで申告）の方が新しいため無対応だと"
                 "全期間の採用タグが後者に切り替わり、2019年以前を含め制限付き"
-                "現金混入の過大計上になる。既存タグへ固定して回避する。",
+                "現金混入の過大計上になる。既存タグへ固定して回避する。"
+                "cogs_conceptはCostDirectMaterial（Cost of vehicle sales、"
+                "全期間存在）に固定。LYFT等がCostDirectMaterialを別の意味"
+                "（COGSとは無関係の少額の部品費）で申告しているため、"
+                "グローバル候補リストへは追加しない。",
+    },
+    # LAYER3-COGS-CANDIDATE-TAG-EXPANSION-1（2026-09-06）: CEG「Purchased
+    # power and fuel」はCostDirectMaterialタグ（CPRTと同一タグ、
+    # company_facts.jsonにFY2020から全期間存在）で申告されている。
+    # CPRTと同じ理由でグローバル候補リストへは追加せず、ticker限定
+    # オーバーライドとする。
+    "CEG": {
+        "cogs_concept": "CostDirectMaterial",
+        "note": "「Purchased power and fuel」がCostDirectMaterialタグで"
+                "全期間申告されている。CostDirectMaterialは他銘柄（LYFT等）"
+                "で全く異なる少額項目に使われているため、グローバル候補"
+                "リストへは追加せずCPRTと同じくticker限定オーバーライドと"
+                "する。",
+    },
+    # LAYER3-COGS-CANDIDATE-TAG-EXPANSION-1（2026-09-06）: JOBY「Cost of
+    # Revenue」はOtherCostAndExpenseOperatingタグ（company_facts.jsonに
+    # 2021年から全期間存在）で申告されている。
+    #
+    # 【VSTには適用しない、意図的な除外】: VSTも同タグ（「Operating
+    # costs」$2,803M、FY2025）を申告しているが、原価の最大コンポーネント
+    # （Fuel/Purchased Power costs、約76%相当）がVista固有のカスタム
+    # 拡張タグvistra:CostOfFuelPurchasedPowerAndDeliveryのため、
+    # OtherCostAndExpenseOperating単独では原価の24%程度しか捕捉できない。
+    # 部分回収した値をcost_of_revenueとして採用すると、gross_margin計算上
+    # 実態より大幅に良好なマージンを表示してしまうミスリードになるため、
+    # VSTはcogs_conceptを設定せずNoneのまま維持する方が誠実と判断した
+    # （2026-09-04付BACKLOG登録時の判断を実装時も踏襲）。
+    "JOBY": {
+        "cogs_concept": "OtherCostAndExpenseOperating",
+        "note": "「Cost of Revenue」がOtherCostAndExpenseOperatingタグで"
+                "全期間申告されている（2021年〜、2025年Blade買収以降のみ"
+                "有意な値を持つ点に注意——過去年度との時系列比較〈gross"
+                "margin trend等〉に不連続が生じる）。OtherCostAndExpense"
+                "Operatingは他銘柄（AMZN/CAKE/CAT/FCX/KO/LMT/META/RCAT等）"
+                "で全く異なる少額の会計項目に使われていることを全105銘柄"
+                "相当のcompany_facts.json横断チェックで確認済みのため、"
+                "グローバル候補リストへは追加せずJOBY限定オーバーライドと"
+                "する。VSTは同タグを申告しているが、原価の76%相当が別の"
+                "カスタムタグのため意図的に適用しない（本ファイル冒頭の"
+                "コメント参照）。",
     },
     "HEI": {
         "cash_concept": "CashAndCashEquivalentsAtCarryingValue",
@@ -390,14 +442,50 @@ def build_raw_table(ticker: str, company_facts: dict) -> dict:
                     fields[field_name] = entries
                     continue
 
-        if field_name == "_COGS" and not entries:
-            # CostOfRevenue未申告の場合、代替COGSタグを試みる
-            for fallback_concept in _COGS_FALLBACKS:
-                fb = _get_field_units(company_facts, fallback_concept, unit)
-                if fb:
-                    entries = fb
-                    logger.debug("[%s] _COGS fallback: %s", ticker, fallback_concept)
-                    break
+        if field_name == "_COGS":
+            if not entries:
+                # CostOfRevenue未申告の場合、代替COGSタグを試みる
+                for fallback_concept in _COGS_FALLBACKS:
+                    fb = _get_field_units(company_facts, fallback_concept, unit)
+                    if fb:
+                        entries = fb
+                        logger.debug("[%s] _COGS fallback: %s", ticker, fallback_concept)
+                        break
+
+            # 銘柄固有のcogs_concept（cost_of_revenue相当タグ）が指定されて
+            # いる場合は追加候補としてマージする（[[LAYER3-COGS-CANDIDATE-
+            # TAG-EXPANSION-1]]、2026-09-06）。OtherCostAndExpenseOperating・
+            # CostDirectMaterialは名称が汎用的で他銘柄（AMZN/CAKE/CAT/FCX/
+            # KO/LMT/META/RCAT/LYFT等）でCOGSとは全く異なる少額の会計項目
+            # に使われていることを全105銘柄相当のcompany_facts.json横断
+            # チェックで確認済みのため、グローバル候補リスト（_COGS_
+            # FALLBACKS）へは追加せず、ticker限定オーバーライドとする
+            # （V/KLAC/TER等のsti_conceptと同型の設計判断）。
+            # 「置換」ではなく既存entriesへの「マージ」とする理由: CPRTは
+            # FY2016-2019をCostOfGoodsSold等の既存候補タグが本人データ
+            # （is_own_data=True）として既に正しく提供しており、cogs_concept
+            # （CostDirectMaterial）はFY2018以降のみ・かつ一部年度は後年
+            # 提出分の比較年度データ（is_own_data=False）しか無い。全置換
+            # するとFY2016-2019の高品質な既存データを低品質な比較年度データ
+            # で潰す回帰が生じることをQA中に発見し、マージ方式に修正した。
+            # 年度ごとの最良エントリ選択（is_own_data優先）は下流のロジック
+            # （SECParser側）に委ねる。
+            ticker_cogs_concept = restrictions.get("cogs_concept")
+            if ticker_cogs_concept:
+                override_entries = _get_field_units(company_facts, ticker_cogs_concept, unit)
+                if override_entries:
+                    seen_key = {(e.get("end"), e.get("start"), e.get("val")) for e in entries}
+                    merged = list(entries)
+                    added = 0
+                    for e in override_entries:
+                        key = (e.get("end"), e.get("start"), e.get("val"))
+                        if key not in seen_key:
+                            merged.append(e)
+                            seen_key.add(key)
+                            added += 1
+                    entries = merged
+                    logger.debug("[%s] _COGS merged with override: %s (+%d entries)",
+                                 ticker, ticker_cogs_concept, added)
 
         processed = _process_entries(entries)
 

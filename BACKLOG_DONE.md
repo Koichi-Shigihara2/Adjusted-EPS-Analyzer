@@ -240,6 +240,117 @@ Discoverサブシステム自体が削除対象となったため対応不要と
 
 ---
 
+### ✅ [LAYER3-COGS-CANDIDATE-TAG-EXPANSION-1] cost_of_revenue候補タグへOtherCostAndExpenseOperating/CostDirectMaterial追加でJOBY/CEG/CPRT完全回収・VSTは意図的に適用除外
+**状態:** ✅完了
+**優先度:** 中
+**分類:** データ品質 / common/sec_data抽出ロジック
+**登録日:** 2026-09-04
+**完了日:** 2026-09-06
+**発見:** [[LAYER3-COGS-STRUCTURAL-GAP-16TICKERS-1]]残10銘柄一次情報
+裏取り調査
+
+#### 内容（登録時の調査結果）
+[[LAYER3-COGS-STRUCTURAL-GAP-16TICKERS-1]]の一次情報裏取り調査により、
+以下2つの標準us-gaapタグ（現行の6候補タグのいずれにも含まれない）が、
+複数銘柄でcost_of_revenue相当の値を報告する際に使われていることが
+判明していた：
+- **`us-gaap:OtherCostAndExpenseOperating`**: JOBY（FY2025「Cost of
+  Revenue」$29,328K）・VST（FY2025「Operating costs」$2,803M、原価の
+  約24%相当のみ）
+- **`us-gaap:CostDirectMaterial`**: CEG（FY2025「Purchased power and
+  fuel」$14,681M）・CPRT（FY2025「Cost of vehicle sales」$602,997K）
+
+#### 実装前の誤爆リスク横断チェック（依頼書で明記された必須確認事項）
+全105銘柄相当のcompany_facts.jsonを横断検索した結果：
+- `OtherCostAndExpenseOperating`: 10銘柄が申告（想定は2銘柄）。AMZN・
+  CAKE・CAT・FCX・KO・LMT・META・RCAT・LYFTはCOGSとは無関係の少額
+  項目（雑費・その他営業費用等）に使用しており、グローバル候補
+  リストへの追加は誤爆確定
+- `CostDirectMaterial`: 3銘柄が申告（想定は2銘柄）。CEG/CPRT以外の
+  1銘柄も含め、汎用的すぎるタグ名であることを確認
+
+この結果、`XBRL_MAPPING["cost_of_revenue"]`・`_COGS_FALLBACKS`への
+グローバル追加は見送り、既存の`sti_concept`/`ltdebt_concept`/
+`cash_concept`と同型の`TICKER_RESTRICTIONS`によるticker限定
+オーバーライド（`cogs_concept`）方式を採用した。
+
+#### 実装内容
+- `common/sec_data/quarterly.py::TICKER_RESTRICTIONS`にJOBY
+  （`OtherCostAndExpenseOperating`）・CEG・CPRT（いずれも
+  `CostDirectMaterial`）の`cogs_concept`を追加。VSTには**追加しない**
+  （原価の76%を占めるFuel/Purchased Power分が別のカスタム拡張タグ
+  `vistra:CostOfFuelPurchasedPowerAndDelivery`のため、部分回収する
+  とgross marginが実態より大幅に良好に表示されるミスリードリスクが
+  あり、VSTのgross_marginはNoneのまま維持する方が誠実と判断。除外が
+  意図的であることが分かるようコード上に明示コメントを付与）
+- `common/sec_data/quarterly.py`・`common/sec_data/parser.py`双方の
+  `_COGS`/`cost_of_revenue`抽出ロジックに`cogs_concept`を追加
+
+#### 実装中に発見・修正した回帰（重要）
+**初回実装（`xbrl_keys = [cogs_concept]`による全置換方式）はCPRTで
+データ欠損の回帰を引き起こすことをQA中に発見した：**
+CPRTはFY2016-2019の一部年度について、既存候補タグ
+（`CostOfGoodsAndServicesSold`等）が既にcost_of_revenue値を提供して
+いた（FY2018は本人データ〈is_own_data=True〉）。`cogs_concept`
+オーバーライドを候補リストへの「全置換」として実装すると、
+`CostDirectMaterial`が申告されているFY2018以降のみで既存データを
+完全に上書きし、FY2016-2017分が完全欠損する回帰が生じた。
+
+**修正**: 全置換ではなく既存候補リストへの「追加（マージ）」方式に
+変更した。
+- `quarterly.py`: 既存entries＋`_COGS_FALLBACKS`の結果へ
+  `cogs_concept`のentriesを`(end, start, val)`キーで重複排除しつつ
+  追加する方式に変更（Revenueフィールドの複数タグマージ方式と同型）
+- `parser.py`: `xbrl_keys = [cogs_concept]`（全置換）から
+  `xbrl_keys = list(xbrl_keys) + [cogs_concept]`（末尾追加）に変更。
+  `_extract_values_best_candidate()`はfreshest（最新期末）のタグを
+  「勝者」として採用しつつ、本人データ（is_own_data）backfillは
+  勝者タグに限らず全候補タグを横断して行う既存機構のため、追加
+  だけで既存候補タグの年度別データが失われないことを確認した
+
+この修正により、CPRT FY2018-2019は既存データ（本人データ）を維持し、
+FY2020-2025は`CostDirectMaterial`により新規回収された。FY2016-2017は
+本人データではない比較年度再掲値（既に低信頼扱い）が消え、
+`CostDirectMaterial`自体もFY2018以降にしか存在しないため結果的に
+欠損（None）となったが、これはBACKLOG登録時点の調査結果
+「company_facts.jsonにFY2018から全期間存在」という記述どおりの
+挙動であり、意図した範囲外の後退ではないと判断した。
+
+#### 検証結果（実データ、2026-09-06）
+再パース後の実データ確認（FY2025）:
+| Ticker | cost_of_revenue | gross_profit | gross_margin |
+|---|---|---|---|
+| CEG | $14,681,000,000 | $10,852,000,000 | 42.5% |
+| CPRT | $602,997,000 | $4,043,961,000 | 87.0% |
+| JOBY | $29,328,000 | $24,097,000 | 45.1% |
+| VST | None（変更なし） | None（変更なし） | — |
+
+いずれも登録時にBACKLOG記載の実額（JOBY $29,328K・CEG $14,681M・
+CPRT $602,997K）と一致。CEG（FY2020-2025）・CPRT（FY2018-2025、
+連続的）の各年推移も異常値なく妥当な範囲（CEG 28.6%〜51.5%、CPRT
+83.3%〜89.8%）。JOBYはFY2021-2022が0、FY2023-2024が僅少、FY2025
+（Blade買収後）で$29,328Kと明確な不連続があることを確認済み
+（時系列比較時の注意点としてコード内コメントに明記済み）。
+
+全104銘柄相当の再パースによるbefore/after比較では、CEG・CPRT・JOBY
+以外に意図しない差分は発生しなかった（再パース時に生じたFRSH・TSLAの
+`bs_identity_violations_log.json`の差分は、dictキー挿入順序のみが
+異なる既知の非決定性ノイズ〈本タスクとは無関係〉と特定し、
+`git checkout --`で除外した）。
+
+`fixed_registry.json`のCPRT/2020エントリ（`fields_snapshot: [revenue]`
+のみを固定対象とする既存登録）は、cost_of_revenue/gross_profitという
+固定対象外フィールドの新規追加によりファイル全体のsnapshot_hashが
+変化したため、NG-31検知を受けて手動で再登録（`revenue`自体の値は
+不変であることを確認済み）。
+
+検証トリオ: `pytest -q` 1142 passed / `audit.py` NG無し（警告9銘柄は
+いずれも既存の無関係な警告）/ `report_consistency_check.py
+--fail-on-ng` NG=0・WARN=93（ベースラインと同数、CEG/CPRT/JOBY/VST
+関連の新規警告なし）。
+
+---
+
 ### ✅ [REGISTER-FLOW-REDESIGN-1] 新規銘柄登録プロセスの原子性・検証強制力の欠如
 **状態:** ✅完了
 **優先度:** 中
