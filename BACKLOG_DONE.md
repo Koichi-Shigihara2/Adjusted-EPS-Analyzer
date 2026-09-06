@@ -2098,6 +2098,59 @@ TICKER-AUDIT-1・PREFLIGHT-CHECK-1との「統合的設計」という当初の�
 
 ---
 
+### ✅ [MARKETDATA-CWAN-FROZEN-DATA-SUSPECT-1] CWANのyfinance日次データが1日分・出来高0のフリーズ状態で取得される — 根本原因は非公開化・上場廃止と判明、CWAN登録抹消により対応完了
+**状態:** ✅完了
+**優先度:** 低→（実測で根本原因判明のため優先度の議論自体が解消）
+**分類:** データ品質疑い / 外部データソース側の異常疑い → 上場廃止（登録抹消で対応）
+**登録日:** 2026-08-11
+**完了日:** 2026-09-06
+
+#### 根本原因
+CWAN（Clearwater Analytics Holdings, Inc.）は2026年6月25日、
+Permira・Warburg Pincus主導の投資家グループにより1株$24.55の
+現金対価で非公開化買収（going-private buyout、総額約$8.4B）が
+成立し、NYSEから上場廃止された。本エントリが検知した「1日分
+（2026-07-02）のみ・open=high=low=close完全同値・volume=0」という
+「フリーズしたような」異常な価格形状は、データ取得コード側の
+バグではなく、**買収対価$24.55にほぼ一致する価格で取引が停止した
+実際の上場廃止**を正確に反映した結果だった。
+
+裏付け:
+- `yfinance.Ticker('CWAN').history()` → "possibly delisted; no price
+  data found"
+- 削除前の`common/market_data/daily/CWAN.json`が単一レコード
+  `{date: 2026-07-02, open/high/low/close: 24.559999..., volume: 0}`
+  のみで固定（買収対価$24.55と一致）
+- SEC EDGAR `submissions.json`の`former_names`に
+  `"to": "2026-07-06T04:00:00.000Z"`（登録抹消日の裏付け）
+- 直近SEC提出書類は`quarterly_2026Q1.json`（対象期間2026-03-31）が
+  最後で、以降の四半期報告が存在しない
+- ポートフォリオ（`docs/portfolio/data/portfolio.json`）に保有ゼロを
+  確認済み
+
+66日間の価格凍結データが`TANUKI VALUATION`最新出力へ実際に混入して
+いた点について: データパイプライン自体（`validate_price_record()`の
+`volume must be > 0`検知・警告フラグ付与）は設計通り正常に機能して
+おり、異常データを検知した上で保存を継続していた（保存拒否はしない
+設計のため）。問題はパイプラインのバグではなく、上場廃止という
+外部要因そのものだった。
+
+#### 対応
+AVGO・ENBと同型の「銘柄削除時の必須手順」（`CLAUDE_CODE_START.md`）に
+従い、CWANを4大パイプライン（TANUKI VALUATION・STONKS SILO・
+EPS Analyzer・HypeCore、いずれも登録フラグtrue）から完全抹消した。
+Step 0の全参照洗い出しで新たに`docs/value-monitor/tanuki_valuation/
+data/hypecore_history/CWAN.json`・`src/value/hypecore/data/
+CWAN_poc.json`（`docs/`側の複製元）・`.watcher_state.json`の
+CWANエントリを追加で発見し、これらも含め全て削除。過去の完了記録
+（`BACKLOG_DONE.md`）やコメント中の履歴的言及（`CWAN-SNPS-MA-
+DISTORTION-1`関連）はAVGO・ENBの前例と同様に変更していない。
+4パイプライン全て再生成後、`audit.py`・`report_consistency_check.py
+--fail-on-ng`・`system_health.py`・`pytest`いずれもCWAN起因の新規
+WARN/エラーなし・NG=0を確認した。
+
+---
+
 ## 2026-09-05⑤（完了）
 
 ### ✅ [PREFLIGHT-CHECK-1] 新規登録時のデータ品質プリフライトチェック

@@ -3107,44 +3107,6 @@ UNDERCOUNT-1]]`・`[[MACRODATA-SCHEDULED-SILENT-GAP-CSCICP-USALOL-1]]`・
 
 ---
 
-### [MARKETDATA-CWAN-FROZEN-DATA-SUSPECT-1] CWANのyfinance日次データが1日分・出来高0のフリーズ状態で取得される
-**優先度:** 低（監視銘柄1件のみ・実害は限定的、`daily_price_validation`が
-既に警告フラグ付きで検知・保存継続しており実害顕在化はしていない）
-**分類:** データ品質疑い / 外部データソース側の異常疑い
-**登録日:** 2026-08-11
-**発見:** `common/market_data/`日次価格層バックフィル（`backfill_daily_prices()`、
-period=1y）実行時（チャット記録、2026-08-11。前回2026-08-10の同種
-バックフィル検証時にも同一事象を確認済みだが、当時は未登録のまま
-作業ツリーごと消失していたため今回改めて登録する）
-
-#### 内容
-`CWAN`（Clearwater Analytics、`config/monitor_tickers.yaml`監視銘柄・
-`config/beta_config.json`に`source: "yfinance_5yr_2026"`のアクティブな
-βオーバーライドを持つ実在の上場企業）に対し`yf.download(period="1y")`で
-バックフィルを実行したところ、**1日分（2026-07-02）のデータしか返らず、
-かつそのレコードはopen=high=low=close（完全に同一値）・volume=0という
-「フリーズしたような」異常な形状**だった。`validate_price_record()`が
-`volume must be > 0`として正しく検知・警告フラグを付けて保存継続している
-（保存拒否はしない設計通り、実害は生じていない）。
-
-通常の`fetch_daily_prices()`（period="5d"の日次バッチ）でも同様の事象が
-起きるかは未確認（バックフィル=period="1y"でのみ確認済み）。
-
-#### 対応方針（未定）
-- まずyfinance公式（Yahoo Finance）でCWANの実際の価格チャートを確認し、
-  一次情報として本当にデータが存在しないのか、取得側の問題かを切り分ける
-  （`[[MP-IRX-FRED-1]]`の教訓「取得コード側の失敗とデータソース側の
-  データ不在は別問題」を踏まえること）
-- 単発の事象か、繰り返し発生するかを次回バックフィル・日次バッチ実行時に
-  再確認する
-- 実害が顕在化した場合（`get_ma_deviation()`等の計算に影響する場合）の
-  み優先度を上げて対応する
-
-#### 着手条件
-なし。優先度低のため次回同種事象の再確認時に着手判断する。
-
----
-
 ### [MARKETDATA-SP500-SCRAPE-INVALID-TICKERS-1] get_sp500_constituents()のWikipediaスクレイピングに不正銘柄コード（FDXF/HONA/Q）が混入
 **優先度:** 低（実害は限定的。該当銘柄の日次データ取得が無駄になる程度で、
 `validate_price_record()`等の検証機構は正常に機能し保存自体は成立する）
