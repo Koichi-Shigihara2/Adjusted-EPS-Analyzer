@@ -1,7 +1,68 @@
 {
   "ticker": "RBRK",
-  "last_updated": "2026-08-31T10:51:23.393555",
+  "last_updated": "2026-09-06T22:50:58.057954",
   "quarters": [
+    {
+      "gaap_eps": -0.2997472064125145,
+      "adjusted_eps": 0.14267010145962347,
+      "gaap_net_income": -61777000.0,
+      "adjusted_net_income": 29403879.90052402,
+      "diluted_shares_used": 206097000.0,
+      "adjustments": [
+        {
+          "item_id": "sbc",
+          "item_name": "株式報酬費用",
+          "amount": 101018000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金費用",
+          "extracted_from": "us-gaap:AllocatedShareBasedCompensationExpense",
+          "category": "株式報酬関連",
+          "net_amount": 91180879.90052402,
+          "tax_rate_applied": 0.09737987387867483
+        }
+      ],
+      "net_adjustment_total": 91180879.90052402,
+      "filing_date": "2026-07-31",
+      "form": "10-Q",
+      "sector": "Technology",
+      "sector_exclusions": [
+        "inventory_writeoff",
+        "gov_subsidy_timing",
+        "fx_gains_losses",
+        "derivative_gains_losses",
+        "tax_one_time"
+      ],
+      "revenue": 427260000.0,
+      "diluted_shares": 206097000.0,
+      "period_end": "2026-07-31",
+      "fiscal_year": 2027,
+      "quarter": 2,
+      "tax_expense": 5482000.0,
+      "pretax_income": -56295000.0,
+      "maturity_monitor": {
+        "alert": "SBC寄与率が40%超（現在 110.8%）",
+        "sbc_contribution": 1.108,
+        "sbc_to_revenue": 0.236,
+        "sbc_per_share": 0.4901,
+        "sector_threshold": {
+          "sbc_contribution": 0.4,
+          "sbc_to_revenue": 0.25
+        }
+      },
+      "ai_analysis": {
+        "health": "過大調整",
+        "comment": "SBCは恒常的に発生する非現金費用であり、調整によりGAAP EPS(-0.30)がAdjusted EPS(+0.14)に大幅に改善されている。市場がGAAP EPSのみで判断する場合、企業の実力(非現金費用の実態や成長投資)を過小評価し株価が低く抑えられる可能性がある。ただしSBCは従業員報酬としての実質コストと希薄化をもたらすため過大調整のリスクが高く、投資家はキャッシュフローや潜在株式の影響を加味した実質的な収益力を注視すべき。",
+        "sources": [
+          {
+            "item": "sbc",
+            "snippet": "株式報酬費用は非現金費用としてadd_backされているが、テック企業で毎期継続的に発生する恒常的な運用コストであり、一過性ではない。",
+            "confidence": 0.2
+          }
+        ]
+      }
+    },
     {
       "gaap_eps": -0.20549619969754698,
       "adjusted_eps": 0.1098531490081535,
@@ -40,28 +101,7 @@
       "fiscal_year": 2027,
       "quarter": 1,
       "tax_expense": 4637000.0,
-      "pretax_income": -37216000.0,
-      "maturity_monitor": {
-        "alert": "SBC寄与率が40%超（現在 114.2%）",
-        "sbc_contribution": 1.142,
-        "sbc_to_revenue": 0.19,
-        "sbc_per_share": 0.3602,
-        "sector_threshold": {
-          "sbc_contribution": 0.4,
-          "sbc_to_revenue": 0.25
-        }
-      },
-      "ai_analysis": {
-        "health": "過大調整",
-        "comment": "株式報酬費用(SBC)は恒常的に発生する運用コストであり一過性ではないため、この調整によりGAAP EPS(-0.21)がAdjusted EPS(+0.11)に転換され、企業の実力が見えにくくなっている。市場がGAAPベースで判断する場合、赤字を重視して実態を過小評価するリスクがある一方、SBC加算還元は実質的な報酬コストを無視した過大評価を招く可能性が高い。投資家はSBCの継続性、株式希薄化効果、将来キャッシュフローへの影響を注視すべきであり、調整依存の収益性には慎重な判断が必要。",
-        "sources": [
-          {
-            "item": "sbc",
-            "snippet": "非現金費用としてadd_backされた株式報酬費用は毎期発生する恒常的コスト(カテゴリ:株式報酬関連)であり、調整の根拠は非現金項目だが実質的な報酬支出として考慮すべき。",
-            "confidence": 0.2
-          }
-        ]
-      }
+      "pretax_income": -37216000.0
     },
     {
       "gaap_eps": -0.442647148645072,

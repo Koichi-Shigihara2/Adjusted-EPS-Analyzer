@@ -1,6 +1,6 @@
 {
   "ticker": "PAYS",
-  "last_updated": "2026-08-31T10:52:28.323295",
+  "last_updated": "2026-09-06T22:52:19.559440",
   "quarters": [
     {
       "gaap_eps": 0.10901942897431569,
@@ -49,17 +49,17 @@
       "tax_expense": 1148582.0,
       "pretax_income": 7905119.0,
       "ai_analysis": {
-        "health": "調整大",
-        "comment": "SBCと無形資産償却の調整によりAdjusted EPSがGAAP EPSを約43%上回る水準となっている。これらは非現金項目だが、両者とも恒常的に発生する費用（SBCは継続的な報酬コスト、無形資産償却は買収後の定期償却）であるため、市場がGAAP EPS中心に判断する場合、企業の現金生成実力や本業の強さを過小評価している可能性がある。投資家としてはSBCによる希薄化効果と将来の償却完了見通しを注視すべきで、過大調整のリスクもあり調整後EPSをそのまま信用しすぎると過大評価に繋がる恐れもある。",
+        "health": "過大調整",
+        "comment": "調整項目のSBCと無形資産償却費はともに恒常的に発生する非現金費用（SBCは株主希薄化を伴う）であり、一過性とは判断しにくい。市場がGAAP EPS（0.109）で評価する場合、非現金項目を加算したAdjusted EPS（0.156）の企業実力が見えにくくなり、過小評価の可能性がある。ただし恒常的コストを除外した調整は持続可能性を過大に描くため、過大評価リスクも高い。投資家はSBCの継続額と買収戦略の経済性を注視すべき。",
         "sources": [
           {
             "item": "sbc",
-            "snippet": "株式報酬費用。非現金費用として毎期継続的に発生する恒常的な報酬コストであり、調整の根拠はus-gaap:ShareBasedCompensation。",
+            "snippet": "非現金費用だが毎期発生する株式報酬費用（us-gaap:ShareBasedCompensation）",
             "confidence": 0.2
           },
           {
             "item": "amortization_intangibles",
-            "snippet": "無形資産償却費。買収関連無形資産の償却として定期的に発生する非現金費用であり、調整の根拠はus-gaap:AmortizationOfIntangibleAssets。",
+            "snippet": "買収関連無形資産の償却で恒常的な非現金費用（us-gaap:AmortizationOfIntangibleAssets）",
             "confidence": 0.2
           }
         ]

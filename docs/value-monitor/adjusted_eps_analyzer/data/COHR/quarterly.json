@@ -1,6 +1,6 @@
 {
   "ticker": "COHR",
-  "last_updated": "2026-08-31T10:49:19.481705",
+  "last_updated": "2026-09-06T22:48:50.340247",
   "quarters": [
     {
       "gaap_eps": 1.2310440305649812,
@@ -62,9 +62,25 @@
       "tax_expense": 60849000.0,
       "pretax_income": 301379000.0,
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にリクエストエラーが発生しました: Request failed: HTTPSConnectionPool(host='api.x.ai', port=443): Read timed out. (read timeout=30)",
-        "sources": []
+        "health": "過大調整",
+        "comment": "調整項目の大部分を占める株式報酬費用と無形資産償却費は恒常的に発生する非現金コスト（SBCは報酬としての実質的負担、無形資産償却は買収後の定期的費用）であり、リストラ費用のみが一過性です。市場がGAAP EPS（1.23）のみで判断する場合、これら調整により企業の実力が見えにくくなり過小評価の可能性がありますが、調整後EPS（1.75）は持続可能性に疑問があり過大評価リスクが高いと言えます。投資家はコア事業の収益性とSBCの希薄化効果を慎重に検証すべきです。",
+        "sources": [
+          {
+            "item": "sbc",
+            "snippet": "非現金費用だが、企業が継続的に付与する恒常的な運用コストである",
+            "confidence": 0.2
+          },
+          {
+            "item": "amortization_intangibles",
+            "snippet": "買収関連無形資産の償却は買収後も複数年にわたり発生する定期的な費用",
+            "confidence": 0.2
+          },
+          {
+            "item": "restructuring",
+            "snippet": "一過性の事業再編費用で将来的に繰り返し発生する可能性は低い",
+            "confidence": 0.8
+          }
+        ]
       }
     },
     {

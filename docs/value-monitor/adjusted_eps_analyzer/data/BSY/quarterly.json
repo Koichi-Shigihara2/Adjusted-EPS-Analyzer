@@ -1,6 +1,6 @@
 {
   "ticker": "BSY",
-  "last_updated": "2026-08-31T10:48:55.129931",
+  "last_updated": "2026-09-06T22:48:29.009647",
   "quarters": [
     {
       "gaap_eps": 0.2463430165528035,
@@ -65,9 +65,20 @@
         }
       },
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にリクエストエラーが発生しました: Request failed: HTTPSConnectionPool(host='api.x.ai', port=443): Read timed out. (read timeout=30)",
-        "sources": []
+        "health": "調整大",
+        "comment": "調整項目はSBC（株式報酬費用）と無形資産償却費の2つで、ともに恒常的に発生する項目です。SBCは毎期計上される非現金費用ですが株主希薄化の実質コストを伴い、無形資産償却も買収後の定期的な非現金費用です。市場がGAAP EPS（0.246）で評価する場合、非現金項目を除いた真の稼得力（Adjusted EPS 0.327）が分かりにくくなり、企業の実力を過小評価する可能性があります。ただし恒常的コストのadd-backであるため過大評価リスクもあり、投資家は調整の持続可能性とSBCの経済効果を注視する必要があります。",
+        "sources": [
+          {
+            "item": "sbc",
+            "snippet": "非現金費用として株式報酬費用をadd-back。ただし毎期発生する恒常的コストであり、株主希薄化の実質影響を無視できない。",
+            "confidence": 0.2
+          },
+          {
+            "item": "amortization_intangibles",
+            "snippet": "買収関連無形資産の償却をadd-back。定期的に発生する非現金項目で、買収の経済的コストを反映する恒常的性質を持つ。",
+            "confidence": 0.2
+          }
+        ]
       }
     },
     {

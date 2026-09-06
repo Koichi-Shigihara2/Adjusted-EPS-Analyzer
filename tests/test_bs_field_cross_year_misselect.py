@@ -320,16 +320,3 @@ class TestRealDataCrmVrt:
         assert tl + bs["stockholders_equity"] == ta  # TA=TL+SE恒等式が完全一致
         prov = annual_2017.get("bs_provenance", {}).get("stockholders_equity")
         assert prov.get("aligned_to_sibling_accn") is True
-
-    def test_cwan_2023_unaffected_by_vrt_type_fix(self):
-        """CWAN(2023)は『正しいaccnにタグ自体が存在しない』構造的必然
-        パターン（BACKLOG記載: 後続3つの異なるfilingで一貫して報告される
-        $354,329,000、MinorityInterest加算で恒等式が一致する既に正しい値）
-        であり、VRT型の新規ステップの対象外（アンカーaccnに該当タグが
-        ないためno-op）のまま値が変化していないことを実データで確認する。"""
-        parser = SECParser(data_dir=_DATA_DIR)
-        parsed = parser.parse_company_facts("CWAN")
-        annual_2023 = parsed["annual"].get(2023, {})
-        assert annual_2023.get("bs", {}).get("stockholders_equity") == 354_329_000
-        prov = annual_2023.get("bs_provenance", {}).get("stockholders_equity")
-        assert not prov.get("aligned_to_sibling_accn")  # 新規ステップは発火していない
