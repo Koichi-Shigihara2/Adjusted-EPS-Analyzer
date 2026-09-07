@@ -1,13 +1,13 @@
 {
-  "intrinsic_value_pt": 46470000303.41577,
+  "intrinsic_value_pt": 45290169239.28041,
   "intrinsic_value_per_share": 385.03362525330647,
-  "intrinsic_value_beta": 330.32,
-  "upside_percent_beta": 90.5,
+  "intrinsic_value_beta": 321.95,
+  "upside_percent_beta": 85.7,
   "intrinsic_value_rf": 2431.61,
   "upside_percent_rf": 1302.5,
-  "v0": 46470000303.41577,
+  "v0": 45290169239.28041,
   "v0_note": "v0はβ込みCAPMベース（intrinsic_value_betaの参考値）。メインの理論株価計算根拠はdcf_components.v0_rm（market_return 10%固定・βなし）を参照すること。",
-  "v0_adjusted": 46470000303.41577,
+  "v0_adjusted": 45290169239.28041,
   "alpha": 0.6,
   "alpha_was_capped": true,
   "future_values": {
@@ -45,7 +45,7 @@
     }
   },
   "upside_percent": 122.1,
-  "calculation_date": "2026-09-06T23:46:24+09:00",
+  "calculation_date": "2026-09-07T17:57:15+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -54,8 +54,8 @@
     "phase1_years": 6
   },
   "wacc": {
-    "value": 0.109576,
-    "beta": 1.168,
+    "value": 0.11128600000000001,
+    "beta": 1.198,
     "risk_free_rate": 0.043,
     "market_return": 0.1,
     "method": "CAPM"
@@ -120,49 +120,49 @@
   },
   "maturity_profile": null,
   "dcf_components": {
-    "v0": 46470000303.41577,
-    "pv_high_growth": 9240256032.08548,
-    "pv_terminal": 37229744271.33029,
+    "v0": 45290169239.28041,
+    "pv_high_growth": 9178823534.89603,
+    "pv_terminal": 36111345704.38438,
     "high_growth_detail": [
       {
         "year": 1,
         "fcf": 706839750.0,
-        "discount_factor": 1.1095760000000001,
-        "pv": 637035903.8046966
+        "discount_factor": 1.111286,
+        "pv": 636055659.8391414
       },
       {
         "year": 2,
         "fcf": 1060259625.0,
-        "discount_factor": 1.2311588997760003,
-        "pv": 861188287.874868
+        "discount_factor": 1.234956573796,
+        "pv": 858540006.5858042
       },
       {
         "year": 3,
         "fcf": 1590389437.5,
-        "discount_factor": 1.3660643673778554,
-        "pv": 1164212664.848827
+        "discount_factor": 1.3723899510674615,
+        "pv": 1158846606.4349828
       },
       {
         "year": 4,
         "fcf": 2385584156.25,
-        "discount_factor": 1.5157522364976515,
-        "pv": 1573861544.656013
+        "discount_factor": 1.5251177391619553,
+        "pv": 1564196714.1244235
       },
       {
         "year": 5,
         "fcf": 3578376234.375,
-        "discount_factor": 1.6818423035641183,
-        "pv": 2127652650.1871157
+        "discount_factor": 1.6948419918823325,
+        "pv": 2111333240.215962
       },
       {
         "year": 6,
         "fcf": 5367564351.5625,
-        "discount_factor": 1.8661318558194604,
-        "pv": 2876304980.71396
+        "discount_factor": 1.8834541777909497,
+        "pv": 2849851307.6957173
       }
     ],
     "terminal_fcf": 5528591282.109375,
-    "terminal_value": 69475611768.74152,
+    "terminal_value": 68014064932.57602,
     "v0_rm": 54176919361.619675,
     "pv_fcf_rm": 9594838666.286396,
     "pv_tv_rm": 44582080695.333275
@@ -301,14 +301,14 @@
     "current_price": 173.3800048828125,
     "latest_revenue": 6399188000.0,
     "rpo": 0.0,
-    "beta": 1.168,
+    "beta": 1.198,
     "sector": "Consumer Cyclical",
     "industry": "Furnishings, Fixtures & Appliances",
     "eps_data": {
       "ticker": "SN"
     },
     "_shares_source": "yf_implied",
-    "_beta_source": "yfinance",
+    "_beta_source": "beta_config()",
     "high_growth_rate_used": 0.5,
     "high_growth_years": 6,
     "terminal_growth_used": 0.03,
@@ -319,8 +319,8 @@
     "moat_gross_margin_norm": 0.4734,
     "moat_roic_norm": 0.5863,
     "moat_fcf_margin_norm": 0.1881,
-    "pv_high": 9240256032.08548,
-    "pv_terminal": 37229744271.33029,
+    "pv_high": 9178823534.89603,
+    "pv_terminal": 36111345704.38438,
     "roe_used": 0.20055312843235104,
     "fcf_floor_applied": 0.0,
     "fcf_growth_floor": 0.15,
@@ -330,12 +330,12 @@
     "rpo_pv": 0.0,
     "growth_option_pv": 0,
     "alpha_uncapped": 0.8423231394158743,
-    "per": 39.347736,
+    "per": 35.31161,
     "per_is_forward": false,
     "per_adjusted": 40.41,
-    "peg": 2.9947,
-    "ps": 3.8985581,
-    "ev_ebitda": 24.387,
+    "peg": 2.4001,
+    "ps": 3.534655,
+    "ev_ebitda": 22.122,
     "ma200": 128.1557002258301,
     "forward_eps": 7.66126,
     "analyst_target_median": 206.0,
@@ -356,7 +356,7 @@
     "max_eps_reliability": "MED"
   },
   "validation": {
-    "validated_at": "2026-09-06",
+    "validated_at": "2026-09-07",
     "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
@@ -365,7 +365,7 @@
       },
       "dcf_components": {
         "pass": true,
-        "detail": "2段階: pv_high $9.24B + pv_terminal $37.23B = $46.47B (差異0.00%)"
+        "detail": "2段階: pv_high $9.18B + pv_terminal $36.11B = $45.29B (差異0.00%)"
       },
       "formula_verification": {
         "pass": true,

@@ -1,13 +1,13 @@
 {
-  "intrinsic_value_pt": 106665872009.75179,
+  "intrinsic_value_pt": 107310661073.40782,
   "intrinsic_value_per_share": 179.7199512248339,
-  "intrinsic_value_beta": 71.4,
-  "upside_percent_beta": -85.1,
+  "intrinsic_value_beta": 71.79,
+  "upside_percent_beta": -85.0,
   "intrinsic_value_rf": 1600.37,
   "upside_percent_rf": 235.1,
-  "v0": 106231911296.34668,
+  "v0": 106876700360.00272,
   "v0_note": "v0はβ込みCAPMベース（intrinsic_value_betaの参考値）。メインの理論株価計算根拠はdcf_components.v0_rm（market_return 10%固定・βなし）を参照すること。",
-  "v0_adjusted": 106231911296.34668,
+  "v0_adjusted": 106876700360.00272,
   "alpha": 0.269746904354059,
   "alpha_was_capped": false,
   "future_values": {
@@ -45,7 +45,7 @@
     }
   },
   "upside_percent": -62.4,
-  "calculation_date": "2026-09-06T23:41:32+09:00",
+  "calculation_date": "2026-09-07T17:53:18+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + three_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "three_stage",
   "growth": {
@@ -54,8 +54,8 @@
     "phase1_years": 5
   },
   "wacc": {
-    "value": 0.184873,
-    "beta": 2.489,
+    "value": 0.18413200000000002,
+    "beta": 2.476,
     "risk_free_rate": 0.043,
     "market_return": 0.1,
     "method": "CAPM"
@@ -148,51 +148,51 @@
     "terminal_growth": 0.03
   },
   "dcf_components": {
-    "v0": 106231911296.34668,
-    "pv_phase1": 37053120864.32462,
-    "pv_phase2": 27246419562.631763,
-    "pv_high_growth": 64299540426.95639,
-    "pv_terminal": 41932370869.39029,
+    "v0": 106876700360.00272,
+    "pv_phase1": 37125073515.33687,
+    "pv_phase2": 27372974029.192577,
+    "pv_high_growth": 64498047544.52945,
+    "pv_terminal": 42378652815.47326,
     "phase1_detail": [
       {
         "year": 1,
         "phase": "phase1",
         "growth_rate": 0.246,
         "fcf": 7920193427.1855545,
-        "discount_factor": 1.184873,
-        "pv": 6684423923.226839
+        "discount_factor": 1.184132,
+        "pv": 6688606867.465413
       },
       {
         "year": 2,
         "phase": "phase1",
         "growth_rate": 0.246,
         "fcf": 9868561010.273201,
-        "discount_factor": 1.4039240261290002,
-        "pv": 7029269979.432935
+        "discount_factor": 1.402168593424,
+        "pv": 7038070212.49481
       },
       {
         "year": 3,
         "phase": "phase1",
         "growth_rate": 0.246,
         "fcf": 12296227018.80041,
-        "discount_factor": 1.6634716726115468,
-        "pv": 7391906469.616101
+        "discount_factor": 1.6603527008683479,
+        "pv": 7405792162.333705
       },
       {
         "year": 4,
         "phase": "phase1",
         "growth_rate": 0.246,
         "fcf": 15321098865.42531,
-        "discount_factor": 1.9710026711422615,
-        "pv": 7773251193.285408
+        "discount_factor": 1.9660767643846384,
+        "pv": 7792726684.41339
       },
       {
         "year": 5,
         "phase": "phase1",
         "growth_rate": 0.246,
         "fcf": 19090089186.319935,
-        "discount_factor": 2.335387847964345,
-        "pv": 8174269298.763342
+        "discount_factor": 2.3280944111643107,
+        "pv": 8199877588.629548
       }
     ],
     "phase2_detail": [
@@ -201,36 +201,36 @@
         "phase": "phase2",
         "growth_rate": 0.1,
         "fcf": 20999098104.95193,
-        "discount_factor": 2.7671380055810575,
-        "pv": 7588742615.149199
+        "discount_factor": 2.756771091280817,
+        "pv": 7617280292.646854
       },
       {
         "year": 7,
         "phase": "phase2",
         "growth_rate": 0.1,
         "fcf": 23099007915.447124,
-        "discount_factor": 3.2787071100868443,
-        "pv": 7045157478.197341
+        "discount_factor": 3.2643808658605367,
+        "pv": 7076076249.870402
       },
       {
         "year": 8,
         "phase": "phase2",
         "growth_rate": 0.1,
         "fcf": 25408908706.99184,
-        "discount_factor": 3.88485152964993,
-        "pv": 6540509595.557562
+        "discount_factor": 3.865457843453169,
+        "pv": 6573324489.885794
       },
       {
         "year": 9,
         "phase": "phase2",
         "growth_rate": 0.1,
         "fcf": 27949799577.691025,
-        "discount_factor": 4.603055686490902,
-        "pv": 6072009873.727664
+        "discount_factor": 4.577212327083887,
+        "pv": 6106292996.789525
       }
     ],
     "terminal_fcf": 28928042562.91021,
-    "terminal_value": 193017038178.39243,
+    "terminal_value": 193976092072.19247,
     "dcf_type": "three_stage",
     "v0_rm": 283069374210.59357,
     "pv_fcf_rm": 94326082593.54611,
@@ -400,7 +400,7 @@
     "current_price": 477.57000732421875,
     "latest_revenue": 34639000000.0,
     "rpo": 222000000,
-    "beta": 2.489,
+    "beta": 2.476,
     "sector": "Technology",
     "industry": "Semiconductors",
     "eps_data": {
@@ -418,8 +418,8 @@
     "moat_gross_margin_norm": 0.4833,
     "moat_roic_norm": 0.0,
     "moat_fcf_margin_norm": 0.3746,
-    "pv_high": 64299540426.95639,
-    "pv_terminal": 41932370869.39029,
+    "pv_high": 64498047544.52945,
+    "pv_terminal": 42378652815.47326,
     "roe_used": 0.06422545341763311,
     "fcf_floor_applied": 0.0,
     "fcf_growth_floor": 0.15,
@@ -429,12 +429,12 @@
     "rpo_pv": 0.0,
     "growth_option_pv": 433960713.40511227,
     "alpha_uncapped": 0.269746904354059,
-    "per": 121.87958,
+    "per": 121.82908,
     "per_is_forward": false,
     "per_adjusted": 85.43,
-    "peg": 1.0208,
-    "ps": 18.400862,
-    "ev_ebitda": 78.562,
+    "peg": 0.475,
+    "ps": 18.874739,
+    "ev_ebitda": 80.609,
     "ma200": 340.9978502655029,
     "forward_eps": 15.45073,
     "analyst_target_median": 610.0,
@@ -455,7 +455,7 @@
     "max_eps_reliability": "HIGH"
   },
   "validation": {
-    "validated_at": "2026-09-06",
+    "validated_at": "2026-09-07",
     "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
@@ -464,7 +464,7 @@
       },
       "dcf_components": {
         "pass": true,
-        "detail": "3段階: P1 $37.05B + P2 $27.25B + TV $41.93B = $106.23B (差異0.00%)"
+        "detail": "3段階: P1 $37.13B + P2 $27.37B + TV $42.38B = $106.88B (差異0.00%)"
       },
       "formula_verification": {
         "pass": true,

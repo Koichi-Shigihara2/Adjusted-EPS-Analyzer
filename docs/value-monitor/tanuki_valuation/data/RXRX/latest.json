@@ -1,13 +1,13 @@
 {
-  "intrinsic_value_pt": 9104792968.31733,
+  "intrinsic_value_pt": 8979858422.875303,
   "intrinsic_value_per_share": 18.752031013413735,
-  "intrinsic_value_beta": 17.97,
-  "upside_percent_beta": 395.0,
+  "intrinsic_value_beta": 17.74,
+  "upside_percent_beta": 388.6,
   "intrinsic_value_rf": 100.55,
   "upside_percent_rf": 2670.0,
-  "v0": 9104792968.31733,
+  "v0": 8979858422.875303,
   "v0_note": "v0はβ込みCAPMベース（intrinsic_value_betaの参考値）。メインの理論株価計算根拠はdcf_components.v0_rm（market_return 10%固定・βなし）を参照すること。",
-  "v0_adjusted": 9104792968.31733,
+  "v0_adjusted": 8979858422.875303,
   "alpha": 0.0,
   "alpha_was_capped": false,
   "future_values": {
@@ -45,7 +45,7 @@
     }
   },
   "upside_percent": 416.6,
-  "calculation_date": "2026-09-06T23:44:09+09:00",
+  "calculation_date": "2026-09-07T17:55:30+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -54,8 +54,8 @@
     "phase1_years": 3
   },
   "wacc": {
-    "value": 0.103078,
-    "beta": 1.054,
+    "value": 0.104047,
+    "beta": 1.071,
     "risk_free_rate": 0.043,
     "market_return": 0.1,
     "method": "CAPM"
@@ -125,31 +125,31 @@
   },
   "maturity_profile": null,
   "dcf_components": {
-    "v0": 9104792968.31733,
-    "pv_high_growth": 1296397164.2737005,
-    "pv_terminal": 7808395804.04363,
+    "v0": 8979858422.875303,
+    "pv_high_growth": 1293918460.2848735,
+    "pv_terminal": 7685939962.59043,
     "high_growth_detail": [
       {
         "year": 1,
         "fcf": 353882238.9110366,
-        "discount_factor": 1.103078,
-        "pv": 320813431.97039247
+        "discount_factor": 1.104047,
+        "pv": 320531860.4289823
       },
       {
         "year": 2,
         "fcf": 512972804.6855035,
-        "discount_factor": 1.216781074084,
-        "pv": 421581840.48981243
+        "discount_factor": 1.218919778209,
+        "pv": 420842137.3219752
       },
       {
         "year": 3,
         "fcf": 743583795.436152,
-        "discount_factor": 1.3422044336384307,
-        "pv": 554001891.8134956
+        "discount_factor": 1.3457447243723117,
+        "pv": 552544462.533916
       }
     ],
     "terminal_fcf": 765891309.2992365,
-    "terminal_value": 10480463467.791079,
+    "terminal_value": 10343313156.498394,
     "v0_rm": 9524685055.021095,
     "pv_fcf_rm": 1304321104.1867466,
     "pv_tv_rm": 8220363950.834348
@@ -308,7 +308,7 @@
     "current_price": 3.630000114440918,
     "latest_revenue": 74681000.0,
     "rpo": 112818000,
-    "beta": 1.054,
+    "beta": 1.071,
     "sector": "Healthcare",
     "industry": "Biotechnology",
     "eps_data": {
@@ -326,8 +326,8 @@
     "moat_gross_margin_norm": 0.0482,
     "moat_roic_norm": 0.0,
     "moat_fcf_margin_norm": 0.0,
-    "pv_high": 1296397164.2737005,
-    "pv_terminal": 7808395804.04363,
+    "pv_high": 1293918460.2848735,
+    "pv_terminal": 7685939962.59043,
     "roe_used": -0.5125061112141825,
     "fcf_floor_applied": 342031980.0,
     "fcf_growth_floor": 0.15,
@@ -337,11 +337,11 @@
     "rpo_pv": 0.0,
     "growth_option_pv": 0,
     "alpha_uncapped": 0.0,
-    "per": -3.732928,
+    "per": -4.0570445,
     "per_is_forward": false,
     "per_adjusted": null,
     "peg": null,
-    "ps": 32.651768,
+    "ps": 35.4868,
     "ev_ebitda": null,
     "ma200": 3.6465500032901765,
     "forward_eps": -0.89474,
@@ -350,7 +350,7 @@
     "analyst_target_low": 4.0,
     "analyst_target_high": 10.0,
     "analyst_count": 6,
-    "analyst_rec_key": "buy",
+    "analyst_rec_key": "none",
     "dividend_yield": 0.0,
     "payout_ratio": 0.0,
     "insider_buy_count": 0,
@@ -363,7 +363,7 @@
     "max_eps_reliability": "LOW"
   },
   "validation": {
-    "validated_at": "2026-09-06",
+    "validated_at": "2026-09-07",
     "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
@@ -372,7 +372,7 @@
       },
       "dcf_components": {
         "pass": true,
-        "detail": "2段階: pv_high $1.30B + pv_terminal $7.81B = $9.10B (差異0.00%)"
+        "detail": "2段階: pv_high $1.29B + pv_terminal $7.69B = $8.98B (差異0.00%)"
       },
       "formula_verification": {
         "pass": true,
