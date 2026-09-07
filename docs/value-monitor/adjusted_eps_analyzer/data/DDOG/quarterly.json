@@ -1,6 +1,6 @@
 {
   "ticker": "DDOG",
-  "last_updated": "2026-09-06T14:33:00.230492",
+  "last_updated": "2026-09-07T09:18:27.948869",
   "quarters": [
     {
       "gaap_eps": 0.12009498063462373,
@@ -65,9 +65,20 @@
         }
       },
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にリクエストエラーが発生しました: Request failed: HTTPSConnectionPool(host='api.x.ai', port=443): Read timed out. (read timeout=30)",
-        "sources": []
+        "health": "過大調整",
+        "comment": "調整項目の大部分を占めるSBCは毎期発生する恒常的なコストであり、一過性とは言えない。無形資産償却も買収関連で継続的に発生する性質を持つ。市場がGAAP EPS（0.12）で判断する場合、非現金費用の影響で企業の実力（収益性・成長力）が過小評価されている可能性があるが、SBCの従業員報酬としての実質性と株式希薄化を考慮すると、調整後EPS（0.635）に依存した投資は過大評価リスクを伴う。投資家はフリーキャッシュフローと希薄化率を重点的に確認すべき。",
+        "sources": [
+          {
+            "item": "sbc",
+            "snippet": "株式報酬費用は非現金費用としてadd_backされているが、テック企業では恒常的に発生する運用コストであり、実質的な経済的コストを反映する（毎期発生するSBCの例）",
+            "confidence": 0.2
+          },
+          {
+            "item": "amortization_intangibles",
+            "snippet": "買収関連無形資産の償却はadd_backされているが、過去のM&Aから生じる継続的な非現金費用であり、一過性とはみなせない（無形資産償却の例）",
+            "confidence": 0.25
+          }
+        ]
       }
     },
     {

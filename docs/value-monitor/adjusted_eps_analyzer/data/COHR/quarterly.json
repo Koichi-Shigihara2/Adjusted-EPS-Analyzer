@@ -1,6 +1,6 @@
 {
   "ticker": "COHR",
-  "last_updated": "2026-09-06T14:32:29.918582",
+  "last_updated": "2026-09-07T09:18:13.012099",
   "quarters": [
     {
       "gaap_eps": 1.2310440305649812,
@@ -62,9 +62,25 @@
       "tax_expense": 60849000.0,
       "pretax_income": 301379000.0,
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にリクエストエラーが発生しました: Request failed: HTTPSConnectionPool(host='api.x.ai', port=443): Read timed out. (read timeout=30)",
-        "sources": []
+        "health": "調整大",
+        "comment": "調整項目の大部分をSBCと無形資産償却が占め、これらは恒常的な非現金費用であるため、Adjusted EPSは企業の実力をある程度過大に示す可能性がある。市場がGAAP EPS（1.23）で判断する場合、非現金費用により真のキャッシュ生成力が見えにくくなり、企業実力を過小評価しているリスクが高い。ただしリストラは一過性だが金額が小さい。投資家はSBCの希薄化効果や償却の持続性を注視すべきで、過小評価の機会がある一方、過大調整による評価リスクも存在する。",
+        "sources": [
+          {
+            "item": "sbc",
+            "snippet": "株式報酬費用は非現金費用としてadd_backされているが、継続的に発生する恒常的な運用コストである。",
+            "confidence": 0.2
+          },
+          {
+            "item": "amortization_intangibles",
+            "snippet": "買収関連無形資産の償却は定期的に発生する非現金費用であり、買収の影響が続く限り恒常的性格が強い。",
+            "confidence": 0.2
+          },
+          {
+            "item": "restructuring",
+            "snippet": "リストラ費用は一過性の事業再編費用として明確に非経常的と分類される。",
+            "confidence": 0.8
+          }
+        ]
       }
     },
     {

@@ -1,6 +1,6 @@
 {
   "ticker": "IONQ",
-  "last_updated": "2026-09-06T14:33:40.351667",
+  "last_updated": "2026-09-07T09:19:02.426273",
   "quarters": [
     {
       "gaap_eps": -5.080070633397915,
@@ -97,9 +97,25 @@
         }
       },
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にリクエストエラーが発生しました: Request failed: HTTPSConnectionPool(host='api.x.ai', port=443): Read timed out. (read timeout=30)",
-        "sources": []
+        "health": "調整大",
+        "comment": "ワラント公正価値変動の巨額調整（16億ドル超）がGAAP EPSを-5.08から-0.13へ大幅に改善させており、この非現金・非経常項目により市場がGAAPベースで判断する場合、IONQの量子コンピューティング事業の実力（技術進捗や運用基盤）を強く過小評価している可能性が高い。SBCと無形資産償却は恒常的に発生しやすい項目のため調整の持続可能性に注意が必要。投資家は調整後EPSの裏付けとなるキャッシュフローや事業マイルストーンを重点的に検証すべきで、過小評価リスクが大きい一方、SBCの過大調整による過大評価リスクも潜む。",
+        "sources": [
+          {
+            "item": "sbc",
+            "snippet": "株式報酬費用は非現金費用だが成長企業では毎期継続的に発生する恒常的コストであり、調整の完全な一過性は低い",
+            "confidence": 0.2
+          },
+          {
+            "item": "amortization_intangibles",
+            "snippet": "無形資産償却費は買収関連の非現金項目だが、償却期間を通じて恒常的に計上される性質を持つ",
+            "confidence": 0.25
+          },
+          {
+            "item": "warrant_fv_change",
+            "snippet": "ワラント公正価値変動損益は非現金かつ非経常的な時価評価変動であり、事業の実力とは直接無関係な一過性項目",
+            "confidence": 0.8
+          }
+        ]
       }
     },
     {

@@ -1,6 +1,6 @@
 {
   "ticker": "AVAV",
-  "last_updated": "2026-09-06T14:31:45.116959",
+  "last_updated": "2026-09-07T09:17:35.397560",
   "quarters": [
     {
       "gaap_eps": -0.49092081694536915,
@@ -88,9 +88,35 @@
       "tax_expense": -23059000.0,
       "pretax_income": -47157000.0,
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にリクエストエラーが発生しました: Request failed: HTTPSConnectionPool(host='api.x.ai', port=443): Read timed out. (read timeout=30)",
-        "sources": []
+        "health": "調整大",
+        "comment": "GAAP EPSが-0.49の赤字に対しAdjusted EPSが1.12と大幅に黒字化する調整は、主にのれん減損と無形資産償却の巨額加算によるもので、市場がGAAPベースで判断する場合に企業の実力（非現金項目除いた収益力）が過小評価されやすい状況を示唆する。SBCと償却は恒常的性格が強く一過性調整とは言いにくい一方、のれん減損や異常貸倒・在庫評価損は非経常性が高い。投資家は調整の持続可能性を精査すべきであり、GAAP重視の市場心理により過小評価リスクが優勢だが、恒常項目の過度な加算は将来的な過大評価リスクも孕む。",
+        "sources": [
+          {
+            "item": "sbc",
+            "snippet": "株式報酬費用は非現金費用だが、企業が継続的に付与する恒常的なコストである。",
+            "confidence": 0.2
+          },
+          {
+            "item": "amortization_intangibles",
+            "snippet": "買収関連無形資産の償却は定期的に発生する非現金費用であり、恒常的性格が強い。",
+            "confidence": 0.25
+          },
+          {
+            "item": "goodwill_impairment",
+            "snippet": "のれん減損は非現金で一過性の減損損失であり、通常毎期発生するものではない。",
+            "confidence": 0.8
+          },
+          {
+            "item": "loan_loss_provision_abnormal",
+            "snippet": "マクロ変動による一時的影響の異常貸倒引当金であり、明確に一過性。",
+            "confidence": 0.85
+          },
+          {
+            "item": "inventory_writeoff",
+            "snippet": "一過性の在庫評価損・減損であり、通常の事業運営から乖離した項目。",
+            "confidence": 0.7
+          }
+        ]
       }
     },
     {

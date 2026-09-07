@@ -1,6 +1,6 @@
 {
   "ticker": "ESTC",
-  "last_updated": "2026-09-06T14:33:12.057362",
+  "last_updated": "2026-09-07T09:18:41.568956",
   "quarters": [
     {
       "gaap_eps": -0.1598715889684915,
@@ -91,9 +91,30 @@
         }
       },
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にリクエストエラーが発生しました: Request failed: HTTPSConnectionPool(host='api.x.ai', port=443): Read timed out. (read timeout=30)",
-        "sources": []
+        "health": "調整大",
+        "comment": "調整項目のうちSBC（恒常的・非現金だが希薄化コスト）が74MUSDと最大で、リストラ費用（一過性）が次点。GAAP EPSが-0.16に対しAdjusted EPSが+0.73と大幅にプラス転換しており、市場がGAAPのみで判断する場合、非現金費用や一時的リストラを控除した企業の実力（キャッシュ生成力や事業基盤）が過小評価されるリスクが高い。投資家はSBCの継続性と希薄化効果に注目すべきで、過大調整の可能性もあるが全体として実力はGAAPより強いと見られる。",
+        "sources": [
+          {
+            "item": "sbc",
+            "snippet": "株式報酬費用は非現金費用だがテック企業では毎期発生する恒常的コストであり、実際の株主希薄化をもたらす",
+            "confidence": 0.2
+          },
+          {
+            "item": "amortization_intangibles",
+            "snippet": "無形資産償却費は買収関連で定期的に発生する非現金項目であり、恒常的な調整要素",
+            "confidence": 0.25
+          },
+          {
+            "item": "loan_loss_provision_abnormal",
+            "snippet": "貸倒引当金繰入（異常変動分）はマクロ変動による一時的影響とされ、金融関連の一過性項目",
+            "confidence": 0.7
+          },
+          {
+            "item": "restructuring",
+            "snippet": "リストラ費用は一過性の事業再編費用であり、調整として妥当な一時的項目",
+            "confidence": 0.8
+          }
+        ]
       }
     },
     {
